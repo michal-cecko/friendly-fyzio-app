@@ -23,5 +23,9 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
-.playwright-mcp/*
+.playwright-mcp
 rr
+.claude
+
+# Composer auth credentials (provide via Dokploy COMPOSER_AUTH build arg)
+auth.json
