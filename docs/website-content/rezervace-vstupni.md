@@ -1,0 +1,216 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "home" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e5]: FriendlyFyzio
+      - navigation [ref=e6]:
+        - link "Fyzioterapie" [ref=e7] [cursor=pointer]:
+          - /url: /fyzioterapie
+        - link "Laser/kryoterapie" [ref=e8] [cursor=pointer]:
+          - /url: /pristrojova-terapie
+        - link "Pohybové kurzy" [ref=e9] [cursor=pointer]:
+          - /url: /fyzio-kurzy
+        - link "Relaxace" [ref=e10] [cursor=pointer]:
+          - /url: /relaxace
+        - link "Workshopy" [ref=e11] [cursor=pointer]:
+          - /url: /workshopy
+          - text: Workshopy
+        - link "Ceník" [ref=e12] [cursor=pointer]:
+          - /url: /cenik
+        - link "O nás" [ref=e13] [cursor=pointer]:
+          - /url: /nas-tym
+        - link "Chci se objednat" [ref=e14] [cursor=pointer]:
+          - /url: "#kontakt"
+        - link:
+          - /url: "#"
+      - text: 
+  - heading "Rezervace vstupního vyšetření fyzioterapeutem" [level=1] [ref=e19]
+  - generic [ref=e23]:
+    - generic [ref=e24]:
+      - heading "Před výběrem pro vás máme pár informací" [level=3] [ref=e25]: Před výběrem pro vás máme pár informací
+      - generic [ref=e26]:
+        - paragraph [ref=e27]:
+          - strong [ref=e28]: Komplexní fyzioterapeutické vyšetření a terapie zahrnuje vstupní vyšetření, diagnostiku pohybového systému a následnou terapii.
+        - list [ref=e29]:
+          - listitem [ref=e30]:
+            - strong [ref=e31]: Vstupní vyšetření trvá 90 minut.
+          - listitem [ref=e32]: Lze u nás využít těhotenské a poporodní příspěvky z pojišťovny, fond FKSP či Benefit.
+          - listitem [ref=e33]: Jsme zdravotnické zařízení, rády Vám dáme razítko na propustku do práce.
+      - heading "1. Začněte výběrem druhu terapie a terapeuta" [level=3] [ref=e34]: 1. Začněte výběrem druhu terapie a terapeuta
+      - paragraph [ref=e35]:
+        - link "Těhotenská fyzioterapie/ příprava k porodu" [ref=e36] [cursor=pointer]:
+          - /url: /fyzioterapie/tehotenska-fyzioterapie
+          - emphasis [ref=e37]: Těhotenská fyzioterapie/ příprava k porodu
+        - emphasis [ref=e38]
+        - text: "- Renáta, Ema, Lada, Daniela"
+        - link "Terapie pánevního dna/poporodní fyzioterapie" [ref=e39] [cursor=pointer]:
+          - /url: /fyzioterapie/terapie-panevniho-dna
+          - emphasis [ref=e40]: Terapie pánevního dna/poporodní fyzioterapie
+        - emphasis [ref=e41]
+        - text: "- Renáta, Šárka, Ema, Daniela"
+        - link "Terapie jizev" [ref=e42] [cursor=pointer]:
+          - /url: /fyzioterapie/terapie-jizev
+          - emphasis [ref=e43]: Terapie jizev
+        - text: "- Renáta, Šárka, Ema, Daniela"
+        - link "Terapie temporomandibulárního (čelistního) kloubu" [ref=e44] [cursor=pointer]:
+          - /url: /fyzioterapie/terapie-celistniho-kloubu
+          - emphasis [ref=e45]: Terapie temporomandibulárního (čelistního) kloubu
+        - emphasis [ref=e46]
+        - text: "- Šárka"
+        - link "SM systém" [ref=e47] [cursor=pointer]:
+          - /url: /fyzio-kurzy/sm-system
+          - emphasis [ref=e48]: SM systém
+        - text: "- Šárka, Ema"
+    - generic [ref=e50]:
+      - form "Rezervace vstupního vyšetření" [ref=e51]:
+        - heading "2. Vyplňte formulář" [level=3] [ref=e52]: 2. Vyplňte formulář
+        - generic [ref=e53]: "Vyberte termín:"
+        - combobox "Vyberte termín:" [ref=e54]:
+          - option "1.4 10:00 Ema" [selected]
+          - option "3.4 15:30 Ema"
+          - option "7.4 12:00 Šárka"
+          - option "8.4 9:00 Ema"
+          - option "8.4 10:30 Šárka"
+          - option "8.4 10:30 Ema"
+          - option "9.4 17:00 Daniela"
+          - option "9.4 18:30 Daniela"
+          - option "13.4 12:00 Šárka"
+          - option "14.4 12:30 Šárka"
+          - option "14.4 14:00 Šárka"
+          - option "14.4 18:00 Daniela"
+          - option "16.4 8:00 Renáta"
+          - option "16.4 9:30 Renáta"
+          - option "20.4 11:00 Šárka"
+          - option "21.4 14:00 Šárka"
+          - option "27.4 13:30 Šárka"
+          - option "28.4 13:30 Šárka"
+          - option "28.4 18:00 Daniela"
+          - option "30.4 18:00 Daniela"
+          - option "4.5 11:00 Šárka"
+          - option "5.5 12:30 Šárka"
+          - option "5.5 15:00 Šárka"
+          - option "6.5 13:00 Ema"
+          - option "6.5 14:30 Ema"
+          - option "7.5 8:00 Renáta"
+          - option "7.5 9:30 Renáta"
+          - option "7.5 17:00 Daniela"
+          - option "7.5 18:30 Daniela"
+          - option "11.5 13:00 Šárka"
+          - option "12.5 16:00 Daniela"
+          - option "12.5 17:30 Daniela"
+          - option "13.5 9:00 Šárka"
+          - option "14.5 8:00 Renáta"
+        - generic [ref=e55]:
+          - generic [ref=e56]:
+            - generic [ref=e57]: "Jméno:"
+            - textbox "Jméno:" [ref=e58]:
+              - /placeholder: ""
+          - generic [ref=e59]:
+            - generic [ref=e60]: "Příjmení:"
+            - textbox "Příjmení:" [ref=e61]:
+              - /placeholder: ""
+        - generic [ref=e62]: "Stučný popis Vašeho problému/ týden těhotenství:"
+        - textbox "Stučný popis Vašeho problému/ týden těhotenství:" [ref=e63]:
+          - /placeholder: únik moči, diastáza, bolesti...
+        - heading "Kontaktní údaje" [level=5] [ref=e64]: Kontaktní údaje
+        - generic [ref=e65]:
+          - generic [ref=e66]:
+            - generic [ref=e67]: Telefon (pro potvrzení termínu)
+            - textbox "Telefon (pro potvrzení termínu)" [ref=e68]:
+              - /placeholder: "+420"
+          - generic [ref=e69]:
+            - generic [ref=e70]: Telefon (znovu pro kontrolu)
+            - textbox "Telefon (znovu pro kontrolu)" [ref=e71]:
+              - /placeholder: "+420"
+        - generic [ref=e72]: Email
+        - textbox "Email" [ref=e73]:
+          - /placeholder: "@"
+        - generic [ref=e74]:
+          - checkbox "Souhlasím se storno podmínkami" [ref=e75]
+          - generic [ref=e76] [cursor=pointer]:
+            - text: Souhlasím se
+            - link "storno podmínkami" [ref=e77]:
+              - /url: /storno-podminky
+        - generic [ref=e78]:
+          - checkbox "Chci dostávat informace o kurzech, workshopech, soutěžích emailem" [ref=e79]
+          - generic [ref=e80] [cursor=pointer]: Chci dostávat informace o kurzech, workshopech, soutěžích emailem
+        - button "Závazná objednávka" [ref=e81] [cursor=pointer]
+      - paragraph [ref=e82]:
+        - text: Nevyhovuje Vám žádný termín? Nevíte, do které kategorie spadáte nebo který terapeut je vhodný?
+        - text: "Kontaktujte nás na tel. čísle:"
+        - strong [ref=e83]: +420 604 793 255
+  - generic [ref=e85]:
+    - heading "Kontakt" [level=2] [ref=e86]
+    - generic [ref=e88]:
+      - heading "Mgr. Lucie Fickerová" [level=3] [ref=e89]
+      - paragraph [ref=e90]:
+        - text: +420 604 793 255
+        - link "info@friendlyfyzio.cz" [ref=e91] [cursor=pointer]:
+          - /url: "#"
+      - link "Online rezervace vstupního vyšetření" [ref=e92] [cursor=pointer]:
+        - /url: /rezervace-vstupniho-vysetreni
+      - link "Online rezervace masáží" [ref=e93] [cursor=pointer]:
+        - /url: /rezervace-masazi
+      - heading "Adresa" [level=4] [ref=e94]
+      - paragraph [ref=e95]:
+        - text: FriendlyFyzio
+        - text: Zednická 1109/2
+        - text: Ostrava-Poruba
+        - text: "IČ: 06816967"
+  - generic [ref=e97]:
+    - generic [ref=e98]:
+      - generic:
+        - button "Keyboard shortcuts"
+      - region "Map" [ref=e99]
+      - generic [ref=e100]:
+        - generic [ref=e139]:
+          - generic:
+            - button "Map pin showing location of FriendlyFyzio, Zednická 1109/2, Ostrava" [ref=e141]:
+              - generic:
+                - generic "Map pin showing location of FriendlyFyzio, Zednická 1109/2, Ostrava"
+            - dialog [ref=e142]:
+              - button "Close" [ref=e145] [cursor=pointer]
+              - generic [ref=e147]: FriendlyFyzio, Zednická 1109/2, Ostrava
+        - iframe [ref=e149]:
+          
+        - button "Toggle fullscreen view" [ref=e184] [cursor=pointer]
+        - generic:
+          - generic:
+            - button "Map camera controls" [ref=e186] [cursor=pointer]
+            - generic [ref=e188] [cursor=pointer]:
+              - button "Zoom in" [ref=e189]
+              - button "Zoom out" [ref=e191]
+        - link "Open this area in Google Maps (opens a new window)" [ref=e193] [cursor=pointer]:
+          - /url: https://maps.google.com/maps?ll=49.830985,18.176954&z=17&t=m&hl=en-GB&gl=US&mapclient=apiv3
+          - img "Google" [ref=e195]
+        - generic [ref=e196]:
+          - button "Keyboard shortcuts" [ref=e202] [cursor=pointer]
+          - generic [ref=e207]: Map data ©2026 Google
+          - link "Terms (opens in new tab)" [ref=e212] [cursor=pointer]:
+            - /url: https://www.google.com/intl/en-GB_US/help/terms_maps.html
+            - text: Terms
+          - link "Report a map error" [ref=e217] [cursor=pointer]:
+            - /url: https://www.google.com/maps/@49.8309854,18.1769535,17z/data=!10m1!1e1!12b1?source=apiv3&rapsrc=apiv3
+    - generic [ref=e218]:
+      - generic [ref=e220]: This page can't load Google Maps correctly.
+      - table [ref=e221]:
+        - row "Do you own this website? OK" [ref=e222]:
+          - cell "Do you own this website?" [ref=e223]:
+            - link "Do you own this website?" [ref=e224] [cursor=pointer]:
+              - /url: http://g.co/dev/maps-no-account
+          - cell "OK" [ref=e225]:
+            - button "OK" [ref=e226] [cursor=pointer]
+  - generic [ref=e152]:
+    - generic [ref=e153]:
+      - generic [ref=e154]: FriendlyFyzio
+      - generic [ref=e155]:
+        - text: Zednická 1109/2
+        - text: Ostrava -Poruba
+      - paragraph [ref=e156]:
+        - text: "Mobil: +420 604 793 255"
+        - text: "E-mail: friendlyfyzio@seznam.cz"
+    - generic [ref=e158]:
+      - text: "Webdesign:"
+      - link "Petr Hlubina" [ref=e159] [cursor=pointer]:
+        - /url: http://www.hlubina.cz

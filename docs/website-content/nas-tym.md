@@ -1,0 +1,191 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "home" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e5]: FriendlyFyzio
+      - navigation [ref=e6]:
+        - link "Fyzioterapie" [ref=e7] [cursor=pointer]:
+          - /url: /fyzioterapie
+        - link "Laser/kryoterapie" [ref=e8] [cursor=pointer]:
+          - /url: /pristrojova-terapie
+        - link "Pohybové kurzy" [ref=e9] [cursor=pointer]:
+          - /url: /fyzio-kurzy
+        - link "Relaxace" [ref=e10] [cursor=pointer]:
+          - /url: /relaxace
+        - link "Workshopy" [ref=e11] [cursor=pointer]:
+          - /url: /workshopy
+          - text: Workshopy
+        - link "Ceník" [ref=e12] [cursor=pointer]:
+          - /url: /cenik
+        - link "O nás" [ref=e13] [cursor=pointer]:
+          - /url: /nas-tym
+        - link "Chci se objednat" [ref=e14] [cursor=pointer]:
+          - /url: "#kontakt"
+        - link:
+          - /url: "#"
+      - text: 
+  - heading "Tým Friendly Fyzio" [level=1] [ref=e19]:
+    - strong [ref=e20]: Tým Friendly Fyzio
+  - generic [ref=e22]:
+    - generic [ref=e24]:
+      - generic [ref=e26]:
+        - heading "Mgr. Lucie Fickerová fyzioterapeut‍" [level=3] [ref=e27]:
+          - text: Mgr. Lucie Fickerová
+          - strong [ref=e28]:
+            - emphasis [ref=e29]: fyzioterapeut
+            - text: ‍
+        - generic [ref=e30]:
+          - text: Urogynekologická fyzioterapie
+          - text: Těhotenská fyzioterapie
+          - text: Terapie jizev
+          - text: Onkologická fyzioterapie - rakovina prsu
+        - paragraph [ref=e31]:
+          - link "Podrobný profil" [ref=e32] [cursor=pointer]:
+            - /url: /nas-tym/o-me
+      - generic [ref=e34]:
+        - heading "Mgr. Renáta Prnka fyzioterapeut‍‍" [level=3] [ref=e35]:
+          - text: Mgr. Renáta Prnka
+          - strong [ref=e36]:
+            - emphasis [ref=e37]: fyzioterapeut
+          - emphasis: ‍
+          - text: ‍
+        - generic [ref=e38]:
+          - text: Urogynekologická fyzioterapie
+          - text: Těhotenská fyzioterapie
+          - text: Terapie jizev, čelistního kloubu
+          - text: Onkologická fyzioterapie - rakovina prsu
+        - paragraph [ref=e39]:
+          - link "Podrobný profil" [ref=e40] [cursor=pointer]:
+            - /url: /nas-tym/renata-prnka
+      - generic [ref=e42]:
+        - heading "Šárka Antošíková fyzioterapeut‍‍" [level=3] [ref=e43]:
+          - text: Šárka Antošíková
+          - strong [ref=e44]:
+            - emphasis [ref=e45]: fyzioterapeut
+          - emphasis: ‍
+          - text: ‍
+        - generic [ref=e46]:
+          - text: Urogynekologická fyzioterapie
+          - text: Terapie čelistního kloubu
+          - text: Fyzioterapie nohy a terapie jizev
+        - paragraph [ref=e47]:
+          - link "Podrobný profil" [ref=e48] [cursor=pointer]:
+            - /url: /nas-tym/sarka-antosikova
+      - generic [ref=e50]:
+        - heading "Mgr. Lada Činčilová fyzioterapeut‍" [level=3] [ref=e51]:
+          - text: Mgr. Lada Činčilová
+          - emphasis [ref=e52]: fyzioterapeut
+          - text: ‍
+        - generic [ref=e53]:
+          - text: Urogynekologická fyzioterapie
+          - text: Terapie čelistního kloubu
+          - text: Těhotenská fyzioterapie
+          - text: Terapie jizev, Acces Bars
+        - paragraph [ref=e54]:
+          - link "Podrobný profil" [ref=e55] [cursor=pointer]:
+            - /url: /nas-tym/bc-lada-cincilova
+      - generic [ref=e57]:
+        - heading "Bc. Ema Murčová fyzioterapeut" [level=3] [ref=e58]:
+          - text: Bc. Ema Murčová
+          - strong [ref=e59]:
+            - emphasis [ref=e60]: fyzioterapeut
+        - generic [ref=e61]:
+          - text: Těhotenská fyzioterapie
+          - text: Urogynekologická fyzioterapie
+          - text: Terapie jizev
+          - text: SM systém
+        - paragraph [ref=e62]:
+          - link "Podrobný profil" [ref=e63] [cursor=pointer]:
+            - /url: /nas-tym/bc-ema-murcova
+      - generic [ref=e64]:
+        - generic [ref=e65]:
+          - heading "Mgr. Daniela Steblová fyzioterapeut" [level=3] [ref=e66]:
+            - text: Mgr. Daniela Steblová
+            - strong [ref=e67]:
+              - emphasis [ref=e68]: fyzioterapeut
+          - generic [ref=e69]:
+            - text: Těhotenská fyzioterapie
+            - text: Urogynekologická fyzioterapie
+            - text: ‍
+        - paragraph [ref=e70]:
+          - link "Podrobný profil" [ref=e71] [cursor=pointer]:
+            - /url: /nas-tym/mgr-daniela-steblova
+      - heading "Michaela Hrubá kondiční trenér" [level=3] [ref=e74]:
+        - text: Michaela Hrubá
+        - strong [ref=e75]:
+          - emphasis [ref=e76]: kondiční trenér
+      - generic [ref=e78]:
+        - heading "Denisa Nováková masér, lektor, bylinná napářka" [level=3] [ref=e79]:
+          - text: Denisa Nováková
+          - emphasis [ref=e80]: masér, lektor, bylinná napářka
+        - generic [ref=e81]:
+          - text: masáže žen a dětí, bylinná napářka
+          - text: ‍
+      - heading "Kristýna Černá lektorka jógy" [level=3] [ref=e84]:
+        - text: Kristýna Černá
+        - emphasis [ref=e85]: lektorka
+        - emphasis [ref=e86]: jógy
+      - heading "Adéla Macurová Asistentka" [level=3] [ref=e89]:
+        - text: Adéla Macurová
+        - emphasis [ref=e90]: Asistentka
+    - generic [ref=e93]:
+      - heading "Spolupracující terapeuté" [level=2] [ref=e94]
+      - generic [ref=e95]:
+        - generic [ref=e97]:
+          - heading "Lucie Amani" [level=3] [ref=e98]
+          - generic [ref=e99]:
+            - strong [ref=e100]: Pohybový specialista
+            - text: SM systém
+            - text: Terapie pánevního dna
+            - text: Bylinná napářka
+            - text: ‍
+          - paragraph [ref=e101]:
+            - link "www.lucieamani.cz Kontakt +420 773 900 951" [ref=e102] [cursor=pointer]:
+              - /url: /nas-tym/lucie-kretinska
+              - text: www.lucieamani.cz
+              - text: Kontakt +420 773 900 951
+        - generic [ref=e104]:
+          - heading "Mgr. Jakub Trepáč fyzioterapeut‍‍" [level=3] [ref=e105]:
+            - text: Mgr. Jakub Trepáč
+            - strong [ref=e106]:
+              - emphasis [ref=e107]: fyzioterapeut
+            - emphasis: ‍
+            - text: ‍
+          - generic [ref=e108]: Dětská fyzioterapie
+          - paragraph [ref=e110]:
+            - link "www.fyziokuba.cz Kontakt +420 602 330 804" [ref=e111] [cursor=pointer]:
+              - /url: /nas-tym
+              - text: www.fyziokuba.cz
+              - text: Kontakt +420 602 330 804
+  - generic [ref=e114]:
+    - heading "Kontakt" [level=2] [ref=e115]
+    - generic [ref=e117]:
+      - heading "Mgr. Lucie Fickerová" [level=3] [ref=e118]
+      - paragraph [ref=e119]:
+        - text: +420 604 793 255
+        - link "info@friendlyfyzio.cz" [ref=e120] [cursor=pointer]:
+          - /url: "#"
+      - link "Online rezervace vstupního vyšetření" [ref=e121] [cursor=pointer]:
+        - /url: /rezervace-vstupniho-vysetreni
+      - link "Online rezervace masáží" [ref=e122] [cursor=pointer]:
+        - /url: /rezervace-masazi
+      - heading "Adresa" [level=4] [ref=e123]
+      - paragraph [ref=e124]:
+        - text: FriendlyFyzio
+        - text: Zednická 1109/2
+        - text: Ostrava-Poruba
+        - text: "IČ: 06816967"
+  - generic [ref=e130]:
+    - generic [ref=e131]:
+      - generic [ref=e132]: FriendlyFyzio
+      - generic [ref=e133]:
+        - text: Zednická 1109/2
+        - text: Ostrava -Poruba
+      - paragraph [ref=e134]:
+        - text: "Mobil: +420 604 793 255"
+        - text: "E-mail: info@friendlyfyzio.cz"
+    - generic [ref=e136]:
+      - text: "Webdesign:"
+      - link "Petr Hlubina" [ref=e137] [cursor=pointer]:
+        - /url: http://www.hlubina.cz

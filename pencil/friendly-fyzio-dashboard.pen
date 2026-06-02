@@ -1,5 +1,5 @@
 {
-  "version": "2.10",
+  "version": "2.11",
   "children": [
     {
       "type": "frame",
@@ -2707,7 +2707,7 @@
       "name": "04 Client Detail",
       "width": 1440,
       "height": 1100,
-      "fill": "$f:bg-page",
+      "fill": "#000000",
       "children": [
         {
           "id": "TaoU4",
@@ -4217,7 +4217,7 @@
       "name": "05 Reservation List",
       "width": 1440,
       "height": 900,
-      "fill": "$f:bg-page",
+      "fill": "#000000",
       "children": [
         {
           "id": "eqOGm",
@@ -5357,7 +5357,7 @@
       "name": "06 Reservation Create",
       "width": 1440,
       "height": 900,
-      "fill": "$f:bg-page",
+      "fill": "#000000",
       "children": [
         {
           "id": "r9SxF",
@@ -5981,7 +5981,7 @@
       "name": "07 Service List + Edit",
       "width": 1440,
       "height": 900,
-      "fill": "$f:bg-page",
+      "fill": "#000000",
       "children": [
         {
           "id": "tm84m",
@@ -7268,7 +7268,7 @@
       "name": "08 Course List + Detail",
       "width": 1440,
       "height": 1000,
-      "fill": "$f:bg-page",
+      "fill": "#000000",
       "children": [
         {
           "id": "ggfDA",
@@ -8194,7 +8194,7 @@
       "name": "09 Workshop List + Detail",
       "width": 1440,
       "height": 900,
-      "fill": "$f:bg-page",
+      "fill": "#000000",
       "children": [
         {
           "id": "7YKHc",
@@ -8771,7 +8771,7 @@
       "name": "10 Working Hours",
       "width": 1440,
       "height": 900,
-      "fill": "$f:bg-page",
+      "fill": "#000000",
       "children": [
         {
           "id": "jHB8K",
@@ -9771,7 +9771,7 @@
       "name": "11 Room Management",
       "width": 1440,
       "height": 900,
-      "fill": "$f:bg-page",
+      "fill": "#000000",
       "children": [
         {
           "id": "BXuC7",
@@ -10747,7 +10747,7 @@
       "name": "12 Invoice List + Detail",
       "width": 1440,
       "height": 900,
-      "fill": "$f:bg-page",
+      "fill": "#000000",
       "children": [
         {
           "id": "51pT4",
@@ -11758,7 +11758,7 @@
       "name": "13 Payment Overview",
       "width": 1440,
       "height": 900,
-      "fill": "$f:bg-page",
+      "fill": "#000000",
       "children": [
         {
           "id": "cvs5j",
@@ -12871,7 +12871,7 @@
       "name": "14 Credit Management",
       "width": 1440,
       "height": 900,
-      "fill": "$f:bg-page",
+      "fill": "#000000",
       "children": [
         {
           "id": "NOFLj",
@@ -13786,7 +13786,7 @@
       "name": "15 CMS Page Editor",
       "width": 1440,
       "height": 900,
-      "fill": "$f:bg-page",
+      "fill": "#000000",
       "children": [
         {
           "id": "hefjl",
@@ -14588,7 +14588,7 @@
       "name": "16 Banner Modal TopBar Mgmt",
       "width": 1440,
       "height": 900,
-      "fill": "$f:bg-page",
+      "fill": "#000000",
       "children": [
         {
           "id": "B0Qrq",
@@ -14843,7 +14843,7 @@
                           "type": "text",
                           "id": "56x2J",
                           "name": "tab2t",
-                          "fill": "$f:text-secondary",
+                          "fill": "#000000",
                           "content": "Modals",
                           "fontFamily": "Inter",
                           "fontSize": 14,
@@ -14864,7 +14864,7 @@
                           "type": "text",
                           "id": "yGKhX",
                           "name": "tab3t",
-                          "fill": "$f:text-secondary",
+                          "fill": "#000000",
                           "content": "Top Bar",
                           "fontFamily": "Inter",
                           "fontSize": 14,
@@ -15210,7 +15210,7 @@
                   "id": "oilSC",
                   "name": "heading16",
                   "width": "fill_container",
-                  "fill": "$f:bg-page",
+                  "fill": "#000000",
                   "layout": "vertical",
                   "gap": 16,
                   "padding": [
@@ -15224,7 +15224,7 @@
                       "type": "text",
                       "id": "4Zdm9",
                       "name": "h16title",
-                      "fill": "$f:text-primary",
+                      "fill": "#000000",
                       "content": "Banners & Promotions",
                       "fontFamily": "Montserrat",
                       "fontSize": 24,
@@ -15268,12 +15268,12 @@
                   "id": "PNQT7",
                   "name": "bannerCard",
                   "width": "fill_container",
-                  "fill": "$f:bg-surface",
+                  "fill": "#000000",
                   "cornerRadius": 12,
                   "stroke": {
                     "align": "inside",
                     "thickness": 1,
-                    "fill": "$f:border-default"
+                    "fill": "#000000"
                   },
                   "layout": "vertical",
                   "children": [
@@ -15293,7 +15293,7 @@
                           "type": "text",
                           "id": "082C3",
                           "name": "bht",
-                          "fill": "$f:text-primary",
+                          "fill": "#000000",
                           "content": "Active Banners",
                           "fontFamily": "Inter",
                           "fontSize": 16,
@@ -15326,7 +15326,7 @@
                         "thickness": {
                           "top": 1
                         },
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "gap": 16,
                       "padding": [
@@ -15356,7 +15356,7 @@
                               "type": "text",
                               "id": "IYClK",
                               "name": "br1name",
-                              "fill": "$f:text-primary",
+                              "fill": "#000000",
                               "content": "Spring Promotion",
                               "fontFamily": "Inter",
                               "fontSize": 14,
@@ -15366,7 +15366,7 @@
                               "type": "text",
                               "id": "mF966",
                               "name": "br1meta",
-                              "fill": "$f:text-secondary",
+                              "fill": "#000000",
                               "content": "Homepage · Until Apr 30, 2026",
                               "fontFamily": "Inter",
                               "fontSize": 12,
@@ -15432,7 +15432,7 @@
                         "thickness": {
                           "top": 1
                         },
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "gap": 16,
                       "padding": [
@@ -15462,7 +15462,7 @@
                               "type": "text",
                               "id": "XlnBF",
                               "name": "br2name",
-                              "fill": "$f:text-primary",
+                              "fill": "#000000",
                               "content": "New Client Welcome",
                               "fontFamily": "Inter",
                               "fontSize": 14,
@@ -15472,7 +15472,7 @@
                               "type": "text",
                               "id": "c6qR8",
                               "name": "br2meta",
-                              "fill": "$f:text-secondary",
+                              "fill": "#000000",
                               "content": "All Pages · Until May 15, 2026",
                               "fontFamily": "Inter",
                               "fontSize": 12,
@@ -15538,7 +15538,7 @@
                         "thickness": {
                           "top": 1
                         },
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "gap": 16,
                       "padding": [
@@ -15568,7 +15568,7 @@
                               "type": "text",
                               "id": "pMi7m",
                               "name": "br3name",
-                              "fill": "$f:text-primary",
+                              "fill": "#000000",
                               "content": "Holiday Discount",
                               "fontFamily": "Inter",
                               "fontSize": 14,
@@ -15578,7 +15578,7 @@
                               "type": "text",
                               "id": "hlZ9h",
                               "name": "br3meta",
-                              "fill": "$f:text-secondary",
+                              "fill": "#000000",
                               "content": "Homepage · Expired Dec 31, 2025",
                               "fontFamily": "Inter",
                               "fontSize": 12,
@@ -15650,7 +15650,7 @@
       "name": "17 Navigation Editor",
       "width": 1440,
       "height": 900,
-      "fill": "$f:bg-page",
+      "fill": "#000000",
       "children": [
         {
           "id": "gjqTd",
@@ -15823,7 +15823,7 @@
                   "type": "text",
                   "id": "ByJ7q",
                   "name": "h17",
-                  "fill": "$f:text-primary",
+                  "fill": "#000000",
                   "content": "Navigation Editor",
                   "fontFamily": "Montserrat",
                   "fontSize": 24,
@@ -15834,12 +15834,12 @@
                   "id": "q3Kdm",
                   "name": "headerCard",
                   "width": "fill_container",
-                  "fill": "$f:bg-surface",
+                  "fill": "#000000",
                   "cornerRadius": 12,
                   "stroke": {
                     "align": "inside",
                     "thickness": 1,
-                    "fill": "$f:border-default"
+                    "fill": "#000000"
                   },
                   "layout": "vertical",
                   "children": [
@@ -15859,7 +15859,7 @@
                           "type": "text",
                           "id": "yv6mI",
                           "name": "hcTitle",
-                          "fill": "$f:text-primary",
+                          "fill": "#000000",
                           "content": "Header Navigation",
                           "fontFamily": "Inter",
                           "fontSize": 16,
@@ -15892,7 +15892,7 @@
                         "thickness": {
                           "top": 1
                         },
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "gap": 12,
                       "padding": [
@@ -15909,13 +15909,13 @@
                           "height": 16,
                           "iconFontName": "grip-vertical",
                           "iconFontFamily": "lucide",
-                          "fill": "$f:text-muted"
+                          "fill": "#000000"
                         },
                         {
                           "type": "text",
                           "id": "QgpJm",
                           "name": "n1t",
-                          "fill": "$f:text-primary",
+                          "fill": "#000000",
                           "textGrowth": "fixed-width",
                           "width": "fill_container",
                           "content": "Domů",
@@ -15927,7 +15927,7 @@
                           "type": "text",
                           "id": "CGzaG",
                           "name": "n1link",
-                          "fill": "$f:text-secondary",
+                          "fill": "#000000",
                           "content": "/",
                           "fontFamily": "Inter",
                           "fontSize": 12,
@@ -15974,7 +15974,7 @@
                         "thickness": {
                           "top": 1
                         },
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "gap": 12,
                       "padding": [
@@ -15991,13 +15991,13 @@
                           "height": 16,
                           "iconFontName": "grip-vertical",
                           "iconFontFamily": "lucide",
-                          "fill": "$f:text-muted"
+                          "fill": "#000000"
                         },
                         {
                           "type": "text",
                           "id": "pe9pj",
                           "name": "n2t",
-                          "fill": "$f:text-primary",
+                          "fill": "#000000",
                           "textGrowth": "fixed-width",
                           "width": "fill_container",
                           "content": "Služby ▾",
@@ -16009,7 +16009,7 @@
                           "type": "text",
                           "id": "9vZYE",
                           "name": "n2link",
-                          "fill": "$f:text-secondary",
+                          "fill": "#000000",
                           "content": "/sluzby",
                           "fontFamily": "Inter",
                           "fontSize": 12,
@@ -16073,7 +16073,7 @@
                         "thickness": {
                           "top": 1
                         },
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "gap": 12,
                       "padding": [
@@ -16090,13 +16090,13 @@
                           "height": 16,
                           "iconFontName": "grip-vertical",
                           "iconFontFamily": "lucide",
-                          "fill": "$f:text-muted"
+                          "fill": "#000000"
                         },
                         {
                           "type": "text",
                           "id": "2qvgV",
                           "name": "n3t",
-                          "fill": "$f:text-primary",
+                          "fill": "#000000",
                           "textGrowth": "fixed-width",
                           "width": "fill_container",
                           "content": "Ceník",
@@ -16108,7 +16108,7 @@
                           "type": "text",
                           "id": "PuHyT",
                           "name": "n3link",
-                          "fill": "$f:text-secondary",
+                          "fill": "#000000",
                           "content": "/cenik",
                           "fontFamily": "Inter",
                           "fontSize": 12,
@@ -16155,7 +16155,7 @@
                         "thickness": {
                           "top": 1
                         },
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "gap": 12,
                       "padding": [
@@ -16172,13 +16172,13 @@
                           "height": 16,
                           "iconFontName": "grip-vertical",
                           "iconFontFamily": "lucide",
-                          "fill": "$f:text-muted"
+                          "fill": "#000000"
                         },
                         {
                           "type": "text",
                           "id": "ZyAX0",
                           "name": "n4t",
-                          "fill": "$f:text-primary",
+                          "fill": "#000000",
                           "textGrowth": "fixed-width",
                           "width": "fill_container",
                           "content": "Kontakt",
@@ -16190,7 +16190,7 @@
                           "type": "text",
                           "id": "N8V87",
                           "name": "n4link",
-                          "fill": "$f:text-secondary",
+                          "fill": "#000000",
                           "content": "/kontakt",
                           "fontFamily": "Inter",
                           "fontSize": 12,
@@ -16234,12 +16234,12 @@
                   "id": "ZFnF0",
                   "name": "footerCard",
                   "width": "fill_container",
-                  "fill": "$f:bg-surface",
+                  "fill": "#000000",
                   "cornerRadius": 12,
                   "stroke": {
                     "align": "inside",
                     "thickness": 1,
-                    "fill": "$f:border-default"
+                    "fill": "#000000"
                   },
                   "layout": "vertical",
                   "children": [
@@ -16259,7 +16259,7 @@
                           "type": "text",
                           "id": "ssGkj",
                           "name": "fcTitle",
-                          "fill": "$f:text-primary",
+                          "fill": "#000000",
                           "content": "Footer Navigation",
                           "fontFamily": "Inter",
                           "fontSize": 16,
@@ -16291,7 +16291,7 @@
                         "thickness": {
                           "top": 1
                         },
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "gap": 24,
                       "padding": [
@@ -16311,7 +16311,7 @@
                               "type": "text",
                               "id": "36ADp",
                               "name": "col1h",
-                              "fill": "$f:text-primary",
+                              "fill": "#000000",
                               "content": "Služby",
                               "fontFamily": "Inter",
                               "fontSize": 14,
@@ -16321,7 +16321,7 @@
                               "type": "text",
                               "id": "KbnYp",
                               "name": "col1i1",
-                              "fill": "$f:text-secondary",
+                              "fill": "#000000",
                               "content": "Fyzioterapie",
                               "fontFamily": "Inter",
                               "fontSize": 13,
@@ -16331,7 +16331,7 @@
                               "type": "text",
                               "id": "z9q9X",
                               "name": "col1i2",
-                              "fill": "$f:text-secondary",
+                              "fill": "#000000",
                               "content": "Masáže",
                               "fontFamily": "Inter",
                               "fontSize": 13,
@@ -16341,7 +16341,7 @@
                               "type": "text",
                               "id": "1Xmo3",
                               "name": "col1i3",
-                              "fill": "$f:text-secondary",
+                              "fill": "#000000",
                               "content": "Kurzy",
                               "fontFamily": "Inter",
                               "fontSize": 13,
@@ -16361,7 +16361,7 @@
                               "type": "text",
                               "id": "dZZe8",
                               "name": "col2h",
-                              "fill": "$f:text-primary",
+                              "fill": "#000000",
                               "content": "O nás",
                               "fontFamily": "Inter",
                               "fontSize": 14,
@@ -16371,7 +16371,7 @@
                               "type": "text",
                               "id": "9gSgx",
                               "name": "col2i1",
-                              "fill": "$f:text-secondary",
+                              "fill": "#000000",
                               "content": "Tým",
                               "fontFamily": "Inter",
                               "fontSize": 13,
@@ -16381,7 +16381,7 @@
                               "type": "text",
                               "id": "fmb73",
                               "name": "col2i2",
-                              "fill": "$f:text-secondary",
+                              "fill": "#000000",
                               "content": "Kontakt",
                               "fontFamily": "Inter",
                               "fontSize": 13,
@@ -16391,7 +16391,7 @@
                               "type": "text",
                               "id": "x668z",
                               "name": "col2i3",
-                              "fill": "$f:text-secondary",
+                              "fill": "#000000",
                               "content": "Obchodní podmínky",
                               "fontFamily": "Inter",
                               "fontSize": 13,
@@ -16411,7 +16411,7 @@
                               "type": "text",
                               "id": "g3GDQ",
                               "name": "col3h",
-                              "fill": "$f:text-primary",
+                              "fill": "#000000",
                               "content": "Sociální sítě",
                               "fontFamily": "Inter",
                               "fontSize": 14,
@@ -16421,7 +16421,7 @@
                               "type": "text",
                               "id": "Q73cv",
                               "name": "col3i1",
-                              "fill": "$f:text-secondary",
+                              "fill": "#000000",
                               "content": "Instagram",
                               "fontFamily": "Inter",
                               "fontSize": 13,
@@ -16431,7 +16431,7 @@
                               "type": "text",
                               "id": "f7hgu",
                               "name": "col3i2",
-                              "fill": "$f:text-secondary",
+                              "fill": "#000000",
                               "content": "Facebook",
                               "fontFamily": "Inter",
                               "fontSize": 13,
@@ -16457,7 +16457,7 @@
       "name": "18 Email Template Editor",
       "width": 1440,
       "height": 900,
-      "fill": "$f:bg-page",
+      "fill": "#000000",
       "children": [
         {
           "id": "czvQ8",
@@ -16631,12 +16631,12 @@
                   "name": "tplList",
                   "width": 320,
                   "height": "fill_container",
-                  "fill": "$f:bg-surface",
+                  "fill": "#000000",
                   "cornerRadius": 12,
                   "stroke": {
                     "align": "inside",
                     "thickness": 1,
-                    "fill": "$f:border-default"
+                    "fill": "#000000"
                   },
                   "layout": "vertical",
                   "children": [
@@ -16652,7 +16652,7 @@
                           "type": "text",
                           "id": "LGwqm",
                           "name": "tplTitle",
-                          "fill": "$f:text-primary",
+                          "fill": "#000000",
                           "content": "Email Templates",
                           "fontFamily": "Montserrat",
                           "fontSize": 16,
@@ -16671,7 +16671,7 @@
                         "thickness": {
                           "top": 1
                         },
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "layout": "vertical",
                       "gap": 4,
@@ -16694,7 +16694,7 @@
                           "type": "text",
                           "id": "CKgpr",
                           "name": "tpl1d",
-                          "fill": "$f:text-secondary",
+                          "fill": "#000000",
                           "content": "Sent after booking confirmation",
                           "fontFamily": "Inter",
                           "fontSize": 12,
@@ -16712,7 +16712,7 @@
                         "thickness": {
                           "top": 1
                         },
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "layout": "vertical",
                       "gap": 4,
@@ -16725,7 +16725,7 @@
                           "type": "text",
                           "id": "wZ92S",
                           "name": "tpl2t",
-                          "fill": "$f:text-primary",
+                          "fill": "#000000",
                           "content": "Reservation Reminder",
                           "fontFamily": "Inter",
                           "fontSize": 14,
@@ -16735,7 +16735,7 @@
                           "type": "text",
                           "id": "Dqj5N",
                           "name": "tpl2d",
-                          "fill": "$f:text-secondary",
+                          "fill": "#000000",
                           "content": "24h before appointment",
                           "fontFamily": "Inter",
                           "fontSize": 12,
@@ -16753,7 +16753,7 @@
                         "thickness": {
                           "top": 1
                         },
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "layout": "vertical",
                       "gap": 4,
@@ -16766,7 +16766,7 @@
                           "type": "text",
                           "id": "JtcCT",
                           "name": "tpl3t",
-                          "fill": "$f:text-primary",
+                          "fill": "#000000",
                           "content": "Reservation Cancelled",
                           "fontFamily": "Inter",
                           "fontSize": 14,
@@ -16776,7 +16776,7 @@
                           "type": "text",
                           "id": "Gn3Um",
                           "name": "tpl3d",
-                          "fill": "$f:text-secondary",
+                          "fill": "#000000",
                           "content": "When client or admin cancels",
                           "fontFamily": "Inter",
                           "fontSize": 12,
@@ -16794,7 +16794,7 @@
                         "thickness": {
                           "top": 1
                         },
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "layout": "vertical",
                       "gap": 4,
@@ -16807,7 +16807,7 @@
                           "type": "text",
                           "id": "qRM1x",
                           "name": "tpl4t",
-                          "fill": "$f:text-primary",
+                          "fill": "#000000",
                           "content": "Payment Received",
                           "fontFamily": "Inter",
                           "fontSize": 14,
@@ -16817,7 +16817,7 @@
                           "type": "text",
                           "id": "TenOQ",
                           "name": "tpl4d",
-                          "fill": "$f:text-secondary",
+                          "fill": "#000000",
                           "content": "With invoice PDF attached",
                           "fontFamily": "Inter",
                           "fontSize": 12,
@@ -16835,7 +16835,7 @@
                         "thickness": {
                           "top": 1
                         },
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "layout": "vertical",
                       "gap": 4,
@@ -16848,7 +16848,7 @@
                           "type": "text",
                           "id": "SgAQJ",
                           "name": "tpl5t",
-                          "fill": "$f:text-primary",
+                          "fill": "#000000",
                           "content": "Waitlist Spot Available",
                           "fontFamily": "Inter",
                           "fontSize": 14,
@@ -16858,7 +16858,7 @@
                           "type": "text",
                           "id": "YsGRZ",
                           "name": "tpl5d",
-                          "fill": "$f:text-secondary",
+                          "fill": "#000000",
                           "content": "When a spot opens up",
                           "fontFamily": "Inter",
                           "fontSize": 12,
@@ -16876,7 +16876,7 @@
                         "thickness": {
                           "top": 1
                         },
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "layout": "vertical",
                       "gap": 4,
@@ -16889,7 +16889,7 @@
                           "type": "text",
                           "id": "5qXDh",
                           "name": "tpl6t",
-                          "fill": "$f:text-primary",
+                          "fill": "#000000",
                           "content": "Payment Overdue",
                           "fontFamily": "Inter",
                           "fontSize": 14,
@@ -16899,7 +16899,7 @@
                           "type": "text",
                           "id": "6YuVs",
                           "name": "tpl6d",
-                          "fill": "$f:text-secondary",
+                          "fill": "#000000",
                           "content": "Reminder for unpaid invoices",
                           "fontFamily": "Inter",
                           "fontSize": 12,
@@ -16915,12 +16915,12 @@
                   "name": "editorPanel",
                   "width": "fill_container",
                   "height": "fill_container",
-                  "fill": "$f:bg-surface",
+                  "fill": "#000000",
                   "cornerRadius": 12,
                   "stroke": {
                     "align": "inside",
                     "thickness": 1,
-                    "fill": "$f:border-default"
+                    "fill": "#000000"
                   },
                   "layout": "vertical",
                   "children": [
@@ -16940,7 +16940,7 @@
                           "type": "text",
                           "id": "tr1o8",
                           "name": "edTitle",
-                          "fill": "$f:text-primary",
+                          "fill": "#000000",
                           "content": "Reservation Confirmed",
                           "fontFamily": "Montserrat",
                           "fontSize": 18,
@@ -16995,7 +16995,7 @@
                         "thickness": {
                           "top": 1
                         },
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "layout": "vertical",
                       "gap": 16,
@@ -17078,7 +17078,7 @@
                           "type": "text",
                           "id": "4dVKK",
                           "name": "bodyLabel",
-                          "fill": "$f:text-primary",
+                          "fill": "#000000",
                           "content": "Email Body",
                           "fontFamily": "Inter",
                           "fontSize": 14,
@@ -17090,12 +17090,12 @@
                           "name": "bodyArea",
                           "width": "fill_container",
                           "height": 260,
-                          "fill": "$f:white",
+                          "fill": "#000000",
                           "cornerRadius": 8,
                           "stroke": {
                             "align": "inside",
                             "thickness": 1,
-                            "fill": "$f:border-default"
+                            "fill": "#000000"
                           },
                           "layout": "vertical",
                           "gap": 12,
@@ -17111,7 +17111,7 @@
                                 "thickness": {
                                   "bottom": 1
                                 },
-                                "fill": "$f:border-default"
+                                "fill": "#000000"
                               },
                               "gap": 12,
                               "padding": [
@@ -17129,7 +17129,7 @@
                                   "height": 18,
                                   "iconFontName": "bold",
                                   "iconFontFamily": "lucide",
-                                  "fill": "$f:text-secondary"
+                                  "fill": "#000000"
                                 },
                                 {
                                   "type": "icon_font",
@@ -17139,7 +17139,7 @@
                                   "height": 18,
                                   "iconFontName": "italic",
                                   "iconFontFamily": "lucide",
-                                  "fill": "$f:text-secondary"
+                                  "fill": "#000000"
                                 },
                                 {
                                   "type": "icon_font",
@@ -17149,7 +17149,7 @@
                                   "height": 18,
                                   "iconFontName": "underline",
                                   "iconFontFamily": "lucide",
-                                  "fill": "$f:text-secondary"
+                                  "fill": "#000000"
                                 },
                                 {
                                   "type": "icon_font",
@@ -17159,7 +17159,7 @@
                                   "height": 18,
                                   "iconFontName": "link",
                                   "iconFontFamily": "lucide",
-                                  "fill": "$f:text-secondary"
+                                  "fill": "#000000"
                                 }
                               ]
                             },
@@ -17167,7 +17167,7 @@
                               "type": "text",
                               "id": "KfcST",
                               "name": "bodyContent",
-                              "fill": "$f:text-primary",
+                              "fill": "#000000",
                               "textGrowth": "fixed-width",
                               "width": "fill_container",
                               "content": "Dobrý den {{client_name}},\n\nvaše rezervace byla potvrzena.\n\nDatum: {{date}}\nČas: {{time}}\nTerapeut: {{therapist}}",
@@ -17196,7 +17196,7 @@
       "name": "19 Settings",
       "width": 1440,
       "height": 1000,
-      "fill": "$f:bg-page",
+      "fill": "#000000",
       "children": [
         {
           "id": "sbRQQ",
@@ -17369,7 +17369,7 @@
                   "type": "text",
                   "id": "UcE63",
                   "name": "h19",
-                  "fill": "$f:text-primary",
+                  "fill": "#000000",
                   "content": "Settings",
                   "fontFamily": "Montserrat",
                   "fontSize": 24,
@@ -17380,12 +17380,12 @@
                   "id": "Fvb3q",
                   "name": "clinicCard",
                   "width": "fill_container",
-                  "fill": "$f:bg-surface",
+                  "fill": "#000000",
                   "cornerRadius": 12,
                   "stroke": {
                     "align": "inside",
                     "thickness": 1,
-                    "fill": "$f:border-default"
+                    "fill": "#000000"
                   },
                   "layout": "vertical",
                   "gap": 16,
@@ -17395,7 +17395,7 @@
                       "type": "text",
                       "id": "yxpgC",
                       "name": "ccTitle",
-                      "fill": "$f:text-primary",
+                      "fill": "#000000",
                       "content": "Clinic Information",
                       "fontFamily": "Inter",
                       "fontSize": 16,
@@ -17578,12 +17578,12 @@
                   "id": "d7Hwx",
                   "name": "rulesCard",
                   "width": "fill_container",
-                  "fill": "$f:bg-surface",
+                  "fill": "#000000",
                   "cornerRadius": 12,
                   "stroke": {
                     "align": "inside",
                     "thickness": 1,
-                    "fill": "$f:border-default"
+                    "fill": "#000000"
                   },
                   "layout": "vertical",
                   "gap": 16,
@@ -17593,7 +17593,7 @@
                       "type": "text",
                       "id": "mm1T0",
                       "name": "rcTitle",
-                      "fill": "$f:text-primary",
+                      "fill": "#000000",
                       "content": "Booking & Payment Rules",
                       "fontFamily": "Inter",
                       "fontSize": 16,
@@ -17776,12 +17776,12 @@
                   "id": "PrzmF",
                   "name": "intCard",
                   "width": "fill_container",
-                  "fill": "$f:bg-surface",
+                  "fill": "#000000",
                   "cornerRadius": 12,
                   "stroke": {
                     "align": "inside",
                     "thickness": 1,
-                    "fill": "$f:border-default"
+                    "fill": "#000000"
                   },
                   "layout": "vertical",
                   "gap": 16,
@@ -17791,7 +17791,7 @@
                       "type": "text",
                       "id": "xa2ZS",
                       "name": "intTitle",
-                      "fill": "$f:text-primary",
+                      "fill": "#000000",
                       "content": "Integrations",
                       "fontFamily": "Inter",
                       "fontSize": 16,
@@ -17817,7 +17817,7 @@
                               "type": "text",
                               "id": "4Nbim",
                               "name": "imapT",
-                              "fill": "$f:text-primary",
+                              "fill": "#000000",
                               "content": "IMAP (Air Bank Payment Matching)",
                               "fontFamily": "Inter",
                               "fontSize": 14,
@@ -17827,7 +17827,7 @@
                               "type": "text",
                               "id": "6fNO4",
                               "name": "imapD",
-                              "fill": "$f:text-secondary",
+                              "fill": "#000000",
                               "content": "Auto-match QR payments via email notifications",
                               "fontFamily": "Inter",
                               "fontSize": 12,
@@ -17870,7 +17870,7 @@
                         "thickness": {
                           "top": 1
                         },
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "gap": 16,
                       "padding": [
@@ -17893,7 +17893,7 @@
                               "type": "text",
                               "id": "btwX9",
                               "name": "gcalT",
-                              "fill": "$f:text-primary",
+                              "fill": "#000000",
                               "content": "Google Calendar Sync",
                               "fontFamily": "Inter",
                               "fontSize": 14,
@@ -17903,7 +17903,7 @@
                               "type": "text",
                               "id": "hvk4q",
                               "name": "gcalD",
-                              "fill": "$f:text-secondary",
+                              "fill": "#000000",
                               "content": "Sync therapist schedules with Google Calendar",
                               "fontFamily": "Inter",
                               "fontSize": 12,
@@ -17943,7 +17943,7 @@
                         "thickness": {
                           "top": 1
                         },
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "gap": 16,
                       "padding": [
@@ -17966,7 +17966,7 @@
                               "type": "text",
                               "id": "vqZ4U",
                               "name": "mlT",
-                              "fill": "$f:text-primary",
+                              "fill": "#000000",
                               "content": "MailerLite Newsletter",
                               "fontFamily": "Inter",
                               "fontSize": 14,
@@ -17976,7 +17976,7 @@
                               "type": "text",
                               "id": "X2Oud",
                               "name": "mlD",
-                              "fill": "$f:text-secondary",
+                              "fill": "#000000",
                               "content": "Auto-sync client contacts for newsletters",
                               "fontFamily": "Inter",
                               "fontSize": 12,
@@ -18050,7 +18050,7 @@
       "name": "20 Therapist Dashboard",
       "width": 1440,
       "height": 900,
-      "fill": "$f:bg-page",
+      "fill": "#000000",
       "children": [
         {
           "id": "eHqKu",
@@ -18225,7 +18225,7 @@
                   "type": "text",
                   "id": "SYPNd",
                   "name": "h20",
-                  "fill": "$f:text-primary",
+                  "fill": "#000000",
                   "content": "Therapist Dashboard",
                   "fontFamily": "Montserrat",
                   "fontSize": 24,
@@ -18243,12 +18243,12 @@
                       "id": "c6I6L",
                       "name": "stat1",
                       "width": "fill_container",
-                      "fill": "$f:bg-surface",
+                      "fill": "#000000",
                       "cornerRadius": 12,
                       "stroke": {
                         "align": "inside",
                         "thickness": 1,
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "layout": "vertical",
                       "gap": 8,
@@ -18258,7 +18258,7 @@
                           "type": "text",
                           "id": "PZHbm",
                           "name": "s1l",
-                          "fill": "$f:text-secondary",
+                          "fill": "#000000",
                           "content": "Today's Appointments",
                           "fontFamily": "Inter",
                           "fontSize": 13,
@@ -18268,7 +18268,7 @@
                           "type": "text",
                           "id": "qixDB",
                           "name": "s1v",
-                          "fill": "$f:text-primary",
+                          "fill": "#000000",
                           "content": "6",
                           "fontFamily": "Montserrat",
                           "fontSize": 32,
@@ -18281,12 +18281,12 @@
                       "id": "mrA3T",
                       "name": "stat2",
                       "width": "fill_container",
-                      "fill": "$f:bg-surface",
+                      "fill": "#000000",
                       "cornerRadius": 12,
                       "stroke": {
                         "align": "inside",
                         "thickness": 1,
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "layout": "vertical",
                       "gap": 8,
@@ -18296,7 +18296,7 @@
                           "type": "text",
                           "id": "5WiKa",
                           "name": "s2l",
-                          "fill": "$f:text-secondary",
+                          "fill": "#000000",
                           "content": "Hours This Month",
                           "fontFamily": "Inter",
                           "fontSize": 13,
@@ -18306,7 +18306,7 @@
                           "type": "text",
                           "id": "LGWzy",
                           "name": "s2v",
-                          "fill": "$f:text-primary",
+                          "fill": "#000000",
                           "content": "124",
                           "fontFamily": "Montserrat",
                           "fontSize": 32,
@@ -18319,12 +18319,12 @@
                       "id": "FgzV0",
                       "name": "stat3",
                       "width": "fill_container",
-                      "fill": "$f:bg-surface",
+                      "fill": "#000000",
                       "cornerRadius": 12,
                       "stroke": {
                         "align": "inside",
                         "thickness": 1,
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "layout": "vertical",
                       "gap": 8,
@@ -18334,7 +18334,7 @@
                           "type": "text",
                           "id": "S2PnA",
                           "name": "s3l",
-                          "fill": "$f:text-secondary",
+                          "fill": "#000000",
                           "content": "Pending Notes",
                           "fontFamily": "Inter",
                           "fontSize": 13,
@@ -18359,12 +18359,12 @@
                   "id": "psQHs",
                   "name": "todayCard",
                   "width": "fill_container",
-                  "fill": "$f:bg-surface",
+                  "fill": "#000000",
                   "cornerRadius": 12,
                   "stroke": {
                     "align": "inside",
                     "thickness": 1,
-                    "fill": "$f:border-default"
+                    "fill": "#000000"
                   },
                   "layout": "vertical",
                   "children": [
@@ -18383,7 +18383,7 @@
                           "type": "text",
                           "id": "dALsG",
                           "name": "todayTitle",
-                          "fill": "$f:text-primary",
+                          "fill": "#000000",
                           "content": "My Schedule Today — April 2, 2026",
                           "fontFamily": "Inter",
                           "fontSize": 16,
@@ -18401,7 +18401,7 @@
                         "thickness": {
                           "top": 1
                         },
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "gap": 16,
                       "padding": [
@@ -18414,7 +18414,7 @@
                           "type": "text",
                           "id": "B8kiu",
                           "name": "a1time",
-                          "fill": "$f:text-secondary",
+                          "fill": "#000000",
                           "content": "08:00",
                           "fontFamily": "JetBrains Mono",
                           "fontSize": 13,
@@ -18441,7 +18441,7 @@
                               "type": "text",
                               "id": "zRKgM",
                               "name": "a1name",
-                              "fill": "$f:text-primary",
+                              "fill": "#000000",
                               "content": "Jana Novotná — Pelvic Floor Therapy",
                               "fontFamily": "Inter",
                               "fontSize": 14,
@@ -18451,7 +18451,7 @@
                               "type": "text",
                               "id": "cSFHr",
                               "name": "a1room",
-                              "fill": "$f:text-secondary",
+                              "fill": "#000000",
                               "content": "Room A · 60 min",
                               "fontFamily": "Inter",
                               "fontSize": 12,
@@ -18488,7 +18488,7 @@
                         "thickness": {
                           "top": 1
                         },
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "gap": 16,
                       "padding": [
@@ -18501,7 +18501,7 @@
                           "type": "text",
                           "id": "8Cl42",
                           "name": "a2time",
-                          "fill": "$f:text-secondary",
+                          "fill": "#000000",
                           "content": "09:15",
                           "fontFamily": "JetBrains Mono",
                           "fontSize": 13,
@@ -18528,7 +18528,7 @@
                               "type": "text",
                               "id": "AeHuO",
                               "name": "a2name",
-                              "fill": "$f:text-primary",
+                              "fill": "#000000",
                               "content": "Petr Dvořák — Jaw Therapy (TMJ)",
                               "fontFamily": "Inter",
                               "fontSize": 14,
@@ -18538,7 +18538,7 @@
                               "type": "text",
                               "id": "6Exrv",
                               "name": "a2room",
-                              "fill": "$f:text-secondary",
+                              "fill": "#000000",
                               "content": "Room A · 45 min",
                               "fontFamily": "Inter",
                               "fontSize": 12,
@@ -18575,7 +18575,7 @@
                         "thickness": {
                           "top": 1
                         },
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "gap": 16,
                       "padding": [
@@ -18588,7 +18588,7 @@
                           "type": "text",
                           "id": "xU1jw",
                           "name": "a3time",
-                          "fill": "$f:text-secondary",
+                          "fill": "#000000",
                           "content": "10:15",
                           "fontFamily": "JetBrains Mono",
                           "fontSize": 13,
@@ -18600,7 +18600,7 @@
                           "name": "a3bar",
                           "width": 4,
                           "height": 36,
-                          "fill": "$f:warning-500",
+                          "fill": "#000000",
                           "cornerRadius": 2
                         },
                         {
@@ -18615,7 +18615,7 @@
                               "type": "text",
                               "id": "VCQLD",
                               "name": "a3name",
-                              "fill": "$f:text-primary",
+                              "fill": "#000000",
                               "content": "Marie Kučerová — Scar Therapy",
                               "fontFamily": "Inter",
                               "fontSize": 14,
@@ -18625,7 +18625,7 @@
                               "type": "text",
                               "id": "GTYu9",
                               "name": "a3room",
-                              "fill": "$f:text-secondary",
+                              "fill": "#000000",
                               "content": "Room B · 60 min",
                               "fontFamily": "Inter",
                               "fontSize": 12,
@@ -18662,7 +18662,7 @@
                         "thickness": {
                           "top": 1
                         },
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "gap": 16,
                       "padding": [
@@ -18675,7 +18675,7 @@
                           "type": "text",
                           "id": "GJCuV",
                           "name": "a4time",
-                          "fill": "$f:text-secondary",
+                          "fill": "#000000",
                           "content": "12:00",
                           "fontFamily": "JetBrains Mono",
                           "fontSize": 13,
@@ -18702,7 +18702,7 @@
                               "type": "text",
                               "id": "bRZV0",
                               "name": "a4name",
-                              "fill": "$f:text-muted",
+                              "fill": "#000000",
                               "content": "Lunch Break",
                               "fontFamily": "Inter",
                               "fontSize": 14,
@@ -18713,7 +18713,7 @@
                               "type": "text",
                               "id": "0AFiy",
                               "name": "a4room",
-                              "fill": "$f:text-muted",
+                              "fill": "#000000",
                               "content": "60 min",
                               "fontFamily": "Inter",
                               "fontSize": 12,
@@ -18739,7 +18739,7 @@
       "name": "21 Therapist Calendar",
       "width": 1440,
       "height": 900,
-      "fill": "$f:bg-page",
+      "fill": "#000000",
       "children": [
         {
           "id": "J8v4Z",
@@ -18917,7 +18917,7 @@
                       "type": "text",
                       "id": "xgwsE",
                       "name": "calTitle",
-                      "fill": "$f:text-primary",
+                      "fill": "#000000",
                       "content": "My Calendar",
                       "fontFamily": "Montserrat",
                       "fontSize": 24,
@@ -18934,12 +18934,12 @@
                           "type": "frame",
                           "id": "aVlOI",
                           "name": "calPrev",
-                          "fill": "$f:bg-surface",
+                          "fill": "#000000",
                           "cornerRadius": 6,
                           "stroke": {
                             "align": "inside",
                             "thickness": 1,
-                            "fill": "$f:border-default"
+                            "fill": "#000000"
                           },
                           "padding": [
                             6,
@@ -18950,7 +18950,7 @@
                               "type": "text",
                               "id": "IyXMU",
                               "name": "calPrevT",
-                              "fill": "$f:text-primary",
+                              "fill": "#000000",
                               "content": "‹",
                               "fontFamily": "Inter",
                               "fontSize": 16,
@@ -18973,7 +18973,7 @@
                               "type": "text",
                               "id": "h2FIn",
                               "name": "calTodayT",
-                              "fill": "$f:white",
+                              "fill": "#000000",
                               "content": "today",
                               "fontFamily": "Inter",
                               "fontSize": 13,
@@ -18985,12 +18985,12 @@
                           "type": "frame",
                           "id": "vgu0F",
                           "name": "calNext",
-                          "fill": "$f:bg-surface",
+                          "fill": "#000000",
                           "cornerRadius": 6,
                           "stroke": {
                             "align": "inside",
                             "thickness": 1,
-                            "fill": "$f:border-default"
+                            "fill": "#000000"
                           },
                           "padding": [
                             6,
@@ -19001,7 +19001,7 @@
                               "type": "text",
                               "id": "AojJt",
                               "name": "calNextT",
-                              "fill": "$f:text-primary",
+                              "fill": "#000000",
                               "content": "›",
                               "fontFamily": "Inter",
                               "fontSize": 16,
@@ -19225,7 +19225,7 @@
                           "height": 20,
                           "iconFontName": "chevron-left",
                           "iconFontFamily": "lucide",
-                          "fill": "$f:text-secondary"
+                          "fill": "#000000"
                         },
                         {
                           "type": "icon_font",
@@ -19235,13 +19235,13 @@
                           "height": 20,
                           "iconFontName": "chevron-right",
                           "iconFontFamily": "lucide",
-                          "fill": "$f:text-secondary"
+                          "fill": "#000000"
                         },
                         {
                           "type": "text",
                           "id": "I4qDt",
                           "name": "calTitle",
-                          "fill": "$f:text-primary",
+                          "fill": "#000000",
                           "content": "March 30 – April 5, 2026",
                           "fontFamily": "Montserrat",
                           "fontSize": 20,
@@ -19270,7 +19270,7 @@
                               "type": "text",
                               "id": "Unoyr",
                               "name": "calWeekT",
-                              "fill": "$f:white",
+                              "fill": "#000000",
                               "content": "week",
                               "fontFamily": "Inter",
                               "fontSize": 13,
@@ -19286,7 +19286,7 @@
                           "stroke": {
                             "align": "inside",
                             "thickness": 1,
-                            "fill": "$f:border-default"
+                            "fill": "#000000"
                           },
                           "padding": [
                             6,
@@ -19297,7 +19297,7 @@
                               "type": "text",
                               "id": "iTq9l",
                               "name": "calDayT",
-                              "fill": "$f:text-secondary",
+                              "fill": "#000000",
                               "content": "day",
                               "fontFamily": "Inter",
                               "fontSize": 13,
@@ -19313,7 +19313,7 @@
                           "stroke": {
                             "align": "inside",
                             "thickness": 1,
-                            "fill": "$f:border-default"
+                            "fill": "#000000"
                           },
                           "padding": [
                             6,
@@ -19324,7 +19324,7 @@
                               "type": "text",
                               "id": "vCzK7",
                               "name": "calListT",
-                              "fill": "$f:text-secondary",
+                              "fill": "#000000",
                               "content": "list",
                               "fontFamily": "Inter",
                               "fontSize": 13,
@@ -19342,12 +19342,12 @@
                   "name": "calGrid",
                   "width": "fill_container",
                   "height": "fill_container",
-                  "fill": "$f:bg-surface",
+                  "fill": "#000000",
                   "cornerRadius": 8,
                   "stroke": {
                     "align": "inside",
                     "thickness": 1,
-                    "fill": "$f:border-default"
+                    "fill": "#000000"
                   },
                   "children": [
                     {
@@ -19368,7 +19368,7 @@
                           "type": "text",
                           "id": "LRtAq",
                           "name": "t08",
-                          "fill": "$f:text-muted",
+                          "fill": "#000000",
                           "content": "08:00",
                           "textAlign": "right",
                           "fontFamily": "Inter",
@@ -19379,7 +19379,7 @@
                           "type": "text",
                           "id": "xrgHl",
                           "name": "t09",
-                          "fill": "$f:text-muted",
+                          "fill": "#000000",
                           "content": "09:00",
                           "textAlign": "right",
                           "fontFamily": "Inter",
@@ -19390,7 +19390,7 @@
                           "type": "text",
                           "id": "gFDLS",
                           "name": "t10",
-                          "fill": "$f:text-muted",
+                          "fill": "#000000",
                           "content": "10:00",
                           "textAlign": "right",
                           "fontFamily": "Inter",
@@ -19401,7 +19401,7 @@
                           "type": "text",
                           "id": "AfDNP",
                           "name": "t11",
-                          "fill": "$f:text-muted",
+                          "fill": "#000000",
                           "content": "11:00",
                           "textAlign": "right",
                           "fontFamily": "Inter",
@@ -19412,7 +19412,7 @@
                           "type": "text",
                           "id": "3FYGm",
                           "name": "t12",
-                          "fill": "$f:text-muted",
+                          "fill": "#000000",
                           "content": "12:00",
                           "textAlign": "right",
                           "fontFamily": "Inter",
@@ -19423,7 +19423,7 @@
                           "type": "text",
                           "id": "ZKSLj",
                           "name": "t13",
-                          "fill": "$f:text-muted",
+                          "fill": "#000000",
                           "content": "13:00",
                           "textAlign": "right",
                           "fontFamily": "Inter",
@@ -19434,7 +19434,7 @@
                           "type": "text",
                           "id": "5J4NE",
                           "name": "t14",
-                          "fill": "$f:text-muted",
+                          "fill": "#000000",
                           "content": "14:00",
                           "textAlign": "right",
                           "fontFamily": "Inter",
@@ -19454,7 +19454,7 @@
                         "thickness": {
                           "left": 1
                         },
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "layout": "vertical",
                       "children": [
@@ -19469,7 +19469,7 @@
                             "thickness": {
                               "bottom": 1
                             },
-                            "fill": "$f:border-default"
+                            "fill": "#000000"
                           },
                           "layout": "vertical",
                           "justifyContent": "center",
@@ -19479,7 +19479,7 @@
                               "type": "text",
                               "id": "HTBtd",
                               "name": "monT",
-                              "fill": "$f:text-secondary",
+                              "fill": "#000000",
                               "content": "MON 30",
                               "textAlign": "center",
                               "fontFamily": "Inter",
@@ -19550,7 +19550,7 @@
                         "thickness": {
                           "left": 1
                         },
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "layout": "vertical",
                       "children": [
@@ -19565,7 +19565,7 @@
                             "thickness": {
                               "bottom": 1
                             },
-                            "fill": "$f:border-default"
+                            "fill": "#000000"
                           },
                           "layout": "vertical",
                           "justifyContent": "center",
@@ -19575,7 +19575,7 @@
                               "type": "text",
                               "id": "kaNVL",
                               "name": "tueT",
-                              "fill": "$f:text-secondary",
+                              "fill": "#000000",
                               "content": "TUE 31",
                               "textAlign": "center",
                               "fontFamily": "Inter",
@@ -19646,7 +19646,7 @@
                         "thickness": {
                           "left": 1
                         },
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "layout": "vertical",
                       "children": [
@@ -19661,7 +19661,7 @@
                             "thickness": {
                               "bottom": 1
                             },
-                            "fill": "$f:border-default"
+                            "fill": "#000000"
                           },
                           "layout": "vertical",
                           "justifyContent": "center",
@@ -19671,7 +19671,7 @@
                               "type": "text",
                               "id": "9Hdj3",
                               "name": "wedT",
-                              "fill": "$f:text-secondary",
+                              "fill": "#000000",
                               "content": "WED 1",
                               "textAlign": "center",
                               "fontFamily": "Inter",
@@ -19742,7 +19742,7 @@
                         "thickness": {
                           "left": 1
                         },
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "layout": "vertical",
                       "children": [
@@ -19757,7 +19757,7 @@
                             "thickness": {
                               "bottom": 1
                             },
-                            "fill": "$f:border-default"
+                            "fill": "#000000"
                           },
                           "layout": "vertical",
                           "justifyContent": "center",
@@ -19878,7 +19878,7 @@
                         "thickness": {
                           "left": 1
                         },
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "layout": "vertical",
                       "children": [
@@ -19893,7 +19893,7 @@
                             "thickness": {
                               "bottom": 1
                             },
-                            "fill": "$f:border-default"
+                            "fill": "#000000"
                           },
                           "layout": "vertical",
                           "justifyContent": "center",
@@ -19903,7 +19903,7 @@
                               "type": "text",
                               "id": "qbLKT",
                               "name": "friT",
-                              "fill": "$f:text-secondary",
+                              "fill": "#000000",
                               "content": "FRI 3",
                               "textAlign": "center",
                               "fontFamily": "Inter",
@@ -19933,7 +19933,7 @@
                         "thickness": {
                           "left": 1
                         },
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "layout": "vertical",
                       "children": [
@@ -19948,7 +19948,7 @@
                             "thickness": {
                               "bottom": 1
                             },
-                            "fill": "$f:border-default"
+                            "fill": "#000000"
                           },
                           "layout": "vertical",
                           "justifyContent": "center",
@@ -19958,7 +19958,7 @@
                               "type": "text",
                               "id": "m4sUm",
                               "name": "satT",
-                              "fill": "$f:text-muted",
+                              "fill": "#000000",
                               "content": "SAT 4",
                               "textAlign": "center",
                               "fontFamily": "Inter",
@@ -19989,7 +19989,7 @@
                         "thickness": {
                           "left": 1
                         },
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "layout": "vertical",
                       "children": [
@@ -20004,7 +20004,7 @@
                             "thickness": {
                               "bottom": 1
                             },
-                            "fill": "$f:border-default"
+                            "fill": "#000000"
                           },
                           "layout": "vertical",
                           "justifyContent": "center",
@@ -20014,7 +20014,7 @@
                               "type": "text",
                               "id": "LNvHW",
                               "name": "sunT",
-                              "fill": "$f:text-muted",
+                              "fill": "#000000",
                               "content": "SUN 5",
                               "textAlign": "center",
                               "fontFamily": "Inter",
@@ -20050,7 +20050,7 @@
       "name": "22 Therapist Client View",
       "width": 1440,
       "height": 900,
-      "fill": "$f:bg-page",
+      "fill": "#000000",
       "children": [
         {
           "id": "7ypqK",
@@ -20401,7 +20401,7 @@
                       "type": "text",
                       "id": "PJNen",
                       "name": "h22t",
-                      "fill": "$f:text-primary",
+                      "fill": "#000000",
                       "content": "My Clients",
                       "fontFamily": "Montserrat",
                       "fontSize": 24,
@@ -20431,12 +20431,12 @@
                   "id": "R1B8K",
                   "name": "clientTable",
                   "width": "fill_container",
-                  "fill": "$f:bg-surface",
+                  "fill": "#000000",
                   "cornerRadius": 12,
                   "stroke": {
                     "align": "inside",
                     "thickness": 1,
-                    "fill": "$f:border-default"
+                    "fill": "#000000"
                   },
                   "layout": "vertical",
                   "children": [
@@ -20450,7 +20450,7 @@
                         "thickness": {
                           "bottom": 1
                         },
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "padding": [
                         12,
@@ -20461,7 +20461,7 @@
                           "type": "text",
                           "id": "paJY2",
                           "name": "cth1",
-                          "fill": "$f:text-secondary",
+                          "fill": "#000000",
                           "textGrowth": "fixed-width",
                           "width": "fill_container",
                           "content": "Client",
@@ -20473,7 +20473,7 @@
                           "type": "text",
                           "id": "Qq4u6",
                           "name": "cth2",
-                          "fill": "$f:text-secondary",
+                          "fill": "#000000",
                           "textGrowth": "fixed-width",
                           "width": 120,
                           "content": "Last Visit",
@@ -20485,7 +20485,7 @@
                           "type": "text",
                           "id": "5hPsv",
                           "name": "cth3",
-                          "fill": "$f:text-secondary",
+                          "fill": "#000000",
                           "textGrowth": "fixed-width",
                           "width": 80,
                           "content": "Sessions",
@@ -20497,7 +20497,7 @@
                           "type": "text",
                           "id": "YRWsP",
                           "name": "cth4",
-                          "fill": "$f:text-secondary",
+                          "fill": "#000000",
                           "textGrowth": "fixed-width",
                           "width": 120,
                           "content": "Actions",
@@ -20517,7 +20517,7 @@
                         "thickness": {
                           "top": 1
                         },
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "padding": [
                         12,
@@ -20566,7 +20566,7 @@
                               "type": "text",
                               "id": "c7Gsp",
                               "name": "cr1name",
-                              "fill": "$f:text-primary",
+                              "fill": "#000000",
                               "content": "Jana Novotná",
                               "fontFamily": "Inter",
                               "fontSize": 14,
@@ -20576,7 +20576,7 @@
                               "type": "text",
                               "id": "FmrnM",
                               "name": "cr1email",
-                              "fill": "$f:text-secondary",
+                              "fill": "#000000",
                               "content": "jana.novotn@email.cz",
                               "fontFamily": "Inter",
                               "fontSize": 12,
@@ -20588,7 +20588,7 @@
                           "type": "text",
                           "id": "stqw4",
                           "name": "cr1date",
-                          "fill": "$f:text-secondary",
+                          "fill": "#000000",
                           "textGrowth": "fixed-width",
                           "width": 120,
                           "content": "Mar 28, 2026",
@@ -20600,7 +20600,7 @@
                           "type": "text",
                           "id": "gSWn9",
                           "name": "cr1sess",
-                          "fill": "$f:text-primary",
+                          "fill": "#000000",
                           "textGrowth": "fixed-width",
                           "width": 80,
                           "content": "12",
@@ -20642,7 +20642,7 @@
                         "thickness": {
                           "top": 1
                         },
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "padding": [
                         12,
@@ -20691,7 +20691,7 @@
                               "type": "text",
                               "id": "Xnsg2",
                               "name": "cr2name",
-                              "fill": "$f:text-primary",
+                              "fill": "#000000",
                               "content": "Petr Dvořák",
                               "fontFamily": "Inter",
                               "fontSize": 14,
@@ -20701,7 +20701,7 @@
                               "type": "text",
                               "id": "Bq91U",
                               "name": "cr2email",
-                              "fill": "$f:text-secondary",
+                              "fill": "#000000",
                               "content": "petr.dvorak@email.cz",
                               "fontFamily": "Inter",
                               "fontSize": 12,
@@ -20713,7 +20713,7 @@
                           "type": "text",
                           "id": "x2c5s",
                           "name": "cr2date",
-                          "fill": "$f:text-secondary",
+                          "fill": "#000000",
                           "textGrowth": "fixed-width",
                           "width": 120,
                           "content": "Mar 25, 2026",
@@ -20725,7 +20725,7 @@
                           "type": "text",
                           "id": "WMTT2",
                           "name": "cr2sess",
-                          "fill": "$f:text-primary",
+                          "fill": "#000000",
                           "textGrowth": "fixed-width",
                           "width": 80,
                           "content": "8",
@@ -20767,7 +20767,7 @@
                         "thickness": {
                           "top": 1
                         },
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "padding": [
                         12,
@@ -20816,7 +20816,7 @@
                               "type": "text",
                               "id": "h06ZP",
                               "name": "cr3name",
-                              "fill": "$f:text-primary",
+                              "fill": "#000000",
                               "content": "Marie Kučerová",
                               "fontFamily": "Inter",
                               "fontSize": 14,
@@ -20826,7 +20826,7 @@
                               "type": "text",
                               "id": "96BCg",
                               "name": "cr3email",
-                              "fill": "$f:text-secondary",
+                              "fill": "#000000",
                               "content": "m.kucerova@email.cz",
                               "fontFamily": "Inter",
                               "fontSize": 12,
@@ -20838,7 +20838,7 @@
                           "type": "text",
                           "id": "ikQtL",
                           "name": "cr3date",
-                          "fill": "$f:text-secondary",
+                          "fill": "#000000",
                           "textGrowth": "fixed-width",
                           "width": 120,
                           "content": "Mar 20, 2026",
@@ -20850,7 +20850,7 @@
                           "type": "text",
                           "id": "4t9bs",
                           "name": "cr3sess",
-                          "fill": "$f:text-primary",
+                          "fill": "#000000",
                           "textGrowth": "fixed-width",
                           "width": 80,
                           "content": "5",
@@ -20898,7 +20898,7 @@
       "name": "23 Customer Dashboard",
       "width": 1440,
       "height": 900,
-      "fill": "$f:bg-page",
+      "fill": "#000000",
       "children": [
         {
           "id": "WLyjJ",
@@ -21243,7 +21243,7 @@
                   "type": "text",
                   "id": "huGZA",
                   "name": "h23",
-                  "fill": "$f:text-primary",
+                  "fill": "#000000",
                   "content": "Welcome back, Jana!",
                   "fontFamily": "Montserrat",
                   "fontSize": 24,
@@ -21309,12 +21309,12 @@
                       "id": "ZqwtM",
                       "name": "tokenCard",
                       "width": "fill_container",
-                      "fill": "$f:bg-surface",
+                      "fill": "#000000",
                       "cornerRadius": 12,
                       "stroke": {
                         "align": "inside",
                         "thickness": 1,
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "layout": "vertical",
                       "gap": 8,
@@ -21324,7 +21324,7 @@
                           "type": "text",
                           "id": "VD2Tg",
                           "name": "tkLabel",
-                          "fill": "$f:text-secondary",
+                          "fill": "#000000",
                           "content": "Substitute Tokens",
                           "fontFamily": "Inter",
                           "fontSize": 13,
@@ -21334,7 +21334,7 @@
                           "type": "text",
                           "id": "Tceln",
                           "name": "tkVal",
-                          "fill": "$f:text-primary",
+                          "fill": "#000000",
                           "content": "2 available",
                           "fontFamily": "Montserrat",
                           "fontSize": 28,
@@ -21344,7 +21344,7 @@
                           "type": "text",
                           "id": "VxoFE",
                           "name": "tkExp",
-                          "fill": "$f:text-secondary",
+                          "fill": "#000000",
                           "content": "Use before expiry",
                           "fontFamily": "Inter",
                           "fontSize": 12,
@@ -21357,12 +21357,12 @@
                       "id": "vbJlt",
                       "name": "nextCard",
                       "width": "fill_container",
-                      "fill": "$f:bg-surface",
+                      "fill": "#000000",
                       "cornerRadius": 12,
                       "stroke": {
                         "align": "inside",
                         "thickness": 1,
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "layout": "vertical",
                       "gap": 8,
@@ -21372,7 +21372,7 @@
                           "type": "text",
                           "id": "mcTR2",
                           "name": "nxLabel",
-                          "fill": "$f:text-secondary",
+                          "fill": "#000000",
                           "content": "Next Appointment",
                           "fontFamily": "Inter",
                           "fontSize": 13,
@@ -21382,7 +21382,7 @@
                           "type": "text",
                           "id": "uELnZ",
                           "name": "nxVal",
-                          "fill": "$f:text-primary",
+                          "fill": "#000000",
                           "content": "Apr 5, 10:00",
                           "fontFamily": "Montserrat",
                           "fontSize": 22,
@@ -21392,7 +21392,7 @@
                           "type": "text",
                           "id": "JIs1K",
                           "name": "nxExp",
-                          "fill": "$f:text-secondary",
+                          "fill": "#000000",
                           "content": "Pelvic Floor Therapy",
                           "fontFamily": "Inter",
                           "fontSize": 12,
@@ -21407,12 +21407,12 @@
                   "id": "HCGv7",
                   "name": "upcomingCard",
                   "width": "fill_container",
-                  "fill": "$f:bg-surface",
+                  "fill": "#000000",
                   "cornerRadius": 12,
                   "stroke": {
                     "align": "inside",
                     "thickness": 1,
-                    "fill": "$f:border-default"
+                    "fill": "#000000"
                   },
                   "layout": "vertical",
                   "children": [
@@ -21432,7 +21432,7 @@
                           "type": "text",
                           "id": "zOWJ1",
                           "name": "upTitle",
-                          "fill": "$f:text-primary",
+                          "fill": "#000000",
                           "content": "Upcoming Reservations",
                           "fontFamily": "Inter",
                           "fontSize": 16,
@@ -21460,7 +21460,7 @@
                         "thickness": {
                           "top": 1
                         },
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "gap": 16,
                       "padding": [
@@ -21490,7 +21490,7 @@
                               "type": "text",
                               "id": "MZgZE",
                               "name": "ur1t",
-                              "fill": "$f:text-primary",
+                              "fill": "#000000",
                               "content": "Pelvic Floor Therapy — Mgr. Tereza Horáková",
                               "fontFamily": "Inter",
                               "fontSize": 14,
@@ -21500,7 +21500,7 @@
                               "type": "text",
                               "id": "zg1SX",
                               "name": "ur1d",
-                              "fill": "$f:text-secondary",
+                              "fill": "#000000",
                               "content": "Sat, Apr 5 · 10:00 – 11:00 · Room A",
                               "fontFamily": "Inter",
                               "fontSize": 12,
@@ -21534,7 +21534,7 @@
                         "thickness": {
                           "top": 1
                         },
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "gap": 16,
                       "padding": [
@@ -21564,7 +21564,7 @@
                               "type": "text",
                               "id": "JzfSd",
                               "name": "ur2t",
-                              "fill": "$f:text-primary",
+                              "fill": "#000000",
                               "content": "Movement Course — Mgr. Anna Černá",
                               "fontFamily": "Inter",
                               "fontSize": 14,
@@ -21574,7 +21574,7 @@
                               "type": "text",
                               "id": "1IWWH",
                               "name": "ur2d",
-                              "fill": "$f:text-secondary",
+                              "fill": "#000000",
                               "content": "Mon, Apr 7 · 17:00 – 18:00 · Room B",
                               "fontFamily": "Inter",
                               "fontSize": 12,
@@ -21785,7 +21785,7 @@
                   "type": "text",
                   "id": "SoDV3",
                   "name": "h23",
-                  "fill": "$f:text-primary",
+                  "fill": "#000000",
                   "content": "Vítejte zpět, Jano!",
                   "fontFamily": "Montserrat",
                   "fontSize": 24,
@@ -21803,12 +21803,12 @@
                       "id": "TzPxH",
                       "name": "cstat1",
                       "width": "fill_container",
-                      "fill": "$f:bg-surface",
+                      "fill": "#000000",
                       "cornerRadius": 12,
                       "stroke": {
                         "align": "inside",
                         "thickness": 1,
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "layout": "vertical",
                       "gap": 8,
@@ -21818,7 +21818,7 @@
                           "type": "text",
                           "id": "ZBYwG",
                           "name": "cs1l",
-                          "fill": "$f:text-secondary",
+                          "fill": "#000000",
                           "content": "Kredit",
                           "fontFamily": "Inter",
                           "fontSize": 13,
@@ -21838,7 +21838,7 @@
                           "type": "text",
                           "id": "I5HG3",
                           "name": "cs1d",
-                          "fill": "$f:text-muted",
+                          "fill": "#000000",
                           "content": "Platnost do 30. 9. 2026",
                           "fontFamily": "Inter",
                           "fontSize": 12,
@@ -21851,12 +21851,12 @@
                       "id": "A5nS9",
                       "name": "cstat2",
                       "width": "fill_container",
-                      "fill": "$f:bg-surface",
+                      "fill": "#000000",
                       "cornerRadius": 12,
                       "stroke": {
                         "align": "inside",
                         "thickness": 1,
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "layout": "vertical",
                       "gap": 8,
@@ -21866,7 +21866,7 @@
                           "type": "text",
                           "id": "VhUTw",
                           "name": "cs2l",
-                          "fill": "$f:text-secondary",
+                          "fill": "#000000",
                           "content": "Náhradové tokeny",
                           "fontFamily": "Inter",
                           "fontSize": 13,
@@ -21876,7 +21876,7 @@
                           "type": "text",
                           "id": "YX68V",
                           "name": "cs2v",
-                          "fill": "$f:text-primary",
+                          "fill": "#000000",
                           "content": "2",
                           "fontFamily": "Montserrat",
                           "fontSize": 28,
@@ -21886,7 +21886,7 @@
                           "type": "text",
                           "id": "vnb0J",
                           "name": "cs2d",
-                          "fill": "$f:text-muted",
+                          "fill": "#000000",
                           "content": "Platnost do 15. 5. 2026",
                           "fontFamily": "Inter",
                           "fontSize": 12,
@@ -21899,12 +21899,12 @@
                       "id": "nBEjf",
                       "name": "cstat3",
                       "width": "fill_container",
-                      "fill": "$f:bg-surface",
+                      "fill": "#000000",
                       "cornerRadius": 12,
                       "stroke": {
                         "align": "inside",
                         "thickness": 1,
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "layout": "vertical",
                       "gap": 8,
@@ -21914,7 +21914,7 @@
                           "type": "text",
                           "id": "hgZvJ",
                           "name": "cs3l",
-                          "fill": "$f:text-secondary",
+                          "fill": "#000000",
                           "content": "Nadcházející",
                           "fontFamily": "Inter",
                           "fontSize": 13,
@@ -21924,7 +21924,7 @@
                           "type": "text",
                           "id": "bb0Um",
                           "name": "cs3v",
-                          "fill": "$f:text-primary",
+                          "fill": "#000000",
                           "content": "3",
                           "fontFamily": "Montserrat",
                           "fontSize": 28,
@@ -21934,7 +21934,7 @@
                           "type": "text",
                           "id": "83vnR",
                           "name": "cs3d",
-                          "fill": "$f:text-muted",
+                          "fill": "#000000",
                           "content": "rezervace tento měsíc",
                           "fontFamily": "Inter",
                           "fontSize": 12,
@@ -21949,12 +21949,12 @@
                   "id": "d2kx9",
                   "name": "upcomingCard",
                   "width": "fill_container",
-                  "fill": "$f:bg-surface",
+                  "fill": "#000000",
                   "cornerRadius": 12,
                   "stroke": {
                     "align": "inside",
                     "thickness": 1,
-                    "fill": "$f:border-default"
+                    "fill": "#000000"
                   },
                   "layout": "vertical",
                   "children": [
@@ -21974,7 +21974,7 @@
                           "type": "text",
                           "id": "mYeMt",
                           "name": "ucTitle",
-                          "fill": "$f:text-primary",
+                          "fill": "#000000",
                           "content": "Nadcházející rezervace",
                           "fontFamily": "Inter",
                           "fontSize": 16,
@@ -22002,7 +22002,7 @@
                         "thickness": {
                           "top": 1
                         },
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "gap": 16,
                       "padding": [
@@ -22032,7 +22032,7 @@
                               "type": "text",
                               "id": "wfwid",
                               "name": "uc1t",
-                              "fill": "$f:text-primary",
+                              "fill": "#000000",
                               "content": "Fyzioterapie pánevního dna",
                               "fontFamily": "Inter",
                               "fontSize": 14,
@@ -22042,7 +22042,7 @@
                               "type": "text",
                               "id": "BhHAw",
                               "name": "uc1d",
-                              "fill": "$f:text-secondary",
+                              "fill": "#000000",
                               "content": "5. dubna 2026 · 10:00 · Mgr. Petra Nová · Místnost A",
                               "fontFamily": "Inter",
                               "fontSize": 12,
@@ -22076,7 +22076,7 @@
                         "thickness": {
                           "top": 1
                         },
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "gap": 16,
                       "padding": [
@@ -22106,7 +22106,7 @@
                               "type": "text",
                               "id": "6wN2E",
                               "name": "uc2t",
-                              "fill": "$f:text-primary",
+                              "fill": "#000000",
                               "content": "Kurz – Cvičení pro těhotné",
                               "fontFamily": "Inter",
                               "fontSize": 14,
@@ -22116,7 +22116,7 @@
                               "type": "text",
                               "id": "6rCp2",
                               "name": "uc2d",
-                              "fill": "$f:text-secondary",
+                              "fill": "#000000",
                               "content": "8. dubna 2026 · 17:00 · Mgr. Klára Šimková · Sál",
                               "fontFamily": "Inter",
                               "fontSize": 12,
@@ -22153,7 +22153,7 @@
                         "thickness": {
                           "top": 1
                         },
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "gap": 16,
                       "padding": [
@@ -22183,7 +22183,7 @@
                               "type": "text",
                               "id": "MeApj",
                               "name": "uc3t",
-                              "fill": "$f:text-primary",
+                              "fill": "#000000",
                               "content": "Masáž – Relaxační masáž",
                               "fontFamily": "Inter",
                               "fontSize": 14,
@@ -22193,7 +22193,7 @@
                               "type": "text",
                               "id": "dNWEK",
                               "name": "uc3d",
-                              "fill": "$f:text-secondary",
+                              "fill": "#000000",
                               "content": "12. dubna 2026 · 14:00 · Bc. Anna Malá · Místnost B",
                               "fontFamily": "Inter",
                               "fontSize": 12,
@@ -22287,7 +22287,7 @@
       "name": "24 Customer Profile",
       "width": 1440,
       "height": 900,
-      "fill": "$f:bg-page",
+      "fill": "#000000",
       "children": [
         {
           "id": "CQdi0",
@@ -22634,7 +22634,7 @@
                   "type": "text",
                   "id": "kUatP",
                   "name": "h24",
-                  "fill": "$f:text-primary",
+                  "fill": "#000000",
                   "content": "My Profile",
                   "fontFamily": "Montserrat",
                   "fontSize": 24,
@@ -22645,12 +22645,12 @@
                   "id": "vmeNV",
                   "name": "profCard",
                   "width": "fill_container",
-                  "fill": "$f:bg-surface",
+                  "fill": "#000000",
                   "cornerRadius": 12,
                   "stroke": {
                     "align": "inside",
                     "thickness": 1,
-                    "fill": "$f:border-default"
+                    "fill": "#000000"
                   },
                   "layout": "vertical",
                   "gap": 16,
@@ -22833,12 +22833,12 @@
                   "id": "486cv",
                   "name": "pwCard",
                   "width": "fill_container",
-                  "fill": "$f:bg-surface",
+                  "fill": "#000000",
                   "cornerRadius": 12,
                   "stroke": {
                     "align": "inside",
                     "thickness": 1,
-                    "fill": "$f:border-default"
+                    "fill": "#000000"
                   },
                   "layout": "vertical",
                   "gap": 16,
@@ -22848,7 +22848,7 @@
                       "type": "text",
                       "id": "M6wBO",
                       "name": "pwTitle",
-                      "fill": "$f:text-primary",
+                      "fill": "#000000",
                       "content": "Change Password",
                       "fontFamily": "Inter",
                       "fontSize": 16,
@@ -22946,12 +22946,12 @@
                   "id": "BOoxb",
                   "name": "billingCard",
                   "width": "fill_container",
-                  "fill": "$f:bg-surface",
+                  "fill": "#000000",
                   "cornerRadius": 12,
                   "stroke": {
                     "align": "inside",
                     "thickness": 1,
-                    "fill": "$f:border-default"
+                    "fill": "#000000"
                   },
                   "layout": "vertical",
                   "gap": 16,
@@ -22961,7 +22961,7 @@
                       "type": "text",
                       "id": "sByCc",
                       "name": "bilTitle",
-                      "fill": "$f:text-primary",
+                      "fill": "#000000",
                       "content": "Company Billing (Optional)",
                       "fontFamily": "Inter",
                       "fontSize": 16,
@@ -23262,7 +23262,7 @@
                   "type": "text",
                   "id": "7mPgK",
                   "name": "h24",
-                  "fill": "$f:text-primary",
+                  "fill": "#000000",
                   "content": "Můj profil",
                   "fontFamily": "Montserrat",
                   "fontSize": 24,
@@ -23273,12 +23273,12 @@
                   "id": "3iX9t",
                   "name": "profCard",
                   "width": "fill_container",
-                  "fill": "$f:bg-surface",
+                  "fill": "#000000",
                   "cornerRadius": 12,
                   "stroke": {
                     "align": "inside",
                     "thickness": 1,
-                    "fill": "$f:border-default"
+                    "fill": "#000000"
                   },
                   "layout": "vertical",
                   "gap": 20,
@@ -23288,7 +23288,7 @@
                       "type": "text",
                       "id": "WOKEi",
                       "name": "pcTitle",
-                      "fill": "$f:text-primary",
+                      "fill": "#000000",
                       "content": "Osobní údaje",
                       "fontFamily": "Inter",
                       "fontSize": 16,
@@ -23471,12 +23471,12 @@
                   "id": "eVbBu",
                   "name": "billingCard",
                   "width": "fill_container",
-                  "fill": "$f:bg-surface",
+                  "fill": "#000000",
                   "cornerRadius": 12,
                   "stroke": {
                     "align": "inside",
                     "thickness": 1,
-                    "fill": "$f:border-default"
+                    "fill": "#000000"
                   },
                   "layout": "vertical",
                   "gap": 20,
@@ -23486,7 +23486,7 @@
                       "type": "text",
                       "id": "WCu37",
                       "name": "bcTitle",
-                      "fill": "$f:text-primary",
+                      "fill": "#000000",
                       "content": "Fakturační údaje (volitelné)",
                       "fontFamily": "Inter",
                       "fontSize": 16,
@@ -23656,7 +23656,7 @@
       "name": "25 Customer Reservations",
       "width": 1440,
       "height": 900,
-      "fill": "$f:bg-page",
+      "fill": "#000000",
       "children": [
         {
           "id": "bVcdk",
@@ -24003,7 +24003,7 @@
                   "type": "text",
                   "id": "6P2cF",
                   "name": "h25",
-                  "fill": "$f:text-primary",
+                  "fill": "#000000",
                   "content": "My Reservations",
                   "fontFamily": "Montserrat",
                   "fontSize": 24,
@@ -24045,12 +24045,12 @@
                   "id": "7xX8L",
                   "name": "resCard1",
                   "width": "fill_container",
-                  "fill": "$f:bg-surface",
+                  "fill": "#000000",
                   "cornerRadius": 12,
                   "stroke": {
                     "align": "inside",
                     "thickness": 1,
-                    "fill": "$f:border-default"
+                    "fill": "#000000"
                   },
                   "gap": 16,
                   "padding": 20,
@@ -24077,7 +24077,7 @@
                           "type": "text",
                           "id": "ioRiU",
                           "name": "rc1t",
-                          "fill": "$f:text-primary",
+                          "fill": "#000000",
                           "content": "Pelvic Floor Therapy",
                           "fontFamily": "Inter",
                           "fontSize": 15,
@@ -24087,7 +24087,7 @@
                           "type": "text",
                           "id": "eoEoj",
                           "name": "rc1d",
-                          "fill": "$f:text-secondary",
+                          "fill": "#000000",
                           "content": "Sat, Apr 5 · 10:00 – 11:00 · Mgr. Tereza Horáková · Room A",
                           "fontFamily": "Inter",
                           "fontSize": 13,
@@ -24133,12 +24133,12 @@
                   "id": "5hMAV",
                   "name": "resCard2",
                   "width": "fill_container",
-                  "fill": "$f:bg-surface",
+                  "fill": "#000000",
                   "cornerRadius": 12,
                   "stroke": {
                     "align": "inside",
                     "thickness": 1,
-                    "fill": "$f:border-default"
+                    "fill": "#000000"
                   },
                   "gap": 16,
                   "padding": 20,
@@ -24165,7 +24165,7 @@
                           "type": "text",
                           "id": "SE2L2",
                           "name": "rc2t",
-                          "fill": "$f:text-primary",
+                          "fill": "#000000",
                           "content": "Movement Course",
                           "fontFamily": "Inter",
                           "fontSize": 15,
@@ -24175,7 +24175,7 @@
                           "type": "text",
                           "id": "5KQcV",
                           "name": "rc2d",
-                          "fill": "$f:text-secondary",
+                          "fill": "#000000",
                           "content": "Mon, Apr 7 · 17:00 – 18:00 · Mgr. Anna Černá · Room B",
                           "fontFamily": "Inter",
                           "fontSize": 13,
@@ -24828,7 +24828,7 @@
       "name": "26 Customer Tokens",
       "width": 1440,
       "height": 900,
-      "fill": "$f:bg-page",
+      "fill": "#000000",
       "children": [
         {
           "id": "B5gic",
@@ -25173,7 +25173,7 @@
                   "type": "text",
                   "id": "22GlE",
                   "name": "h26",
-                  "fill": "$f:text-primary",
+                  "fill": "#000000",
                   "content": "My Substitute Tokens",
                   "fontFamily": "Montserrat",
                   "fontSize": 24,
@@ -25184,12 +25184,12 @@
                   "id": "4ewJs",
                   "name": "activeTokens",
                   "width": "fill_container",
-                  "fill": "$f:bg-surface",
+                  "fill": "#000000",
                   "cornerRadius": 12,
                   "stroke": {
                     "align": "inside",
                     "thickness": 1,
-                    "fill": "$f:border-default"
+                    "fill": "#000000"
                   },
                   "layout": "vertical",
                   "children": [
@@ -25208,7 +25208,7 @@
                           "type": "text",
                           "id": "dsOgW",
                           "name": "atTitle",
-                          "fill": "$f:text-primary",
+                          "fill": "#000000",
                           "content": "Available Tokens (2)",
                           "fontFamily": "Inter",
                           "fontSize": 16,
@@ -25226,7 +25226,7 @@
                         "thickness": {
                           "top": 1
                         },
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "gap": 16,
                       "padding": [
@@ -25257,7 +25257,7 @@
                               "type": "text",
                               "id": "660po",
                               "name": "tk1t",
-                              "fill": "$f:text-primary",
+                              "fill": "#000000",
                               "content": "Movement Course Substitute",
                               "fontFamily": "Inter",
                               "fontSize": 14,
@@ -25267,7 +25267,7 @@
                               "type": "text",
                               "id": "wRyTE",
                               "name": "tk1d",
-                              "fill": "$f:text-secondary",
+                              "fill": "#000000",
                               "content": "Expires: Apr 20, 2026 · Compatible: Movement, Yoga",
                               "fontFamily": "Inter",
                               "fontSize": 12,
@@ -25302,7 +25302,7 @@
                         "thickness": {
                           "top": 1
                         },
-                        "fill": "$f:border-default"
+                        "fill": "#000000"
                       },
                       "gap": 16,
                       "padding": [
@@ -25333,7 +25333,7 @@
                               "type": "text",
                               "id": "6QnAz",
                               "name": "tk2t",
-                              "fill": "$f:text-primary",
+                              "fill": "#000000",
                               "content": "Pilates Course Substitute",
                               "fontFamily": "Inter",
                               "fontSize": 14,
@@ -25343,7 +25343,7 @@
                               "type": "text",
                               "id": "nOkYH",
                               "name": "tk2d",
-                              "fill": "$f:text-secondary",
+                              "fill": "#000000",
                               "content": "Expires: May 1, 2026 · Compatible: Pilates, Movement",
                               "fontFamily": "Inter",
                               "fontSize": 12,
@@ -25375,12 +25375,12 @@
                   "id": "hYOqg",
                   "name": "usedCard",
                   "width": "fill_container",
-                  "fill": "$f:bg-surface",
+                  "fill": "#000000",
                   "cornerRadius": 12,
                   "stroke": {
                     "align": "inside",
                     "thickness": 1,
-                    "fill": "$f:border-default"
+                    "fill": "#000000"
                   },
                   "layout": "vertical",
                   "children": [
@@ -25398,7 +25398,7 @@
                           "type": "text",
                           "id": "tYOdm",
                           "name": "usedTitle",
-                          "fill": "$f:text-secondary",
+                          "fill": "#000000",
                           "content": "Used Tokens",
                           "fontFamily": "Inter",
                           "fontSize": 16,
@@ -30829,7 +30829,7 @@
               "fill": {
                 "type": "image",
                 "enabled": true,
-                "url": "./images/generated-1775119641706.png",
+                "url": "images/generated-1775119641706.png",
                 "mode": "fill"
               },
               "cornerRadius": 150
@@ -31319,7 +31319,7 @@
             },
             "f:mkJCE": {
               "height": "fit_content",
-              "y": 160
+              "y": 88
             },
             "f:pE9SF": {
               "content": "SYSTEM"
@@ -33334,6 +33334,6 @@
     }
   },
   "imports": {
-    "f": "../../../../Work/Design/FilamentPHP.lib.pen"
+    "f": "../../../Work/Design/FilamentPHP.lib.pen"
   }
 }

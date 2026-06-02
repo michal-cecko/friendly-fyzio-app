@@ -1,0 +1,114 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "home" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e5]: FriendlyFyzio
+      - navigation [ref=e6]:
+        - link "Fyzioterapie" [ref=e7] [cursor=pointer]:
+          - /url: /fyzioterapie
+        - link "Laser/kryoterapie" [ref=e8] [cursor=pointer]:
+          - /url: /pristrojova-terapie
+        - link "Pohybové kurzy" [ref=e9] [cursor=pointer]:
+          - /url: /fyzio-kurzy
+        - link "Relaxace" [ref=e10] [cursor=pointer]:
+          - /url: /relaxace
+        - link "Workshopy" [ref=e11] [cursor=pointer]:
+          - /url: /workshopy
+          - text: Workshopy
+        - link "Ceník" [ref=e12] [cursor=pointer]:
+          - /url: /cenik
+        - link "O nás" [ref=e13] [cursor=pointer]:
+          - /url: /nas-tym
+        - link "Chci se objednat" [ref=e14] [cursor=pointer]:
+          - /url: "#kontakt"
+        - link:
+          - /url: "#"
+      - text: 
+  - heading "Terapie pánevního dna" [level=1] [ref=e19]:
+    - strong [ref=e20]: Terapie pánevního dna
+  - generic [ref=e22]:
+    - generic [ref=e23]:
+      - generic [ref=e24]:
+        - paragraph [ref=e25]:
+          - strong [ref=e26]:
+            - text: Dysfunkce svalů pánevního dna se může projevovat různě, a to
+            - text: ‍
+          - text: ➡️ bolestivou nebo nepravidelnou menstruací,
+          - text: ➡️ funkční sterilitou ženy/muže (neplodností),
+          - text: ➡️ poklesem orgánů pánevního dna (močového měchýře, dělohy),
+          - text: ➡️ opakovanými potraty,
+          - text: ➡️ bolestivou kostrčí a bederní páteří,
+          - text: ➡️ bolestivým pohlavním stykem,
+          - text: ➡️ anorgasmií (neschopnost dosáhnout orgazmu),
+          - text: ➡️ močovou nebo fekální inkontinencí (únik moči nebo stolice při kašli, kýchání, smíchu, pohybu, námaze...),
+          - text: ➡️ retencí moči (nemožnost močit),
+          - text: ➡️ dále při výhřezech plotének a migrén
+        - paragraph [ref=e27]:
+          - text: V praxi pracuje komplexně a využíváme širokou škálu diagnostických metod a terapeutických přístupů.
+          - text: K diagnostice a terapii pánevního dna přístupujeme per vaginam (přes pochvu) a per rectum (přes konečník). Pomocí těchto metod zjišťujeme, zda je pánevní dno funkční a zda pracuje v souhře s celým tělem. Společně s tímto vyšetřením hodnotíme temporomandibulární (čelistní) kloub, funkčnost bránice, stav břišní stěny (rozestup, diastázu), symetrii pánve, mobilitu kyčlí, aktivitu plosek nohou. ..V neposlední řadě je součástí každého vyšetření hodnocení a terapie jizev. Výsledek komplexního vyšetření ukazuje na zdroj potíží, na jehož základě určíme vhodný terapeutický plán včetně autoterapie.
+          - text: V rámci fyzioterapie pánevního dna provádíme rovněž
+          - strong [ref=e28]: komplexní kontrolu
+          - text: žen
+          - strong [ref=e29]: po porodu
+          - text: ", a to jak preventivní kontrolu, tak terapii konkrétního problému (ošetření jizev, diastázy, hodnocení celkového stavu břišní stěny, vhodné cviky po porodu atd.)"
+          - text: ‍
+      - link "Chci se objednat" [ref=e30] [cursor=pointer]:
+        - /url: /rezervace-vstupniho-vysetreni
+    - heading "Ohlasy klientek" [level=2] [ref=e31]:
+      - emphasis [ref=e32]: Ohlasy klientek
+    - generic [ref=e33]:
+      - paragraph [ref=e34]:
+        - text: Na fyzioterapii pánevního dna jsem se rozhodla jít ze zvědavosti. Zajímalo mě v jaké kondici se po dvou porodech nachází mé pánevní dno a v jakém stavu je mé břicho/diastáza.
+        - text: Během čtyř měsíců došlo ke zlepšení v oblastech, ve kterých jsem si myslela, že nemám problém a že jsou prostě běžné. Znatelně se mi upravila bolestivost menstruace, úplně zmizely občasné zácpy a v neposlední radě se prodloužila doba, ve které jsem schopna vydržet s nutkáním na malou stranu.
+        - text: Určitě bych doporučila terapii všem ženám, které již nějaké potíže mají, ale i těm které si jako já myslí, že žádné nemají, ale chtějí se třeba jenom dozvědět něco více o svém těle a třeba u nich dojde k úlevě v oblastech, které ani neočekávaly. Je třeba jenom odhodit zbytečný stud a o věcech začít mluvit!!
+      - generic [ref=e35]: Klára
+    - generic [ref=e36]:
+      - paragraph [ref=e37]: Chtěla jsem jen poporodní kontrolu pánevního dna. Dostala jsem cviky, které doma cvičím a s dosavadními výsledky spokojena jsem. Neměnila bych nic. Příjemné a útulné prostory, milá fyzioterapeutka s evidentním zájmem pomoci, vstupní dotazník a povídání o pánevním dnu se mi líbilo. Přístup byl skvělý, individuální a vlastně celý průběh terapie mi moc vyhovoval. Děkuji za to!
+      - generic [ref=e38]: Klára JaRešová
+    - generic [ref=e39]:
+      - paragraph [ref=e40]: Fyzioterapii pánevního dna jsem absolvovala kvůli trvajícím pooperačním bolestem pánevního dna (kostrče). Již asi po 14 dnech začaly problémy ustupovat a když něco začne znovu zlobit, tak již vím, jak si pomoci. Jsem velmi spokojená. Nemám, co bych vytkla. Určitě doporučuji. Předtím jsem absolvovala rehabilitace ve dvou zdravotnických zařízeních a, a to bez většího úspěchu.
+      - generic [ref=e41]: Hanka
+    - generic [ref=e42]:
+      - paragraph [ref=e43]: Terapii jsme se rozhodla absolvovat kvůli opakovaným potratům. Terapie byla velmi zajímavá a přínosná. Věřím, že nyní už vše dopadne dobře a náš sen si splníme. Zároveň jsem moc ráda, že vím, na koho se obrátit v případě jakýchkoliv problémů v budoucnu. Možná bych na začátku předem uvítala informaci, jak probíhá vstupní vyšetření. Jelikož jsem byla krátce po spontánním potratu, měla jsem trošku strach, jak to mé tělo zvládne, ale bylo to v pohodě :) Rozhodně bych terapii pánevního dna doporučila. Myslím, že každá žena by měla mít přehled o svém pánevním dnu a vědět, že různé problémy nemusí být neodstranitelné.
+      - generic [ref=e44]: PAVLÍNA
+    - generic [ref=e45]:
+      - paragraph [ref=e46]: S terapií jsem maximálně spokojená, jsem moc ráda, že jsem k Lucce na terapii šla, moc mi pomohla naučit správně pracovat se svaly pánevního dna, úplně jsem zapomínala i na jakoukoliv relaxaci svalů pánevního dna, která je taky velmi důležitá. Nyní po dvou porodech a terapii, si již mohu svobodně kýchnout, za což patří ještě jednou mé velké DĚKUJI, jako bonus navíc se zmírnily bolesti hlavy, nemám bolesti při menstruaci a skoro zmizely problémy se zácpou. Neměnila bych vůbec nic. Jsem 100% spokojená. Určitě doporučuji terapii dalším ženám, není vůbec důvod k obávám a ostychu. Můj gynekolog mi doporučil laserový zákrok o možnosti fyzioterapie se nezmínil, a když jsem se jej na tuto možnost ptala, zdálo se mu to zcela zbytečné. Já jsem moc ráda, že jsem nedala na jeho rady a zkusila jsem fyzioterapii, výsledek je více než super ♥️
+      - generic [ref=e47]: Iva landecká
+    - generic [ref=e48]:
+      - paragraph [ref=e49]: Jsem naprosto spokojená, potíže po porodu vymizely, břicho se zmenšilo, cítím se fit. Určitě doporučuji
+      - generic [ref=e50]: Sylvie Z.
+    - generic [ref=e51]:
+      - paragraph [ref=e52]: Fyzioterapii jsem se rozhodla navštívit kvůli zjištěnému poklesu pánevního dna, šlo o prevenci. Terapie splnila mé očekávání,velká spokojenost, bez výhrad :-)), nic bych neměnila! Doporučuji všem ženám..příjemné prostředí,milá slečna fyzioterapeutka a profesionálka
+      - generic [ref=e53]: Marcela
+  - generic [ref=e55]:
+    - heading "Kontakt" [level=2] [ref=e56]
+    - generic [ref=e58]:
+      - heading "Mgr. Lucie Fickerová" [level=3] [ref=e59]
+      - paragraph [ref=e60]:
+        - text: +420 604 793 255
+        - link "info@friendlyfyzio.cz" [ref=e61] [cursor=pointer]:
+          - /url: "#"
+      - link "Online rezervace vstupního vyšetření" [ref=e62] [cursor=pointer]:
+        - /url: /rezervace-vstupniho-vysetreni
+      - link "Online rezervace masáží" [ref=e63] [cursor=pointer]:
+        - /url: /rezervace-masazi
+      - heading "Adresa" [level=4] [ref=e64]
+      - paragraph [ref=e65]:
+        - text: FriendlyFyzio
+        - text: Zednická 1109/2
+        - text: Ostrava-Poruba
+        - text: "IČ: 06816967"
+  - generic [ref=e71]:
+    - generic [ref=e72]:
+      - generic [ref=e73]: FriendlyFyzio
+      - generic [ref=e74]:
+        - text: Zednická 1109/2
+        - text: Ostrava -Poruba
+      - paragraph [ref=e75]:
+        - text: "Mobil: +420 604 793 255"
+        - text: "E-mail: info@friendlyfyzio.cz"
+    - generic [ref=e77]:
+      - text: "Webdesign:"
+      - link "Petr Hlubina" [ref=e78] [cursor=pointer]:
+        - /url: http://www.hlubina.cz

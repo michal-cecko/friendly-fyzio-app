@@ -1,0 +1,141 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "home" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e5]: FriendlyFyzio
+      - navigation [ref=e6]:
+        - link "Fyzioterapie" [ref=e7] [cursor=pointer]:
+          - /url: /fyzioterapie
+        - link "Laser/kryoterapie" [ref=e8] [cursor=pointer]:
+          - /url: /pristrojova-terapie
+        - link "Pohybové kurzy" [ref=e9] [cursor=pointer]:
+          - /url: /fyzio-kurzy
+        - link "Relaxace" [ref=e10] [cursor=pointer]:
+          - /url: /relaxace
+        - link "Workshopy" [ref=e11] [cursor=pointer]:
+          - /url: /workshopy
+          - text: Workshopy
+        - link "Ceník" [ref=e12] [cursor=pointer]:
+          - /url: /cenik
+        - link "O nás" [ref=e13] [cursor=pointer]:
+          - /url: /nas-tym
+        - link "Chci se objednat" [ref=e14] [cursor=pointer]:
+          - /url: "#kontakt"
+        - link:
+          - /url: "#"
+      - text: 
+  - generic [ref=e18]:
+    - heading "Workshopy" [level=1] [ref=e19]
+    - heading "Vzdělávejte se pod dohledem zkušených fyzioterapeutek!" [level=3] [ref=e20]:
+      - text: Vzdělávejte se pod dohledem
+      - text: zkušených fyzioterapeutek!
+  - generic [ref=e23]:
+    - paragraph [ref=e25]: ‍
+    - generic [ref=e26]:
+      - generic [ref=e27]:
+        - heading "Dětská noha v pohybu" [level=3] [ref=e28]
+        - paragraph [ref=e29]:
+          - text: Vývoj a hlavní milníky dětské nohy,
+          - strong [ref=e30]: obouvání
+          - text: a
+          - strong [ref=e31]: vhodné aktivity
+          - text: pro děti, jak poznat problém a
+          - strong [ref=e32]: kdy vyhledat odborníka
+          - text: ", praxe, diagnostika na"
+          - strong [ref=e33]: podoskopu
+          - text: a mnoho dalšího.
+          - strong
+          - text: ‍
+          - link "Více informací" [ref=e34] [cursor=pointer]:
+            - /url: /workshopy-2/detska-noha-v-pohybu
+      - generic [ref=e35]:
+        - 'heading "Základy pohybu: fyzioterapeutický pohled na dospělou nohu" [level=3] [ref=e36]'
+        - paragraph [ref=e37]:
+          - text: Vliv nohy na postupu těla, problematika ploché nohy, barefoot, noha vs. pánevní dno, stélky do bot a mnoho dalšího.
+          - text: ‍
+          - link "Více informací" [ref=e38] [cursor=pointer]:
+            - /url: /workshopy-2/dospela-noha
+    - generic [ref=e40]:
+      - heading "Handling - manipulace s novorozencem" [level=3] [ref=e41]
+      - paragraph [ref=e42]:
+        - text: Chtěli byste si vyzkoušet jak manipulovat s miminkem? Jak ho zvedat, pokládat, otáčet, polohovat přes den a na spaní a předcházet tak asymetrii?
+        - strong:
+          - emphasis
+        - text: ‍
+        - link "Více informací" [ref=e43] [cursor=pointer]:
+          - /url: /workshopy-2/handling-manipulace-s-novorozencem
+  - generic [ref=e46]:
+    - heading "Kontakt" [level=2] [ref=e47]
+    - generic [ref=e49]:
+      - heading "Mgr. Lucie Fickerová" [level=3] [ref=e50]
+      - paragraph [ref=e51]:
+        - text: +420 604 793 255
+        - link "info@friendlyfyzio.cz" [ref=e52] [cursor=pointer]:
+          - /url: "#"
+      - link "Online rezervace vstupního vyšetření" [ref=e53] [cursor=pointer]:
+        - /url: /rezervace-vstupniho-vysetreni
+      - link "Online rezervace masáží" [ref=e54] [cursor=pointer]:
+        - /url: /rezervace-masazi
+      - heading "Adresa" [level=4] [ref=e55]
+      - paragraph [ref=e56]:
+        - text: FriendlyFyzio
+        - text: Zednická 1109/2
+        - text: Ostrava-Poruba
+        - text: "IČ: 06816967"
+  - generic [ref=e58]:
+    - generic [ref=e59]:
+      - generic:
+        - button "Keyboard shortcuts"
+      - region "Map" [ref=e60]
+      - generic [ref=e61]:
+        - generic [ref=e100]:
+          - generic:
+            - button "Map pin showing location of FriendlyFyzio, Zednická 1109/2, Ostrava" [ref=e102]:
+              - generic:
+                - generic "Map pin showing location of FriendlyFyzio, Zednická 1109/2, Ostrava"
+            - dialog [ref=e103]:
+              - button "Close" [ref=e106] [cursor=pointer]
+              - generic [ref=e108]: FriendlyFyzio, Zednická 1109/2, Ostrava
+        - iframe [ref=e110]:
+          
+        - button "Toggle fullscreen view" [ref=e149] [cursor=pointer]
+        - generic:
+          - generic:
+            - button "Map camera controls" [ref=e151] [cursor=pointer]
+            - generic [ref=e153] [cursor=pointer]:
+              - button "Zoom in" [ref=e154]
+              - button "Zoom out" [ref=e156]
+        - link "Open this area in Google Maps (opens a new window)" [ref=e158] [cursor=pointer]:
+          - /url: https://maps.google.com/maps?ll=49.830985,18.176954&z=17&t=m&hl=en-GB&gl=US&mapclient=apiv3
+          - img "Google" [ref=e160]
+        - generic [ref=e161]:
+          - button "Keyboard shortcuts" [ref=e167] [cursor=pointer]
+          - generic [ref=e172]: Map data ©2026 Google
+          - link "Terms (opens in new tab)" [ref=e177] [cursor=pointer]:
+            - /url: https://www.google.com/intl/en-GB_US/help/terms_maps.html
+            - text: Terms
+          - link "Report a map error" [ref=e182] [cursor=pointer]:
+            - /url: https://www.google.com/maps/@49.8309854,18.1769535,17z/data=!10m1!1e1!12b1?source=apiv3&rapsrc=apiv3
+    - generic [ref=e183]:
+      - generic [ref=e185]: This page can't load Google Maps correctly.
+      - table [ref=e186]:
+        - row "Do you own this website? OK" [ref=e187]:
+          - cell "Do you own this website?" [ref=e188]:
+            - link "Do you own this website?" [ref=e189] [cursor=pointer]:
+              - /url: http://g.co/dev/maps-no-account
+          - cell "OK" [ref=e190]:
+            - button "OK" [ref=e191] [cursor=pointer]
+  - generic [ref=e113]:
+    - generic [ref=e114]:
+      - generic [ref=e115]: FriendlyFyzio
+      - generic [ref=e116]:
+        - text: Zednická 1109/2
+        - text: Ostrava -Poruba
+      - paragraph [ref=e117]:
+        - text: "Mobil: +420 604 793 255"
+        - text: "E-mail: info@friendlyfyzio.cz"
+    - generic [ref=e119]:
+      - text: "Webdesign:"
+      - link "Petr Hlubina" [ref=e120] [cursor=pointer]:
+        - /url: http://www.hlubina.cz

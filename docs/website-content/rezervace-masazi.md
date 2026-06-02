@@ -1,0 +1,195 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "home" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e5]: FriendlyFyzio
+      - navigation [ref=e6]:
+        - link "Fyzioterapie" [ref=e7] [cursor=pointer]:
+          - /url: /fyzioterapie
+        - link "Laser/kryoterapie" [ref=e8] [cursor=pointer]:
+          - /url: /pristrojova-terapie
+        - link "Pohybové kurzy" [ref=e9] [cursor=pointer]:
+          - /url: /fyzio-kurzy
+        - link "Relaxace" [ref=e10] [cursor=pointer]:
+          - /url: /relaxace
+        - link "Workshopy" [ref=e11] [cursor=pointer]:
+          - /url: /workshopy
+          - text: Workshopy
+        - link "Ceník" [ref=e12] [cursor=pointer]:
+          - /url: /cenik
+        - link "O nás" [ref=e13] [cursor=pointer]:
+          - /url: /nas-tym
+        - link "Chci se objednat" [ref=e14] [cursor=pointer]:
+          - /url: "#kontakt"
+        - link:
+          - /url: "#"
+      - text: 
+  - heading "Rezervace masáží a napářek" [level=1] [ref=e17]
+  - generic [ref=e18]:
+    - generic [ref=e20]:
+      - form "Rezervace masáže" [ref=e23]:
+        - heading "Masáže" [level=3] [ref=e24]: Masáže
+        - generic [ref=e25]:
+          - text: "Vyberte termín masáže:"
+          - emphasis [ref=e26]: Denisa
+          - text: "- těhotenské, klasické relaxační a lymfatické masáže (pouze ženy) - 60 min/90 min (napište do poznámky), bylinná napářka, masáže miminek a dětí"
+          - text: Pokud je u termínu specifikovaný v závorce konkrétní délka terapie nebo služba, není možné vybírat jiné. V ostatních situacích je výběr služby i délky masáže libovolný
+        - 'combobox "Vyberte termín masáže: Denisa - těhotenské, klasické relaxační a lymfatické masáže (pouze ženy) - 60 min/90 min (napište do poznámky), bylinná napářka, masáže miminek a dětí Pokud je u termínu specifikovaný v závorce konkrétní délka terapie nebo služba, není možné vybírat jiné. V ostatních situacích je výběr služby i délky masáže libovolný" [ref=e27]':
+          - option "7.4 14:00 Denisa" [selected]
+          - option "8.4 13:45 Denisa (60 min)"
+          - option "14.4 11:30 Denisa (baby masáž)"
+          - option "15.4 13:45 Denisa"
+          - option "15.4 15:00 Denisa (60 min)"
+          - option "20.4 19:00 Denisa"
+          - option "21.4 14:00 Denisa (Baby masáž)"
+          - option "22.4 15:00 Denisa"
+          - option "22.4 16:15 Denisa"
+          - option "28.4 10:15 Denisa"
+          - option "28.4 11:30 Denisa"
+          - option "28.4 12:45 Denisa"
+          - option "29.4 13:45 Denisa"
+          - option "29.4 15:00 Denisa"
+          - option "29.4 16:15 Denisa"
+          - option "4.5 17:45 Denisa"
+          - option "4.5 19:00 Denisa"
+          - option "5.5 11:00 Denisa"
+          - option "5.5 12:15 Denisa"
+          - option "5.5 13:30 Denisa"
+          - option "5.5 14:45 Denisa"
+          - option "6.5 13:45 Denisa"
+          - option "6.5 15:00 Denisa"
+          - option "6.5 16:15 Denisa"
+        - generic [ref=e28]: "Jméno a příjmení:"
+        - textbox "Jméno a příjmení:" [ref=e29]:
+          - /placeholder: ""
+        - generic [ref=e30]: "Poznámka:"
+        - textbox "Poznámka:" [ref=e31]:
+          - /placeholder: klasická/těhotenská částečná/celková, masáž miminka...
+        - generic [ref=e32]: Telefonní číslo pro potvrzení termínu
+        - textbox "Telefonní číslo pro potvrzení termínu" [ref=e33]:
+          - /placeholder: "+420"
+        - generic [ref=e34]: Telefonní číslo znovu pro kontrolu
+        - textbox "Telefonní číslo znovu pro kontrolu" [ref=e35]:
+          - /placeholder: "+420"
+        - generic [ref=e36]: Email
+        - textbox "Email" [ref=e37]:
+          - /placeholder: "@"
+        - generic [ref=e38]:
+          - checkbox "Souhlasím se storno podmínkami" [ref=e39]
+          - generic [ref=e40] [cursor=pointer]:
+            - text: Souhlasím se
+            - link "storno podmínkami" [ref=e41]:
+              - /url: /storno-podminky
+        - generic [ref=e42]:
+          - checkbox "Chci dostávat informace o kurzech, workshopech, soutěžích emailem" [ref=e43]
+          - generic [ref=e44] [cursor=pointer]: Chci dostávat informace o kurzech, workshopech, soutěžích emailem
+        - button "závazná objednávka" [ref=e45] [cursor=pointer]
+      - form "Rezervace vaginální napářky" [ref=e48]:
+        - heading "Rezervace bylinné napářky" [level=3] [ref=e49]:
+          - text: Rezervace bylinné
+          - link "napářky" [ref=e50] [cursor=pointer]:
+            - /url: /relaxace-ritualy/bylinna-naparka
+        - generic [ref=e51]:
+          - text: "Vyberte termín:"
+          - text: ‍
+          - emphasis [ref=e52]: Denisa
+          - text: "- těhotenské, klasické relaxační a lymfatické masáže - 60 min/90 min (napište do poznámky), bylinná napářka"
+          - text: ‍
+        - 'combobox "Vyberte termín: ‍ Denisa - těhotenské, klasické relaxační a lymfatické masáže - 60 min/90 min (napište do poznámky), bylinná napářka ‍" [ref=e53]':
+          - option "navrhni svůj termín a napiš ho do poznámky, Denisa Vás kontaktuje" [selected]
+        - generic [ref=e54]: "Jméno:"
+        - textbox "Jméno:" [ref=e55]:
+          - /placeholder: ""
+        - generic [ref=e56]: "Příjmení:"
+        - textbox [ref=e57]
+        - generic [ref=e58]: "Poznámka:"
+        - textbox "Poznámka:" [ref=e59]:
+          - /placeholder: napářka, napářka s masáží...
+        - generic [ref=e60]: Telefonní číslo pro potvrzení termínu
+        - textbox [ref=e61]
+        - generic [ref=e62]:
+          - checkbox "Souhlasím se storno podmínkami" [ref=e63]
+          - generic [ref=e64] [cursor=pointer]:
+            - text: Souhlasím se
+            - link "storno podmínkami" [ref=e65]:
+              - /url: /storno-podminky
+        - button "závazná objednávka" [ref=e66] [cursor=pointer]
+    - paragraph [ref=e67]:
+      - text: Nevyhovuje Vám žádný termín? Nevíte, do které kategorie spadáte nebo který terapeut je vhodný?
+      - text: "Kontaktujte nás na tel. čísle:"
+      - strong [ref=e68]: +420 604 793 255
+  - generic [ref=e70]:
+    - heading "Kontakt" [level=2] [ref=e71]
+    - generic [ref=e73]:
+      - heading "Mgr. Lucie Fickerová" [level=3] [ref=e74]
+      - paragraph [ref=e75]:
+        - text: +420 604 793 255
+        - link "info@friendlyfyzio.cz" [ref=e76] [cursor=pointer]:
+          - /url: "#"
+      - link "Online rezervace vstupního vyšetření" [ref=e77] [cursor=pointer]:
+        - /url: /rezervace-vstupniho-vysetreni
+      - link "Online rezervace masáží" [ref=e78] [cursor=pointer]:
+        - /url: /rezervace-masazi
+      - heading "Adresa" [level=4] [ref=e79]
+      - paragraph [ref=e80]:
+        - text: FriendlyFyzio
+        - text: Zednická 1109/2
+        - text: Ostrava-Poruba
+        - text: "IČ: 06816967"
+  - generic [ref=e82]:
+    - generic [ref=e83]:
+      - generic:
+        - button "Keyboard shortcuts"
+      - region "Map" [ref=e84]
+      - generic [ref=e85]:
+        - generic [ref=e124]:
+          - generic:
+            - button "Map pin showing location of FriendlyFyzio, Zednická 1109/2, Ostrava" [ref=e126]:
+              - generic:
+                - generic "Map pin showing location of FriendlyFyzio, Zednická 1109/2, Ostrava"
+            - dialog [ref=e127]:
+              - button "Close" [ref=e130] [cursor=pointer]
+              - generic [ref=e132]: FriendlyFyzio, Zednická 1109/2, Ostrava
+        - iframe [ref=e134]:
+          
+        - button "Toggle fullscreen view" [ref=e169] [cursor=pointer]
+        - generic:
+          - generic:
+            - button "Map camera controls" [ref=e171] [cursor=pointer]
+            - generic [ref=e173] [cursor=pointer]:
+              - button "Zoom in" [ref=e174]
+              - button "Zoom out" [ref=e176]
+        - link "Open this area in Google Maps (opens a new window)" [ref=e178] [cursor=pointer]:
+          - /url: https://maps.google.com/maps?ll=49.830985,18.176954&z=17&t=m&hl=en-GB&gl=US&mapclient=apiv3
+          - img "Google" [ref=e180]
+        - generic [ref=e181]:
+          - button "Keyboard shortcuts" [ref=e187] [cursor=pointer]
+          - generic [ref=e192]: Map data ©2026 Google
+          - link "Terms (opens in new tab)" [ref=e197] [cursor=pointer]:
+            - /url: https://www.google.com/intl/en-GB_US/help/terms_maps.html
+            - text: Terms
+          - link "Report a map error" [ref=e202] [cursor=pointer]:
+            - /url: https://www.google.com/maps/@49.8309854,18.1769535,17z/data=!10m1!1e1!12b1?source=apiv3&rapsrc=apiv3
+    - generic [ref=e203]:
+      - generic [ref=e205]: This page can't load Google Maps correctly.
+      - table [ref=e206]:
+        - row "Do you own this website? OK" [ref=e207]:
+          - cell "Do you own this website?" [ref=e208]:
+            - link "Do you own this website?" [ref=e209] [cursor=pointer]:
+              - /url: http://g.co/dev/maps-no-account
+          - cell "OK" [ref=e210]:
+            - button "OK" [ref=e211] [cursor=pointer]
+  - generic [ref=e137]:
+    - generic [ref=e138]:
+      - generic [ref=e139]: FriendlyFyzio
+      - generic [ref=e140]:
+        - text: Zednická 1109/2
+        - text: Ostrava -Poruba
+      - paragraph [ref=e141]:
+        - text: "Mobil: +420 604 793 255"
+        - text: "E-mail: friendlyfyzio@seznam.cz"
+    - generic [ref=e143]:
+      - text: "Webdesign:"
+      - link "Petr Hlubina" [ref=e144] [cursor=pointer]:
+        - /url: http://www.hlubina.cz

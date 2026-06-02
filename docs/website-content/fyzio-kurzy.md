@@ -1,0 +1,204 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "home" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e5]: FriendlyFyzio
+      - navigation [ref=e6]:
+        - link "Fyzioterapie" [ref=e7] [cursor=pointer]:
+          - /url: /fyzioterapie
+        - link "Laser/kryoterapie" [ref=e8] [cursor=pointer]:
+          - /url: /pristrojova-terapie
+        - link "Pohybové kurzy" [ref=e9] [cursor=pointer]:
+          - /url: /fyzio-kurzy
+        - link "Relaxace" [ref=e10] [cursor=pointer]:
+          - /url: /relaxace
+        - link "Workshopy" [ref=e11] [cursor=pointer]:
+          - /url: /workshopy
+          - text: Workshopy
+        - link "Ceník" [ref=e12] [cursor=pointer]:
+          - /url: /cenik
+        - link "O nás" [ref=e13] [cursor=pointer]:
+          - /url: /nas-tym
+        - link "Chci se objednat" [ref=e14] [cursor=pointer]:
+          - /url: "#kontakt"
+        - link:
+          - /url: "#"
+      - text: 
+  - heading "Kurzy/Lekce" [level=1] [ref=e19]
+  - generic [ref=e21]:
+    - generic [ref=e22]:
+      - paragraph [ref=e23]:
+        - strong [ref=e24]: Kurzy/lekce mají jeden hlavní cíl, a to naučit klienty cvičit správně a efektivně s ohledem na jejich věk a stav.
+        - text: ‍
+        - text: Jsou určené pro všechny ty, kteří chtějí ulevit svému tělu od bolesti svalů, šlach a kloubů, zvýšit svou kondici a pravidelně si zacvičit pod vedením odborníka - fyzioterapeuta, lékaře či specialisty. Nově nabízíme také lekce vedoucí k relaxaci a celkovému uvolnění.
+      - generic [ref=e25]:
+        - generic [ref=e26]:
+          - heading "Pro ženy po rakovině prsu" [level=3] [ref=e27]
+          - paragraph [ref=e28]:
+            - text: Ohleduplné kondiční cvičení, postupný silový trénink, zlepšení mobility hrudníku, hrudní a bederní páteře a ramenních kloubů, péče o jizvy, strečink a řízená relaxace.
+            - text: ‍
+            - link "Více informací" [ref=e29] [cursor=pointer]:
+              - /url: /fyzio-kurzy/cviceni-pro-zeny-po-rakovine-prsu
+        - generic [ref=e30]:
+          - heading "Pro těhotné ženy" [level=3] [ref=e31]
+          - paragraph [ref=e32]:
+            - text: Pohyb je jedna z cest vedoucí k plynulému porodu.
+            - text: Pro těhotné ženy nabízíme
+            - emphasis [ref=e33]
+            - strong [ref=e34]:
+              - emphasis [ref=e35]: jógu, kondiční cvičení, SM systém
+            - text: a těhotenský
+            - strong [ref=e36]:
+              - emphasis [ref=e37]: relaxační kruh
+            - text: a
+            - strong [ref=e38]:
+              - emphasis [ref=e39]: kurz
+            - text: zaměřený na pohyb a předporodní přípravu z pohledu fyzioterapie.
+            - text: ‍
+            - link "Více informací" [ref=e40] [cursor=pointer]:
+              - /url: /fyzio-kurzy/pro-tehotne-zeny
+      - generic [ref=e41]:
+        - generic [ref=e42]:
+          - heading "SM a CORE systém" [level=3] [ref=e43]
+          - paragraph [ref=e44]:
+            - text: Trpíte bolestmi zad? Máte sedavé zaměstnání?Diagnostikovali Vám lékaři skoliózu, výhřez ploténky či vadné držení těla? Právě pro vás je cvičení kombinující SM a CORE systém! Nově také
+            - strong [ref=e45]:
+              - emphasis [ref=e46]: pro těhotné ženy
+            - text: .
+            - text: ‍
+            - link "Více informací" [ref=e47] [cursor=pointer]:
+              - /url: /fyzio-kurzy/sm-system
+        - generic [ref=e48]:
+          - heading "Mami&Mimi" [level=3] [ref=e49]
+          - paragraph [ref=e50]:
+            - text: Milé maminky, víme, jak důležité a příjemné je zacvičit si - protáhnout se, uvolnit záda i lehce posílit tělo. Že nemáte hlídání pro děti? Nevadí!
+            - text: ‍
+            - link "Více informací" [ref=e51] [cursor=pointer]:
+              - /url: /fyzio-kurzy/mami-a-mimi
+      - generic [ref=e52]:
+        - generic [ref=e53]:
+          - heading "Jóga" [level=3] [ref=e54]
+          - paragraph [ref=e55]:
+            - strong [ref=e56]:
+              - emphasis [ref=e57]: Jin jóga
+            - text: pro celkové zklidnění,
+            - strong [ref=e58]:
+              - emphasis [ref=e59]: hormonální jóga
+            - text: třeba pro podporu plodnosti a
+            - strong [ref=e60]:
+              - emphasis [ref=e61]: somatická
+            - strong [ref=e62]:
+              - emphasis [ref=e63]: jóga
+            - text: pro zvýšení odolnosti vůči stresu.
+            - text: ‍
+            - link "Více informací" [ref=e64] [cursor=pointer]:
+              - /url: /fyzio-kurzy/joga
+        - generic [ref=e65]:
+          - heading "Mobility&Stretch" [level=3] [ref=e66]
+          - paragraph [ref=e67]:
+            - text: Cílené protažení, zlepšení pohyblivosti a držení těla, úleva od bolesti zad a kloubů, příjemné uvolnění v malé skupině max. 6 osob
+            - text: ‍
+            - link "Více informací" [ref=e68] [cursor=pointer]:
+              - /url: /fyzio-kurzy/mobility-stretch
+      - generic [ref=e69]:
+        - generic [ref=e70]:
+          - heading "Restart po císařském řezu" [level=3] [ref=e71]
+          - paragraph [ref=e72]:
+            - text: Tvoje tělo zvládlo porod - teď mu pomoz získat zpět sílu, pružnost a tvar. Naučíš se, jak pečovat o jizvu a znovu aktivovat střed těla bez bolesti, strachu a zbytečného přetěžování.
+            - text: ‍
+            - link "Více informací" [ref=e73] [cursor=pointer]:
+              - /url: /fyzio-kurzy/restart-po-cisarem-rezu
+        - generic [ref=e74]:
+          - heading "Principy pohybu pro začátečníky" [level=3] [ref=e75]
+          - paragraph [ref=e76]:
+            - text: Kondiční cvičení s postupnou zátěží, který vás naučí nejen vnímat své tělo, ale cvičit technicky správně s ohledem na pohybová aparát.
+            - text: ‍
+            - link "Více informací" [ref=e77] [cursor=pointer]:
+              - /url: /fyzio-kurzy/principy-pohybu-pro-zacatecniky
+    - heading "Ohlasy účastníků" [level=2] [ref=e82]:
+      - emphasis [ref=e83]: Ohlasy účastníků
+    - generic [ref=e84]:
+      - paragraph [ref=e85]: Úplná spokojenost. Lekce byly pokaždé jiné, vždy s jinými pomůckami. Velkou část z nich jsem vyzkoušela poprvé a některé si pořídila i domů. Nejvíce v trvalém zlepšení problémů a v tom, že si už umím pomoct díky cvikům i sama. Vážím si toho, že Lucka klade důraz na to, aby byly cviky prováděny správně a klienti se vše naučili. Jestli bych doporučila? Samosebou! Kvůli všeho výše zmíněného. ;)
+      - generic [ref=e86]: Andrea Hámová
+    - generic [ref=e87]:
+      - paragraph [ref=e88]: Určitě mi kurzy pomohly s posílením středu těla. A tím pádem s bolestí zad. Určitě doporučuji. Cítím se pevnější a možná i nějaký špíček se zmenšil. :-)).Naprostá spokojenost. Luci dik.
+      - generic [ref=e89]: m.p.
+    - generic [ref=e90]:
+      - paragraph [ref=e91]: Jsem spokojená, jen někdy nestíhám u kruhového tréninku si všechno zapamatovat dopředu. Pomůcek máme dostatek, polovinu z nich jsem nikdy před tím ani neviděla :) Moje záda jsou v pořádku díky pravidelnému cvičení, po období těhotenství i nevyspání (spaní na jedné straně) a nošení těžkého miminka se záda zázračně uzdravily :) Každopádně bych doporučila. Jsem moc ráda, že alespoň jednou týdně pro sebe něco dělám, že si na to najdu čas, zrelaxuju a nabudím se skvělou energií. Zvýším si sebevědomí. Také na sobě vidím pokroky - hlavně v klicích a cvičeních na ruce - mám je silnější a více vydržím. A můžu cvičit se svým synem a ukázat mu, že jsem ještě ve formě :)
+      - generic [ref=e92]: Jana Ř.
+    - generic [ref=e93]:
+      - paragraph [ref=e94]:
+        - text: Spokojená jsem byla moc. Přidala bych více aerobního cvičení. V
+        - strong [ref=e95]: pokročilých
+        - text: byla lekce už hodně silová oproti
+        - strong [ref=e96]: mírně pokročilým
+        - text: ", kde se mi aspoň zdálo, že tato složka byla více zastoupena v úvodu lekce. Naučila jsme se nové cviky, které jsem dříve neznala a jsou šetrné k tělu a přesto účinné. Určitě doporučuji. Vhodné cvičení jak pro lidi bez problému s bolesti zad, tak určitě i super pro ty, co je záda bolí. Lekce má tempo, logické vystavění lekce (zahřátí, posilování, stretching), instruktorka je velmi sympatická, přátelská, empatická, prostě super!!!"
+      - generic [ref=e97]: Míša Plecáková
+    - generic [ref=e98]:
+      - paragraph [ref=e99]: S lekcemi naprostá spokojenost. Pomáhá mi se udržovat v kondici, pomáhá mi s bolestmi zad. Určitě doporučuji. Cvičení v kolektivu víc motivuje než cvičení doma.
+      - generic [ref=e100]: K.A.
+    - generic [ref=e101]:
+      - paragraph [ref=e102]: Lekce Zdravá záda mi velmi vyhovuje, je to akční cvičení bez toho, abych si nějak ublížila, zvyšuje to mojí kondici. Po absolvování jednoho roku cvičení Zdravých zad jsem poznala, že mám daleko větší kondici a výkon při dalších sportovních aktivitách. Určitě doporučuji, jednak se člověk naučí správně držet své tělo, posílí svaly které neví, že má a ještě bude při každodenní jednostranné zátěži v pohodě.
+      - generic [ref=e103]: šárka
+    - generic [ref=e104]:
+      - paragraph [ref=e105]:
+        - text: Lekce
+        - strong [ref=e106]: mírně pokročilých
+        - text: jsou super!!! Střídání pomůcek a různorodost cviků plně vyhovuje. Pomohli mi ke správnému držení těla, uvědomění si svalů a vnitřních orgánů,které běžně zanedbáváme, udržení fyzické kondice. Určitě bych doporučila - vhodné pro různé věkové kategorie. Správného pohybu ( i posedu) není nikdy dost!!! Cvičení tohoto typu oceníme při provozování jiných sportů.
+      - generic [ref=e107]: voborka
+    - generic [ref=e108]:
+      - paragraph [ref=e109]: Ano,byl sem spokojen. Snad bych ocenil jen větší tělocvičnu :-) Zlepšení a následné vymizení bolesti páteře a s nimi souvisejícími potížemi, zpevnění vnitřního stabilizačního systému a udržování fyzičky, to byl efekt kurů Zdravých zad. Je lepší cvičit ve skupině a pod odborným dohledem než se dotyčný cviky naučí.
+      - generic [ref=e110]: o.m.
+    - generic [ref=e111]:
+      - paragraph [ref=e112]: Byla jsem spokojená a překvapená, jak relativně na pohled jednoduché cviky dají tělu zabrat👍. Doporučila bych kurz nejen těm, kteří mají bolavá záda, ale i ostatním bez bolestí. Z vlastní zkušenosti doporučuji Lucku a její cviky na zpevnění pánevního dna.😉
+      - generic [ref=e113]: zdeňka
+    - generic [ref=e114]:
+      - paragraph [ref=e115]:
+        - text: Absolvovala jsem kurz
+        - strong [ref=e116]: Začátečníků
+        - text: ". Byla jsem velmi spokojena. Je veden profesionálně, s osobním dohledem nad každým cvičencem a s důrazem na to, aby si každý dokázal základní cviky zafixoval a mohl je cvičit denně doma. Díky speciálním cvikům se mi podařilo vyrovnat záda a zpevnit střed těla. Např. při mé oblíbené sportovní chůzi se pak cítím silnější a pevnější. Kurz velmi doporučuji všem, které \"bolí záda\" a chtějí s tím něco dělat. Lucka pak bude s Vámi na každém kroku...i když jdu jen na tramvaj, stále se odněkud ozývá: \"Ramena, lopatky od uší!\"...věřte, funguje to!!!"
+      - generic [ref=e117]: kača M.
+    - generic [ref=e121]:
+      - paragraph [ref=e122]: Lépe se mi spí, zlepšil se mi sed, zesílilo mezilopatkové svalstvo. Kurzy bych doporučila, protože bolesti zad mohou být invalidizující. Je dobré se starat o své tělo dříve než obtíže začnou nebo co nejdříve po jejich objevení. Doktoři neumí dokážou řešit jen následky (operativně) nebo tlumit bolest. A zkušený fyzioterapeut dokáže naučit jak se svým tělem zacházet, aby nám sloužilo co nejefektivněji a co nejdéle bez bolesti :D
+      - generic [ref=e123]: katka k.
+    - generic [ref=e124]:
+      - paragraph [ref=e125]: Po porodu mi cvičení pomohlo dostat se rychleji do formy. Je přínosné cvičit pod dozorem a vědět na co přesně který cvik je. Většinu cviků jsem před tím ani neznala. Po každém cvičení se cítím fajn a dokonce mám menší zadek :D. Cviky jsou různorodé a opravdu pomáhají předejít bolesti různých částí těla a zároveň ho posilují. A navíc atmosféra je přátelská a pozitivní.
+      - generic [ref=e126]: M.d.
+    - generic [ref=e127]:
+      - paragraph [ref=e128]: Prevence je nejlepší - záda mě nebolely a nebolí i když půl dne sedím na židli. Doporučuji všem a všude.
+      - generic [ref=e129]: ivana č.
+    - generic [ref=e130]:
+      - paragraph [ref=e131]: Lekce bych doporučila. Jsem toho názoru, že pohybu není nikdy dost. Většina nás jezdíme auty, hodně z nás má sedavé zaměstnání, přetěžujeme se a málo se hýbeme, pak přibíráme, jsme líní, nechce se nám hýbat, jen ležíme na gauči a pro své tělo nic neuděláme. Cvičením se odbourává stres, působí na nás endorfiny (hormony štěstí) a hned je nám líp. A ještě k tomu všemu posílíme svaly a užijeme si i zábavy. Zdravá záda jsou nejen zdravotní cvičení na záda, ale cvičení na svalstvo celého těla. Já jsem mívala potíže a jsou pryč a když mě něco bolí, tak bolest dokážu eliminovat bez pomocí obstřiků, prášku proti bolesti, ale jen cvičením. Někdy to v pokročilých kurzech bývá náročné. Ale ne zas tak moc. Fyzičku je taky třeba získat.
+      - generic [ref=e132]: anonym
+  - generic [ref=e134]:
+    - heading "Kontakt" [level=2] [ref=e135]
+    - generic [ref=e137]:
+      - heading "Mgr. Lucie Fickerová" [level=3] [ref=e138]
+      - paragraph [ref=e139]:
+        - text: +420 604 793 255
+        - link "info@friendlyfyzio.cz" [ref=e140] [cursor=pointer]:
+          - /url: "#"
+      - link "Online rezervace vstupního vyšetření" [ref=e141] [cursor=pointer]:
+        - /url: /rezervace-vstupniho-vysetreni
+      - link "Online rezervace masáží" [ref=e142] [cursor=pointer]:
+        - /url: /rezervace-masazi
+      - heading "Adresa" [level=4] [ref=e143]
+      - paragraph [ref=e144]:
+        - text: FriendlyFyzio
+        - text: Zednická 1109/2
+        - text: Ostrava-Poruba
+        - text: "IČ: 06816967"
+  - generic [ref=e150]:
+    - generic [ref=e151]:
+      - generic [ref=e152]: FriendlyFyzio
+      - generic [ref=e153]:
+        - text: Zednická 1109/2
+        - text: Ostrava -Poruba
+      - paragraph [ref=e154]:
+        - text: "Mobil: +420 604 793 255"
+        - text: "E-mail: info@friendlyfyzio.cz"
+    - generic [ref=e156]:
+      - text: "Webdesign:"
+      - link "Petr Hlubina" [ref=e157] [cursor=pointer]:
+        - /url: http://www.hlubina.cz

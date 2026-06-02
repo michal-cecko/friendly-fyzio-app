@@ -1,0 +1,159 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "home" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e5]: FriendlyFyzio
+      - navigation [ref=e6]:
+        - link "Fyzioterapie" [ref=e7] [cursor=pointer]:
+          - /url: /fyzioterapie
+        - link "Laser/kryoterapie" [ref=e8] [cursor=pointer]:
+          - /url: /pristrojova-terapie
+        - link "Pohybové kurzy" [ref=e9] [cursor=pointer]:
+          - /url: /fyzio-kurzy
+        - link "Relaxace" [ref=e10] [cursor=pointer]:
+          - /url: /relaxace
+        - link "Workshopy" [ref=e11] [cursor=pointer]:
+          - /url: /workshopy
+          - text: Workshopy
+        - link "Ceník" [ref=e12] [cursor=pointer]:
+          - /url: /cenik
+        - link "O nás" [ref=e13] [cursor=pointer]:
+          - /url: /nas-tym
+        - link "Chci se objednat" [ref=e14] [cursor=pointer]:
+          - /url: "#kontakt"
+        - link:
+          - /url: "#"
+      - text: 
+  - heading "Relaxace" [level=1] [ref=e19]
+  - generic [ref=e22]:
+    - paragraph [ref=e23]:
+      - strong [ref=e24]: V dnešním uspěchaném světě je čím dál tím těžší najít si čas sama pro sebe a jen tak být.
+      - text: ‍
+      - text: Níže Vám nabízíme několik možností jak strávit čas sama se sebou, uvolnit svaly, hlavu a mysl. Nerušeně, v klidu a soukromí. Jen Vy, Vaše miminko nebo Vy a Vaše miminko v bříšku.
+    - generic [ref=e25]:
+      - generic [ref=e26]:
+        - heading "Masáže dospělých" [level=3] [ref=e27]
+        - paragraph [ref=e28]:
+          - text: Přijďte si k nám odpočinou po náročném dni.
+          - text: Klasické
+          - strong [ref=e29]: relaxační masáže, těhotenské masáže, lymfatické masáže
+          - text: ","
+          - strong [ref=e30]: rebozo
+          - text: .
+          - text: ‍
+          - link "Více informací" [ref=e31] [cursor=pointer]:
+            - /url: /relaxace-ritualy/masaze
+      - generic [ref=e32]:
+        - heading "Bylinná napářka" [level=3] [ref=e33]
+        - paragraph [ref=e34]:
+          - text: Příjemný voňavý
+          - strong [ref=e35]: rituál s šálkem pravého kakaa
+          - strong [ref=e36]: či sklenicí
+          - text: červeného
+          - strong [ref=e37]: vína
+          - text: . A co třeba napářku doplnit masáží?
+          - text: ‍
+          - link "Více informací" [ref=e38] [cursor=pointer]:
+            - /url: /relaxace-ritualy/bylinna-naparka
+    - generic [ref=e39]:
+      - generic [ref=e40]:
+        - heading "Jin jóga" [level=3] [ref=e41]
+        - paragraph [ref=e42]:
+          - strong [ref=e43]: Jemná, pomalá a pasivní forma jógy
+          - text: ","
+          - strong [ref=e44]
+          - text: která nás
+          - strong [ref=e45]: učí odpočinku
+          - text: a respektu ke svému tělu.
+          - strong [ref=e46]: Podporuje regeneraci
+          - text: ", flexibilitu a harmonii na všech úrovních."
+          - text: ‍
+          - link "Více informací" [ref=e47] [cursor=pointer]:
+            - /url: /fyzio-kurzy/joga
+      - generic [ref=e48]:
+        - heading "Masáže miminek a dětí" [level=3] [ref=e49]
+        - paragraph [ref=e50]:
+          - text: Masáže miminek
+          - strong [ref=e51]: podporují trávení,
+          - strong [ref=e52]: ulevují při kolikách
+          - text: ", zmírňují nadýmání,"
+          - strong [ref=e53]: zlepšují spánek
+          - text: ", zklidňují a vytvářejí krásný rituál pro rodiče s dětmi."
+          - text: ‍
+          - link "Více informací" [ref=e54] [cursor=pointer]:
+            - /url: /relaxace-ritualy/masaze-miminek-a-deti
+  - generic [ref=e59]:
+    - heading "Kontakt" [level=2] [ref=e60]
+    - generic [ref=e62]:
+      - heading "Mgr. Lucie Fickerová" [level=3] [ref=e63]
+      - paragraph [ref=e64]:
+        - text: +420 604 793 255
+        - link "info@friendlyfyzio.cz" [ref=e65] [cursor=pointer]:
+          - /url: "#"
+      - link "Online rezervace vstupního vyšetření" [ref=e66] [cursor=pointer]:
+        - /url: /rezervace-vstupniho-vysetreni
+      - link "Online rezervace masáží" [ref=e67] [cursor=pointer]:
+        - /url: /rezervace-masazi
+      - heading "Adresa" [level=4] [ref=e68]
+      - paragraph [ref=e69]:
+        - text: FriendlyFyzio
+        - text: Zednická 1109/2
+        - text: Ostrava-Poruba
+        - text: "IČ: 06816967"
+  - generic [ref=e71]:
+    - generic [ref=e72]:
+      - generic:
+        - button "Keyboard shortcuts"
+      - region "Map" [ref=e73]
+      - generic [ref=e74]:
+        - generic [ref=e113]:
+          - generic:
+            - button "Map pin showing location of FriendlyFyzio, Zednická 1109/2, Ostrava" [ref=e115]:
+              - generic:
+                - generic "Map pin showing location of FriendlyFyzio, Zednická 1109/2, Ostrava"
+            - dialog [ref=e116]:
+              - button "Close" [ref=e119] [cursor=pointer]
+              - generic [ref=e121]: FriendlyFyzio, Zednická 1109/2, Ostrava
+        - iframe [ref=e123]:
+          
+        - button "Toggle fullscreen view" [ref=e162] [cursor=pointer]
+        - generic:
+          - generic:
+            - button "Map camera controls" [ref=e164] [cursor=pointer]
+            - generic [ref=e166] [cursor=pointer]:
+              - button "Zoom in" [ref=e167]
+              - button "Zoom out" [ref=e169]
+        - link "Open this area in Google Maps (opens a new window)" [ref=e171] [cursor=pointer]:
+          - /url: https://maps.google.com/maps?ll=49.830985,18.176954&z=17&t=m&hl=en-GB&gl=US&mapclient=apiv3
+          - img "Google" [ref=e173]
+        - generic [ref=e174]:
+          - button "Keyboard shortcuts" [ref=e180] [cursor=pointer]
+          - generic [ref=e185]: Map data ©2026 Google
+          - link "Terms (opens in new tab)" [ref=e190] [cursor=pointer]:
+            - /url: https://www.google.com/intl/en-GB_US/help/terms_maps.html
+            - text: Terms
+          - link "Report a map error" [ref=e195] [cursor=pointer]:
+            - /url: https://www.google.com/maps/@49.8309854,18.1769535,17z/data=!10m1!1e1!12b1?source=apiv3&rapsrc=apiv3
+    - generic [ref=e196]:
+      - generic [ref=e198]: This page can't load Google Maps correctly.
+      - table [ref=e199]:
+        - row "Do you own this website? OK" [ref=e200]:
+          - cell "Do you own this website?" [ref=e201]:
+            - link "Do you own this website?" [ref=e202] [cursor=pointer]:
+              - /url: http://g.co/dev/maps-no-account
+          - cell "OK" [ref=e203]:
+            - button "OK" [ref=e204] [cursor=pointer]
+  - generic [ref=e126]:
+    - generic [ref=e127]:
+      - generic [ref=e128]: FriendlyFyzio
+      - generic [ref=e129]:
+        - text: Zednická 1109/2
+        - text: Ostrava -Poruba
+      - paragraph [ref=e130]:
+        - text: "Mobil: +420 604 793 255"
+        - text: "E-mail: info@friendlyfyzio.cz"
+    - generic [ref=e132]:
+      - text: "Webdesign:"
+      - link "Petr Hlubina" [ref=e133] [cursor=pointer]:
+        - /url: http://www.hlubina.cz

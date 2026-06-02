@@ -1,0 +1,117 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "home" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e5]: FriendlyFyzio
+      - navigation [ref=e6]:
+        - link "Fyzioterapie" [ref=e7] [cursor=pointer]:
+          - /url: /fyzioterapie
+        - link "Laser/kryoterapie" [ref=e8] [cursor=pointer]:
+          - /url: /pristrojova-terapie
+        - link "Pohybové kurzy" [ref=e9] [cursor=pointer]:
+          - /url: /fyzio-kurzy
+        - link "Relaxace" [ref=e10] [cursor=pointer]:
+          - /url: /relaxace
+        - link "Workshopy" [ref=e11] [cursor=pointer]:
+          - /url: /workshopy
+          - text: Workshopy
+        - link "Ceník" [ref=e12] [cursor=pointer]:
+          - /url: /cenik
+        - link "O nás" [ref=e13] [cursor=pointer]:
+          - /url: /nas-tym
+        - link "Chci se objednat" [ref=e14] [cursor=pointer]:
+          - /url: "#kontakt"
+        - link:
+          - /url: "#"
+      - text: 
+  - heading "Přístrojová terapie" [level=1] [ref=e19]
+  - generic [ref=e22]:
+    - paragraph [ref=e23]
+    - generic [ref=e24]:
+      - generic [ref=e25]:
+        - heading "Lokální kryoterapie" [level=3] [ref=e26]
+        - paragraph [ref=e27]:
+          - text: Urychlení hojení akutních bolestivých stavů chladem. Okamžitý efekt při úrazech svalů, kloubů a šlach. Podpora léčby pooperačních stavů. Rychlé zmírnění bolesti, léčba otoků, zánětů šlach a kloubů.
+          - link "Více informací" [ref=e28] [cursor=pointer]:
+            - /url: /pristrojova-terapie/lokalni-kryoterapie
+      - generic [ref=e29]:
+        - heading "Laseroterapie" [level=3] [ref=e30]
+        - paragraph [ref=e31]:
+          - text: Přesné zacílení terapeutové části laserovým zářením do hloubky až 4 cm . Úleva od bolesti, urychlení a podpora hojení postižené tkáně, redukce otoků. Podpora a urychlení hojení pooperačních stavů.
+          - link "Více informací" [ref=e32] [cursor=pointer]:
+            - /url: /pristrojova-terapie/vysokovykonny-laser
+  - generic [ref=e40]:
+    - heading "Kontakt" [level=2] [ref=e41]
+    - generic [ref=e43]:
+      - heading "Mgr. Lucie Fickerová" [level=3] [ref=e44]
+      - paragraph [ref=e45]:
+        - text: +420 604 793 255
+        - link "info@friendlyfyzio.cz" [ref=e46] [cursor=pointer]:
+          - /url: "#"
+      - link "Online rezervace vstupního vyšetření" [ref=e47] [cursor=pointer]:
+        - /url: /rezervace-vstupniho-vysetreni
+      - link "Online rezervace masáží" [ref=e48] [cursor=pointer]:
+        - /url: /rezervace-masazi
+      - heading "Adresa" [level=4] [ref=e49]
+      - paragraph [ref=e50]:
+        - text: FriendlyFyzio
+        - text: Zednická 1109/2
+        - text: Ostrava-Poruba
+        - text: "IČ: 06816967"
+  - generic [ref=e52]:
+    - generic [ref=e53]:
+      - generic:
+        - button "Keyboard shortcuts"
+      - region "Map" [ref=e54]
+      - generic [ref=e55]:
+        - generic [ref=e94]:
+          - generic:
+            - button "Map pin showing location of FriendlyFyzio, Zednická 1109/2, Ostrava" [ref=e96]:
+              - generic:
+                - generic "Map pin showing location of FriendlyFyzio, Zednická 1109/2, Ostrava"
+            - dialog [ref=e97]:
+              - button "Close" [ref=e100] [cursor=pointer]
+              - generic [ref=e102]: FriendlyFyzio, Zednická 1109/2, Ostrava
+        - iframe [ref=e104]:
+          
+        - button "Toggle fullscreen view" [ref=e139] [cursor=pointer]
+        - generic:
+          - generic:
+            - button "Map camera controls" [ref=e141] [cursor=pointer]
+            - generic [ref=e143] [cursor=pointer]:
+              - button "Zoom in" [ref=e144]
+              - button "Zoom out" [ref=e146]
+        - link "Open this area in Google Maps (opens a new window)" [ref=e148] [cursor=pointer]:
+          - /url: https://maps.google.com/maps?ll=49.830985,18.176954&z=17&t=m&hl=en-GB&gl=US&mapclient=apiv3
+          - img "Google" [ref=e150]
+        - generic [ref=e151]:
+          - button "Keyboard shortcuts" [ref=e157] [cursor=pointer]
+          - generic [ref=e162]: Map data ©2026 Google
+          - link "Terms (opens in new tab)" [ref=e167] [cursor=pointer]:
+            - /url: https://www.google.com/intl/en-GB_US/help/terms_maps.html
+            - text: Terms
+          - link "Report a map error" [ref=e172] [cursor=pointer]:
+            - /url: https://www.google.com/maps/@49.8309854,18.1769535,17z/data=!10m1!1e1!12b1?source=apiv3&rapsrc=apiv3
+    - generic [ref=e173]:
+      - generic [ref=e175]: This page can't load Google Maps correctly.
+      - table [ref=e176]:
+        - row "Do you own this website? OK" [ref=e177]:
+          - cell "Do you own this website?" [ref=e178]:
+            - link "Do you own this website?" [ref=e179] [cursor=pointer]:
+              - /url: http://g.co/dev/maps-no-account
+          - cell "OK" [ref=e180]:
+            - button "OK" [ref=e181] [cursor=pointer]
+  - generic [ref=e107]:
+    - generic [ref=e108]:
+      - generic [ref=e109]: FriendlyFyzio
+      - generic [ref=e110]:
+        - text: Zednická 1109/2
+        - text: Ostrava -Poruba
+      - paragraph [ref=e111]:
+        - text: "Mobil: +420 604 793 255"
+        - text: "E-mail: info@friendlyfyzio.cz"
+    - generic [ref=e113]:
+      - text: "Webdesign:"
+      - link "Petr Hlubina" [ref=e114] [cursor=pointer]:
+        - /url: http://www.hlubina.cz

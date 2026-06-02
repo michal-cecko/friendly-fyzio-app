@@ -1,0 +1,226 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "home" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e5]: FriendlyFyzio
+      - navigation [ref=e6]:
+        - link "Fyzioterapie" [ref=e7] [cursor=pointer]:
+          - /url: /fyzioterapie
+        - link "Laser/kryoterapie" [ref=e8] [cursor=pointer]:
+          - /url: /pristrojova-terapie
+        - link "Pohybové kurzy" [ref=e9] [cursor=pointer]:
+          - /url: /fyzio-kurzy
+        - link "Relaxace" [ref=e10] [cursor=pointer]:
+          - /url: /relaxace
+        - link "Workshopy" [ref=e11] [cursor=pointer]:
+          - /url: /workshopy
+          - text: Workshopy
+        - link "Ceník" [ref=e12] [cursor=pointer]:
+          - /url: /cenik
+        - link "O nás" [ref=e13] [cursor=pointer]:
+          - /url: /nas-tym
+        - link "Chci se objednat" [ref=e14] [cursor=pointer]:
+          - /url: "#kontakt"
+        - link:
+          - /url: "#"
+      - text: 
+  - generic [ref=e18]:
+    - heading "Jóga" [level=1] [ref=e19]
+    - paragraph [ref=e20]:
+      - text: Hormonální jóga
+      - text: Somatická jóga
+      - text: Jin jóga
+    - link "chci na kurz jógy" [ref=e21] [cursor=pointer]:
+      - /url: https://www.friendlyfyzio.cz/prihlaska-na-kurz
+  - generic [ref=e24]:
+    - generic [ref=e25]:
+      - generic [ref=e26]:
+        - heading "Hormonální jóga" [level=3] [ref=e27]
+        - paragraph [ref=e28]:
+          - text: Hormonální jóga nabízí účinnou cestu
+          - strong [ref=e29]: k
+          - strong [ref=e30]: podpoře zdraví, hormonální rovnováze a celkové vitalitě,
+          - text: a to bez vedlejších účinků – jemně, přirozeně a s respektem k ženskému tělu.
+          - text: Během kurzu se naučíte ucelenou, dynamickou sestavu, která spojuje jednoduché jógové pozice inspirované hatha jógou, kundaliní jógou a tibetskými technikami práce s energií. Každý cvik si projdeme krok za krokem tak, aby se vám díky praxi zautomatizoval a stal se vaším přirozeným nástrojem pro každodenní péči o sebe. Kurz je vhodný
+          - strong [ref=e31]: pro ženy, které chtějí harmonizovat hormonální hladiny, podpořit plodnost,
+          - strong [ref=e32]: zmírnit příznaky PMS
+          - text: a
+          - strong [ref=e33]: potíže při menstruaci
+          - text: ","
+          - strong [ref=e34]: podpořit funkci štítné žlázy
+          - text: ", zmírnit příznaky hormonální nerovnováhy, zlepšit psychickou pohodu a"
+          - strong [ref=e35]: ulevit od stresu
+          - text: ", posílit svou vitalitu, energii a ženskou pohodu."
+          - strong [ref=e36]: Kurz není vhodný pro těhotné a kojící ženy.
+          - emphasis [ref=e37]: "Termín/cena:"
+          - strong [ref=e38]: úterky 16:30
+          - text: od 07.04. - 10 lekcí
+          - strong [ref=e39]:
+            - emphasis [ref=e40]: (4/6)
+          - strong [ref=e41]: "Cena:"
+          - text: 2 000 Kč/kurz
+          - emphasis [ref=e42]: "Lektor:"
+          - text: Simona Hořínová
+          - link "Chci na hormonální jogu" [ref=e43] [cursor=pointer]:
+            - /url: /prihlaska-na-kurz
+      - generic [ref=e44]:
+        - heading "Somatická jóga" [level=3] [ref=e45]
+        - generic [ref=e46]:
+          - paragraph [ref=e47]:
+            - text: Somatická jóga je
+            - strong [ref=e48]: návrat
+            - text: domů –
+            - strong [ref=e49]: k vlastnímu tělu
+            - text: ", k dechovému rytmu, k pocitu, že je v nás vše, co potřebujeme. Nejde o výkon, ale o"
+            - strong [ref=e50]: zvědomění
+            - text: a návrat k přirozené moudrosti, kterou v sobě každý
+          - paragraph [ref=e51]:
+            - text: máme. Lekce obsahují
+            - strong [ref=e52]: prvky sensualní a jemné jógy
+            - strong [ref=e53]: a
+            - text: taktéž
+            - strong [ref=e54]: náročnější posilovací pozice
+            - text: zaměřující se především na sílu v nohou a střed těla.
+            - strong [ref=e55]: "- Kombinace lehkosti a klidu s budováním vnitřní stability a síly -"
+            - text: Budeme se učit cítit a vnímat, co se děje uvnitř nás. Spoluvytvářet prostor, kde si skutečně oddechneme a
+            - strong [ref=e56]: dostaneme z těla
+            - text: nahromaděné
+            - strong [ref=e57]: emoce, stres
+            - text: i vtíravé myšlenky. Při pravidelné praxi se prohlubuje vztah k sobě, roste odolnost vůči stresu a tělo se postupně uvolňuje do větší lehkosti a síly.
+            - emphasis: ‍
+            - text: ‍
+          - paragraph [ref=e58]:
+            - text: ‍
+            - emphasis [ref=e59]: "Termín/cena:"
+            - strong [ref=e60]: úterky 18:45 -
+            - text: 260 Kč/lekce
+            - emphasis [ref=e61]: "Lektor:"
+            - text: Kristýna Černá
+            - link "Chci na somatickou jogu" [ref=e62] [cursor=pointer]:
+              - /url: /prihlaska-na-jednorazove-vstupy
+            - text: ‍
+      - generic [ref=e63]:
+        - heading "Jin jóga" [level=3] [ref=e64]
+        - paragraph [ref=e65]:
+          - text: Jin jóga je
+          - strong [ref=e66]: jemná, pomalá a pasivní forma jógy
+          - text: ","
+          - strong
+          - text: která nás
+          - strong [ref=e67]: učí odpočinku
+          - text: a respektu ke svému tělu.
+          - strong [ref=e68]: Podporuje regeneraci
+          - text: ", flexibilitu a harmonii na všech úrovních. Pomalé a hluboké protažení v pozicích vám umožní ponořit se do uvolnění a nechat odplout veškerý stres. V průběhu kurzu se zaměříme na"
+          - strong [ref=e69]: protažení klíčových oblastí těla,
+          - text: jako jsou kyčle, bedra, páteř, ramena a krk. Současně kromě fyzického uvolnění svalů a fascií budeme pracovat s
+          - strong [ref=e70]: energetickými dráhami
+          - text: (meridiány) a
+          - strong [ref=e71]: aromaterapií,
+          - text: která podpoří relaxaci a uvolnění emocí. Postupně projdeme sestavy zaměřené na jednotlivé orgány a oblasti těla a dopřejeme jim potřebnou péči.
+          - strong [ref=e72]: Lekce jsou vhodné pro každého i pro těhotné ženy
+          - text: – pozice upravujeme dle individuálních potřeb.
+          - emphasis [ref=e73]: "Termín/cena:"
+          - strong [ref=e74]: úterky 17:45
+          - text: od 13.01. - 15 lekcí
+          - strong [ref=e75]
+          - text: (6/6)
+          - text: ‍
+          - strong [ref=e76]:
+            - text: čtvrtky 18:00
+            - emphasis [ref=e77]
+          - text: od 15.01. - 14 lekcí
+          - strong [ref=e78]:
+            - text: (3/6)
+            - text: "Cena:"
+          - text: 2 800 Kč/kurz
+          - emphasis [ref=e79]: "Lektor:"
+          - text: Simona Hořínová
+          - text: ‍
+          - link "Chci na jin jogu - jednorázové lekce" [ref=e80] [cursor=pointer]:
+            - /url: /prihlaska-na-jednorazove-vstupy
+          - link "Chci na jin jogu - celý kurz" [ref=e81] [cursor=pointer]:
+            - /url: /prihlaska-na-kurz
+          - text: ‍
+    - generic [ref=e82]:
+      - link "chci na kurz jógy" [ref=e83] [cursor=pointer]:
+        - /url: https://www.friendlyfyzio.cz/prihlaska-na-kurz
+      - paragraph [ref=e84]:
+        - strong [ref=e85]:
+          - text: "⚠️ Důležité upozornění:"
+          - text: ‍
+        - text: Náhrady včas omluvených lekcí jsou možné v souběžné skupině. Detaily zašleme po registraci na lekce e-mailem.
+  - generic [ref=e87]:
+    - heading "Kontakt" [level=2] [ref=e88]
+    - generic [ref=e90]:
+      - heading "Mgr. Lucie Fickerová" [level=3] [ref=e91]
+      - paragraph [ref=e92]:
+        - text: +420 604 793 255
+        - link "info@friendlyfyzio.cz" [ref=e93] [cursor=pointer]:
+          - /url: "#"
+      - link "Online rezervace vstupního vyšetření" [ref=e94] [cursor=pointer]:
+        - /url: /rezervace-vstupniho-vysetreni
+      - link "Online rezervace masáží" [ref=e95] [cursor=pointer]:
+        - /url: /rezervace-masazi
+      - heading "Adresa" [level=4] [ref=e96]
+      - paragraph [ref=e97]:
+        - text: FriendlyFyzio
+        - text: Zednická 1109/2
+        - text: Ostrava-Poruba
+        - text: "IČ: 06816967"
+  - generic [ref=e99]:
+    - generic [ref=e100]:
+      - generic:
+        - button "Keyboard shortcuts"
+      - region "Map" [ref=e101]
+      - generic [ref=e102]:
+        - generic [ref=e141]:
+          - generic:
+            - button "Map pin showing location of FriendlyFyzio, Zednická 1109/2, Ostrava" [ref=e143]:
+              - generic:
+                - generic "Map pin showing location of FriendlyFyzio, Zednická 1109/2, Ostrava"
+            - dialog [ref=e144]:
+              - button "Close" [ref=e147] [cursor=pointer]
+              - generic [ref=e149]: FriendlyFyzio, Zednická 1109/2, Ostrava
+        - iframe [ref=e151]:
+          
+        - button "Toggle fullscreen view" [ref=e190] [cursor=pointer]
+        - generic:
+          - generic:
+            - button "Map camera controls" [ref=e192] [cursor=pointer]
+            - generic [ref=e194] [cursor=pointer]:
+              - button "Zoom in" [ref=e195]
+              - button "Zoom out" [ref=e197]
+        - link "Open this area in Google Maps (opens a new window)" [ref=e199] [cursor=pointer]:
+          - /url: https://maps.google.com/maps?ll=49.830985,18.176954&z=17&t=m&hl=en-GB&gl=US&mapclient=apiv3
+          - img "Google" [ref=e201]
+        - generic [ref=e202]:
+          - button "Keyboard shortcuts" [ref=e208] [cursor=pointer]
+          - generic [ref=e213]: Map data ©2026 Google
+          - link "Terms (opens in new tab)" [ref=e218] [cursor=pointer]:
+            - /url: https://www.google.com/intl/en-GB_US/help/terms_maps.html
+            - text: Terms
+          - link "Report a map error" [ref=e223] [cursor=pointer]:
+            - /url: https://www.google.com/maps/@49.8309854,18.1769535,17z/data=!10m1!1e1!12b1?source=apiv3&rapsrc=apiv3
+    - generic [ref=e224]:
+      - generic [ref=e226]: This page can't load Google Maps correctly.
+      - table [ref=e227]:
+        - row "Do you own this website? OK" [ref=e228]:
+          - cell "Do you own this website?" [ref=e229]:
+            - link "Do you own this website?" [ref=e230] [cursor=pointer]:
+              - /url: http://g.co/dev/maps-no-account
+          - cell "OK" [ref=e231]:
+            - button "OK" [ref=e232] [cursor=pointer]
+  - generic [ref=e154]:
+    - generic [ref=e155]:
+      - generic [ref=e156]: FriendlyFyzio
+      - generic [ref=e157]:
+        - text: Zednická 1109/2
+        - text: Ostrava -Poruba
+      - paragraph [ref=e158]:
+        - text: "Mobil: +420 604 793 255"
+        - text: "E-mail: friendlyfyzio@seznam.cz"
+    - generic [ref=e160]:
+      - text: "Webdesign:"
+      - link "Petr Hlubina" [ref=e161] [cursor=pointer]:
+        - /url: http://www.hlubina.cz

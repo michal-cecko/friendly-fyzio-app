@@ -1,0 +1,181 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "home" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e5]: FriendlyFyzio
+      - navigation [ref=e6]:
+        - link "Fyzioterapie" [ref=e7] [cursor=pointer]:
+          - /url: /fyzioterapie
+        - link "Laser/kryoterapie" [ref=e8] [cursor=pointer]:
+          - /url: /pristrojova-terapie
+        - link "Pohybové kurzy" [ref=e9] [cursor=pointer]:
+          - /url: /fyzio-kurzy
+        - link "Relaxace" [ref=e10] [cursor=pointer]:
+          - /url: /relaxace
+        - link "Workshopy" [ref=e11] [cursor=pointer]:
+          - /url: /workshopy
+          - text: Workshopy
+        - link "Ceník" [ref=e12] [cursor=pointer]:
+          - /url: /cenik
+        - link "O nás" [ref=e13] [cursor=pointer]:
+          - /url: /nas-tym
+        - link "Chci se objednat" [ref=e14] [cursor=pointer]:
+          - /url: "#kontakt"
+        - link:
+          - /url: "#"
+      - text: 
+  - heading "Ceník" [level=1] [ref=e19]
+  - generic [ref=e22]:
+    - generic [ref=e23]:
+      - tablist [ref=e24]:
+        - tab "Fyzioterapie a kurzy" [selected] [ref=e25] [cursor=pointer]:
+          - generic [ref=e26]: Fyzioterapie a kurzy
+        - tab "Masáže" [ref=e27] [cursor=pointer]:
+          - generic [ref=e28]: Masáže
+        - tab "Laser/kryo" [ref=e29] [cursor=pointer]:
+          - generic [ref=e30]: Laser/kryo
+        - tab "Ostatní" [ref=e31] [cursor=pointer]:
+          - generic [ref=e32]: Ostatní
+      - tabpanel "Fyzioterapie a kurzy" [ref=e34]:
+        - heading "Dárkové poukazy 🎁" [level=1] [ref=e35]
+        - paragraph [ref=e36]:
+          - text: Darujte zdraví! Nově nabízíme možnost zakopit online
+          - link "dárkový poukaz" [ref=e37] [cursor=pointer]:
+            - /url: /darkove-poukazy
+          - text: na všechny služby FriendlyFyzio.
+        - heading "Fyzioterapie" [level=1] [ref=e38]
+        - paragraph [ref=e39]:
+          - text: Fyzioterapie - vstupní vyšetření
+          - generic [ref=e40]: 90 min
+          - generic [ref=e41]: 1 750 Kč
+        - paragraph [ref=e42]:
+          - text: Fyzioterapie - kontrolní vyšetření/terapie
+          - generic [ref=e43]: 55 min
+          - generic [ref=e44]: 1 250 Kč
+        - paragraph [ref=e45]:
+          - text: Fyzioterapie - kontrolní vyšetření
+          - generic [ref=e46]: 55 min
+          - text: (balíček 5ks, platnost 6 měsíců)
+          - generic [ref=e47]: 5 750 Kč
+        - paragraph [ref=e48]:
+          - text: Fyzio pohotovost (terapie do 24 hodin)
+          - generic [ref=e49]: 55 min
+          - generic [ref=e50]: + 600 Kč
+        - paragraph [ref=e51]:
+          - text: Terapie v domácím prostředí po břišních operacích
+          - generic [ref=e52]: 60 min
+          - generic [ref=e53]: 1 300 Kč + 7 Kč za km
+        - paragraph [ref=e54]:
+          - text: Kinesiotaping mimo terapii
+          - generic [ref=e55]: 1 cm
+          - generic [ref=e56]: 3 Kč
+        - paragraph [ref=e57]:
+          - text: Cross tape
+          - generic [ref=e58]: ks
+          - generic [ref=e59]: 5 Kč
+        - heading "Fyzio kurzy" [level=1] [ref=e60]
+        - paragraph [ref=e61]:
+          - text: 3 - 5 osob
+          - generic [ref=e62]: 1 lekce
+          - generic [ref=e63]: 220 Kč
+        - paragraph [ref=e64]:
+          - text: 6 - 10 osob
+          - generic [ref=e65]: 1 lekce
+          - generic [ref=e66]: 200 Kč
+        - paragraph [ref=e67]:
+          - text: Jednorázový vstup na lekci
+          - generic [ref=e68]: 1 lekce
+          - generic [ref=e69]: 260 Kč
+        - paragraph [ref=e70]:
+          - text: Individuální kondiční trénink/lekce Principy pohybu/SM Systém (až pro 2 osoby)
+          - generic [ref=e71]: 1 lekce
+          - generic [ref=e72]: 850 Kč
+    - paragraph [ref=e73]:
+      - strong [ref=e74]: Platba je možná v hotovosti nebo QR kódem s okamžitým převodem.
+      - text: Nespolupracujeme se zdravotními pojišťovnami.
+      - text: Žádanky od lékařů u nás není možné uplatnit.
+    - heading "Storno podmínky" [level=1] [ref=e75]
+    - paragraph [ref=e76]:
+      - strong [ref=e77]:
+        - text: Vážení klienti,
+        - text: domluvené termíny jsou závazné.
+        - text: ‍
+      - text: Omluva po 17 hodině předchozího dne/v den terapie je přijímána pouze ze zdravotních důvodů potvrzených lékařem.
+      - text: V opačném případě je klient povinen uhradit 100% z ceny terapie.
+      - strong [ref=e78]:
+        - text: ‍
+        - text: Děkujeme za pochopení.
+  - generic [ref=e80]:
+    - heading "Kontakt" [level=2] [ref=e81]
+    - generic [ref=e83]:
+      - heading "Mgr. Lucie Fickerová" [level=3] [ref=e84]
+      - paragraph [ref=e85]:
+        - text: +420 604 793 255
+        - link "info@friendlyfyzio.cz" [ref=e86] [cursor=pointer]:
+          - /url: "#"
+      - link "Online rezervace vstupního vyšetření" [ref=e87] [cursor=pointer]:
+        - /url: /rezervace-vstupniho-vysetreni
+      - link "Online rezervace masáží" [ref=e88] [cursor=pointer]:
+        - /url: /rezervace-masazi
+      - heading "Adresa" [level=4] [ref=e89]
+      - paragraph [ref=e90]:
+        - strong [ref=e91]: FriendlyFyzio
+        - text: Zednická 1109/2, Ostrava-Poruba
+        - text: "IČ: 06816967"
+  - generic [ref=e93]:
+    - generic [ref=e104]:
+      - generic:
+        - button "Keyboard shortcuts"
+      - region "Map" [ref=e105]
+      - generic [ref=e106]:
+        - generic [ref=e157]:
+          - generic:
+            - button "Map pin showing location of FriendlyFyzio, Zednická 1109/2, Ostrava" [ref=e159]:
+              - generic:
+                - generic "Map pin showing location of FriendlyFyzio, Zednická 1109/2, Ostrava"
+            - dialog [ref=e160]:
+              - button "Close" [ref=e163] [cursor=pointer]
+              - generic [ref=e165]: FriendlyFyzio, Zednická 1109/2, Ostrava
+        - iframe [ref=e167]:
+          
+        - button "Toggle fullscreen view" [ref=e168] [cursor=pointer]
+        - generic:
+          - generic:
+            - button "Map camera controls" [ref=e170] [cursor=pointer]
+            - generic [ref=e172] [cursor=pointer]:
+              - button "Zoom in" [ref=e173]
+              - button "Zoom out" [ref=e175]
+        - link "Open this area in Google Maps (opens a new window)" [ref=e177] [cursor=pointer]:
+          - /url: https://maps.google.com/maps?ll=49.830985,18.176954&z=17&t=m&hl=en-GB&gl=US&mapclient=apiv3
+          - img "Google" [ref=e179]
+        - generic [ref=e180]:
+          - button "Keyboard shortcuts" [ref=e186] [cursor=pointer]
+          - generic [ref=e191]: Map data ©2026 Google
+          - link "Terms (opens in new tab)" [ref=e196] [cursor=pointer]:
+            - /url: https://www.google.com/intl/en-GB_US/help/terms_maps.html
+            - text: Terms
+          - link "Report a map error" [ref=e201] [cursor=pointer]:
+            - /url: https://www.google.com/maps/@49.8309854,18.1769535,17z/data=!10m1!1e1!12b1?source=apiv3&rapsrc=apiv3
+    - generic [ref=e202]:
+      - generic [ref=e204]: This page can't load Google Maps correctly.
+      - table [ref=e205]:
+        - row "Do you own this website? OK" [ref=e206]:
+          - cell "Do you own this website?" [ref=e207]:
+            - link "Do you own this website?" [ref=e208] [cursor=pointer]:
+              - /url: http://g.co/dev/maps-no-account
+          - cell "OK" [ref=e209]:
+            - button "OK" [ref=e210] [cursor=pointer]
+  - generic [ref=e96]:
+    - generic [ref=e97]:
+      - generic [ref=e98]: FriendlyFyzio
+      - generic [ref=e99]:
+        - text: Zednická 1109/2
+        - text: Ostrava -Poruba
+      - paragraph [ref=e100]:
+        - text: "Mobil: +420 604 793 255"
+        - text: "E-mail: info@friendlyfyzio.cz"
+    - generic [ref=e102]:
+      - text: "Webdesign:"
+      - link "Petr Hlubina" [ref=e103] [cursor=pointer]:
+        - /url: http://www.hlubina.cz

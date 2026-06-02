@@ -1,0 +1,249 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "home" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e5]: FriendlyFyzio
+      - navigation [ref=e6]:
+        - link "Fyzioterapie" [ref=e7] [cursor=pointer]:
+          - /url: /fyzioterapie
+        - link "Laser/kryoterapie" [ref=e8] [cursor=pointer]:
+          - /url: /pristrojova-terapie
+        - link "Pohybové kurzy" [ref=e9] [cursor=pointer]:
+          - /url: /fyzio-kurzy
+        - link "Relaxace" [ref=e10] [cursor=pointer]:
+          - /url: /relaxace
+        - link "Workshopy" [ref=e11] [cursor=pointer]:
+          - /url: /workshopy
+          - text: Workshopy
+        - link "Ceník" [ref=e12] [cursor=pointer]:
+          - /url: /cenik
+        - link "O nás" [ref=e13] [cursor=pointer]:
+          - /url: /nas-tym
+        - link "Chci se objednat" [ref=e14] [cursor=pointer]:
+          - /url: "#kontakt"
+        - link:
+          - /url: "#"
+      - text: 
+  - heading "Dárkové poukazy" [level=1] [ref=e19]
+  - generic [ref=e24]:
+    - iframe [ref=e25]:
+      - generic [ref=f11e4]:
+        - generic [ref=f11e5]:
+          - generic [ref=f11e6]: Objednávka
+          - generic [ref=f11e7]:
+            - generic [ref=f11e8]:
+              - heading "Dárkový poukaz" [level=2] [ref=f11e9]
+              - generic [ref=f11e11]:
+                - generic [ref=f11e15]:
+                  - generic [ref=f11e16] [cursor=pointer]:
+                    - checkbox "Dárkový poukaz na relaxační masáž 90 min pouze pro ženy" [ref=f11e18]: 
+                    - generic [ref=f11e19]: Dárkový poukaz na relaxační masáž 90 min
+                    - generic [ref=f11e20]: pouze pro ženy
+                  - generic:
+                    - generic [ref=f11e21]:
+                      - generic [ref=f11e22]:
+                        - textbox [ref=f11e23]: "0"
+                        - generic:
+                          - generic [ref=f11e24] [cursor=pointer]:  +
+                          - generic [ref=f11e25] [cursor=pointer]:  -
+                      - text: ks
+                    - generic [ref=f11e26]: 1 300,00 Kč
+                - generic [ref=f11e30]:
+                  - generic [ref=f11e31] [cursor=pointer]:
+                    - checkbox "Dárkový poukaz na těhotenskou masáž 90 min" [ref=f11e33]: 
+                    - generic [ref=f11e34]: Dárkový poukaz na těhotenskou masáž 90 min
+                  - generic:
+                    - generic [ref=f11e35]:
+                      - generic [ref=f11e36]:
+                        - textbox [ref=f11e37]: "0"
+                        - generic:
+                          - generic [ref=f11e38] [cursor=pointer]:  +
+                          - generic [ref=f11e39] [cursor=pointer]:  -
+                      - text: ks
+                    - generic [ref=f11e40]: 1 400,00 Kč
+                - generic [ref=f11e44]:
+                  - generic [ref=f11e45] [cursor=pointer]:
+                    - checkbox "Dárkový poukaz na vstupní vyšetření s fyzioterapeutem" [ref=f11e47]: 
+                    - generic [ref=f11e48]: Dárkový poukaz na vstupní vyšetření s fyzioterapeutem
+                  - generic:
+                    - generic [ref=f11e49]:
+                      - generic [ref=f11e50]:
+                        - textbox [ref=f11e51]: "0"
+                        - generic:
+                          - generic [ref=f11e52] [cursor=pointer]:  +
+                          - generic [ref=f11e53] [cursor=pointer]:  -
+                      - text: ks
+                    - generic [ref=f11e54]: 1 750,00 Kč
+                - generic [ref=f11e58]:
+                  - generic [ref=f11e59] [cursor=pointer]:
+                    - checkbox "Dárkový poukaz na vstupní vyšetření a 3 kontrolní terapie" [ref=f11e61]: 
+                    - generic [ref=f11e62]: Dárkový poukaz na vstupní vyšetření a 3 kontrolní terapie
+                  - generic:
+                    - generic [ref=f11e63]:
+                      - generic [ref=f11e64]:
+                        - textbox [ref=f11e65]: "0"
+                        - generic:
+                          - generic [ref=f11e66] [cursor=pointer]:  +
+                          - generic [ref=f11e67] [cursor=pointer]:  -
+                      - text: ks
+                    - generic [ref=f11e68]: 5 500,00 Kč
+                - generic [ref=f11e72]:
+                  - generic [ref=f11e73] [cursor=pointer]:
+                    - checkbox "Dárkový poukaz na vstupní vyšetření a 5 kontrolních terapií" [ref=f11e75]: 
+                    - generic [ref=f11e76]: Dárkový poukaz na vstupní vyšetření a 5 kontrolních terapií
+                  - generic:
+                    - generic [ref=f11e77]:
+                      - generic [ref=f11e78]:
+                        - textbox [ref=f11e79]: "0"
+                        - generic:
+                          - generic [ref=f11e80] [cursor=pointer]:  +
+                          - generic [ref=f11e81] [cursor=pointer]:  -
+                      - text: ks
+                    - generic [ref=f11e82]: 7 500,00 Kč
+                - generic [ref=f11e86]:
+                  - generic [ref=f11e87] [cursor=pointer]:
+                    - checkbox "Volný poukaz využitelný na všechny služby Friendly Fyzio" [ref=f11e89]: 
+                    - generic [ref=f11e90]: Volný poukaz
+                    - generic [ref=f11e91]: využitelný na všechny služby Friendly Fyzio
+                  - generic:
+                    - generic [ref=f11e92]:
+                      - generic [ref=f11e93]:
+                        - textbox [ref=f11e94]: "0"
+                        - generic:
+                          - generic [ref=f11e95] [cursor=pointer]:  +
+                          - generic [ref=f11e96] [cursor=pointer]:  -
+                      - text: ks
+                    - generic [ref=f11e97]: 2 000,00 Kč
+                - generic [ref=f11e101]:
+                  - generic [ref=f11e102] [cursor=pointer]:
+                    - checkbox "7x ošetření laserem s kryoterapií pro ošetření jizev po císařském řezu a břišních operacích (jizva do 25cm)" [ref=f11e104]: 
+                    - generic [ref=f11e105]: 7x ošetření laserem s kryoterapií
+                    - generic [ref=f11e106]: pro ošetření jizev po císařském řezu a břišních operacích (jizva do 25cm)
+                  - generic:
+                    - generic [ref=f11e107]:
+                      - generic [ref=f11e108]:
+                        - textbox [ref=f11e109]: "0"
+                        - generic:
+                          - generic [ref=f11e110] [cursor=pointer]:  +
+                          - generic [ref=f11e111] [cursor=pointer]:  -
+                      - text: ks
+                    - generic [ref=f11e112]: 2 800,00 Kč
+            - generic [ref=f11e120]:
+              - generic [ref=f11e121]: "Celkem:"
+              - generic [ref=f11e123]: 0,00 Kč
+            - generic [ref=f11e124]:
+              - heading "Zvolte platební metodu" [level=2] [ref=f11e125]
+              - generic [ref=f11e128]:
+                - generic [ref=f11e129]: 
+                - text: Bankovní převod
+            - generic [ref=f11e130]:
+              - heading "Fakturační údaje" [level=2] [ref=f11e131]
+              - generic [ref=f11e133]:
+                - generic [ref=f11e134]:
+                  - generic [ref=f11e135]: "E-mail: *"
+                  - textbox [ref=f11e137]
+                - generic [ref=f11e138]:
+                  - generic [ref=f11e139]: "Jméno: *"
+                  - textbox [ref=f11e141]
+                - generic [ref=f11e142]:
+                  - generic [ref=f11e143]: "Příjmení: *"
+                  - textbox [ref=f11e145]
+                - generic [ref=f11e146]:
+                  - generic [ref=f11e147]: "Ulice a č.p.:"
+                  - textbox [ref=f11e149]
+                - generic [ref=f11e150]:
+                  - generic [ref=f11e151]: "Město:"
+                  - textbox [ref=f11e153]
+                - generic [ref=f11e154]:
+                  - generic [ref=f11e155]: "PSČ:"
+                  - textbox [ref=f11e157]
+                - generic [ref=f11e158]:
+                  - generic [ref=f11e159]: "Stát:"
+                  - combobox [ref=f11e161]:
+                    - option "Česká republika" [selected]
+                - generic [ref=f11e162]:
+                  - generic [ref=f11e163]: Jméno obdarované / obdarovaného
+                  - textbox [ref=f11e165]
+            - button "Potvrďte nákup" [ref=f11e169] [cursor=pointer]
+        - generic [ref=f11e171]:
+          - generic [ref=f11e172]: 
+          - text: Údaje označené hvězdičkou jsou povinné.
+    - generic [ref=e26]:
+      - text: Prodejní formulář je vytvořen v systému
+      - link "SimpleShop.cz" [ref=e27] [cursor=pointer]:
+        - /url: https://www.simpleshop.cz/?utm_source=simpleshop&utm_medium=form&utm_campaign=57521
+      - text: .
+  - generic [ref=e29]:
+    - heading "Kontakt" [level=2] [ref=e30]
+    - generic [ref=e32]:
+      - heading "Mgr. Lucie Fickerová" [level=3] [ref=e33]
+      - paragraph [ref=e34]:
+        - text: +420 604 793 255
+        - link "info@friendlyfyzio.cz" [ref=e35] [cursor=pointer]:
+          - /url: "#"
+      - link "Online rezervace vstupního vyšetření" [ref=e36] [cursor=pointer]:
+        - /url: /rezervace-vstupniho-vysetreni
+      - link "Online rezervace masáží" [ref=e37] [cursor=pointer]:
+        - /url: /rezervace-masazi
+      - heading "Adresa" [level=4] [ref=e38]
+      - paragraph [ref=e39]:
+        - strong [ref=e40]: FriendlyFyzio
+        - text: Zednická 1109/2, Ostrava-Poruba
+        - text: "IČ: 06816967"
+  - generic [ref=e42]:
+    - generic [ref=e43]:
+      - generic:
+        - button "Keyboard shortcuts"
+      - region "Map" [ref=e44]
+      - generic [ref=e45]:
+        - generic [ref=e96]:
+          - generic:
+            - button "Map pin showing location of FriendlyFyzio, Zednická 1109/2, Ostrava" [ref=e98]:
+              - generic:
+                - generic "Map pin showing location of FriendlyFyzio, Zednická 1109/2, Ostrava"
+            - dialog [ref=e99]:
+              - button "Close" [ref=e102] [cursor=pointer]
+              - generic [ref=e104]: FriendlyFyzio, Zednická 1109/2, Ostrava
+        - iframe [ref=e106]:
+          
+        - button "Toggle fullscreen view" [ref=e107] [cursor=pointer]
+        - generic:
+          - generic:
+            - button "Map camera controls" [ref=e109] [cursor=pointer]
+            - generic [ref=e111] [cursor=pointer]:
+              - button "Zoom in" [ref=e112]
+              - button "Zoom out" [ref=e114]
+        - link "Open this area in Google Maps (opens a new window)" [ref=e116] [cursor=pointer]:
+          - /url: https://maps.google.com/maps?ll=49.830985,18.176954&z=17&t=m&hl=en-GB&gl=US&mapclient=apiv3
+          - img "Google" [ref=e118]
+        - generic [ref=e119]:
+          - button "Keyboard shortcuts" [ref=e125] [cursor=pointer]
+          - generic [ref=e130]: Map data ©2026 Google
+          - link "Terms (opens in new tab)" [ref=e135] [cursor=pointer]:
+            - /url: https://www.google.com/intl/en-GB_US/help/terms_maps.html
+            - text: Terms
+          - link "Report a map error" [ref=e140] [cursor=pointer]:
+            - /url: https://www.google.com/maps/@49.8309854,18.1769535,17z/data=!10m1!1e1!12b1?source=apiv3&rapsrc=apiv3
+    - generic [ref=e141]:
+      - generic [ref=e143]: This page can't load Google Maps correctly.
+      - table [ref=e144]:
+        - row "Do you own this website? OK" [ref=e145]:
+          - cell "Do you own this website?" [ref=e146]:
+            - link "Do you own this website?" [ref=e147] [cursor=pointer]:
+              - /url: http://g.co/dev/maps-no-account
+          - cell "OK" [ref=e148]:
+            - button "OK" [ref=e149] [cursor=pointer]
+  - generic [ref=e152]:
+    - generic [ref=e153]:
+      - generic [ref=e154]: FriendlyFyzio
+      - generic [ref=e155]:
+        - text: Zednická 1109/2
+        - text: Ostrava -Poruba
+      - paragraph [ref=e156]:
+        - text: "Mobil: +420 604 793 255"
+        - text: "E-mail: friendlyfyzio@seznam.cz"
+    - generic [ref=e158]:
+      - text: "Webdesign:"
+      - link "Petr Hlubina" [ref=e159] [cursor=pointer]:
+        - /url: http://www.hlubina.cz

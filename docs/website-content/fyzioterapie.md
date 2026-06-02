@@ -1,0 +1,191 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "home" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e5]: FriendlyFyzio
+      - navigation [ref=e6]:
+        - link "Fyzioterapie" [ref=e7] [cursor=pointer]:
+          - /url: /fyzioterapie
+        - link "Laser/kryoterapie" [ref=e8] [cursor=pointer]:
+          - /url: /pristrojova-terapie
+        - link "Pohybové kurzy" [ref=e9] [cursor=pointer]:
+          - /url: /fyzio-kurzy
+        - link "Relaxace" [ref=e10] [cursor=pointer]:
+          - /url: /relaxace
+        - link "Workshopy" [ref=e11] [cursor=pointer]:
+          - /url: /workshopy
+          - text: Workshopy
+        - link "Ceník" [ref=e12] [cursor=pointer]:
+          - /url: /cenik
+        - link "O nás" [ref=e13] [cursor=pointer]:
+          - /url: /nas-tym
+        - link "Chci se objednat" [ref=e14] [cursor=pointer]:
+          - /url: "#kontakt"
+        - link:
+          - /url: "#"
+      - text: 
+  - generic [ref=e18]:
+    - heading "Fyzioterapie" [level=1] [ref=e19]
+    - heading [level=3]
+  - generic [ref=e22]:
+    - paragraph [ref=e23]:
+      - text: Obor fyzioterapie se zabývá
+      - strong [ref=e24]: diagnostikou, léčbou a prevencí
+      - text: dysfunkcí pohybového systému člověka. Jako jeden z mála oborů vyšetřuje jedince jako celek a propojuje vědomosti z mnoha medicínských oborů.
+      - text: Klinika
+      - strong [ref=e25]: Friendly Fyzio se specializuje
+      - text: zejména
+      - strong [ref=e26]:
+        - text: na
+        - emphasis [ref=e27]: fyzioterapii žen
+      - text: .
+      - text: Ženy nás navšťěvují v různých životních obdobích s problémy s nimi spojenými
+      - text: "- mladé ženy trpící"
+      - strong [ref=e28]: bolestivou menstruací
+      - text: ","
+      - text: "- ženy, které"
+      - strong [ref=e29]: nemohou otěhotnět
+      - text: nebo zažily
+      - strong [ref=e30]: opakované ztráty
+      - text: ","
+      - text: "-"
+      - strong [ref=e31]: ženy těhotné
+      - text: ", které chtějí připravit k porodu nebo ulevit od bolestí"
+      - text: "- maminky"
+      - strong [ref=e32]: po porodu
+      - text: pro ošetření jizev, kontrolu pánevního dna a diastázy
+      - text: "- ženy zralé, které často trápí"
+      - strong [ref=e33]: močová inkontinence
+      - text: nebo
+      - strong [ref=e34]: pokles orgánů
+      - text: malé pánve.
+      - text: "- ženy po"
+      - strong [ref=e35]: onkologických onemocněních
+      - text: ‍
+      - text: Své místo u nás má také
+      - link "fyzioterapie čelistního kloubu" [ref=e36] [cursor=pointer]:
+        - /url: /fyzioterapie/terapie-celistniho-kloubu
+        - strong [ref=e37]:
+          - emphasis [ref=e38]: fyzioterapie čelistního kloubu
+      - text: ", která řeší problémy v oblasti dutiny ústní, hlavy a krční páteře a"
+      - link "fyzioterapie jizev" [ref=e39] [cursor=pointer]:
+        - /url: /fyzioterapie/terapie-jizev
+        - strong [ref=e40]:
+          - emphasis [ref=e41]: fyzioterapie jizev
+      - strong [ref=e42]:
+        - emphasis [ref=e43]: .
+      - text: A jestli k nám chodí na terapie i
+      - strong [ref=e44]: muži
+      - text: "? Ano! Muži nás navštěvují"
+      - strong [ref=e45]: s probémy pánevního dna
+      - text: jako je inkontinence, zácpa, neplodnost, bolesti kostrče nebo podbřišku, bolestivá ejakulace nebo erekce, po operacích prostaty nebo s bolestmi pánve. Samozřejmostí je
+      - strong [ref=e46]: terapie jizev a čelistního kloubu
+      - text: .
+      - text: ‍
+      - strong: ‍
+      - text: ‍
+    - generic [ref=e47]:
+      - generic [ref=e48]:
+        - heading "Terapie pánevního dna" [level=3] [ref=e49]
+        - paragraph [ref=e50]:
+          - text: Terapie neplodných párů, opakovaných potratů, inkontinence, poklesu orgánů malé pánve, bolestivé nebo nepravidelné menstruace, kostrčového syndromu, výhřezu plotének.
+          - link "Více informací" [ref=e51] [cursor=pointer]:
+            - /url: /fyzioterapie/terapie-panevniho-dna
+      - generic [ref=e52]:
+        - heading "Těhotenská fyzioterapie" [level=3] [ref=e53]
+        - paragraph [ref=e54]:
+          - text: Kondiční a uvolňující cvičení pro těhotné ženy, prevence negativních důsledků těhotenství, příprava na porod, terapie poporodní diastázy a dalších následků porodu a těhotenství.
+          - text: ‍
+          - link "Více informací" [ref=e55] [cursor=pointer]:
+            - /url: /fyzioterapie/tehotenska-fyzioterapie
+    - generic [ref=e56]:
+      - generic [ref=e57]:
+        - heading "Terapie jizev" [level=3] [ref=e58]
+        - paragraph [ref=e59]:
+          - text: Péče o jizvy po císařských řezech, nástřizích hráze, laparoskopiích, plastikách...ty čerstvé i ty zapomenuté.
+          - text: Ošetření jizev domácím prostředí nebo přímo v nemocnici.
+          - link "Více informací" [ref=e60] [cursor=pointer]:
+            - /url: /fyzioterapie/terapie-jizev
+            - text: Více informací
+      - generic [ref=e61]:
+        - heading "Terapie čelistního kloubu" [level=3] [ref=e62]
+        - paragraph [ref=e63]:
+          - text: Dysfunkce čelistního kloubu mohou být příčinou mnoha obtíží, např. bolestí hlavy, dechových obtíží, bolestí krční páteře a ramenních pletenců nebo i dysfunkcí svalů pánevního dna.
+          - link "Více informací" [ref=e64] [cursor=pointer]:
+            - /url: /fyzioterapie/terapie-celistniho-kloubu
+            - text: Více informací
+  - generic [ref=e66]:
+    - heading "Kontakt" [level=2] [ref=e67]
+    - generic [ref=e69]:
+      - heading "Mgr. Lucie Fickerová" [level=3] [ref=e70]
+      - paragraph [ref=e71]:
+        - text: +420 604 793 255
+        - link "info@friendlyfyzio.cz" [ref=e72] [cursor=pointer]:
+          - /url: "#"
+      - link "Online rezervace vstupního vyšetření" [ref=e73] [cursor=pointer]:
+        - /url: /rezervace-vstupniho-vysetreni
+      - link "Online rezervace masáží" [ref=e74] [cursor=pointer]:
+        - /url: /rezervace-masazi
+      - heading "Adresa" [level=4] [ref=e75]
+      - paragraph [ref=e76]:
+        - text: FriendlyFyzio
+        - text: Zednická 1109/2
+        - text: Ostrava-Poruba
+        - text: "IČ: 06816967"
+  - generic [ref=e78]:
+    - generic [ref=e79]:
+      - generic:
+        - button "Keyboard shortcuts"
+      - region "Map" [ref=e80]
+      - generic [ref=e81]:
+        - generic [ref=e132]:
+          - generic:
+            - button "Map pin showing location of FriendlyFyzio, Zednická 1109/2, Ostrava" [ref=e134]:
+              - generic:
+                - generic "Map pin showing location of FriendlyFyzio, Zednická 1109/2, Ostrava"
+            - dialog [ref=e135]:
+              - button "Close" [ref=e138] [cursor=pointer]
+              - generic [ref=e140]: FriendlyFyzio, Zednická 1109/2, Ostrava
+        - iframe [ref=e142]:
+          
+        - button "Toggle fullscreen view" [ref=e170] [cursor=pointer]
+        - generic:
+          - generic:
+            - button "Map camera controls" [ref=e172] [cursor=pointer]
+            - generic [ref=e174] [cursor=pointer]:
+              - button "Zoom in" [ref=e175]
+              - button "Zoom out" [ref=e177]
+        - link "Open this area in Google Maps (opens a new window)" [ref=e179] [cursor=pointer]:
+          - /url: https://maps.google.com/maps?ll=49.830985,18.176954&z=17&t=m&hl=en-GB&gl=US&mapclient=apiv3
+          - img "Google" [ref=e181]
+        - generic [ref=e182]:
+          - button "Keyboard shortcuts" [ref=e188] [cursor=pointer]
+          - generic [ref=e193]: Map data ©2026 Google
+          - link "Terms (opens in new tab)" [ref=e198] [cursor=pointer]:
+            - /url: https://www.google.com/intl/en-GB_US/help/terms_maps.html
+            - text: Terms
+          - link "Report a map error" [ref=e203] [cursor=pointer]:
+            - /url: https://www.google.com/maps/@49.8309854,18.1769535,17z/data=!10m1!1e1!12b1?source=apiv3&rapsrc=apiv3
+    - generic [ref=e143]:
+      - generic [ref=e145]: This page can't load Google Maps correctly.
+      - table [ref=e146]:
+        - row "Do you own this website? OK" [ref=e147]:
+          - cell "Do you own this website?" [ref=e148]:
+            - link "Do you own this website?" [ref=e149] [cursor=pointer]:
+              - /url: http://g.co/dev/maps-no-account
+          - cell "OK" [ref=e150]:
+            - button "OK" [ref=e151] [cursor=pointer]
+  - generic [ref=e154]:
+    - generic [ref=e155]:
+      - generic [ref=e156]: FriendlyFyzio
+      - generic [ref=e157]:
+        - text: Zednická 1109/2
+        - text: Ostrava -Poruba
+      - paragraph [ref=e158]:
+        - text: "Mobil: +420 604 793 255"
+        - text: "E-mail: info@friendlyfyzio.cz"
+    - generic [ref=e160]:
+      - text: "Webdesign:"
+      - link "Petr Hlubina" [ref=e161] [cursor=pointer]:
+        - /url: http://www.hlubina.cz

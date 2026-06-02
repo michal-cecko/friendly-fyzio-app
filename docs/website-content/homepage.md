@@ -1,0 +1,257 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "home" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e5]: FriendlyFyzio
+      - navigation [ref=e6]:
+        - link "Fyzioterapie" [ref=e7] [cursor=pointer]:
+          - /url: /fyzioterapie
+        - link "Laser/kryoterapie" [ref=e8] [cursor=pointer]:
+          - /url: /pristrojova-terapie
+        - link "Pohybové kurzy" [ref=e9] [cursor=pointer]:
+          - /url: /fyzio-kurzy
+        - link "Relaxace" [ref=e10] [cursor=pointer]:
+          - /url: /relaxace
+        - link "Workshopy" [ref=e11] [cursor=pointer]:
+          - /url: /workshopy
+          - text: Workshopy
+        - link "Ceník" [ref=e12] [cursor=pointer]:
+          - /url: /cenik
+        - link "O nás" [ref=e13] [cursor=pointer]:
+          - /url: /nas-tym
+        - link "Chci se objednat" [ref=e14] [cursor=pointer]:
+          - /url: "#kontakt"
+        - link:
+          - /url: "#"
+      - text: 
+  - generic [ref=e18]:
+    - heading "Specializovaná fyzioterapie" [level=1] [ref=e19]
+    - paragraph [ref=e20]:
+      - text: Těhotenská fyzioterapie
+      - text: Fyzioterapie pánevního dna
+      - text: Fyzioterapie čelistního kloubu
+      - text: Fyzioterapie jizev
+    - link "objednat vstupní vyšetření" [ref=e21] [cursor=pointer]:
+      - /url: /rezervace-vstupniho-vysetreni
+    - link "chci na masáž" [ref=e22] [cursor=pointer]:
+      - /url: /rezervace-masazi
+    - link "koupit dárkový poukaz 🎁" [ref=e23] [cursor=pointer]:
+      - /url: /darkove-poukazy
+  - generic [ref=e25]:
+    - generic [ref=e26]:
+      - paragraph [ref=e28]:
+        - strong [ref=e29]: "Právě probíhá přihlašování na lekce a kurzy leden-duben:"
+      - generic [ref=e30]:
+        - link "JIN jóga" [ref=e31] [cursor=pointer]:
+          - /url: /fyzio-kurzy/joga
+        - link "Somatická joga" [ref=e32] [cursor=pointer]:
+          - /url: /fyzio-kurzy/joga
+        - link "Hormonální jóga" [ref=e33] [cursor=pointer]:
+          - /url: /fyzio-kurzy/joga
+        - link "Jednorázové vstupy na lekce" [ref=e34] [cursor=pointer]:
+          - /url: /prihlaska-na-jednorazove-vstupy
+      - paragraph [ref=e36]:
+        - strong [ref=e37]: "Právě probíhá přihlašování na workshopy leden-květen:"
+      - generic [ref=e38]:
+        - link "Handling - manipulace s novorozencem" [ref=e39] [cursor=pointer]:
+          - /url: /workshopy-2/handling-manipulace-s-novorozencem
+        - link "Fyzioterapeutický pohled na dospělou nohu" [ref=e40] [cursor=pointer]:
+          - /url: /workshopy-2/dospela-noha
+      - paragraph [ref=e41]:
+        - strong [ref=e42]: Hledá se
+        - text: "- lektor skupinových lekcí pro SM systém"
+        - text: ‍
+        - text: Více informací nalezneš
+        - link "zde." [ref=e43] [cursor=pointer]:
+          - /url: /fyzioterapie/nabidka-prace
+      - heading "Naše nabídka" [level=2] [ref=e44]
+      - generic [ref=e45]:
+        - link "Fyzioterapie" [ref=e47] [cursor=pointer]:
+          - /url: /fyzioterapie
+          - heading "Fyzioterapie" [level=3] [ref=e49]
+        - link "Pohybové kurzy" [ref=e51] [cursor=pointer]:
+          - /url: /fyzio-kurzy
+          - heading "Pohybové kurzy" [level=3] [ref=e53]
+        - link "Masáže a relaxace" [ref=e55] [cursor=pointer]:
+          - /url: /relaxace
+          - heading "Masáže a relaxace" [level=3] [ref=e57]
+        - link "Laser, kryoterapie" [ref=e59] [cursor=pointer]:
+          - /url: /pristrojova-terapie
+          - heading "Laser, kryoterapie" [level=3] [ref=e61]
+    - generic [ref=e62]:
+      - heading "Doporučení našich klientů" [level=2] [ref=e63]
+      - paragraph [ref=e64]: A jaká byla Vaše poslední návštěva FriendlyFyzio?
+      - paragraph [ref=e65]:
+        - link "Napište nám zpětnou vazbu →" [ref=e66] [cursor=pointer]:
+          - /url: https://g.page/r/CUau6BiMke5mEAE/review
+      - generic [ref=e67]:
+        - generic [ref=e69]:
+          - paragraph [ref=e70]:
+            - strong [ref=e71]: Agnieszka Dzivý Kraina
+          - paragraph [ref=e72]: Doporučuji těhotenskou masáž 👌🏻 příjemné prostředí, relaxační atmosféra, člověk se spojí se svým tělem. Velice profesionální péče, opravdu vysoká úroveň služeb. Člověk odchází s lepším pocitem, než s jakým přišel.
+        - generic [ref=e74]:
+          - paragraph [ref=e75]:
+            - strong [ref=e76]: Vendula Saidlová
+          - paragraph [ref=e77]: Určitě moc doporučuji! Byla jsem na několika návštěvách a ošetření pánevního dne před porodem u fyzioterapeutky Káji a byla jsem moc spokojená - milý, profesionální a empatický přístup, který žena v tomto období velmi ocení. :) Určitě plánuji přijít i po porodu
+        - generic [ref=e79]:
+          - paragraph [ref=e80]:
+            - strong [ref=e81]: Jana Vaverová
+          - paragraph [ref=e82]: Friendly fyzio jsem navštívila před druhým porodem a doporučuji ho všem nastávajícím maminkám. Po prvním porodu byl druhý rychlý bez velkého poranění. Fyzioterapii jsem navštívila i po porodu, kdy po pravidelném cvičení se zlepšily problémy s diastázou. Také jsem začala chodit na cvičení principy pohybu, které je úžasné.
+      - paragraph [ref=e83]:
+        - link "Zobrazit další doporučení →" [ref=e84] [cursor=pointer]:
+          - /url: https://www.google.com/search?sca_esv=bb656345beb648fb&hl=cs-CZ&sxsrf=AHTn8zrymA0iA3wGcLjSvRz6YSPwqOk2Yg:1743365000981&si=APYL9bs7Hg2KMLB-4tSoTdxuOx8BdRvHbByC_AuVpNyh0x2KzRXOji8QZVOj_hVaGqudc73_KsByHYoC0C-EFh-g5NfDM1XgB3gtrNw5XGoX7TqoxXQs4fNkp50lfCp_HcR-CjHL4HEX&q=Friendly+Fyzio+Recenze&sa=X&ved=2ahUKEwjTsePczLKMAxWNwAIHHdXBPFMQ0bkNegQIPxAE&cshid=1743365002350878&biw=2634&bih=1495&dpr=1.33
+  - generic [ref=e85]:
+    - generic [ref=e86]:
+      - heading "Sledujte nás na Instagramu" [level=2] [ref=e87]
+      - paragraph [ref=e88]: ‍
+    - generic [ref=e92]:
+      - generic [ref=e205]:
+        - generic [ref=e206]:
+          - link "friendlyfyzio" [ref=e208] [cursor=pointer]:
+            - /url: https://www.instagram.com/friendlyfyzio
+            - img "friendlyfyzio" [ref=e209]
+          - generic [ref=e210]:
+            - link "Friendly Fyzio Ostrava" [ref=e212] [cursor=pointer]:
+              - /url: https://www.instagram.com/friendlyfyzio
+              - generic [ref=e213]: Friendly Fyzio Ostrava
+            - link "@friendlyfyzio" [ref=e215] [cursor=pointer]:
+              - /url: https://www.instagram.com/friendlyfyzio
+              - generic [ref=e216]: "@friendlyfyzio"
+        - generic [ref=e217]:
+          - generic [ref=e218]:
+            - generic [ref=e219]: "446"
+            - generic [ref=e220]: Posts
+          - generic [ref=e221]:
+            - generic [ref=e222]: 1.5K
+            - generic [ref=e223]: Followers
+          - generic [ref=e224]:
+            - generic [ref=e225]: "307"
+            - generic [ref=e226]: Following
+        - link "Follow" [ref=e228] [cursor=pointer]:
+          - /url: https://www.instagram.com/friendlyfyzio
+          - img [ref=e229]
+          - generic [ref=e231]: Follow
+      - generic [ref=e94]:
+        - generic [ref=e232]:
+          - link "Někdy stačí jedno odpoledne, abyste o svých základech začali přemýšlet úplně ... Post with multiple images" [ref=e234] [cursor=pointer]:
+            - /url: https://www.instagram.com/p/DWeXxk_jVwb
+            - generic [ref=e236]:
+              - img "Někdy stačí jedno odpoledne, abyste o svých základech začali přemýšlet úplně ..." [ref=e237]
+              - img "Post with multiple images" [ref=e239]
+          - link "❌ Trápí vás v těhotenství oteklé kotníky a ruce a připadáte si zavodněná? ❌ ... Post with multiple images" [ref=e243] [cursor=pointer]:
+            - /url: https://www.instagram.com/p/DWWwOuQjSe2
+            - generic [ref=e245]:
+              - img "❌ Trápí vás v těhotenství oteklé kotníky a ruce a připadáte si zavodněná? ❌ ..." [ref=e246]
+              - img "Post with multiple images" [ref=e248]
+          - 'link "👣 Věděli jste, že: 🔴 bolest zad může začínat u vaší nohy? 🔴 propadlá klen..." [ref=e252] [cursor=pointer]':
+            - /url: https://www.instagram.com/p/DWULejyjWZR
+            - 'img "👣 Věděli jste, že: 🔴 bolest zad může začínat u vaší nohy? 🔴 propadlá klen..." [ref=e255]'
+          - link "Rozházené hormony nemusí řídit váš život ♀️ PMS, nepravidelný cyklus, velká ..." [ref=e257] [cursor=pointer]:
+            - /url: https://www.instagram.com/p/DWTiQCuDf8q
+            - img "Rozházené hormony nemusí řídit váš život ♀️ PMS, nepravidelný cyklus, velká ..." [ref=e260]
+          - link "Pokračujeme v našem seriálu o lymfě obličeje! Dnes navážeme na první díl a u... Post with video" [ref=e262] [cursor=pointer]:
+            - /url: https://www.instagram.com/p/DWQ9frRuZFY
+            - generic [ref=e264]:
+              - img "Pokračujeme v našem seriálu o lymfě obličeje! Dnes navážeme na první díl a u..." [ref=e265]
+              - img "Post with video" [ref=e267]
+          - 'link "Lymfatická masáž obličeje: 1. část Proč si dopřát lymfatickou masáž obličeje... Post with video" [ref=e272] [cursor=pointer]':
+            - /url: https://www.instagram.com/p/DWEIopfDZG9
+            - generic [ref=e274]:
+              - 'img "Lymfatická masáž obličeje: 1. část Proč si dopřát lymfatickou masáž obličeje..." [ref=e275]'
+              - img "Post with video" [ref=e277]
+          - link "Lymfatické masáže po rakovině prsu – kdy mohou pomoci? 🎀 Po léčbě rakoviny ... Post with multiple images" [ref=e282] [cursor=pointer]:
+            - /url: https://www.instagram.com/p/DWBgwmlDZWY
+            - generic [ref=e284]:
+              - img "Lymfatické masáže po rakovině prsu – kdy mohou pomoci? 🎀 Po léčbě rakoviny ..." [ref=e285]
+              - img "Post with multiple images" [ref=e287]
+          - link "STOP těžkým nohám! 5 minut pro váš lehký krok každý den 👣 Trápí vás pocit t... Post with video" [ref=e291] [cursor=pointer]:
+            - /url: https://www.instagram.com/p/DVyEAhROuww
+            - generic [ref=e293]:
+              - img "STOP těžkým nohám! 5 minut pro váš lehký krok každý den 👣 Trápí vás pocit t..." [ref=e294]
+              - img "Post with video" [ref=e296]
+        - button "Next slide" [ref=e300] [cursor=pointer]:
+          - img [ref=e301]
+  - generic [ref=e98]:
+    - heading "Kontakt" [level=2] [ref=e99]
+    - generic [ref=e101]:
+      - heading "Mgr. Lucie Fickerová" [level=3] [ref=e102]
+      - paragraph [ref=e103]:
+        - text: +420 604 793 255
+        - link "info@friendlyfyzio.cz" [ref=e104] [cursor=pointer]:
+          - /url: "#"
+      - link "Online rezervace vstupního vyšetření" [ref=e105] [cursor=pointer]:
+        - /url: /rezervace-vstupniho-vysetreni
+      - link "Online rezervace masáží" [ref=e106] [cursor=pointer]:
+        - /url: /rezervace-masazi
+      - heading "Adresa" [level=4] [ref=e107]
+      - paragraph [ref=e108]:
+        - text: FriendlyFyzio
+        - text: Zednická 1109/2
+        - text: Ostrava-Poruba
+        - text: "IČ: 06816967"
+  - form "Newsletter-Signup" [ref=e112]:
+    - heading "Přihlašte se k odběru novinek (kurzy, workshopy, atp.) Chcete se o nich dozvědět jako první?" [level=3] [ref=e113]:
+      - text: Přihlašte se k odběru novinek (kurzy, workshopy, atp.)
+      - text: Chcete se o nich dozvědět jako první?
+    - generic [ref=e114]: Vaše emailová adresa
+    - textbox "Vaše emailová adresa" [ref=e115]:
+      - /placeholder: "@"
+    - button "Posílejte mi novinky" [ref=e116] [cursor=pointer]
+    - paragraph [ref=e117]: ‍
+  - generic [ref=e119]:
+    - generic [ref=e120]:
+      - generic:
+        - button "Keyboard shortcuts"
+      - region "Map" [ref=e121]
+      - generic [ref=e122]:
+        - generic [ref=e173]:
+          - generic:
+            - button "Map pin showing location of FriendlyFyzio, Zednická 1109/2, Ostrava" [ref=e175]:
+              - generic:
+                - generic "Map pin showing location of FriendlyFyzio, Zednická 1109/2, Ostrava"
+            - dialog [ref=e176]:
+              - button "Close" [ref=e179] [cursor=pointer]
+              - generic [ref=e181]: FriendlyFyzio, Zednická 1109/2, Ostrava
+        - iframe [ref=e183]:
+          
+        - button "Toggle fullscreen view" [ref=e303] [cursor=pointer]
+        - generic:
+          - generic:
+            - button "Map camera controls" [ref=e305] [cursor=pointer]
+            - generic [ref=e307] [cursor=pointer]:
+              - button "Zoom in" [ref=e308]
+              - button "Zoom out" [ref=e310]
+        - link "Open this area in Google Maps (opens a new window)" [ref=e312] [cursor=pointer]:
+          - /url: https://maps.google.com/maps?ll=49.830985,18.176954&z=17&t=m&hl=en-GB&gl=US&mapclient=apiv3
+          - img "Google" [ref=e314]
+        - generic [ref=e315]:
+          - button "Keyboard shortcuts" [ref=e321] [cursor=pointer]
+          - generic [ref=e326]: Map data ©2026 Google
+          - link "Terms (opens in new tab)" [ref=e331] [cursor=pointer]:
+            - /url: https://www.google.com/intl/en-GB_US/help/terms_maps.html
+            - text: Terms
+          - link "Report a map error" [ref=e336] [cursor=pointer]:
+            - /url: https://www.google.com/maps/@49.8309854,18.1769535,17z/data=!10m1!1e1!12b1?source=apiv3&rapsrc=apiv3
+    - generic [ref=e184]:
+      - generic [ref=e186]: This page can't load Google Maps correctly.
+      - table [ref=e187]:
+        - row "Do you own this website? OK" [ref=e188]:
+          - cell "Do you own this website?" [ref=e189]:
+            - link "Do you own this website?" [ref=e190] [cursor=pointer]:
+              - /url: http://g.co/dev/maps-no-account
+          - cell "OK" [ref=e191]:
+            - button "OK" [ref=e192] [cursor=pointer]
+  - generic [ref=e195]:
+    - generic [ref=e196]:
+      - generic [ref=e197]: FriendlyFyzio
+      - generic [ref=e198]:
+        - text: Zednická 1109/2
+        - text: Ostrava -Poruba
+      - paragraph [ref=e199]:
+        - text: "Mobil: +420 604 793 255"
+        - text: "E-mail: info@friendlyfyzio.cz"
+    - generic [ref=e201]:
+      - text: "Webdesign:"
+      - link "Petr Hlubina" [ref=e202] [cursor=pointer]:
+        - /url: http://www.hlubina.cz
