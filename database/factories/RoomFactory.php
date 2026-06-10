@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Building;
 use App\Models\Room;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -11,14 +12,13 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 class RoomFactory extends Factory
 {
     /**
-     * Define the model's default state.
-     *
      * @return array<string, mixed>
      */
     public function definition(): array
     {
         return [
-            //
+            'building_id' => Building::factory(),
+            'name' => fake()->randomElement(['Ordinace', 'Tělocvična', 'Masážní místnost', 'Rehabilitace', 'Vyšetřovna']).' '.fake()->numberBetween(1, 9),
         ];
     }
 }

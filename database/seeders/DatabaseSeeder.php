@@ -13,6 +13,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call(RolePermissionSeeder::class);
+        $this->call(SettingsSeeder::class);
 
         // The User "saved" event syncs the matching Shield role from the account type
         // (Administrátor -> super_admin, Terapeut -> therapist), so no manual assignRole needed.
@@ -25,5 +26,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Terapeut',
             'email' => 'therapist@friendly-fyzio.test',
         ]);
+
+        $this->call(DemoSeeder::class);
     }
 }

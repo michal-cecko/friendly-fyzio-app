@@ -5,6 +5,10 @@ namespace Tests\Feature;
 use App\Enums\UserRole;
 use App\Filament\Resources\Users\Pages\CreateUser;
 use App\Filament\Resources\Users\Pages\EditUser;
+use App\Filament\Resources\Users\Pages\ListUsers;
+use App\Filament\Resources\Users\Pages\ViewUser;
+use App\Filament\Resources\Users\RelationManagers\InstructedLessonsRelationManager;
+use App\Filament\Resources\Users\RelationManagers\TherapistReservationsRelationManager;
 use App\Models\User;
 use Filament\Facades\Filament;
 use Illuminate\Auth\Notifications\ResetPassword;
@@ -54,6 +58,27 @@ class UserResourceTest extends TestCase
         $this->actingAs($admin)->get('/admin/users')->assertSuccessful();
     }
 
+    public function test_users_list_excludes_customers(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+
+        $therapist = User::factory()->therapist()->create();
+        $customer = User::factory()->customer()->create();
+
+        Livewire::test(ListUsers::class)
+            ->assertCanSeeTableRecords([$therapist])
+            ->assertCanNotSeeTableRecords([$customer]);
+    }
+
+    public function test_customer_cannot_be_opened_via_users_resource(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+
+        $customer = User::factory()->customer()->create();
+
+        $this->get("/admin/users/{$customer->getKey()}/edit")->assertNotFound();
+    }
+
     public function test_user_can_be_created_with_account_type_and_direct_permission(): void
     {
         $permission = Permission::findOrCreate('View:User');
@@ -64,8 +89,6 @@ class UserResourceTest extends TestCase
             ->fillForm([
                 'name' => 'Nový Uživatel',
                 'email' => 'novy@example.test',
-                'password' => 'password123',
-                'password_confirmation' => 'password123',
                 'role' => UserRole::Therapist->value,
                 'permissions' => [$permission->getKey()],
             ])
@@ -77,23 +100,7 @@ class UserResourceTest extends TestCase
         $this->assertNotNull($created);
         $this->assertTrue($created->hasRole('therapist'));          // synced from Role
         $this->assertTrue($created->hasPermissionTo('View:User'));  // direct permission
-        $this->assertTrue(Hash::check('password123', $created->password));
-    }
-
-    public function test_create_user_requires_matching_password_confirmation(): void
-    {
-        $this->actingAs(User::factory()->admin()->create());
-
-        Livewire::test(CreateUser::class)
-            ->fillForm([
-                'name' => 'Nesoulad',
-                'email' => 'nesoulad@example.test',
-                'password' => 'password123',
-                'password_confirmation' => 'jine-heslo',
-                'role' => UserRole::Therapist->value,
-            ])
-            ->call('create')
-            ->assertHasFormErrors(['password']);
+        $this->assertNotNull($created->password);                   // random password generated on create
     }
 
     public function test_create_user_validates_required_fields(): void
@@ -104,17 +111,35 @@ class UserResourceTest extends TestCase
             ->fillForm([
                 'name' => null,
                 'email' => 'not-an-email',
-                'password' => null,
             ])
             ->call('create')
             ->assertHasFormErrors([
                 'name' => 'required',
                 'email' => 'email',
-                'password' => 'required',
             ]);
     }
 
-    public function test_edit_page_exposes_impersonate_and_password_reset_actions(): void
+    public function test_admin_can_view_user_detail(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+
+        $therapist = User::factory()->therapist()->create();
+
+        $this->get("/admin/users/{$therapist->getKey()}")->assertSuccessful();
+    }
+
+    public function test_therapist_relation_managers_are_visible_only_for_therapists(): void
+    {
+        $therapist = User::factory()->therapist()->create();
+        $admin = User::factory()->admin()->create();
+
+        $this->assertTrue(TherapistReservationsRelationManager::canViewForRecord($therapist, ViewUser::class));
+        $this->assertTrue(InstructedLessonsRelationManager::canViewForRecord($therapist, ViewUser::class));
+        $this->assertFalse(TherapistReservationsRelationManager::canViewForRecord($admin, ViewUser::class));
+        $this->assertFalse(InstructedLessonsRelationManager::canViewForRecord($admin, ViewUser::class));
+    }
+
+    public function test_edit_page_can_send_password_reset_email(): void
     {
         Notification::fake();
 
@@ -125,9 +150,42 @@ class UserResourceTest extends TestCase
 
         Livewire::test(EditUser::class, ['record' => $target->getKey()])
             ->assertActionExists('impersonate')
-            ->callAction('sendPasswordReset');
+            ->callAction('resetPassword', ['method' => 'email']);
 
         Notification::assertSentTo($target, ResetPassword::class);
+    }
+
+    public function test_edit_page_can_set_password_manually(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $target = User::factory()->therapist()->create();
+
+        $this->actingAs($admin);
+
+        Livewire::test(EditUser::class, ['record' => $target->getKey()])
+            ->callAction('resetPassword', [
+                'method' => 'manual',
+                'password' => 'nove-heslo-123',
+                'password_confirmation' => 'nove-heslo-123',
+            ]);
+
+        $this->assertTrue(Hash::check('nove-heslo-123', $target->fresh()->password));
+    }
+
+    public function test_set_password_manually_requires_matching_confirmation(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $target = User::factory()->therapist()->create();
+
+        $this->actingAs($admin);
+
+        Livewire::test(EditUser::class, ['record' => $target->getKey()])
+            ->callAction('resetPassword', [
+                'method' => 'manual',
+                'password' => 'nove-heslo-123',
+                'password_confirmation' => 'jine-heslo',
+            ])
+            ->assertHasActionErrors(['password']);
     }
 
     public function test_impersonate_action_requires_permission(): void

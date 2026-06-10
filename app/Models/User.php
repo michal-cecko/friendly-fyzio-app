@@ -5,20 +5,24 @@ namespace App\Models;
 use App\Enums\UserRole;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Spatie\LaravelPasskeys\Models\Concerns\HasPasskeys;
+use Spatie\LaravelPasskeys\Models\Concerns\InteractsWithPasskeys;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Traits\HasRoles;
 use Spatie\Tags\HasTags;
 
-class User extends Authenticatable implements FilamentUser
+class User extends Authenticatable implements FilamentUser, HasPasskeys, MustVerifyEmail
 {
-    use HasFactory, HasRoles, HasTags, HasUuids, Notifiable, SoftDeletes;
+    use HasFactory, HasRoles, HasTags, HasUuids, InteractsWithPasskeys, Notifiable, SoftDeletes;
 
     protected $fillable = [
         'name',
@@ -51,24 +55,30 @@ class User extends Authenticatable implements FilamentUser
         static::saved(function (self $user): void {
             $roleName = $user->role?->shieldRole();
 
-            if (! $roleName) {
+            if ($roleName) {
+                Role::findOrCreate($roleName);
+                $user->syncRoles([$roleName]);
+            } else {
                 $user->syncRoles([]);
-
-                return;
             }
-
-            Role::findOrCreate($roleName);
-            $user->syncRoles([$roleName]);
         });
     }
 
     /**
-     * Only staff (administrators and therapists) may access the Filament admin panel.
+     * Panel access by account type:
+     * - admin panel: staff only (administrators and therapists).
+     * - client panel: any authenticated user; staff are redirected to the admin
+     *   panel after login (see App\Http\Responses\LoginResponse), so they never
+     *   linger here, but allowing them keeps the single shared login working.
      * The account type also drives the matching Shield role (see booted()).
      */
     public function canAccessPanel(Panel $panel): bool
     {
-        return in_array($this->role, [UserRole::Admin, UserRole::Therapist], true);
+        return match ($panel->getId()) {
+            'admin' => in_array($this->role, [UserRole::Admin, UserRole::Therapist], true),
+            'client' => in_array($this->role, [UserRole::Admin, UserRole::Therapist, UserRole::Customer], true),
+            default => false,
+        };
     }
 
     /**
@@ -93,6 +103,30 @@ class User extends Authenticatable implements FilamentUser
     public function reservations(): HasMany
     {
         return $this->hasMany(Reservation::class, 'client_id');
+    }
+
+    /**
+     * Ad-hoc therapy notes written about this client (see ClientNote).
+     */
+    public function clientNotes(): HasMany
+    {
+        return $this->hasMany(ClientNote::class, 'client_id');
+    }
+
+    /**
+     * Reservations where this user is the therapist (through their therapist profile).
+     */
+    public function therapistReservations(): HasManyThrough
+    {
+        return $this->hasManyThrough(Reservation::class, TherapistProfile::class, 'user_id', 'therapist_id');
+    }
+
+    /**
+     * Course lessons this user teaches as instructor.
+     */
+    public function instructedLessons(): HasMany
+    {
+        return $this->hasMany(CourseLesson::class, 'instructor_id');
     }
 
     public function therapyRecords(): HasMany

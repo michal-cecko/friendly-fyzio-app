@@ -249,8 +249,6 @@ Templates for each event type:
 - Substitute token generated
 - Course lesson rescheduled
 
-Per service type: custom sender email address.
-
 ### 4.14 Settings (Nastaveni)
 - Clinic info (name, address, ICO, bank account for QR codes)
 - Cancellation rules per service type

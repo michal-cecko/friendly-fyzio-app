@@ -13,12 +13,10 @@ return new class extends Migration
             $table->foreignUuid('category_id')->nullable()->constrained('service_categories')->nullOnDelete();
             $table->string('name');
             $table->string('slug')->unique();
-            $table->string('type')->nullable();
-            $table->integer('duration_blocks');
+            $table->integer('duration_minutes');
             $table->integer('price');
-            $table->integer('break_blocks')->default(0);
+            $table->integer('break_minutes')->default(0);
             $table->string('visibility')->default('public');
-            $table->string('custom_email_sender')->nullable();
             $table->timestamp('published_at')->nullable();
             $table->softDeletes();
             $table->timestamps();

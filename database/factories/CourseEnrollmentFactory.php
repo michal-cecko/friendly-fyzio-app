@@ -2,7 +2,11 @@
 
 namespace Database\Factories;
 
+use App\Enums\CourseEnrollmentStatus;
+use App\Enums\PaymentStatus;
 use App\Models\CourseEnrollment;
+use App\Models\CourseSeries;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -11,14 +15,18 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 class CourseEnrollmentFactory extends Factory
 {
     /**
-     * Define the model's default state.
-     *
      * @return array<string, mixed>
      */
     public function definition(): array
     {
+        $paymentStatus = fake()->randomElement(PaymentStatus::cases());
+
         return [
-            //
+            'client_id' => User::factory()->customer(),
+            'series_id' => CourseSeries::factory(),
+            'status' => fake()->randomElement(CourseEnrollmentStatus::cases()),
+            'payment_status' => $paymentStatus,
+            'paid_at' => $paymentStatus === PaymentStatus::Paid ? now() : null,
         ];
     }
 }

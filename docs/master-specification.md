@@ -202,7 +202,6 @@ erDiagram
         string visibility "public | logged_in | private"
         string photo_path
         boolean active
-        string custom_email_sender
         int existing_client_months
         timestamp created_at
         timestamp updated_at
@@ -858,7 +857,7 @@ Slots are offered from anchors (start of shift, and end-of-reservation + break).
 
 #### Services (`ServiceResource`)
 
-**Fields:** Name · Description (WYSIWYG) · Category · Duration (blocks) · Price · Break (blocks, per therapist) · Assigned therapists · Assigned rooms · Cancellation rules · Visibility · Photo · Active toggle · Custom sender email
+**Fields:** Name · Description (WYSIWYG) · Category · Duration (blocks) · Price · Break (blocks, per therapist) · Assigned therapists · Assigned rooms · Cancellation rules · Visibility · Photo · Active toggle
 
 **Visibility options:**
 - `public` — visible to all
@@ -1003,8 +1002,6 @@ One template per event type:
 | Payment overdue reminder | Client |
 | Substitute token generated | Client |
 | Course lesson rescheduled | All enrolled clients |
-
-Per service type: custom sender email address.
 
 ---
 

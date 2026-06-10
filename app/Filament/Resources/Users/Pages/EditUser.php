@@ -2,8 +2,8 @@
 
 namespace App\Filament\Resources\Users\Pages;
 
-use App\Filament\Resources\Users\Actions\SendPasswordResetAction;
 use App\Filament\Resources\Users\UserResource;
+use App\Filament\Support\Actions\ResetPasswordAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\RestoreAction;
@@ -18,7 +18,7 @@ class EditUser extends EditRecord
     {
         return [
             Impersonate::make()->record($this->getRecord()),
-            SendPasswordResetAction::make(),
+            ResetPasswordAction::make(),
             DeleteAction::make(),
             ForceDeleteAction::make(),
             RestoreAction::make(),

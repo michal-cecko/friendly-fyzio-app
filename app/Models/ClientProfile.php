@@ -23,6 +23,7 @@ class ClientProfile extends Model
         'company_ico',
         'company_dic',
         'billing_address',
+        'billing_name',
         'anamnesis',
     ];
 

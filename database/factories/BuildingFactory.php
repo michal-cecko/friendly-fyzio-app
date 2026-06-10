@@ -11,14 +11,13 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 class BuildingFactory extends Factory
 {
     /**
-     * Define the model's default state.
-     *
      * @return array<string, mixed>
      */
     public function definition(): array
     {
         return [
-            //
+            'name' => 'Budova '.fake()->unique()->numberBetween(1, 999),
+            'address' => fake('cs_CZ')->streetAddress().', '.fake('cs_CZ')->city(),
         ];
     }
 }

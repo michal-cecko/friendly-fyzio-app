@@ -15,7 +15,7 @@ class Room extends Model
     /** @use HasFactory<RoomFactory> */
     use HasFactory, HasUuids;
 
-    protected $fillable = ['building_id', 'name', 'capacity'];
+    protected $fillable = ['building_id', 'name'];
 
     public function building(): BelongsTo
     {
@@ -35,5 +35,10 @@ class Room extends Model
     public function reservations(): HasMany
     {
         return $this->hasMany(Reservation::class);
+    }
+
+    public function blockings(): HasMany
+    {
+        return $this->hasMany(RoomBlocking::class);
     }
 }

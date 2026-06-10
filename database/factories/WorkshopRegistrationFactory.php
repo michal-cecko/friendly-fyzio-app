@@ -2,6 +2,9 @@
 
 namespace Database\Factories;
 
+use App\Enums\PaymentStatus;
+use App\Models\User;
+use App\Models\Workshop;
 use App\Models\WorkshopRegistration;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -11,14 +14,18 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 class WorkshopRegistrationFactory extends Factory
 {
     /**
-     * Define the model's default state.
-     *
      * @return array<string, mixed>
      */
     public function definition(): array
     {
+        $paymentStatus = fake()->randomElement(PaymentStatus::cases());
+
         return [
-            //
+            'client_id' => User::factory()->customer(),
+            'workshop_id' => Workshop::factory(),
+            'status' => fake()->randomElement(['confirmed', 'pending', 'cancelled']),
+            'payment_status' => $paymentStatus,
+            'paid_at' => $paymentStatus === PaymentStatus::Paid ? now() : null,
         ];
     }
 }

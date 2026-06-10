@@ -15,7 +15,7 @@ return new class extends Migration
         Schema::create('filament_media_library', function (Blueprint $table) {
             $table->id();
 
-            $table->nullableMorphs('uploader', 'fml_uploader_index');
+            $table->nullableUuidMorphs('uploader', 'fml_uploader_index');
             $table->string('caption')->nullable();
             $table->string('alt_text')->nullable();
 

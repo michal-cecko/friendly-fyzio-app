@@ -2,8 +2,8 @@
 
 namespace App\Providers\Filament;
 
+use App\Http\Middleware\RedirectToClientLogin;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
-use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -19,7 +19,9 @@ use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use MarcelWeidum\Passkeys\PasskeysPlugin;
 use RalphJSmit\Filament\MediaLibrary\FilamentMediaLibrary;
+use Saade\FilamentFullCalendar\FilamentFullCalendarPlugin;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -29,10 +31,21 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
-            ->login()
+            ->viteTheme('resources/css/filament/admin/theme.css')
+            ->brandName('FriendlyFyzio')
+            ->brandLogo(asset('logo/ff-logo-bright.svg'))
+            ->darkModeBrandLogo(asset('logo/ff-logo-dark.svg'))
+            ->brandLogoHeight('1.6rem')
+            ->emailChangeVerification()
             ->profile()
+            ->spa()
+            ->unsavedChangesAlerts()
+            ->databaseTransactions()
+            ->databaseNotifications()
+            ->sidebarCollapsibleOnDesktop()
+            ->collapsibleNavigationGroups()
             ->colors([
-                'primary' => Color::Amber,
+                'primary' => Color::hex('#d4678a'),
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
@@ -50,6 +63,8 @@ class AdminPanelProvider extends PanelProvider
                 FilamentMediaLibrary::make()
                     ->navigationGroup('Média')
                     ->navigationLabel('Knihovna médií'),
+                FilamentFullCalendarPlugin::make(),
+                PasskeysPlugin::make(),
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -63,7 +78,9 @@ class AdminPanelProvider extends PanelProvider
                 DispatchServingFilamentEvent::class,
             ])
             ->authMiddleware([
-                Authenticate::class,
+                // No login page of its own — bounce unauthenticated staff to the
+                // single shared login on the client panel.
+                RedirectToClientLogin::class,
             ]);
     }
 }

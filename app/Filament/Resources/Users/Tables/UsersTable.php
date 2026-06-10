@@ -39,7 +39,7 @@ class UsersTable
                     ->badge()
                     ->sortable(),
                 IconColumn::make('email_verified_at')
-                    ->label('Ověřeno')
+                    ->label('Ověřen email?')
                     ->boolean()
                     ->toggleable(),
                 TextColumn::make('created_at')
@@ -51,7 +51,10 @@ class UsersTable
             ->filters([
                 SelectFilter::make('role')
                     ->label('Typ účtu')
-                    ->options(UserRole::class),
+                    ->options(collect(UserRole::cases())
+                        ->reject(fn (UserRole $role): bool => $role === UserRole::Customer)
+                        ->mapWithKeys(fn (UserRole $role): array => [$role->value => $role->getLabel()])
+                        ->all()),
                 TrashedFilter::make(),
             ])
             ->recordActions([

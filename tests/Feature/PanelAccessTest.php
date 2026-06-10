@@ -30,4 +30,21 @@ class PanelAccessTest extends TestCase
 
         $this->actingAs($therapist)->get('/admin')->assertSuccessful();
     }
+
+    public function test_customer_can_access_client_panel(): void
+    {
+        $customer = User::factory()->customer()->create();
+
+        $this->actingAs($customer)->get('/klientska-zona')->assertSuccessful();
+    }
+
+    public function test_unauthenticated_admin_visit_redirects_to_single_client_login(): void
+    {
+        $this->get('/admin')->assertRedirect('/klientska-zona/login');
+    }
+
+    public function test_unauthenticated_client_visit_redirects_to_login(): void
+    {
+        $this->get('/klientska-zona')->assertRedirect('/klientska-zona/login');
+    }
 }

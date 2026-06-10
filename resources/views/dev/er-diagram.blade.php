@@ -134,10 +134,10 @@
             <h2>Services &amp; Reservations</h2>
             <p>
                 Service catalogue for physiotherapy and massage types.
-                <strong>type</strong> on both service_categories and services is nullable — not all services need a type.
-                <strong>duration_blocks</strong> / <strong>break_blocks</strong>: 1 block = 15 min (e.g. 90 min session = 6 blocks, 15 min break = 1 block).
+                <strong>type</strong> lives on service_categories only (single source of truth); a service derives its type from its category.
+                <strong>duration_minutes</strong> / <strong>break_minutes</strong>: stored in minutes, as multiples of the configurable block length (setting <code>reservation.block_minutes</code>, default 15).
                 <strong>price</strong> is an integer in CZK.
-                <strong>visibility</strong>: <em>public</em> = everyone · <em>clients</em> = logged-in clients · <em>invite</em> = token link only (see invitations table) · <em>hidden</em> = admin/manager only, never surfaced to any client.
+                <strong>visibility</strong>: <em>public</em> = everyone · <em>clients</em> = logged-in clients · <em>hidden</em> = admin/manager only, never surfaced to any client.
                 <strong>invitations</strong> is polymorphic — the same table covers invite-only services, courses, and workshops. Replaces the one-off <code>presale_token</code> on course_series.
             </p>
         </div>
@@ -290,7 +290,6 @@ clinic: `erDiagram
         uuid id PK
         uuid building_id FK
         string name
-        int capacity
     }
     therapist_weekly_schedules {
         uuid id PK
@@ -336,12 +335,10 @@ reserv: `erDiagram
         uuid category_id FK
         string name
         string slug
-        string type "nullable"
-        int duration_blocks "1 block = 15 min"
+        int duration_minutes "minutes, multiple of block"
         int price "CZK integer"
-        int break_blocks "blocks after service"
-        string visibility "public or clients or invite or hidden"
-        string custom_email_sender
+        int break_minutes "minutes after service"
+        string visibility "public or clients or hidden"
         timestamp published_at
     }
     cancellation_rules {

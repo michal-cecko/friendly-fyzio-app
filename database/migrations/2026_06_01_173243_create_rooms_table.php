@@ -12,7 +12,6 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('building_id')->constrained()->cascadeOnDelete();
             $table->string('name');
-            $table->integer('capacity');
             $table->timestamps();
         });
     }

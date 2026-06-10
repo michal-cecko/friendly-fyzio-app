@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Enums\ServiceType;
 use App\Enums\ServiceVisibility;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -20,12 +22,10 @@ class Service extends Model
         'category_id',
         'name',
         'slug',
-        'type',
-        'duration_blocks',
+        'duration_minutes',
         'price',
-        'break_blocks',
+        'break_minutes',
         'visibility',
-        'custom_email_sender',
         'published_at',
     ];
 
@@ -34,10 +34,18 @@ class Service extends Model
         return [
             'visibility' => ServiceVisibility::class,
             'published_at' => 'datetime',
-            'duration_blocks' => 'integer',
+            'duration_minutes' => 'integer',
             'price' => 'integer',
-            'break_blocks' => 'integer',
+            'break_minutes' => 'integer',
         ];
+    }
+
+    /**
+     * The service type is owned by its category (single source of truth).
+     */
+    protected function type(): Attribute
+    {
+        return Attribute::get(fn (): ?ServiceType => $this->category?->type);
     }
 
     public function category(): BelongsTo

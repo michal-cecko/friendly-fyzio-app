@@ -28,6 +28,7 @@ class Reservation extends Model
         'payment_status',
         'is_control_therapy',
         'notes',
+        'cancellation_reason',
     ];
 
     protected function casts(): array

@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Users\Schemas;
 use App\Enums\UserRole;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\ToggleButtons;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Schema;
@@ -39,34 +40,18 @@ class UserForm
                                     ->maxLength(255)
                                     ->columnSpanFull(),
                             ]),
-                        Tab::make('Heslo')
-                            ->icon(Heroicon::OutlinedLockClosed)
-                            ->columns(2)
-                            ->schema([
-                                TextInput::make('password')
-                                    ->label('Heslo')
-                                    ->password()
-                                    ->revealable()
-                                    ->minLength(8)
-                                    ->required(fn (string $operation): bool => $operation === 'create')
-                                    ->dehydrated(fn (?string $state): bool => filled($state))
-                                    ->confirmed(),
-                                TextInput::make('password_confirmation')
-                                    ->label('Potvrzení hesla')
-                                    ->password()
-                                    ->revealable()
-                                    ->required(fn (string $operation): bool => $operation === 'create')
-                                    ->dehydrated(false),
-                            ]),
                         Tab::make('Oprávnění')
                             ->icon(Heroicon::OutlinedShieldCheck)
                             ->schema([
-                                Select::make('role')
+                                ToggleButtons::make('role')
                                     ->label('Role')
-                                    ->options(UserRole::class)
+                                    ->options(collect(UserRole::cases())
+                                        ->reject(fn (UserRole $role): bool => $role === UserRole::Customer)
+                                        ->mapWithKeys(fn (UserRole $role): array => [$role->value => $role->getLabel()])
+                                        ->all())
                                     ->required()
-                                    ->native(false)
-                                    ->helperText('Určuje přístup do administrace i odpovídající roli oprávnění.'),
+                                    ->inline()
+                                    ->helperText('Určuje přístup do administrace i odpovídající roli oprávnění. Klienti se spravují v sekci Klienti.'),
                                 Select::make('permissions')
                                     ->label('Přímá oprávnění')
                                     ->relationship('permissions', 'name')

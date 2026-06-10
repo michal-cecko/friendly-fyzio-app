@@ -1,0 +1,15 @@
+@import '../../../../vendor/filament/filament/resources/css/theme.css';
+@import '../../../../vendor/ralphjsmit/laravel-filament-media-library/resources/css/index.css';
+
+@source '../../../../app/Filament/**/*';
+@source '../../../../resources/views/filament/**/*';
+
+/* Table toolbars: search, filters & column toggles on the left, action buttons on the right. */
+.fi-ta-header-toolbar > :nth-child(1) {
+    order: 2;
+}
+
+.fi-ta-header-toolbar > :nth-child(2) {
+    order: 1;
+    margin-inline-start: 0;
+}

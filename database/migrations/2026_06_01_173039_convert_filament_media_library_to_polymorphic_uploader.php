@@ -26,7 +26,7 @@ return new class extends Migration
 
         Schema::table('filament_media_library', function (Blueprint $table) {
             $table->string('uploader_type')->nullable()->after('id');
-            $table->unsignedBigInteger('uploader_id')->nullable()->after('uploader_type');
+            $table->uuid('uploader_id')->nullable()->after('uploader_type');
         });
 
         if (Schema::hasColumn('filament_media_library', 'uploaded_by_user_id')) {
