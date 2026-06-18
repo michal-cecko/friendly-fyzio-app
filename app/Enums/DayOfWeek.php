@@ -2,6 +2,7 @@
 
 namespace App\Enums;
 
+use Carbon\CarbonInterface;
 use Filament\Support\Contracts\HasLabel;
 
 enum DayOfWeek: string implements HasLabel
@@ -13,6 +14,14 @@ enum DayOfWeek: string implements HasLabel
     case Friday = 'friday';
     case Saturday = 'saturday';
     case Sunday = 'sunday';
+
+    /**
+     * The day-of-week case for the given date (e.g. a Monday date → DayOfWeek::Monday).
+     */
+    public static function fromCarbon(CarbonInterface $date): self
+    {
+        return self::from(strtolower($date->englishDayOfWeek));
+    }
 
     public function getLabel(): string
     {

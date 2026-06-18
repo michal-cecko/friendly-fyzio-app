@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\ReservationStatus;
+use App\Filament\Resources\Reservations\ReservationResource;
 use App\Filament\Widgets\ReservationCalendar;
 use App\Models\Building;
 use App\Models\Reservation;
@@ -101,17 +102,15 @@ class CalendarTest extends TestCase
         $this->assertSame(2, $component->instance()->activeFilterCount());
     }
 
-    public function test_list_view_respects_shared_filter_bar(): void
+    public function test_calendar_links_to_reservation_list(): void
     {
+        // The inline "Seznam" list moved to the Rezervace resource index; the
+        // calendar now links there instead of rendering a table inline.
         $this->actingAs(User::factory()->admin()->create());
-        $a = $this->makeReservation();
-        $b = $this->makeReservation();
 
         Livewire::test(ReservationCalendar::class)
-            ->set('listMode', true)
-            ->set('filterData', ['serviceIds' => [$a->service_id]])
-            ->assertSee($a->client->name)
-            ->assertDontSee($b->client->name);
+            ->assertSuccessful()
+            ->assertSee(ReservationResource::getUrl('index'));
     }
 
     public function test_reset_filters_clears_all_filters(): void
@@ -141,17 +140,17 @@ class CalendarTest extends TestCase
             ->assertDontSee('Zrušit všechny filtry');
     }
 
-    public function test_list_mode_renders_reservations_table_inline(): void
+    public function test_mode_toggle_renders_template_toolbar(): void
     {
         $this->actingAs(User::factory()->admin()->create());
-        $reservation = $this->makeReservation();
 
         Livewire::test(ReservationCalendar::class)
             ->assertSuccessful()
-            ->assertDontSee($reservation->client->name)
-            ->set('listMode', true)
+            ->assertSee('Nová rezervace')
+            ->set('mode', 'template')
             ->assertSuccessful()
-            ->assertSee($reservation->client->name);
+            ->assertSee('Přidat pracovní dobu')
+            ->assertSee('Typ týdne');
     }
 
     public function test_selection_mode_click_toggles_selection_instead_of_editing(): void
@@ -238,18 +237,18 @@ class CalendarTest extends TestCase
             'filters' => ['statusIds' => [ReservationStatus::Confirmed->value]],
             'therapists' => ['therapist-id'],
             'q' => 'novak',
-            'view' => 'timeGridDay',
+            'mode' => 'template',
             'date' => '2026-06-04',
-            'list' => true,
+            'week' => 'odd',
         ])
             ->test(ReservationCalendar::class)
             ->assertSet('filterData.statusIds', [ReservationStatus::Confirmed->value])
             ->assertSet('filterData.trashed', 'without')
             ->assertSet('therapistIds', ['therapist-id'])
             ->assertSet('search', 'novak')
-            ->assertSet('calendarView', 'timeGridDay')
+            ->assertSet('mode', 'template')
             ->assertSet('calendarDate', '2026-06-04')
-            ->assertSet('listMode', true);
+            ->assertSet('templateWeekType', 'odd');
     }
 
     public function test_fetch_events_returns_week_reservations(): void
