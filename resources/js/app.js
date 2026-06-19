@@ -6,8 +6,21 @@ import './bootstrap';
 
 // Mobile navigation toggle.
 document.addEventListener('click', (event) => {
-    if (event.target.closest('[data-mobile-toggle]')) {
-        document.querySelector('[data-mobile-menu]')?.classList.toggle('hidden');
+    const toggle = event.target.closest('[data-mobile-toggle]');
+    if (toggle) {
+        const menu = document.querySelector('[data-mobile-menu]');
+        const isOpen = menu?.classList.toggle('hidden') === false;
+        toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        document.body.classList.toggle('overflow-hidden', isOpen);
+        return;
+    }
+
+    // Mobile menu accordions: expand a section's sub-items and rotate its chevron.
+    const accordion = event.target.closest('[data-accordion-trigger]');
+    if (accordion) {
+        accordion.parentElement.querySelector('[data-accordion-panel]')?.classList.toggle('hidden');
+        accordion.querySelector('[data-accordion-icon]')?.classList.toggle('rotate-90');
+        accordion.querySelector('[data-accordion-label]')?.classList.toggle('text-primary');
     }
 });
 
