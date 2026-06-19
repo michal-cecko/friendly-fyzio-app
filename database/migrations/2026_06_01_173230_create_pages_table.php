@@ -12,6 +12,11 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('slug')->unique();
             $table->string('title');
+            $table->string('system_key')->nullable()->unique();
+            $table->json('content')->nullable();
+            $table->string('status')->default('draft');
+            $table->integer('sort_order')->default(0);
+            $table->unsignedBigInteger('featured_image')->nullable();
             $table->string('meta_title')->nullable();
             $table->text('meta_description')->nullable();
             $table->boolean('is_system')->default(false);

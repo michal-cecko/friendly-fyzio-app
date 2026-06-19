@@ -10,11 +10,16 @@ return new class extends Migration
     {
         Schema::create('banners', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->string('title');
-            $table->string('link_url')->nullable();
-            $table->boolean('visible')->default(false);
-            $table->timestamp('starts_at')->nullable();
-            $table->timestamp('ends_at')->nullable();
+            $table->string('name');
+            $table->string('type');
+            $table->string('placement')->default('all');
+            $table->json('page_ids')->nullable();
+            $table->json('content')->nullable();
+            $table->boolean('is_active')->default(false);
+            $table->timestamp('active_from')->nullable();
+            $table->timestamp('active_to')->nullable();
+            $table->integer('sort_order')->default(0);
+            $table->softDeletes();
             $table->timestamps();
         });
     }

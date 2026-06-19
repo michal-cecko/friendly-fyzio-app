@@ -20,6 +20,27 @@ class SettingsSeeder extends Seeder
             'config' => ['min' => 5, 'step' => 5, 'suffix' => 'min'],
             'sort' => 0,
         ]);
+
+        foreach ([
+            ['web.site_name', 'Friendly Fyzio', 'Název webu'],
+            ['web.contact_email', 'info@friendlyfyzio.cz', 'Kontaktní e-mail'],
+            ['web.contact_phone', '+420 777 123 456', 'Telefon'],
+            ['web.address', 'Zdravá 12, 110 00 Praha', 'Adresa'],
+            ['web.instagram_url', 'https://instagram.com/friendlyfyzio', 'Instagram URL'],
+            ['web.facebook_url', 'https://facebook.com/friendlyfyzio', 'Facebook URL'],
+            ['web.footer_note', 'Komplexní fyzioterapie a péče o ženské zdraví.', 'Text v patičce'],
+        ] as $sort => [$key, $value, $label]) {
+            $this->upsert([
+                'key' => $key,
+                'value' => $value,
+                'type' => SettingValueType::Text,
+                'label' => $label,
+                'group' => 'Web',
+                'description' => null,
+                'config' => null,
+                'sort' => $sort,
+            ]);
+        }
     }
 
     /**

@@ -2,9 +2,11 @@
 
 namespace App\Providers;
 
+use App\Enums\NavigationLocation;
 use App\Http\Responses\LoginResponse;
 use App\Models\Course;
 use App\Models\CourseSeries;
+use App\Models\Navigation;
 use App\Models\OneTimeLesson;
 use App\Models\Reservation;
 use App\Models\Service;
@@ -16,6 +18,7 @@ use Filament\Auth\Http\Responses\Contracts\LoginResponse as LoginResponseContrac
 use Filament\Support\Facades\FilamentIcon;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -48,5 +51,17 @@ class AppServiceProvider extends ServiceProvider
         // base button icon so header and standalone delete buttons match too.
         DeleteAction::configureUsing(fn (DeleteAction $action) => $action->icon(Heroicon::OutlinedTrash));
         ForceDeleteAction::configureUsing(fn (ForceDeleteAction $action) => $action->icon(Heroicon::OutlinedTrash));
+
+        // Inject the public navigation menus into the site header and footer.
+        View::composer('components.site.header', fn (\Illuminate\View\View $view) => $view->with('headerNav', $this->navigation(NavigationLocation::Header)));
+        View::composer('components.site.footer', fn (\Illuminate\View\View $view) => $view->with('footerNav', $this->navigation(NavigationLocation::Footer)));
+    }
+
+    private function navigation(NavigationLocation $location): ?Navigation
+    {
+        return Navigation::query()
+            ->with('items.children')
+            ->where('location', $location->value)
+            ->first();
     }
 }

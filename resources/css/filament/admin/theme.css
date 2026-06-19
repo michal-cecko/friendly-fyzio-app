@@ -1,8 +1,12 @@
 @import '../../../../vendor/filament/filament/resources/css/theme.css';
 @import '../../../../vendor/ralphjsmit/laravel-filament-media-library/resources/css/index.css';
 
+/* Mason page builder (custom panel theme must import plugin CSS explicitly). */
+@import '../../../../vendor/awcodes/mason/resources/css/plugin.css';
+
 @source '../../../../app/Filament/**/*';
 @source '../../../../resources/views/filament/**/*';
+@source '../../../../vendor/awcodes/mason/resources/**/*.blade.php';
 
 /* Table toolbars: search, filters & column toggles on the left, action buttons on the right. */
 .fi-ta-header-toolbar > :nth-child(1) {

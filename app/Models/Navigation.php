@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\NavigationLocation;
 use Database\Factories\NavigationFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,6 +15,13 @@ class Navigation extends Model
     use HasFactory, HasUuids;
 
     protected $fillable = ['location'];
+
+    protected function casts(): array
+    {
+        return [
+            'location' => NavigationLocation::class,
+        ];
+    }
 
     public function items(): HasMany
     {
