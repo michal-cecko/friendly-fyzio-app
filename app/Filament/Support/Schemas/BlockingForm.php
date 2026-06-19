@@ -23,10 +23,10 @@ class BlockingForm
      *
      * @return array<int, Component>
      */
-    public static function oneTime(): array
+    public static function oneTime(?string $lockedRoomId = null): array
     {
         return [
-            self::roomSelect(),
+            self::roomSelect($lockedRoomId),
             DateTimePicker::make('start_at')
                 ->label('Začátek')
                 ->seconds(false)
@@ -47,10 +47,10 @@ class BlockingForm
      *
      * @return array<int, Component>
      */
-    public static function recurring(): array
+    public static function recurring(?string $lockedRoomId = null): array
     {
         return [
-            self::roomSelect(),
+            self::roomSelect($lockedRoomId),
             Select::make('day_of_week')
                 ->label('Den v týdnu')
                 ->options(DayOfWeek::class)
@@ -73,9 +73,14 @@ class BlockingForm
         ];
     }
 
-    protected static function roomSelect(): Select
+    /**
+     * Room picker. When $lockedRoomId is given (the calendar is scoped to one
+     * room) the select is preset and disabled but still dehydrated, so the
+     * fixed room saves while staying read-only.
+     */
+    protected static function roomSelect(?string $lockedRoomId = null): Select
     {
-        return Select::make('room_id')
+        $select = Select::make('room_id')
             ->label('Místnost')
             ->options(fn (): array => Room::query()
                 ->with('building')
@@ -89,6 +94,12 @@ class BlockingForm
                 ->all())
             ->searchable()
             ->required();
+
+        if ($lockedRoomId !== null) {
+            $select->default($lockedRoomId)->disabled()->dehydrated();
+        }
+
+        return $select;
     }
 
     protected static function reasonInput(): TextInput

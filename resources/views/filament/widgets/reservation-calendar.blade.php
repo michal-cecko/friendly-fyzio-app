@@ -73,20 +73,26 @@
                             <option value="even">Sudý (B)</option>
                         </select>
                     </label>
-                    <label class="ff-tsel">
-                        <span>Místnost:</span>
-                        <select wire:model.live="templateRoomId">
-                            <option value="">Všechny</option>
-                            @foreach ($this->roomOptions() as $id => $label)
-                                <option value="{{ $id }}">{{ $label }}</option>
-                            @endforeach
-                        </select>
-                    </label>
+                    @unless ($this->room ?? null)
+                        <label class="ff-tsel">
+                            <span>Místnost:</span>
+                            <select wire:model.live="templateRoomId">
+                                <option value="">Všechny</option>
+                                @foreach ($this->roomOptions() as $id => $label)
+                                    <option value="{{ $id }}">{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </label>
+                    @endunless
                 @endunless
             </div>
 
             <div class="ff-toolbar-right">
                 @if ($isTemplate)
+                    <button type="button" class="ff-select-toggle" :class="{ 'ff-select-toggle-active': $wire.selectionMode }" wire:click="toggleSelectionMode" title="Hromadný výběr" aria-label="Hromadný výběr">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+                        <span>Vybrat</span>
+                    </button>
                     {{ $this->addBlockingAction }}
                     {{ $this->addWorkingHoursAction }}
                 @else
@@ -104,14 +110,18 @@
             </div>
         </div>
 
-        @if (! $isTemplate && $selectionMode)
+        @if ($selectionMode)
             <div class="ff-selectbar">
                 <span class="ff-selectbar-count">{{ count($selectedIds) }} vybráno</span>
                 <div class="ff-selectbar-actions">
-                    {{ $this->cancelSelectedAction }}
-                    {{ $this->deleteSelectedAction }}
-                    @if ($this->restoreSelectedAction->isVisible())
-                        {{ $this->restoreSelectedAction }}
+                    @if ($isTemplate)
+                        {{ $this->deleteSelectedTemplateAction }}
+                    @else
+                        {{ $this->cancelSelectedAction }}
+                        {{ $this->deleteSelectedAction }}
+                        @if ($this->restoreSelectedAction->isVisible())
+                            {{ $this->restoreSelectedAction }}
+                        @endif
                     @endif
                 </div>
                 <button type="button" class="ff-selectbar-clear" wire:click="clearSelection" @disabled(count($selectedIds) === 0)>Zrušit výběr</button>

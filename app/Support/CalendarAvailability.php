@@ -9,6 +9,7 @@ use App\Models\TherapistNonstandardDate;
 use App\Models\TherapistProfile;
 use App\Models\TherapistWeeklySchedule;
 use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Builder;
 
 /**
  * Computes how much bookable working time therapists have on a given day.
@@ -27,9 +28,13 @@ class CalendarAvailability
      * parity, plus one-off non-standard working dates. Therapists fully covered
      * by a multi-day calendar block (vacation/sick) contribute nothing.
      *
+     * Passing $roomId restricts the working time to that room (both weekly and
+     * non-standard schedules carry a room_id); the vacation/sick block check
+     * stays therapist-level.
+     *
      * @param  array<int, string>  $therapistIds
      */
-    public function availableMinutes(CarbonInterface $date, array $therapistIds = []): int
+    public function availableMinutes(CarbonInterface $date, array $therapistIds = [], ?string $roomId = null): int
     {
         $therapistIds = $this->resolveTherapistIds($therapistIds);
 
@@ -43,7 +48,7 @@ class CalendarAvailability
             return 0;
         }
 
-        return $this->weeklyMinutes($date, $active) + $this->nonstandardMinutes($date, $active);
+        return $this->weeklyMinutes($date, $active, $roomId) + $this->nonstandardMinutes($date, $active, $roomId);
     }
 
     /**
@@ -78,12 +83,13 @@ class CalendarAvailability
     /**
      * @param  array<int, string>  $therapistIds
      */
-    protected function weeklyMinutes(CarbonInterface $date, array $therapistIds): int
+    protected function weeklyMinutes(CarbonInterface $date, array $therapistIds, ?string $roomId = null): int
     {
         return (int) TherapistWeeklySchedule::query()
             ->whereIn('therapist_id', $therapistIds)
             ->where('day_of_week', DayOfWeek::fromCarbon($date)->value)
             ->whereIn('week_type', [WeekType::All->value, WeekType::forDate($date)->value])
+            ->when($roomId, fn (Builder $query): Builder => $query->where('room_id', $roomId))
             ->get(['start_time', 'end_time'])
             ->sum(fn (TherapistWeeklySchedule $row): int => $this->minutesBetween($row->start_time, $row->end_time));
     }
@@ -91,11 +97,12 @@ class CalendarAvailability
     /**
      * @param  array<int, string>  $therapistIds
      */
-    protected function nonstandardMinutes(CarbonInterface $date, array $therapistIds): int
+    protected function nonstandardMinutes(CarbonInterface $date, array $therapistIds, ?string $roomId = null): int
     {
         return (int) TherapistNonstandardDate::query()
             ->whereIn('therapist_id', $therapistIds)
             ->whereDate('work_date', $date)
+            ->when($roomId, fn (Builder $query): Builder => $query->where('room_id', $roomId))
             ->get(['start_time', 'end_time'])
             ->sum(fn (TherapistNonstandardDate $row): int => $this->minutesBetween($row->start_time, $row->end_time));
     }

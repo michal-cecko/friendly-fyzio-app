@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\DayOfWeek;
 use App\Enums\WeekType;
 use App\Models\CalendarBlock;
+use App\Models\Room;
 use App\Models\TherapistNonstandardDate;
 use App\Models\TherapistProfile;
 use App\Models\TherapistWeeklySchedule;
@@ -60,5 +61,32 @@ class CalendarAvailabilityTest extends TestCase
 
         $this->assertSame(0, $availability->availableMinutes($date, [$t1->getKey()]));
         $this->assertSame(120, $availability->availableMinutes($date));                     // only T2 remains
+    }
+
+    public function test_available_minutes_can_be_scoped_to_a_room(): void
+    {
+        $date = Carbon::parse('2026-01-05')->startOfWeek(Carbon::MONDAY);
+
+        $therapist = TherapistProfile::factory()->create();
+        $roomA = Room::factory()->create();
+        $roomB = Room::factory()->create();
+
+        // Weekly: 180 min in room A, 120 min in room B on this Monday.
+        TherapistWeeklySchedule::factory()->for($therapist, 'therapist')->create([
+            'room_id' => $roomA->getKey(), 'day_of_week' => DayOfWeek::Monday, 'week_type' => WeekType::All, 'start_time' => '08:00', 'end_time' => '11:00',
+        ]);
+        TherapistWeeklySchedule::factory()->for($therapist, 'therapist')->create([
+            'room_id' => $roomB->getKey(), 'day_of_week' => DayOfWeek::Monday, 'week_type' => WeekType::All, 'start_time' => '08:00', 'end_time' => '10:00',
+        ]);
+        // One-off 60 min in room A only.
+        TherapistNonstandardDate::factory()->for($therapist, 'therapist')->create([
+            'room_id' => $roomA->getKey(), 'work_date' => $date->toDateString(), 'start_time' => '13:00', 'end_time' => '14:00',
+        ]);
+
+        $availability = new CalendarAvailability;
+
+        $this->assertSame(360, $availability->availableMinutes($date));                            // 180 + 120 + 60, all rooms
+        $this->assertSame(240, $availability->availableMinutes($date, [], $roomA->getKey()));       // 180 + 60 in room A
+        $this->assertSame(120, $availability->availableMinutes($date, [], $roomB->getKey()));       // 120 in room B
     }
 }

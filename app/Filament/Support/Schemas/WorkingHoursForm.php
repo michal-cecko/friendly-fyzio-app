@@ -19,8 +19,27 @@ class WorkingHoursForm
     /**
      * @return array<int, Component>
      */
-    public static function components(): array
+    public static function components(?string $lockedRoomId = null): array
     {
+        $roomSelect = Select::make('room_id')
+            ->label('Místnost')
+            ->options(fn (): array => Room::query()
+                ->with('building')
+                ->orderBy('name')
+                ->get()
+                ->mapWithKeys(fn (Room $room): array => [
+                    $room->getKey() => $room->building
+                        ? "{$room->name} · {$room->building->name}"
+                        : $room->name,
+                ])
+                ->all())
+            ->searchable()
+            ->required();
+
+        if ($lockedRoomId !== null) {
+            $roomSelect->default($lockedRoomId)->disabled()->dehydrated();
+        }
+
         return [
             Select::make('therapist_id')
                 ->label('Terapeut')
@@ -33,20 +52,7 @@ class WorkingHoursForm
                     ->all())
                 ->searchable()
                 ->required(),
-            Select::make('room_id')
-                ->label('Místnost')
-                ->options(fn (): array => Room::query()
-                    ->with('building')
-                    ->orderBy('name')
-                    ->get()
-                    ->mapWithKeys(fn (Room $room): array => [
-                        $room->getKey() => $room->building
-                            ? "{$room->name} · {$room->building->name}"
-                            : $room->name,
-                    ])
-                    ->all())
-                ->searchable()
-                ->required(),
+            $roomSelect,
             Select::make('day_of_week')
                 ->label('Den v týdnu')
                 ->options(DayOfWeek::class)

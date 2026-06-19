@@ -331,4 +331,61 @@ class CalendarModesTest extends TestCase
             ->call('onEventClick', ['id' => 'schedule:'.$schedule->getKey()])
             ->assertSet('editingTemplateId', (string) $schedule->getKey());
     }
+
+    public function test_template_selection_mode_toggles_selection_instead_of_editing(): void
+    {
+        $room = $this->makeRoom();
+        $therapist = $this->makeTherapist();
+        $this->actingAs(User::factory()->admin()->create());
+
+        $schedule = TherapistWeeklySchedule::factory()->for($therapist, 'therapist')->create([
+            'room_id' => $room->getKey(),
+            'day_of_week' => DayOfWeek::Monday,
+            'week_type' => WeekType::All,
+            'start_time' => '09:00',
+            'end_time' => '12:00',
+        ]);
+
+        Livewire::test(ReservationCalendar::class)
+            ->set('mode', 'template')
+            ->set('selectionMode', true)
+            ->call('onEventClick', ['id' => 'schedule:'.$schedule->getKey()])
+            ->assertSet('selectedIds', ['schedule:'.$schedule->getKey()])
+            ->assertSet('editingTemplateId', null);
+    }
+
+    public function test_template_bulk_delete_removes_selected_schedules_and_blockings(): void
+    {
+        $room = $this->makeRoom();
+        $therapist = $this->makeTherapist();
+        $this->actingAs(User::factory()->admin()->create());
+
+        $schedule = TherapistWeeklySchedule::factory()->for($therapist, 'therapist')->create([
+            'room_id' => $room->getKey(),
+            'day_of_week' => DayOfWeek::Monday,
+            'week_type' => WeekType::All,
+            'start_time' => '09:00',
+            'end_time' => '12:00',
+        ]);
+
+        $blocking = RoomBlocking::create([
+            'room_id' => $room->getKey(),
+            'is_recurring' => true,
+            'day_of_week' => DayOfWeek::Monday,
+            'week_type' => WeekType::All,
+            'start_time' => '13:00',
+            'end_time' => '14:00',
+            'reason' => 'Porada',
+        ]);
+
+        Livewire::test(ReservationCalendar::class)
+            ->set('mode', 'template')
+            ->set('selectionMode', true)
+            ->set('selectedIds', ['schedule:'.$schedule->getKey(), 'blocking:'.$blocking->getKey()])
+            ->callAction('deleteSelectedTemplate')
+            ->assertHasNoActionErrors();
+
+        $this->assertDatabaseMissing('therapist_weekly_schedules', ['id' => $schedule->getKey()]);
+        $this->assertDatabaseMissing('room_blockings', ['id' => $blocking->getKey()]);
+    }
 }

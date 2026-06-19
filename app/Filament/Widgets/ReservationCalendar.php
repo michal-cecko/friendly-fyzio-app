@@ -42,6 +42,13 @@ class ReservationCalendar extends FullCalendarWidget
     /** Indigo accent/tint used for blocking events (matches the "Blokace" legend). */
     private const BLOCKING_COLORS = ['#6366F1', '#EEF2FF'];
 
+    /**
+     * When set, the calendar is scoped to a single room: every query is filtered
+     * by this room, the room filter UI is hidden, and the add/edit blocking and
+     * working-hours modals lock to it. Null on the global calendar page.
+     */
+    public ?Room $room = null;
+
     /** Calendar mode: 'reservations' (real bookings) or 'template' (recurring week). */
     #[Url(as: 'mode')]
     public string $mode = 'reservations';
@@ -189,8 +196,14 @@ class ReservationCalendar extends FullCalendarWidget
             ->all();
     }
 
-    public function mount(): void
+    public function mount(?Room $room = null): void
     {
+        // Set only when provided (room-scoped View page); the global calendar
+        // page mounts the widget without a room.
+        if ($room !== null) {
+            $this->room = $room;
+        }
+
         // Livewire merges any URL query params over the property default above,
         // so $filterData already carries every key (URL values + defaults).
         $this->filtersForm->fill($this->filterData ?? []);
@@ -200,6 +213,13 @@ class ReservationCalendar extends FullCalendarWidget
 
     public function updated(string $property): void
     {
+        if ($property === 'mode') {
+            // Selected IDs are mode-specific (reservation keys in reservations
+            // mode, schedule:/blocking: keys in template mode), so don't carry
+            // a stale selection across the toggle.
+            $this->selectedIds = [];
+        }
+
         if (in_array($property, ['search', 'mode', 'templateWeekType', 'templateRoomId'], true)) {
             $this->dispatch('filament-fullcalendar--refresh');
         }
@@ -228,7 +248,11 @@ class ReservationCalendar extends FullCalendarWidget
     {
         $count = 0;
 
-        foreach (['clientIds', 'roomIds', 'statusIds', 'serviceIds'] as $key) {
+        $keys = $this->room
+            ? ['clientIds', 'statusIds', 'serviceIds']
+            : ['clientIds', 'roomIds', 'statusIds', 'serviceIds'];
+
+        foreach ($keys as $key) {
             if (filled($this->filterData[$key] ?? [])) {
                 $count++;
             }
@@ -382,6 +406,52 @@ class ReservationCalendar extends FullCalendarWidget
     }
 
     /**
+     * Bulk-delete the items selected in template mode: recurring working-hours
+     * schedules (schedule:*) and recurring blockings (blocking:*).
+     */
+    public function deleteSelectedTemplateAction(): Action
+    {
+        return Action::make('deleteSelectedTemplate')
+            ->label('Smazat')
+            ->icon(Heroicon::OutlinedTrash)
+            ->color('danger')
+            ->disabled(fn (): bool => $this->selectedIds === [])
+            ->requiresConfirmation()
+            ->modalHeading('Smazat vybrané položky')
+            ->modalDescription(fn (): string => 'Počet vybraných položek: '.count($this->selectedIds))
+            ->action(function (): void {
+                $scheduleIds = [];
+                $blockingIds = [];
+
+                foreach ($this->selectedIds as $selectedId) {
+                    [$kind, $id] = array_pad(explode(':', $selectedId), 2, null);
+
+                    if ($id === null) {
+                        continue;
+                    }
+
+                    if ($kind === 'schedule') {
+                        $scheduleIds[] = $id;
+                    } elseif ($kind === 'blocking') {
+                        $blockingIds[] = $id;
+                    }
+                }
+
+                if ($scheduleIds !== []) {
+                    TherapistWeeklySchedule::whereIn('id', $scheduleIds)->delete();
+                }
+
+                if ($blockingIds !== []) {
+                    RoomBlocking::whereIn('id', $blockingIds)->delete();
+                }
+
+                Notification::make()->success()->title('Vybrané položky byly smazány')->send();
+
+                $this->clearSelection();
+            });
+    }
+
+    /**
      * One-time room blocking, created from the reservations toolbar.
      */
     public function addOneTimeBlockingAction(): Action
@@ -391,8 +461,12 @@ class ReservationCalendar extends FullCalendarWidget
             ->icon(Heroicon::OutlinedPlus)
             ->color('gray')
             ->modalHeading('Přidat jednorázovou blokaci')
-            ->schema(BlockingForm::oneTime())
+            ->schema(BlockingForm::oneTime($this->room?->getKey()))
             ->action(function (array $data): void {
+                if ($this->room) {
+                    $data['room_id'] = $this->room->getKey();
+                }
+
                 RoomBlocking::create([...$data, 'is_recurring' => false]);
 
                 Notification::make()->success()->title('Blokace byla přidána')->send();
@@ -411,7 +485,7 @@ class ReservationCalendar extends FullCalendarWidget
             ->fillForm(fn (): array => RoomBlocking::find($this->editingTemplateId)?->only([
                 'room_id', 'start_at', 'end_at', 'reason',
             ]) ?? [])
-            ->schema(BlockingForm::oneTime())
+            ->schema(BlockingForm::oneTime($this->room?->getKey()))
             ->extraModalFooterActions([
                 Action::make('deleteOneTimeBlocking')
                     ->label('Smazat')
@@ -428,6 +502,10 @@ class ReservationCalendar extends FullCalendarWidget
                     ->cancelParentActions(),
             ])
             ->action(function (array $data): void {
+                if ($this->room) {
+                    $data['room_id'] = $this->room->getKey();
+                }
+
                 RoomBlocking::whereKey($this->editingTemplateId)->update([...$data, 'is_recurring' => false]);
 
                 Notification::make()->success()->title('Blokace byla upravena')->send();
@@ -443,8 +521,12 @@ class ReservationCalendar extends FullCalendarWidget
             ->icon(Heroicon::OutlinedPlus)
             ->color('gray')
             ->modalHeading('Přidat opakovanou blokaci')
-            ->schema(BlockingForm::recurring())
+            ->schema(BlockingForm::recurring($this->room?->getKey()))
             ->action(function (array $data): void {
+                if ($this->room) {
+                    $data['room_id'] = $this->room->getKey();
+                }
+
                 RoomBlocking::create([...$data, 'is_recurring' => true]);
 
                 Notification::make()->success()->title('Blokace byla přidána')->send();
@@ -462,8 +544,12 @@ class ReservationCalendar extends FullCalendarWidget
             ->label('Přidat pracovní dobu')
             ->icon(Heroicon::OutlinedCalendarDays)
             ->modalHeading('Přidat pracovní dobu')
-            ->schema(WorkingHoursForm::components())
+            ->schema(WorkingHoursForm::components($this->room?->getKey()))
             ->action(function (array $data): void {
+                if ($this->room) {
+                    $data['room_id'] = $this->room->getKey();
+                }
+
                 TherapistWeeklySchedule::create($data);
 
                 Notification::make()->success()->title('Pracovní doba byla přidána')->send();
@@ -479,7 +565,7 @@ class ReservationCalendar extends FullCalendarWidget
             ->fillForm(fn (): array => TherapistWeeklySchedule::find($this->editingTemplateId)?->only([
                 'therapist_id', 'room_id', 'day_of_week', 'week_type', 'start_time', 'end_time',
             ]) ?? [])
-            ->schema(WorkingHoursForm::components())
+            ->schema(WorkingHoursForm::components($this->room?->getKey()))
             ->extraModalFooterActions([
                 Action::make('deleteSchedule')
                     ->label('Smazat')
@@ -496,6 +582,10 @@ class ReservationCalendar extends FullCalendarWidget
                     ->cancelParentActions(),
             ])
             ->action(function (array $data): void {
+                if ($this->room) {
+                    $data['room_id'] = $this->room->getKey();
+                }
+
                 TherapistWeeklySchedule::whereKey($this->editingTemplateId)->update($data);
 
                 Notification::make()->success()->title('Pracovní doba byla upravena')->send();
@@ -511,7 +601,7 @@ class ReservationCalendar extends FullCalendarWidget
             ->fillForm(fn (): array => RoomBlocking::find($this->editingTemplateId)?->only([
                 'room_id', 'day_of_week', 'week_type', 'start_time', 'end_time', 'reason',
             ]) ?? [])
-            ->schema(BlockingForm::recurring())
+            ->schema(BlockingForm::recurring($this->room?->getKey()))
             ->extraModalFooterActions([
                 Action::make('deleteBlocking')
                     ->label('Smazat')
@@ -528,6 +618,10 @@ class ReservationCalendar extends FullCalendarWidget
                     ->cancelParentActions(),
             ])
             ->action(function (array $data): void {
+                if ($this->room) {
+                    $data['room_id'] = $this->room->getKey();
+                }
+
                 RoomBlocking::whereKey($this->editingTemplateId)->update([...$data, 'is_recurring' => true]);
 
                 Notification::make()->success()->title('Blokace byla upravena')->send();
@@ -563,6 +657,7 @@ class ReservationCalendar extends FullCalendarWidget
                     ->afterStateUpdated(fn () => $this->dispatch('filament-fullcalendar--refresh')),
                 Select::make('roomIds')
                     ->label('Místnost')
+                    ->hidden((bool) $this->room)
                     ->multiple()
                     ->options(fn (): array => $this->roomOptions())
                     ->default([])
@@ -606,12 +701,13 @@ class ReservationCalendar extends FullCalendarWidget
     protected function applyFilters(Builder $query): Builder
     {
         $clientIds = $this->filterData['clientIds'] ?? [];
-        $roomIds = $this->filterData['roomIds'] ?? [];
+        $roomIds = $this->room ? [] : ($this->filterData['roomIds'] ?? []);
         $serviceIds = $this->filterData['serviceIds'] ?? [];
         $statusIds = $this->filterData['statusIds'] ?? [];
         $trashed = $this->filterData['trashed'] ?? 'without';
 
         return $query
+            ->when($this->room, fn (Builder $query) => $query->where('room_id', $this->room->getKey()))
             ->when($this->therapistIds, fn (Builder $query) => $query->whereIn('therapist_id', $this->therapistIds))
             ->when($clientIds, fn (Builder $query) => $query->whereIn('client_id', $clientIds))
             ->when($roomIds, fn (Builder $query) => $query->whereIn('room_id', $roomIds))
@@ -775,7 +871,7 @@ class ReservationCalendar extends FullCalendarWidget
      */
     protected function fetchOneTimeBlockingEvents(array $info): array
     {
-        $roomIds = $this->filterData['roomIds'] ?? [];
+        $roomIds = $this->room ? [] : ($this->filterData['roomIds'] ?? []);
         $start = substr((string) $info['start'], 0, 10);
         $end = substr((string) $info['end'], 0, 10);
 
@@ -787,6 +883,7 @@ class ReservationCalendar extends FullCalendarWidget
             ->whereNotNull('start_at')
             ->where('start_at', '<', $end.' 00:00:00')
             ->where('end_at', '>', $start.' 00:00:00')
+            ->when($this->room, fn (Builder $query) => $query->where('room_id', $this->room->getKey()))
             ->when($roomIds, fn (Builder $query) => $query->whereIn('room_id', $roomIds))
             ->get()
             ->map(fn (RoomBlocking $blocking): array => EventData::make()
@@ -833,6 +930,7 @@ class ReservationCalendar extends FullCalendarWidget
             ->with(['therapist.user', 'room'])
             ->when($this->therapistIds, fn (Builder $query) => $query->whereIn('therapist_id', $this->therapistIds))
             ->when($this->templateRoomId, fn (Builder $query) => $query->where('room_id', $this->templateRoomId))
+            ->when($this->room, fn (Builder $query) => $query->where('room_id', $this->room->getKey()))
             ->when($allowedWeekTypes, fn (Builder $query) => $query->whereIn('week_type', $allowedWeekTypes))
             ->get();
 
@@ -859,6 +957,7 @@ class ReservationCalendar extends FullCalendarWidget
                     'initials' => $this->therapistInitials($schedule->therapist?->user?->name),
                     'room' => $schedule->room?->name,
                     'accent' => $accent,
+                    'isSelected' => in_array('schedule:'.$schedule->getKey(), $this->selectedIds, true),
                 ])
                 ->toArray();
         }
@@ -867,6 +966,7 @@ class ReservationCalendar extends FullCalendarWidget
             ->with('room')
             ->where('is_recurring', true)
             ->when($this->templateRoomId, fn (Builder $query) => $query->where('room_id', $this->templateRoomId))
+            ->when($this->room, fn (Builder $query) => $query->where('room_id', $this->room->getKey()))
             ->when($allowedWeekTypes, fn (Builder $query) => $query->whereIn('week_type', $allowedWeekTypes))
             ->get();
 
@@ -891,6 +991,7 @@ class ReservationCalendar extends FullCalendarWidget
                     'timeLabel' => $this->timeLabel($blocking->start_time, $blocking->end_time),
                     'title' => $blocking->reason ?: 'Blokace',
                     'room' => $blocking->room?->name,
+                    'isSelected' => in_array('blocking:'.$blocking->getKey(), $this->selectedIds, true),
                 ])
                 ->toArray();
         }
@@ -1002,10 +1103,11 @@ class ReservationCalendar extends FullCalendarWidget
             ->whereDate('reservation_date', $date->toDateString())
             ->where('status', '!=', ReservationStatus::Cancelled->value)
             ->when($this->therapistIds, fn (Builder $query) => $query->whereIn('therapist_id', $this->therapistIds))
+            ->when($this->room, fn (Builder $query) => $query->where('room_id', $this->room->getKey()))
             ->get(['start_time', 'end_time']);
 
         $booked = (int) $reservations->sum(fn (Reservation $reservation): int => $this->minutesBetween($reservation->start_time, $reservation->end_time));
-        $available = app(CalendarAvailability::class)->availableMinutes($date, $this->therapistIds);
+        $available = app(CalendarAvailability::class)->availableMinutes($date, $this->therapistIds, $this->room?->getKey());
 
         return [
             'label' => ucfirst($date->locale('cs')->isoFormat('dd D. MMMM')),
@@ -1130,7 +1232,19 @@ class ReservationCalendar extends FullCalendarWidget
     public function onEventClick(array $event): void
     {
         if ($this->isTemplateMode()) {
-            [$kind, $id] = array_pad(explode(':', (string) ($event['id'] ?? '')), 2, null);
+            $eventId = (string) ($event['id'] ?? '');
+
+            if ($eventId === '') {
+                return;
+            }
+
+            if ($this->selectionMode) {
+                $this->toggleSelection($eventId);
+
+                return;
+            }
+
+            [$kind, $id] = array_pad(explode(':', $eventId), 2, null);
 
             if ($id === null) {
                 return;
