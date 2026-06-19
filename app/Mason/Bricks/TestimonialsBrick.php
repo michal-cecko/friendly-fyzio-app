@@ -6,10 +6,12 @@ use App\Mason\Support\Fields;
 use Awcodes\Mason\Brick;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Contracts\Support\Htmlable;
+use RalphJSmit\Filament\MediaLibrary\Filament\Forms\Components\MediaPicker;
 
 class TestimonialsBrick extends Brick
 {
@@ -39,6 +41,10 @@ class TestimonialsBrick extends Brick
             ->slideOver()
             ->schema([
                 ...Fields::heading(),
+                Select::make('background')
+                    ->label('Pozadí')
+                    ->options(['white' => 'Bílé', 'alt' => 'Světle růžové'])
+                    ->default('alt'),
                 Repeater::make('items')
                     ->label('Reference')
                     ->schema([
@@ -51,6 +57,9 @@ class TestimonialsBrick extends Brick
                             ->required(),
                         TextInput::make('role')
                             ->label('Role / popis'),
+                        MediaPicker::make('avatar')
+                            ->label('Fotka')
+                            ->acceptedFileTypes(['image/*']),
                     ])
                     ->defaultItems(3)
                     ->reorderable()

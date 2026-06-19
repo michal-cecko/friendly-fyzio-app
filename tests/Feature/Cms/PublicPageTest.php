@@ -3,6 +3,7 @@
 namespace Tests\Feature\Cms;
 
 use App\Models\Page;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -25,7 +26,7 @@ class PublicPageTest extends TestCase
             'slug' => '/',
             'title' => 'Domů',
             'content' => [
-                $this->brick('hero', ['title' => 'Friendly Fyzio', 'title_accent' => 'klinika']),
+                $this->brick('hero', ['title' => 'Friendly Fyzio', 'eyebrow' => 'FriendlyFyzio', 'features' => '<ul><li>klinika</li></ul>']),
                 $this->brick('rich-text', ['content' => '<p>Vítejte v naší klinice.</p>']),
             ],
         ]);
@@ -53,6 +54,24 @@ class PublicPageTest extends TestCase
         Page::factory()->draft()->create(['slug' => 'skryta']);
 
         $this->get('/skryta')->assertNotFound();
+    }
+
+    public function test_draft_page_is_previewable_by_staff(): void
+    {
+        Page::factory()->draft()->create([
+            'slug' => 'koncept',
+            'content' => [$this->brick('hero', ['title' => 'Koncept stránky'])],
+        ]);
+
+        // Guests cannot see an unpublished page.
+        $this->get('/koncept')->assertNotFound();
+
+        // Staff (admin/manager) get a preview with a notice.
+        $this->actingAs(User::factory()->admin()->create())
+            ->get('/koncept')
+            ->assertOk()
+            ->assertSee('Koncept stránky')
+            ->assertSee('Náhled konceptu');
     }
 
     public function test_missing_page_returns_404(): void

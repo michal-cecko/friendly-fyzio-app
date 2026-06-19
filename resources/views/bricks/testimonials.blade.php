@@ -1,28 +1,32 @@
 @php
     $config ??= [];
     $items = $config['items'] ?? [];
-    $star = rescue(fn () => svg('heroicon-s-star', 'h-5 w-5')->toHtml(), '', false);
+    $bg = ($config['background'] ?? 'alt') === 'white' ? 'bg-white' : 'bg-surface-alt';
 @endphp
 
-<section class="bg-surface-alt py-16 lg:py-24">
-    <div class="mx-auto max-w-7xl px-6 lg:px-8">
+<section class="{{ $bg }} py-16 lg:py-24">
+    <div class="ff-container">
         @include('bricks.partials.heading', ['config' => $config])
 
         @if($items)
             <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                 @foreach($items as $item)
-                    <figure class="flex h-full flex-col rounded-2xl border border-line bg-white p-8">
-                        <div class="mb-4 flex gap-0.5 text-primary">
-                            @for($i = 0; $i < 5; $i++)
-                                {!! $star !!}
-                            @endfor
-                        </div>
-                        <blockquote class="flex-1 leading-relaxed text-neutral-700">&ldquo;{{ $item['quote'] ?? '' }}&rdquo;</blockquote>
-                        <figcaption class="mt-6">
-                            <div class="font-semibold text-neutral-900">{{ $item['author'] ?? '' }}</div>
-                            @if(! empty($item['role']))
-                                <div class="text-sm text-neutral-500">{{ $item['role'] }}</div>
-                            @endif
+                    @php($avatar = \App\Support\Media::url($item['avatar'] ?? null, 'thumb'))
+                    <figure class="flex h-full flex-col gap-4 rounded-2xl border border-line bg-white p-8">
+                        <div class="font-heading text-5xl leading-[0.5] text-primary" aria-hidden="true">&ldquo;</div>
+                        <blockquote class="flex-1 italic leading-relaxed text-neutral-900">{{ $item['quote'] ?? '' }}</blockquote>
+                        <figcaption class="flex items-center gap-3">
+                            <span class="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-primary-light">
+                                @if($avatar)
+                                    <img src="{{ $avatar }}" alt="{{ $item['author'] ?? '' }}" class="h-full w-full object-cover">
+                                @endif
+                            </span>
+                            <span class="flex flex-col">
+                                <span class="font-heading text-sm font-semibold text-neutral-900">{{ $item['author'] ?? '' }}</span>
+                                @if(! empty($item['role']))
+                                    <span class="text-[13px] text-neutral-600">{{ $item['role'] }}</span>
+                                @endif
+                            </span>
                         </figcaption>
                     </figure>
                 @endforeach

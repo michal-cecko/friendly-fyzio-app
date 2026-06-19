@@ -4,10 +4,12 @@ namespace App\Filament\Resources\Pages\Tables;
 
 use App\Enums\PageStatus;
 use App\Models\Page;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -53,6 +55,12 @@ class PagesTable
                 TrashedFilter::make(),
             ])
             ->recordActions([
+                Action::make('visit')
+                    ->label('Zobrazit')
+                    ->icon(Heroicon::OutlinedArrowTopRightOnSquare)
+                    ->color('gray')
+                    ->url(fn (Page $record): string => url($record->path()))
+                    ->openUrlInNewTab(),
                 EditAction::make(),
                 DeleteAction::make()
                     ->visible(fn (Page $record): bool => ! $record->is_system),

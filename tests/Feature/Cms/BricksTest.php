@@ -13,7 +13,7 @@ class BricksTest extends TestCase
 
     public function test_every_registered_brick_is_well_formed(): void
     {
-        foreach (BrickRegistry::all() as $brick) {
+        foreach (BrickRegistry::flat() as $brick) {
             $this->assertNotEmpty($brick::getId(), "{$brick} has an empty id");
             $this->assertNotEmpty($brick::getLabel(), "{$brick} has an empty label");
             // Calling getIcon() validates the referenced Heroicon enum case exists.
@@ -33,9 +33,11 @@ class BricksTest extends TestCase
         Page::factory()->system('home')->create([
             'slug' => '/',
             'content' => [
-                $brick('hero', ['title' => 'Hero nadpis', 'badge' => 'Vítejte']),
+                $brick('hero', ['title' => 'Hero nadpis', 'eyebrow' => 'Vítejte', 'features' => '<ul><li>Bod jedna</li></ul>', 'buttons' => [['text' => 'Akce', 'url' => '/x', 'icon' => 'calendar', 'style' => 'primary']]]),
                 $brick('section-heading', ['title' => 'Nadpis sekce']),
                 $brick('rich-text', ['content' => '<p>Tělo textu.</p>']),
+                $brick('last-minute', ['title' => 'Last-minute termíny', 'therapists' => [['name' => 'Jana', 'role' => 'Fyzioterapeutka', 'slots' => ['Dnes 14:00']]]]),
+                $brick('category-cards', ['title' => 'Kurzy', 'categories' => [['icon' => 'activity', 'title' => 'Pohybové kurzy', 'items' => ['Jóga']]]]),
                 $brick('feature-cards', ['title' => 'Naše služby', 'cards' => [
                     ['icon' => 'heroicon-o-heart', 'title' => 'Fyzioterapie', 'description' => 'Popis.'],
                 ]]),
@@ -55,6 +57,8 @@ class BricksTest extends TestCase
         $this->get('/')
             ->assertOk()
             ->assertSee('Hero nadpis')
+            ->assertSee('Last-minute termíny')
+            ->assertSee('Pohybové kurzy')
             ->assertSee('Naše služby')
             ->assertSee('Fyzioterapie')
             ->assertSee('2000+')

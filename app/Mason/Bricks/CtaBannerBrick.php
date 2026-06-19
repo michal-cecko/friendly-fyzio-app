@@ -2,7 +2,7 @@
 
 namespace App\Mason\Bricks;
 
-use App\Mason\Support\LinkPickerField;
+use App\Mason\Support\ButtonsField;
 use Awcodes\Mason\Brick;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Textarea;
@@ -45,8 +45,7 @@ class CtaBannerBrick extends Brick
                 Textarea::make('subtitle')
                     ->label('Popis')
                     ->rows(2),
-                LinkPickerField::make('cta_', 'Hlavní tlačítko', withText: true),
-                LinkPickerField::make('secondary_cta_', 'Vedlejší tlačítko', withText: true),
+                ButtonsField::make(),
             ]);
     }
 }

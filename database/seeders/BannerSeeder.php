@@ -19,7 +19,7 @@ class BannerSeeder extends Seeder
             'is_active' => true,
             'sort_order' => 10,
             'content' => [
-                'text' => 'Právě probíhá přihlašování na lekce a kurzy leden–duben 2026!',
+                'text' => 'Právě probíhá přihlašování na lekce a kurzy leden–duben!',
                 'cta_text' => 'Přihlásit se',
                 'cta_url' => '/kurzy',
             ],

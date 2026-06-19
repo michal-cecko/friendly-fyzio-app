@@ -42,9 +42,15 @@ class NewsletterBrick extends Brick
                 Textarea::make('subtitle')
                     ->label('Popis')
                     ->rows(2),
+                TextInput::make('placeholder')
+                    ->label('Placeholder pole')
+                    ->default('Váš e-mail'),
                 TextInput::make('button_text')
                     ->label('Text tlačítka')
                     ->default('Odebírat'),
+                TextInput::make('consent')
+                    ->label('Text souhlasu')
+                    ->default('Odesláním souhlasím se zpracováním osobních údajů.'),
             ]);
     }
 }

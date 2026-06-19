@@ -1,51 +1,46 @@
 @php
     $config ??= [];
     $image = \App\Support\Media::url($config['image'] ?? null, '800');
-    $ctaUrl = \App\Support\LinkResolver::fromConfig($config, 'cta_');
-    $cta2Url = \App\Support\LinkResolver::fromConfig($config, 'secondary_cta_');
+    $features = $config['features'] ?? [];
+    $buttons = $config['buttons'] ?? [];
 @endphp
 
 <section class="bg-surface-alt">
-    <div class="mx-auto grid max-w-7xl items-center gap-12 px-6 py-16 lg:grid-cols-2 lg:px-8 lg:py-24">
-        <div>
-            @if(! empty($config['badge']))
-                <span class="mb-6 inline-block rounded-full bg-primary-light px-4 py-1.5 text-sm font-semibold text-primary-dark">
-                    {{ $config['badge'] }}
-                </span>
+    <div class="ff-container flex flex-col items-center gap-12 py-16 lg:min-h-[600px] lg:flex-row lg:justify-between lg:py-0">
+        <div class="flex w-full max-w-[600px] flex-col gap-6">
+            @if(! empty($config['eyebrow']))
+                <p class="font-heading text-sm font-semibold uppercase tracking-[0.14em] text-primary">{{ $config['eyebrow'] }}</p>
             @endif
 
-            <h1 class="font-heading text-4xl font-extrabold leading-tight text-neutral-900 lg:text-5xl">
-                {{ $config['title'] ?? '' }}
-                @if(! empty($config['title_accent']))
-                    <span class="text-primary">{{ $config['title_accent'] }}</span>
+            <h1 class="font-heading text-4xl font-bold leading-[1.15] text-neutral-900 lg:text-5xl">{{ $config['title'] ?? '' }}</h1>
+
+            @if(! empty($features))
+                @if(is_array($features))
+                    <ul class="flex flex-col gap-2.5">
+                        @foreach($features as $feature)
+                            <li class="flex items-center gap-2.5">
+                                <span class="h-2 w-2 shrink-0 rounded-full bg-primary"></span>
+                                <span class="text-base text-neutral-900">{{ is_array($feature) ? ($feature['text'] ?? '') : $feature }}</span>
+                            </li>
+                        @endforeach
+                    </ul>
+                @else
+                    <div class="hero-features text-base text-neutral-900">{!! $features !!}</div>
                 @endif
-            </h1>
-
-            @if(! empty($config['subtitle']))
-                <p class="mt-6 max-w-xl text-lg leading-relaxed text-neutral-600">{{ $config['subtitle'] }}</p>
             @endif
 
-            @if(($ctaUrl && ! empty($config['cta_text'])) || ($cta2Url && ! empty($config['secondary_cta_text'])))
-                <div class="mt-8 flex flex-wrap gap-4">
-                    @if($ctaUrl && ! empty($config['cta_text']))
-                        <a href="{{ $ctaUrl }}" class="inline-flex items-center rounded-full bg-primary px-7 py-3.5 font-semibold text-white transition hover:bg-primary-dark">
-                            {{ $config['cta_text'] }}
-                        </a>
-                    @endif
-                    @if($cta2Url && ! empty($config['secondary_cta_text']))
-                        <a href="{{ $cta2Url }}" class="inline-flex items-center rounded-full border border-line px-7 py-3.5 font-semibold text-neutral-900 transition hover:border-primary hover:text-primary">
-                            {{ $config['secondary_cta_text'] }}
-                        </a>
-                    @endif
+            @if($buttons)
+                <div class="flex flex-wrap gap-3">
+                    @foreach($buttons as $btn)
+                        @include('bricks.partials.button', ['btn' => $btn])
+                    @endforeach
                 </div>
             @endif
         </div>
 
-        <div class="relative">
+        <div class="aspect-[56/52] w-full max-w-[560px] shrink-0 overflow-hidden rounded-2xl bg-primary-light lg:h-[520px] lg:w-[560px]">
             @if($image)
-                <img src="{{ $image }}" alt="{{ $config['title'] ?? '' }}" class="aspect-[4/5] w-full rounded-3xl object-cover lg:aspect-[5/6]">
-            @else
-                <div class="aspect-[4/5] w-full rounded-3xl bg-primary-light lg:aspect-[5/6]"></div>
+                <img src="{{ $image }}" alt="{{ $config['title'] ?? '' }}" class="h-full w-full object-cover">
             @endif
         </div>
     </div>

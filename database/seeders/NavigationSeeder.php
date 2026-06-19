@@ -23,7 +23,7 @@ class NavigationSeeder extends Seeder
             ['label' => 'Služby', 'url' => '/sluzby', 'children' => [
                 ['label' => 'Fyzioterapie', 'url' => '/sluzby'],
                 ['label' => 'Přístrojová terapie', 'url' => '/sluzby'],
-                ['label' => 'Relaxace', 'url' => '/sluzby'],
+                ['label' => 'Masáže a relaxace', 'url' => '/sluzby'],
             ]],
             ['label' => 'Kurzy', 'url' => '/kurzy'],
             ['label' => 'Kontakt', 'url' => '/kontakt'],
@@ -33,19 +33,15 @@ class NavigationSeeder extends Seeder
         $this->addItems($footer, [
             ['label' => 'Služby', 'children' => [
                 ['label' => 'Fyzioterapie', 'url' => '/sluzby'],
-                ['label' => 'Přístrojová terapie', 'url' => '/sluzby'],
-                ['label' => 'Kurzy', 'url' => '/kurzy'],
-                ['label' => 'Relaxace', 'url' => '/sluzby'],
+                ['label' => 'Pohybové kurzy', 'url' => '/kurzy'],
+                ['label' => 'Masáže a relaxace', 'url' => '/sluzby'],
+                ['label' => 'Laser / kryoterapie', 'url' => '/sluzby'],
+                ['label' => 'Workshopy', 'url' => '/kurzy'],
             ]],
-            ['label' => 'Klinika', 'children' => [
-                ['label' => 'O nás', 'url' => '/o-nas'],
-                ['label' => 'Reference', 'url' => '/o-nas'],
-                ['label' => 'Kontakt', 'url' => '/kontakt'],
-            ]],
-            ['label' => 'Informace', 'children' => [
+            ['label' => 'Info', 'children' => [
                 ['label' => 'Ceník', 'url' => '/sluzby'],
-                ['label' => 'Časté dotazy', 'url' => '#'],
-                ['label' => 'Ochrana soukromí', 'url' => '#'],
+                ['label' => 'O nás', 'url' => '/o-nas'],
+                ['label' => 'Dárkové poukazy', 'url' => '/sluzby'],
             ]],
         ]);
     }

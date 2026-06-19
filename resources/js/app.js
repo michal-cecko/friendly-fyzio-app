@@ -1,27 +1,8 @@
 import './bootstrap';
 
 // --- Public site interactions (no framework, keeps the frontend dependency-free) ---
-
-// Header dropdown menus: toggle on click, close others and on outside click.
-document.addEventListener('click', (event) => {
-    const toggle = event.target.closest('[data-dropdown-toggle]');
-    const insideDropdown = event.target.closest('[data-dropdown]');
-    const openMenus = document.querySelectorAll('[data-dropdown-menu]:not(.hidden)');
-
-    if (!insideDropdown) {
-        openMenus.forEach((menu) => menu.classList.add('hidden'));
-    }
-
-    if (toggle) {
-        event.preventDefault();
-        const menu = toggle.closest('[data-dropdown]')?.querySelector('[data-dropdown-menu]');
-        if (!menu) return;
-        openMenus.forEach((other) => {
-            if (other !== menu) other.classList.add('hidden');
-        });
-        menu.classList.toggle('hidden');
-    }
-});
+// Header dropdowns open on hover/focus via CSS (group-hover); only the mobile
+// menu and banner dismissal need JS.
 
 // Mobile navigation toggle.
 document.addEventListener('click', (event) => {

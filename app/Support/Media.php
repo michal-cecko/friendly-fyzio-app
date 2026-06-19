@@ -16,6 +16,12 @@ class Media
             return null;
         }
 
+        // Allow direct URLs / absolute paths (used by seeded design content),
+        // while admin-picked values are media-library item ids.
+        if (is_string($id) && (str_starts_with($id, 'http') || str_starts_with($id, '/'))) {
+            return $id;
+        }
+
         $item = MediaLibraryItem::query()->find($id);
 
         $media = $item?->getItem();

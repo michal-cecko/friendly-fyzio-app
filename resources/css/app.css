@@ -19,6 +19,63 @@
     --color-line: #e5e5e5;
 }
 
+@layer components {
+    /* Shared page container — every block aligns to the same 1440/48px gutters. */
+    .ff-container {
+        margin-inline: auto;
+        width: 100%;
+        max-width: 1440px;
+        padding-inline: 1.5rem;
+    }
+
+    @media (min-width: 1024px) {
+        .ff-container {
+            padding-inline: 3rem;
+        }
+    }
+}
+
+/* Hero "Odrážky" rich-editor content — pink custom bullets to match the design. */
+@layer components {
+    .hero-features ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.625rem;
+    }
+
+    .hero-features li {
+        position: relative;
+        padding-left: 1.125rem;
+    }
+
+    .hero-features li::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0.6em;
+        width: 8px;
+        height: 8px;
+        border-radius: 9999px;
+        background: var(--color-primary);
+    }
+
+    .hero-features p {
+        margin: 0.5rem 0;
+    }
+
+    .hero-features a {
+        color: var(--color-primary-dark);
+        text-decoration: underline;
+    }
+
+    .hero-features strong {
+        font-weight: 700;
+    }
+}
+
 /* Lightweight prose styling for the Rich Text brick (no typography plugin). */
 @layer components {
     .ff-prose h2 {

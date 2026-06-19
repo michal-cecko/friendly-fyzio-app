@@ -7,6 +7,7 @@ use App\Mason\Support\LinkPickerField;
 use Awcodes\Mason\Brick;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Support\Icons\Heroicon;
@@ -41,6 +42,14 @@ class CardsBrick extends Brick
             ->slideOver()
             ->schema([
                 ...Fields::heading(),
+                Select::make('background')
+                    ->label('Pozadí')
+                    ->options(['white' => 'Bílé', 'alt' => 'Světle růžové'])
+                    ->default('white'),
+                Select::make('columns')
+                    ->label('Počet sloupců')
+                    ->options([2 => '2', 3 => '3', 4 => '4'])
+                    ->default(4),
                 Repeater::make('cards')
                     ->label('Karty')
                     ->schema([
@@ -50,11 +59,12 @@ class CardsBrick extends Brick
                         TextInput::make('title')
                             ->label('Nadpis')
                             ->required(),
-                        TextInput::make('meta')
-                            ->label('Doplněk (např. termín, cena)'),
                         Textarea::make('description')
                             ->label('Popis')
                             ->rows(2),
+                        TextInput::make('link_text')
+                            ->label('Text odkazu')
+                            ->default('Zjistit více'),
                         LinkPickerField::make('', 'Odkaz'),
                     ])
                     ->defaultItems(3)

@@ -15,6 +15,7 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\View\ActionsIconAlias;
 use Filament\Auth\Http\Responses\Contracts\LoginResponse as LoginResponseContract;
+use Filament\Forms\Components\RichEditor;
 use Filament\Support\Facades\FilamentIcon;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -51,6 +52,18 @@ class AppServiceProvider extends ServiceProvider
         // base button icon so header and standalone delete buttons match too.
         DeleteAction::configureUsing(fn (DeleteAction $action) => $action->icon(Heroicon::OutlinedTrash));
         ForceDeleteAction::configureUsing(fn (ForceDeleteAction $action) => $action->icon(Heroicon::OutlinedTrash));
+
+        // Globally drop the blockquote & code-block tools from every RichEditor
+        // (Filament's default toolbar minus those two). Plugin buttons (e.g. the
+        // media library button) are merged in separately, so they're unaffected.
+        RichEditor::configureUsing(fn (RichEditor $editor) => $editor->toolbarButtons([
+            ['bold', 'italic', 'underline', 'strike', 'subscript', 'superscript', 'link'],
+            ['h2', 'h3'],
+            ['alignStart', 'alignCenter', 'alignEnd'],
+            ['bulletList', 'orderedList'],
+            ['table', 'attachFiles'],
+            ['undo', 'redo'],
+        ]));
 
         // Inject the public navigation menus into the site header and footer.
         View::composer('components.site.header', fn (\Illuminate\View\View $view) => $view->with('headerNav', $this->navigation(NavigationLocation::Header)));

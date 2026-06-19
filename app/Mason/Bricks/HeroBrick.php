@@ -2,10 +2,10 @@
 
 namespace App\Mason\Bricks;
 
-use App\Mason\Support\LinkPickerField;
+use App\Mason\Support\ButtonsField;
 use Awcodes\Mason\Brick;
 use Filament\Actions\Action;
-use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\TextInput;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Contracts\Support\Htmlable;
@@ -38,21 +38,18 @@ class HeroBrick extends Brick
         return $action
             ->slideOver()
             ->schema([
-                TextInput::make('badge')
-                    ->label('Štítek'),
+                TextInput::make('eyebrow')
+                    ->label('Nadtitulek')
+                    ->default('FriendlyFyzio'),
                 TextInput::make('title')
                     ->label('Nadpis')
                     ->required(),
-                TextInput::make('title_accent')
-                    ->label('Zvýrazněná část nadpisu'),
-                Textarea::make('subtitle')
-                    ->label('Podnadpis')
-                    ->rows(3),
+                RichEditor::make('features')
+                    ->label('Odrážky'),
                 MediaPicker::make('image')
                     ->label('Obrázek')
                     ->acceptedFileTypes(['image/*']),
-                LinkPickerField::make('cta_', 'Hlavní tlačítko', withText: true),
-                LinkPickerField::make('secondary_cta_', 'Vedlejší tlačítko', withText: true),
+                ButtonsField::make(),
             ]);
     }
 }

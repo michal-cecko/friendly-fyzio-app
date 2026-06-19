@@ -1,15 +1,16 @@
 @php($config ??= [])
 
 @if(! empty($config['eyebrow']) || ! empty($config['title']) || ! empty($config['subtitle']))
-    <div class="mx-auto mb-12 max-w-2xl text-center">
+    <div class="mx-auto mb-12 flex max-w-2xl flex-col items-center gap-3 text-center">
         @if(! empty($config['eyebrow']))
-            <p class="mb-3 text-sm font-semibold uppercase tracking-widest text-primary">{{ $config['eyebrow'] }}</p>
+            <p class="font-heading text-sm font-semibold uppercase tracking-[0.12em] text-primary">{{ $config['eyebrow'] }}</p>
         @endif
         @if(! empty($config['title']))
             <h2 class="font-heading text-3xl font-bold text-neutral-900 lg:text-4xl">{{ $config['title'] }}</h2>
         @endif
         @if(! empty($config['subtitle']))
-            <p class="mx-auto mt-4 leading-relaxed text-neutral-600">{{ $config['subtitle'] }}</p>
+            <p class="leading-relaxed text-neutral-600">{{ $config['subtitle'] }}</p>
         @endif
+        <span class="mt-1 h-[3px] w-[60px] rounded-full bg-primary"></span>
     </div>
 @endif

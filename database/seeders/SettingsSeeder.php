@@ -24,11 +24,12 @@ class SettingsSeeder extends Seeder
         foreach ([
             ['web.site_name', 'Friendly Fyzio', 'Název webu'],
             ['web.contact_email', 'info@friendlyfyzio.cz', 'Kontaktní e-mail'],
-            ['web.contact_phone', '+420 777 123 456', 'Telefon'],
-            ['web.address', 'Zdravá 12, 110 00 Praha', 'Adresa'],
+            ['web.contact_phone', '+420 604 793 255', 'Telefon'],
+            ['web.address', 'Zednická 1109/2, Ostrava', 'Adresa'],
             ['web.instagram_url', 'https://instagram.com/friendlyfyzio', 'Instagram URL'],
             ['web.facebook_url', 'https://facebook.com/friendlyfyzio', 'Facebook URL'],
-            ['web.footer_note', 'Komplexní fyzioterapie a péče o ženské zdraví.', 'Text v patičce'],
+            ['web.footer_note', 'Specializovaná fyzioterapie pro ženy i muže. Individuální přístup k vašemu zdraví.', 'Text v patičce'],
+            ['web.company_id', '06816967', 'IČO'],
         ] as $sort => [$key, $value, $label]) {
             $this->upsert([
                 'key' => $key,

@@ -8,16 +8,16 @@
     "packages": [
         {
             "name": "awcodes/mason",
-            "version": "v3.0.4",
+            "version": "v3.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/awcodes/mason.git",
-                "reference": "3bda91a31994857800394d47d64662f0e2d8bf73"
+                "reference": "5ca38bc7d98eadb5871b5de38eafc685422122db"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/awcodes/mason/zipball/3bda91a31994857800394d47d64662f0e2d8bf73",
-                "reference": "3bda91a31994857800394d47d64662f0e2d8bf73",
+                "url": "https://api.github.com/repos/awcodes/mason/zipball/5ca38bc7d98eadb5871b5de38eafc685422122db",
+                "reference": "5ca38bc7d98eadb5871b5de38eafc685422122db",
                 "shasum": ""
             },
             "require": {
@@ -84,7 +84,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-02-05T17:53:32+00:00"
+            "time": "2026-06-03T20:36:33+00:00"
         },
         {
             "name": "bacon/bacon-qr-code",

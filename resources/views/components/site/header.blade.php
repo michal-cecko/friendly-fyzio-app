@@ -1,7 +1,7 @@
 @php($items = $headerNav?->items ?? collect())
 
 <header data-site-header class="sticky top-0 z-40 border-b border-line bg-white/90 backdrop-blur">
-    <div class="mx-auto flex h-20 max-w-7xl items-center justify-between px-6 lg:px-8">
+    <div class="ff-container flex h-20 items-center justify-between">
         <a href="{{ url('/') }}" class="flex items-center">
             <img src="{{ asset('logo/ff-logo-bright.svg') }}" alt="Friendly Fyzio" class="h-9 w-auto">
         </a>
@@ -9,15 +9,18 @@
         <nav class="hidden items-center gap-1 lg:flex">
             @foreach($items as $item)
                 @if($item->children->isNotEmpty())
-                    <div class="relative" data-dropdown>
-                        <button type="button" data-dropdown-toggle class="inline-flex items-center gap-1 rounded-full px-4 py-2 text-sm font-medium text-neutral-700 transition hover:bg-surface-alt hover:text-primary">
+                    <div class="group relative">
+                        <a href="{{ $item->resolvedUrl() ?? '#' }}" class="inline-flex items-center gap-1 rounded-full px-4 py-2 text-sm font-medium text-neutral-700 transition hover:bg-surface-alt hover:text-primary">
                             {{ $item->label }}
-                            <svg class="h-4 w-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                        </button>
-                        <div data-dropdown-menu class="absolute left-0 top-full mt-2 hidden min-w-56 rounded-2xl border border-line bg-white p-2 shadow-xl shadow-neutral-900/5">
-                            @foreach($item->children as $child)
-                                <a href="{{ $child->resolvedUrl() ?? '#' }}" target="{{ $child->target }}" class="block rounded-xl px-4 py-2.5 text-sm text-neutral-700 transition hover:bg-surface-alt hover:text-primary">{{ $child->label }}</a>
-                            @endforeach
+                            <svg class="h-4 w-4 text-neutral-400 transition group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </a>
+                        {{-- Hover (and keyboard focus) reveals the dropdown on desktop; pt-2 bridges the gap so hover stays. --}}
+                        <div class="absolute left-0 top-full hidden pt-2 group-hover:block group-focus-within:block">
+                            <div class="min-w-56 rounded-2xl border border-line bg-white p-2 shadow-xl shadow-neutral-900/5">
+                                @foreach($item->children as $child)
+                                    <a href="{{ $child->resolvedUrl() ?? '#' }}" target="{{ $child->target }}" class="block rounded-xl px-4 py-2.5 text-sm text-neutral-700 transition hover:bg-surface-alt hover:text-primary">{{ $child->label }}</a>
+                                @endforeach
+                            </div>
                         </div>
                     </div>
                 @else
@@ -37,7 +40,7 @@
     </div>
 
     <div data-mobile-menu class="hidden border-t border-line bg-white lg:hidden">
-        <nav class="space-y-1 px-6 py-4">
+        <nav class="ff-container space-y-1 py-4">
             @foreach($items as $item)
                 @if($item->children->isNotEmpty())
                     <p class="px-2 pt-3 text-xs font-semibold uppercase tracking-wide text-neutral-400">{{ $item->label }}</p>

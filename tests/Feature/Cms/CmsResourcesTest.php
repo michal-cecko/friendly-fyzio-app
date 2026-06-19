@@ -78,6 +78,16 @@ class CmsResourcesTest extends TestCase
             ->assertFormFieldIsDisabled('slug');
     }
 
+    public function test_edit_page_has_visit_action(): void
+    {
+        $page = Page::factory()->create(['slug' => 'o-nas']);
+
+        $this->actingAs($this->admin());
+
+        Livewire::test(EditPage::class, ['record' => $page->getKey()])
+            ->assertActionExists('visit');
+    }
+
     public function test_admin_can_create_topbar_banner(): void
     {
         $this->actingAs($this->admin());

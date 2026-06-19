@@ -5,7 +5,7 @@
 @endphp
 
 <div data-banner="{{ $banner->id }}" class="relative text-white" style="background: {{ $bg ?: 'var(--color-primary)' }}">
-    <div class="mx-auto flex max-w-7xl items-center justify-center gap-3 px-10 py-2.5 text-center text-sm">
+    <div class="ff-container flex items-center justify-center gap-3 py-2.5 text-center text-sm">
         @if(! empty($content['icon']))
             {!! rescue(fn () => svg($content['icon'], 'h-4 w-4 shrink-0')->toHtml(), '', false) !!}
         @endif
