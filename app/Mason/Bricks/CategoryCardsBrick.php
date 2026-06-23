@@ -6,9 +6,9 @@ use App\Mason\Support\Fields;
 use Awcodes\Mason\Brick;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Support\Icons\Heroicon;
+use Guava\IconPicker\Forms\Components\IconPicker;
 use Illuminate\Contracts\Support\Htmlable;
 
 class CategoryCardsBrick extends Brick
@@ -46,17 +46,11 @@ class CategoryCardsBrick extends Brick
                 Repeater::make('categories')
                     ->label('Kategorie')
                     ->schema([
-                        Select::make('icon')
+                        IconPicker::make('icon')
                             ->label('Ikona')
-                            ->options([
-                                'activity' => 'Pohyb',
-                                'users' => 'Skupina',
-                                'calendar' => 'Kalendář',
-                                'clock' => 'Hodiny',
-                                'sparkles' => 'Jiskry',
-                                'heart' => 'Srdce',
-                            ])
-                            ->default('activity'),
+                            ->sets(['lucide'])
+                            ->searchable()
+                            ->default('lucide-activity'),
                         TextInput::make('title')
                             ->label('Nadpis')
                             ->required(),
@@ -66,7 +60,17 @@ class CategoryCardsBrick extends Brick
                             ->label('Odkaz'),
                         Repeater::make('items')
                             ->label('Položky')
-                            ->simple(TextInput::make('label')->required())
+                            ->schema([
+                                TextInput::make('label')
+                                    ->label('Název')
+                                    ->required(),
+                                TextInput::make('meta')
+                                    ->label('Doplňující údaj')
+                                    ->placeholder('Začíná 12. 1. 2026'),
+                                TextInput::make('url')
+                                    ->label('Odkaz na detail'),
+                            ])
+                            ->columns(2)
                             ->defaultItems(0),
                     ])
                     ->defaultItems(0)

@@ -18,9 +18,7 @@ class LinkResolver
         $type = $link['link_type'] ?? 'custom';
 
         if ($type === 'page' && ! empty($link['page_id'])) {
-            $page = Page::find($link['page_id']);
-
-            return $page ? url($page->path()) : null;
+            return Page::find($link['page_id'])?->permalink;
         }
 
         $url = $link['url'] ?? null;

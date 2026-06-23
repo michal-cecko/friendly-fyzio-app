@@ -26,7 +26,7 @@
     <div class="hidden lg:block">
         {{-- Row 1 — logo + auth / booking CTA --}}
         <div class="ff-container flex items-center justify-between py-4">
-            <a href="{{ url('/') }}" class="flex items-center gap-1 font-heading text-[22px] leading-none">
+            <a href="{{ url('/') }}" class="flex items-center font-heading text-[22px] leading-none">
                 <span class="font-medium text-neutral-900">Friendly</span>
                 <span class="font-semibold italic text-primary">Fyzio</span>
             </a>
@@ -108,7 +108,7 @@
     {{-- ============================ MOBILE (< lg) ============================ --}}
     <div class="lg:hidden">
         <div class="flex h-16 items-center justify-between px-5">
-            <a href="{{ url('/') }}" class="flex items-center gap-1 font-heading text-lg leading-none">
+            <a href="{{ url('/') }}" class="flex items-center font-heading text-lg leading-none">
                 <span class="font-medium text-neutral-900">Friendly</span>
                 <span class="font-semibold italic text-primary">Fyzio</span>
             </a>

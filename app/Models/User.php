@@ -65,17 +65,26 @@ class User extends Authenticatable implements FilamentUser, HasPasskeys, MustVer
     }
 
     /**
+     * Staff accounts (administrators and therapists) belong in the admin panel;
+     * customers belong in the client zone.
+     */
+    public function isStaff(): bool
+    {
+        return in_array($this->role, [UserRole::Admin, UserRole::Therapist], true);
+    }
+
+    /**
      * Panel access by account type:
      * - admin panel: staff only (administrators and therapists).
-     * - client panel: any authenticated user; staff are redirected to the admin
-     *   panel after login (see App\Http\Responses\LoginResponse), so they never
-     *   linger here, but allowing them keeps the single shared login working.
+     * - client panel: any authenticated user; staff who land here are redirected
+     *   to the admin panel (see App\Http\Middleware\RedirectStaffToAdmin), but
+     *   allowing them keeps the single shared login working.
      * The account type also drives the matching Shield role (see booted()).
      */
     public function canAccessPanel(Panel $panel): bool
     {
         return match ($panel->getId()) {
-            'admin' => in_array($this->role, [UserRole::Admin, UserRole::Therapist], true),
+            'admin' => $this->isStaff(),
             'client' => in_array($this->role, [UserRole::Admin, UserRole::Therapist, UserRole::Customer], true),
             default => false,
         };

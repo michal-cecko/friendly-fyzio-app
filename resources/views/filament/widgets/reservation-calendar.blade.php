@@ -1,5 +1,5 @@
 @php
-    use App\Filament\Resources\Reservations\ReservationResource;
+    use App\Filament\Clusters\Provoz\Resources\Reservations\ReservationResource;
 
     $plugin = \Saade\FilamentFullCalendar\FilamentFullCalendarPlugin::get();
     $hasSelection = filled($therapistIds);

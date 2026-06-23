@@ -7,7 +7,6 @@ use Awcodes\Mason\Brick;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Contracts\Support\Htmlable;
@@ -48,10 +47,7 @@ class TestimonialsBrick extends Brick
                 Repeater::make('items')
                     ->label('Reference')
                     ->schema([
-                        Textarea::make('quote')
-                            ->label('Citace')
-                            ->rows(3)
-                            ->required(),
+                        Fields::richText('quote', 'Citace', required: true),
                         TextInput::make('author')
                             ->label('Jméno')
                             ->required(),

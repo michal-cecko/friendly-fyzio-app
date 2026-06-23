@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\ServiceType;
 use App\Enums\ServiceVisibility;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -46,6 +47,17 @@ class Service extends Model
     protected function type(): Attribute
     {
         return Attribute::get(fn (): ?ServiceType => $this->category?->type);
+    }
+
+    /**
+     * Services visible on the public website: publicly visible and published.
+     */
+    public function scopePublic(Builder $query): Builder
+    {
+        return $query
+            ->where('visibility', ServiceVisibility::Public)
+            ->whereNotNull('published_at')
+            ->where('published_at', '<=', now());
     }
 
     public function category(): BelongsTo

@@ -2,7 +2,6 @@
 
 namespace Database\Factories;
 
-use App\Enums\PageStatus;
 use App\Models\Page;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
@@ -22,7 +21,6 @@ class PageFactory extends Factory
         return [
             'title' => $title,
             'slug' => Str::slug($title).'-'.$this->faker->unique()->numberBetween(1, 99999),
-            'status' => PageStatus::Published,
             'content' => [],
             'sort_order' => 0,
             'is_system' => false,
@@ -32,7 +30,7 @@ class PageFactory extends Factory
 
     public function draft(): static
     {
-        return $this->state(fn (): array => ['status' => PageStatus::Draft, 'published_at' => null]);
+        return $this->state(fn (): array => ['published_at' => null]);
     }
 
     public function system(string $key): static

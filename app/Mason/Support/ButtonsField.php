@@ -5,6 +5,7 @@ namespace App\Mason\Support;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Guava\IconPicker\Forms\Components\IconPicker;
 
 /**
  * A reusable, reorderable repeater of buttons. Each button has a visual style,
@@ -27,9 +28,10 @@ class ButtonsField
                     ->options(self::styles())
                     ->default('primary')
                     ->required(),
-                Select::make('icon')
+                IconPicker::make('icon')
                     ->label('Ikona (nepovinné)')
-                    ->options(self::icons()),
+                    ->sets(['lucide'])
+                    ->searchable(),
                 LinkPickerField::make('', 'Odkaz'),
             ])
             ->reorderable()
@@ -51,22 +53,6 @@ class ButtonsField
             'outline' => 'Obrys',
             'ghost' => 'Text (terciární)',
             'white' => 'Bílé (na tmavém pozadí)',
-        ];
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    public static function icons(): array
-    {
-        return [
-            'calendar' => 'Kalendář',
-            'sparkles' => 'Jiskry',
-            'gift' => 'Dárek',
-            'arrow-right' => 'Šipka',
-            'message-circle' => 'Zpráva',
-            'phone' => 'Telefon',
-            'instagram' => 'Instagram',
         ];
     }
 }

@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Filament\Resources\CourseCategories\Pages\CreateCourseCategory;
-use App\Filament\Resources\CourseCategories\Pages\EditCourseCategory;
-use App\Filament\Resources\CourseCategories\Pages\ListCourseCategories;
+use App\Filament\Clusters\Kurzy\Resources\CourseCategories\Pages\CreateCourseCategory;
+use App\Filament\Clusters\Kurzy\Resources\CourseCategories\Pages\EditCourseCategory;
+use App\Filament\Clusters\Kurzy\Resources\CourseCategories\Pages\ListCourseCategories;
 use App\Models\CourseCategory;
 use App\Models\User;
 use Filament\Facades\Filament;

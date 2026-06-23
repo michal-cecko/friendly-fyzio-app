@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Filament\Resources\Clients\Pages\ViewClient;
-use App\Filament\Resources\Clients\RelationManagers\NotesRelationManager;
+use App\Filament\Clusters\Provoz\Resources\Clients\Pages\ViewClient;
+use App\Filament\Clusters\Provoz\Resources\Clients\RelationManagers\NotesRelationManager;
 use App\Models\ClientNote;
 use App\Models\User;
 use Filament\Actions\Testing\TestAction;

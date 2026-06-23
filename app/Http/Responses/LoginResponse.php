@@ -2,7 +2,6 @@
 
 namespace App\Http\Responses;
 
-use App\Enums\UserRole;
 use App\Models\User;
 use Filament\Auth\Http\Responses\Contracts\LoginResponse as LoginResponseContract;
 use Filament\Facades\Filament;
@@ -20,9 +19,7 @@ class LoginResponse implements LoginResponseContract
         /** @var User $user */
         $user = Filament::auth()->user();
 
-        $panelId = in_array($user->role, [UserRole::Admin, UserRole::Therapist], true)
-            ? 'admin'
-            : 'client';
+        $panelId = $user->isStaff() ? 'admin' : 'client';
 
         // Redirect straight to the role's panel home rather than the "intended"
         // URL: a customer bounced off /admin would otherwise be sent back there

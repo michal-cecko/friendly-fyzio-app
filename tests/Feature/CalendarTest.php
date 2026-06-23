@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\ReservationStatus;
-use App\Filament\Resources\Reservations\ReservationResource;
+use App\Filament\Clusters\Provoz\Resources\Reservations\ReservationResource;
 use App\Filament\Widgets\ReservationCalendar;
 use App\Models\Building;
 use App\Models\Reservation;

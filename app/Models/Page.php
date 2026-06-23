@@ -2,26 +2,27 @@
 
 namespace App\Models;
 
-use App\Enums\PageStatus;
+use App\Contracts\HasPermalink;
+use App\Models\Concerns\Publishable;
 use Database\Factories\PageFactory;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Page extends Model
+class Page extends Model implements HasPermalink
 {
     /** @use HasFactory<PageFactory> */
-    use HasFactory, HasUuids, SoftDeletes;
+    use HasFactory, HasUuids, Publishable, SoftDeletes;
 
     protected $fillable = [
         'slug',
         'title',
         'system_key',
         'content',
-        'status',
         'sort_order',
         'featured_image',
         'meta_title',
@@ -35,9 +36,7 @@ class Page extends Model
     {
         return [
             'content' => 'array',
-            'status' => PageStatus::class,
             'is_system' => 'boolean',
-            'published_at' => 'datetime',
         ];
     }
 
@@ -46,9 +45,12 @@ class Page extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function scopePublished(Builder $query): Builder
+    /**
+     * The model this page is the public page for (e.g. a ServiceCategory), if any.
+     */
+    public function pageable(): MorphTo
     {
-        return $query->where('status', PageStatus::Published);
+        return $this->morphTo();
     }
 
     public function isHome(): bool
@@ -62,6 +64,15 @@ class Page extends Model
     public function path(): string
     {
         return $this->isHome() ? '/' : '/'.$this->slug;
+    }
+
+    /**
+     * Canonical public URL. When this page is attached to an owner (pageable),
+     * the owner's permalink wins so the two URLs can never diverge.
+     */
+    public function permalink(): Attribute
+    {
+        return Attribute::get(fn (): string => $this->pageable?->permalink ?? url($this->path()));
     }
 
     protected static function booted(): void

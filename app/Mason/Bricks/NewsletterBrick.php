@@ -2,9 +2,9 @@
 
 namespace App\Mason\Bricks;
 
+use App\Mason\Support\Fields;
 use Awcodes\Mason\Brick;
 use Filament\Actions\Action;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Contracts\Support\Htmlable;
@@ -36,12 +36,8 @@ class NewsletterBrick extends Brick
         return $action
             ->slideOver()
             ->schema([
-                TextInput::make('title')
-                    ->label('Nadpis')
-                    ->required(),
-                Textarea::make('subtitle')
-                    ->label('Popis')
-                    ->rows(2),
+                Fields::richText('title', 'Nadpis', required: true),
+                Fields::richText('subtitle', 'Popis'),
                 TextInput::make('placeholder')
                     ->label('Placeholder pole')
                     ->default('Váš e-mail'),

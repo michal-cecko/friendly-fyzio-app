@@ -4,7 +4,7 @@
     $image = \App\Support\Media::url($content['image'] ?? null, '800');
 @endphp
 
-<div data-banner="{{ $banner->id }}" class="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/60 p-4">
+<div data-banner="{{ $banner->id }}" data-banner-delay="2000" class="pointer-events-none invisible fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/60 p-4 opacity-0 transition-opacity duration-500">
     <div class="relative w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-2xl">
         <button type="button" data-banner-dismiss class="absolute right-4 top-4 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-neutral-700 transition hover:bg-white" aria-label="Zavřít">
             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>

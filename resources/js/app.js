@@ -31,6 +31,14 @@ document.addEventListener('DOMContentLoaded', () => {
             banner.remove();
         }
     });
+
+    // Pop-up / floating banners fade in shortly after load instead of instantly.
+    document.querySelectorAll('[data-banner-delay]').forEach((banner) => {
+        const delay = Number(banner.dataset.bannerDelay) || 2000;
+        window.setTimeout(() => {
+            banner.classList.remove('invisible', 'pointer-events-none', 'opacity-0');
+        }, delay);
+    });
 });
 
 document.addEventListener('click', (event) => {

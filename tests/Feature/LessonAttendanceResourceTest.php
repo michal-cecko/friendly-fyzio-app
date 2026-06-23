@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Filament\Resources\LessonAttendances\Pages\CreateLessonAttendance;
-use App\Filament\Resources\LessonAttendances\Pages\EditLessonAttendance;
-use App\Filament\Resources\LessonAttendances\Pages\ListLessonAttendances;
+use App\Filament\Clusters\Kurzy\Resources\LessonAttendances\Pages\CreateLessonAttendance;
+use App\Filament\Clusters\Kurzy\Resources\LessonAttendances\Pages\EditLessonAttendance;
+use App\Filament\Clusters\Kurzy\Resources\LessonAttendances\Pages\ListLessonAttendances;
 use App\Models\CourseEnrollment;
 use App\Models\CourseLesson;
 use App\Models\LessonAttendance;

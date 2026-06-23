@@ -4,15 +4,17 @@ namespace Tests\Feature\Cms;
 
 use App\Enums\BannerType;
 use App\Enums\NavigationLocation;
-use App\Filament\Resources\Banners\Pages\CreateBanner;
-use App\Filament\Resources\Navigations\Pages\EditNavigation;
-use App\Filament\Resources\Pages\Pages\CreatePage;
-use App\Filament\Resources\Pages\Pages\EditPage;
-use App\Filament\Resources\Pages\Pages\ListPages;
+use App\Filament\Clusters\Obsah\Resources\Banners\Pages\CreateBanner;
+use App\Filament\Clusters\Obsah\Resources\Navigations\Pages\EditNavigation;
+use App\Filament\Clusters\Obsah\Resources\Pages\Pages\CreatePage;
+use App\Filament\Clusters\Obsah\Resources\Pages\Pages\EditPage;
+use App\Filament\Clusters\Obsah\Resources\Pages\Pages\ListPages;
+use App\Filament\Clusters\Provoz\Resources\ServiceCategories\Pages\EditServiceCategory;
 use App\Models\Banner;
 use App\Models\Navigation;
 use App\Models\NavigationItem;
 use App\Models\Page;
+use App\Models\ServiceCategory;
 use App\Models\User;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -50,7 +52,7 @@ class CmsResourcesTest extends TestCase
             ->fillForm([
                 'title' => 'O nás',
                 'slug' => 'o-nas',
-                'status' => 'published',
+                'published_at' => now(),
             ])
             ->call('create')
             ->assertHasNoFormErrors();
@@ -85,6 +87,87 @@ class CmsResourcesTest extends TestCase
         $this->actingAs($this->admin());
 
         Livewire::test(EditPage::class, ['record' => $page->getKey()])
+            ->assertActionExists('visit');
+    }
+
+    public function test_edit_page_form_renders_with_pageable_owner_selector(): void
+    {
+        $category = ServiceCategory::factory()->create();
+        $page = Page::factory()->for($category, 'pageable')->create(['slug' => 'o-nas']);
+
+        $this->actingAs($this->admin());
+
+        // Renders cleanly with the MorphToSelect owner picker bound to an attached page.
+        Livewire::test(EditPage::class, ['record' => $page->getKey()])->assertOk();
+    }
+
+    public function test_admin_can_save_category_public_page_fields(): void
+    {
+        $category = ServiceCategory::factory()->create();
+
+        $this->actingAs($this->admin());
+
+        Livewire::test(EditServiceCategory::class, ['record' => $category->getKey()])
+            ->fillForm(['description' => 'Krásný popis kategorie.'])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        // The perex is now a rich-text editor, so plain input is stored as HTML.
+        $this->assertDatabaseHas('service_categories', [
+            'id' => $category->id,
+            'description' => '<p>Krásný popis kategorie.</p>',
+        ]);
+    }
+
+    public function test_admin_can_author_inline_custom_page_on_category(): void
+    {
+        $category = ServiceCategory::factory()->create(['slug' => 'relaxace']);
+
+        $this->actingAs($this->admin());
+
+        Livewire::test(EditServiceCategory::class, ['record' => $category->getKey()])
+            ->fillForm([
+                'customPage' => [
+                    'published_at' => now(),
+                    'content' => [
+                        ['type' => 'masonBrick', 'attrs' => ['id' => 'hero', 'config' => ['title' => 'Vlastní vzhled']]],
+                    ],
+                ],
+            ])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $page = $category->refresh()->customPage;
+
+        $this->assertNotNull($page);
+        $this->assertSame($category->id, $page->pageable_id);
+        $this->assertSame(ServiceCategory::class, $page->pageable_type);
+
+        $this->get('/sluzby/relaxace')->assertOk()->assertSee('Vlastní vzhled');
+    }
+
+    public function test_empty_inline_custom_page_creates_no_page(): void
+    {
+        $category = ServiceCategory::factory()->create();
+
+        $this->actingAs($this->admin());
+
+        Livewire::test(EditServiceCategory::class, ['record' => $category->getKey()])
+            ->fillForm(['description' => 'Jen výchozí rozvržení.'])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $this->assertNull($category->refresh()->customPage);
+        $this->assertSame(0, Page::count());
+    }
+
+    public function test_category_edit_has_open_public_page_action(): void
+    {
+        $category = ServiceCategory::factory()->create();
+
+        $this->actingAs($this->admin());
+
+        Livewire::test(EditServiceCategory::class, ['record' => $category->getKey()])
             ->assertActionExists('visit');
     }
 

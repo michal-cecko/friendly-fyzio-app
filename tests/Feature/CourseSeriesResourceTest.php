@@ -3,9 +3,9 @@
 namespace Tests\Feature;
 
 use App\Enums\CourseSeriesStatus;
-use App\Filament\Resources\CourseSeries\Pages\CreateCourseSeries;
-use App\Filament\Resources\CourseSeries\Pages\EditCourseSeries;
-use App\Filament\Resources\CourseSeries\Pages\ListCourseSeries;
+use App\Filament\Clusters\Kurzy\Resources\CourseSeries\Pages\CreateCourseSeries;
+use App\Filament\Clusters\Kurzy\Resources\CourseSeries\Pages\EditCourseSeries;
+use App\Filament\Clusters\Kurzy\Resources\CourseSeries\Pages\ListCourseSeries;
 use App\Models\Course;
 use App\Models\CourseSeries;
 use App\Models\User;

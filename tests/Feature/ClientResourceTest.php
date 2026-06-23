@@ -4,12 +4,12 @@ namespace Tests\Feature;
 
 use App\Enums\ReservationStatus;
 use App\Enums\UserRole;
+use App\Filament\Clusters\Provoz\Resources\Clients\Pages\CreateClient;
+use App\Filament\Clusters\Provoz\Resources\Clients\Pages\EditClient;
+use App\Filament\Clusters\Provoz\Resources\Clients\Pages\ListClients;
+use App\Filament\Clusters\Provoz\Resources\Clients\Pages\ViewClient;
+use App\Filament\Clusters\Provoz\Resources\Clients\Widgets\ClientStatsOverview;
 use App\Filament\Pages\Calendar;
-use App\Filament\Resources\Clients\Pages\CreateClient;
-use App\Filament\Resources\Clients\Pages\EditClient;
-use App\Filament\Resources\Clients\Pages\ListClients;
-use App\Filament\Resources\Clients\Pages\ViewClient;
-use App\Filament\Resources\Clients\Widgets\ClientStatsOverview;
 use App\Models\ClientProfile;
 use App\Models\Reservation;
 use App\Models\User;
@@ -40,7 +40,7 @@ class ClientResourceTest extends TestCase
     {
         $admin = User::factory()->admin()->create();
 
-        $this->actingAs($admin)->get('/admin/clients')->assertSuccessful();
+        $this->actingAs($admin)->get('/admin/provoz/clients')->assertSuccessful();
     }
 
     public function test_clients_list_shows_only_customers(): void
@@ -185,7 +185,7 @@ class ClientResourceTest extends TestCase
 
         $client = User::factory()->customer()->create();
 
-        $this->get("/admin/clients/{$client->getKey()}")->assertSuccessful();
+        $this->get("/admin/provoz/clients/{$client->getKey()}")->assertSuccessful();
     }
 
     public function test_client_detail_shows_anamnesis(): void
@@ -198,7 +198,7 @@ class ClientResourceTest extends TestCase
             'anamnesis' => 'Chronické bolesti bederní páteře po úrazu.',
         ]);
 
-        $this->get("/admin/clients/{$client->getKey()}")
+        $this->get("/admin/provoz/clients/{$client->getKey()}")
             ->assertSuccessful()
             ->assertSee('Chronické bolesti bederní páteře po úrazu.');
     }
@@ -261,6 +261,6 @@ class ClientResourceTest extends TestCase
 
         $therapist = User::factory()->therapist()->create();
 
-        $this->get("/admin/clients/{$therapist->getKey()}/edit")->assertNotFound();
+        $this->get("/admin/provoz/clients/{$therapist->getKey()}/edit")->assertNotFound();
     }
 }

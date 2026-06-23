@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\PageController;
+use App\Http\Controllers\ServiceCategoryController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -23,6 +24,12 @@ Route::get('/dev/er-diagram', function () {
 // published page resolves by slug. Reserved prefixes (Filament panels, Livewire,
 // passkeys, storage, dev, health) are excluded from the catch-all.
 Route::get('/', [PageController::class, 'show'])->name('home');
+
+// Public service category pages (default data-driven layout, or a custom page
+// attached via the polymorphic `pageable` relationship). Registered before the
+// catch-all so the prefixed path resolves to its own controller.
+Route::get('/sluzby/{category:slug}', [ServiceCategoryController::class, 'show'])
+    ->name('service-category.show');
 
 Route::get('/{slug}', [PageController::class, 'show'])
     ->where('slug', '^(?!admin|klientska-zona|livewire|passkeys|storage|dev|up).*$')

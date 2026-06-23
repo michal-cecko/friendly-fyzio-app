@@ -5,7 +5,7 @@ namespace Tests\Feature;
 use App\Enums\DayOfWeek;
 use App\Enums\ReservationStatus;
 use App\Enums\WeekType;
-use App\Filament\Resources\Rooms\RoomResource;
+use App\Filament\Clusters\Provoz\Resources\Rooms\RoomResource;
 use App\Filament\Widgets\ReservationCalendar;
 use App\Models\Building;
 use App\Models\Reservation;

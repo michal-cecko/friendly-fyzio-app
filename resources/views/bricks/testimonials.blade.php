@@ -14,7 +14,7 @@
                     @php($avatar = \App\Support\Media::url($item['avatar'] ?? null, 'thumb'))
                     <figure class="flex h-full flex-col gap-4 rounded-2xl border border-line bg-white p-8">
                         <div class="font-heading text-5xl leading-[0.5] text-primary" aria-hidden="true">&ldquo;</div>
-                        <blockquote class="flex-1 italic leading-relaxed text-neutral-900">{{ $item['quote'] ?? '' }}</blockquote>
+                        <blockquote class="flex-1 italic leading-relaxed text-neutral-900">{!! \App\Support\RichText::inline($item['quote'] ?? '') !!}</blockquote>
                         <figcaption class="flex items-center gap-3">
                             <span class="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-primary-light">
                                 @if($avatar)

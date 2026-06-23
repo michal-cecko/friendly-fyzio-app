@@ -3,9 +3,9 @@
 namespace Tests\Feature;
 
 use App\Enums\PaymentStatus;
-use App\Filament\Resources\WorkshopRegistrations\Pages\CreateWorkshopRegistration;
-use App\Filament\Resources\WorkshopRegistrations\Pages\EditWorkshopRegistration;
-use App\Filament\Resources\WorkshopRegistrations\Pages\ListWorkshopRegistrations;
+use App\Filament\Clusters\LekceWorkshopy\Resources\WorkshopRegistrations\Pages\CreateWorkshopRegistration;
+use App\Filament\Clusters\LekceWorkshopy\Resources\WorkshopRegistrations\Pages\EditWorkshopRegistration;
+use App\Filament\Clusters\LekceWorkshopy\Resources\WorkshopRegistrations\Pages\ListWorkshopRegistrations;
 use App\Models\User;
 use App\Models\Workshop;
 use App\Models\WorkshopRegistration;

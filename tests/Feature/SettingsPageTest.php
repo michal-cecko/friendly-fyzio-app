@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\SettingValueType;
-use App\Filament\Pages\Settings;
+use App\Filament\Clusters\System\Pages\Settings;
 use App\Models\Setting;
 use App\Models\User;
 use App\Support\Settings as SettingsHelper;

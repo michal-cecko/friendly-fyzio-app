@@ -28,7 +28,7 @@
                         <div class="flex flex-1 flex-col gap-3 p-6">
                             <h3 class="font-heading text-lg font-semibold text-neutral-900">{{ $card['title'] ?? '' }}</h3>
                             @if(! empty($card['description']))
-                                <p class="text-sm leading-relaxed text-neutral-600">{{ $card['description'] }}</p>
+                                <p class="text-sm leading-relaxed text-neutral-600">{!! \App\Support\RichText::inline($card['description']) !!}</p>
                             @endif
                             @if($url)
                                 <a href="{{ $url }}" class="mt-auto inline-flex items-center gap-1.5 pt-1 font-heading text-sm font-semibold text-primary transition hover:gap-2.5">

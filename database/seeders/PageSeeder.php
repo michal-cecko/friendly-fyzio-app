@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Enums\PageStatus;
 use App\Models\Page;
 use Illuminate\Database\Seeder;
 use RalphJSmit\Filament\MediaLibrary\Models\MediaLibraryItem;
@@ -25,7 +24,6 @@ class PageSeeder extends Seeder
                     'slug' => $slug,
                     'title' => $title,
                     'is_system' => true,
-                    'status' => PageStatus::Published,
                     'published_at' => now(),
                     'content' => [
                         $this->brick('hero', [
@@ -58,7 +56,6 @@ class PageSeeder extends Seeder
                 'slug' => '/',
                 'title' => 'Domů',
                 'is_system' => true,
-                'status' => PageStatus::Published,
                 'published_at' => now(),
                 'meta_title' => 'Friendly Fyzio – specializovaná fyzioterapie',
                 'meta_description' => 'Specializovaná fyzioterapie pro ženy i muže. Těhotenská fyzioterapie, fyzioterapie pánevního dna, pohybové kurzy a masáže s individuálním přístupem.',
@@ -102,9 +99,23 @@ class PageSeeder extends Seeder
                         'button_text' => 'Zobrazit všechny kurzy',
                         'button_url' => '/kurzy',
                         'categories' => [
-                            ['icon' => 'activity', 'title' => 'Pohybové kurzy', 'subtitle' => '4 otevřené kurzy', 'url' => '/kurzy', 'items' => ['Hormonální jóga', 'Somatická jóga', 'Cvičení pro těhotné', 'Jin jóga']],
-                            ['icon' => 'users', 'title' => 'Workshopy', 'subtitle' => '3 workshopy', 'url' => '/kurzy', 'items' => ['Workshop zdravých zad', 'Workshop pánevního dna', 'Workshop dechových technik']],
-                            ['icon' => 'clock', 'title' => 'Jednorázové lekce', 'subtitle' => '4 lekce', 'url' => '/kurzy', 'items' => ['Konzultace dechových technik', 'Mobilita kyčlí', 'Posílení středu těla', 'Relaxační lekce s rolery']],
+                            ['icon' => 'activity', 'title' => 'Pohybové kurzy', 'subtitle' => '4 otevřené kurzy', 'url' => '/kurzy', 'items' => [
+                                ['label' => 'Hormonální jóga', 'meta' => 'Začíná 12. 1. 2026', 'url' => '/kurzy'],
+                                ['label' => 'Somatická jóga', 'meta' => 'Začíná 19. 1. 2026', 'url' => '/kurzy'],
+                                ['label' => 'Cvičení pro těhotné', 'meta' => 'Začíná 26. 1. 2026', 'url' => '/kurzy'],
+                                ['label' => 'Jin jóga', 'meta' => 'Začíná 2. 2. 2026', 'url' => '/kurzy'],
+                            ]],
+                            ['icon' => 'users', 'title' => 'Workshopy', 'subtitle' => '3 workshopy', 'url' => '/kurzy', 'items' => [
+                                ['label' => 'Workshop zdravých zad', 'meta' => '17. 1. 2026 · 9:00', 'url' => '/kurzy'],
+                                ['label' => 'Workshop pánevního dna', 'meta' => '24. 1. 2026 · 9:00', 'url' => '/kurzy'],
+                                ['label' => 'Workshop dechových technik', 'meta' => '31. 1. 2026 · 9:00', 'url' => '/kurzy'],
+                            ]],
+                            ['icon' => 'clock', 'title' => 'Jednorázové lekce', 'subtitle' => '4 lekce', 'url' => '/kurzy', 'items' => [
+                                ['label' => 'Konzultace dechových technik', 'meta' => 'Volné termíny', 'url' => '/kurzy'],
+                                ['label' => 'Mobilita kyčlí', 'meta' => 'Volné termíny', 'url' => '/kurzy'],
+                                ['label' => 'Posílení středu těla', 'meta' => 'Volné termíny', 'url' => '/kurzy'],
+                                ['label' => 'Relaxační lekce s rolery', 'meta' => 'Volné termíny', 'url' => '/kurzy'],
+                            ]],
                         ],
                     ]),
                     $this->brick('cards', [

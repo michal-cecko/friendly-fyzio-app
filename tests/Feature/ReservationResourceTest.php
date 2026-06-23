@@ -2,8 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Filament\Resources\Reservations\Pages\CreateReservation;
+use App\Enums\PaymentStatus;
+use App\Enums\ReservationStatus;
+use App\Filament\Clusters\Provoz\Resources\Reservations\Pages\CreateReservation;
 use App\Models\Building;
+use App\Models\Reservation;
 use App\Models\Room;
 use App\Models\Service;
 use App\Models\TherapistProfile;
@@ -46,7 +49,28 @@ class ReservationResourceTest extends TestCase
     public function test_admin_can_view_reservations_list(): void
     {
         $this->actingAs(User::factory()->admin()->create())
-            ->get('/admin/reservations')
+            ->get('/admin/provoz/reservations')
+            ->assertSuccessful();
+    }
+
+    public function test_admin_can_view_reservation_detail(): void
+    {
+        $deps = $this->dependencies();
+
+        $reservation = Reservation::create([
+            'client_id' => $deps['client']->getKey(),
+            'service_id' => $deps['service']->getKey(),
+            'therapist_id' => $deps['therapist']->getKey(),
+            'room_id' => $deps['room']->getKey(),
+            'reservation_date' => now()->toDateString(),
+            'start_time' => '09:00',
+            'end_time' => '10:00',
+            'status' => ReservationStatus::Pending,
+            'payment_status' => PaymentStatus::Unpaid,
+        ]);
+
+        $this->actingAs(User::factory()->admin()->create())
+            ->get("/admin/provoz/reservations/{$reservation->getKey()}")
             ->assertSuccessful();
     }
 

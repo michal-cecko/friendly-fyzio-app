@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Filament\Resources\CourseLessons\Pages\CreateCourseLesson;
-use App\Filament\Resources\CourseLessons\Pages\EditCourseLesson;
-use App\Filament\Resources\CourseLessons\Pages\ListCourseLessons;
+use App\Filament\Clusters\Kurzy\Resources\CourseLessons\Pages\CreateCourseLesson;
+use App\Filament\Clusters\Kurzy\Resources\CourseLessons\Pages\EditCourseLesson;
+use App\Filament\Clusters\Kurzy\Resources\CourseLessons\Pages\ListCourseLessons;
 use App\Models\CourseLesson;
 use App\Models\CourseSeries;
 use App\Models\Room;

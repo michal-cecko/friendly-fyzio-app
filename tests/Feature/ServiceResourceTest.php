@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Filament\Resources\Services\Pages\CreateService;
+use App\Filament\Clusters\Provoz\Resources\Services\Pages\CreateService;
 use App\Models\Building;
 use App\Models\Room;
 use App\Models\Service;
@@ -37,7 +37,7 @@ class ServiceResourceTest extends TestCase
 
     public function test_admin_can_view_services_list(): void
     {
-        $this->actingAs($this->superAdmin())->get('/admin/services')->assertSuccessful();
+        $this->actingAs($this->superAdmin())->get('/admin/provoz/services')->assertSuccessful();
     }
 
     public function test_service_creation_validates_required_fields(): void

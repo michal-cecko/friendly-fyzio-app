@@ -4,9 +4,9 @@ namespace Tests\Feature;
 
 use App\Enums\CourseEnrollmentStatus;
 use App\Enums\PaymentStatus;
-use App\Filament\Resources\CourseEnrollments\Pages\CreateCourseEnrollment;
-use App\Filament\Resources\CourseEnrollments\Pages\EditCourseEnrollment;
-use App\Filament\Resources\CourseEnrollments\Pages\ListCourseEnrollments;
+use App\Filament\Clusters\Kurzy\Resources\CourseEnrollments\Pages\CreateCourseEnrollment;
+use App\Filament\Clusters\Kurzy\Resources\CourseEnrollments\Pages\EditCourseEnrollment;
+use App\Filament\Clusters\Kurzy\Resources\CourseEnrollments\Pages\ListCourseEnrollments;
 use App\Models\CourseEnrollment;
 use App\Models\CourseSeries;
 use App\Models\User;

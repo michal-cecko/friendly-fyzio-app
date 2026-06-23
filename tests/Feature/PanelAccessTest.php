@@ -38,6 +38,20 @@ class PanelAccessTest extends TestCase
         $this->actingAs($customer)->get('/klientska-zona')->assertSuccessful();
     }
 
+    public function test_admin_visiting_client_panel_is_redirected_to_admin(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)->get('/klientska-zona')->assertRedirect('/admin');
+    }
+
+    public function test_therapist_visiting_client_panel_is_redirected_to_admin(): void
+    {
+        $therapist = User::factory()->therapist()->create();
+
+        $this->actingAs($therapist)->get('/klientska-zona')->assertRedirect('/admin');
+    }
+
     public function test_unauthenticated_admin_visit_redirects_to_single_client_login(): void
     {
         $this->get('/admin')->assertRedirect('/klientska-zona/login');

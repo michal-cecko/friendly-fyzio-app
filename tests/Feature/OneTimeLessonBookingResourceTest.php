@@ -3,9 +3,9 @@
 namespace Tests\Feature;
 
 use App\Enums\PaymentStatus;
-use App\Filament\Resources\OneTimeLessonBookings\Pages\CreateOneTimeLessonBooking;
-use App\Filament\Resources\OneTimeLessonBookings\Pages\EditOneTimeLessonBooking;
-use App\Filament\Resources\OneTimeLessonBookings\Pages\ListOneTimeLessonBookings;
+use App\Filament\Clusters\LekceWorkshopy\Resources\OneTimeLessonBookings\Pages\CreateOneTimeLessonBooking;
+use App\Filament\Clusters\LekceWorkshopy\Resources\OneTimeLessonBookings\Pages\EditOneTimeLessonBooking;
+use App\Filament\Clusters\LekceWorkshopy\Resources\OneTimeLessonBookings\Pages\ListOneTimeLessonBookings;
 use App\Models\OneTimeLesson;
 use App\Models\OneTimeLessonBooking;
 use App\Models\User;

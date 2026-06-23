@@ -16,6 +16,7 @@
         "laravel/octane": "^2.15",
         "laravel/tinker": "^3.0",
         "leandrocfe/filament-apex-charts": "^5.0",
+        "mallardduck/blade-lucide-icons": "^1.26",
         "marcelweidum/filament-passkeys": "^3.0",
         "ralphjsmit/laravel-filament-media-library": "^4.0",
         "saade/filament-fullcalendar": "^4.0",

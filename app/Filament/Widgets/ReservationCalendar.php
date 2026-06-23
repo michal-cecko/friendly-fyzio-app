@@ -6,7 +6,7 @@ use App\Enums\DayOfWeek;
 use App\Enums\ReservationStatus;
 use App\Enums\UserRole;
 use App\Enums\WeekType;
-use App\Filament\Resources\Reservations\Schemas\ReservationForm;
+use App\Filament\Clusters\Provoz\Resources\Reservations\Schemas\ReservationForm;
 use App\Filament\Support\Schemas\BlockingForm;
 use App\Filament\Support\Schemas\WorkingHoursForm;
 use App\Models\Reservation;

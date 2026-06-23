@@ -35,6 +35,17 @@
     }
 }
 
+@layer components {
+    /* "Accent" inline text colors authored in the rich editor (data-color marks). */
+    [data-color='accent'] {
+        color: var(--color-primary);
+    }
+
+    [data-color='dark'] {
+        color: var(--color-neutral-900);
+    }
+}
+
 /* Hero "Odrážky" rich-editor content — pink custom bullets to match the design. */
 @layer components {
     .hero-features ul {

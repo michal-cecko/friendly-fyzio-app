@@ -8,7 +8,6 @@ use Awcodes\Mason\Brick;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Contracts\Support\Htmlable;
@@ -59,9 +58,7 @@ class CardsBrick extends Brick
                         TextInput::make('title')
                             ->label('Nadpis')
                             ->required(),
-                        Textarea::make('description')
-                            ->label('Popis')
-                            ->rows(2),
+                        Fields::richText('description', 'Popis'),
                         TextInput::make('link_text')
                             ->label('Text odkazu')
                             ->default('Zjistit více'),

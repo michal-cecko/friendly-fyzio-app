@@ -2,6 +2,18 @@
     $config ??= [];
     $categories = $config['categories'] ?? [];
     $buttonUrl = ($config['button_url'] ?? '') ?: '#';
+
+    $normalizeItem = function ($item): array {
+        if (is_array($item)) {
+            return [
+                'label' => $item['label'] ?? '',
+                'meta' => $item['meta'] ?? '',
+                'url' => ($item['url'] ?? '') ?: '',
+            ];
+        }
+
+        return ['label' => (string) $item, 'meta' => '', 'url' => ''];
+    };
 @endphp
 
 <section class="bg-surface-alt py-16 lg:py-24">
@@ -13,10 +25,10 @@
                 @foreach($categories as $category)
                     @php($url = ($category['url'] ?? '') ?: '#')
                     @php($items = $category['items'] ?? [])
-                    <a href="{{ $url }}" class="group flex flex-col gap-4 rounded-2xl border border-line bg-white p-6 transition hover:shadow-lg hover:shadow-primary/5">
-                        <div class="flex items-center gap-5">
+                    <div class="flex flex-col gap-4 rounded-2xl border border-line bg-white p-6 transition hover:shadow-lg hover:shadow-primary/5">
+                        <a href="{{ $url }}" class="group/head flex items-center gap-5">
                             <span class="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary-light text-primary-dark">
-                                <x-lucide :name="$category['icon'] ?? 'activity'" class="h-6 w-6" />
+                                {!! \App\Support\Icon::render($category['icon'] ?? 'lucide-activity', 'h-6 w-6') !!}
                             </span>
                             <div class="flex-1">
                                 <h3 class="font-heading text-lg font-semibold text-neutral-900">{{ $category['title'] ?? '' }}</h3>
@@ -24,18 +36,33 @@
                                     <p class="text-sm text-neutral-500">{{ $category['subtitle'] }}</p>
                                 @endif
                             </div>
-                            <x-lucide name="chevron-right" class="h-5 w-5 text-primary transition group-hover:translate-x-1" />
-                        </div>
+                            <x-lucide name="chevron-right" class="h-5 w-5 text-primary transition group-hover/head:translate-x-1" />
+                        </a>
                         <div class="h-px w-full bg-line"></div>
-                        <ul class="flex flex-col gap-2">
-                            @foreach($items as $i => $item)
-                                <li class="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-neutral-700 {{ $i === 0 ? 'bg-surface-alt' : '' }}">
-                                    <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-primary"></span>
-                                    {{ is_array($item) ? ($item['label'] ?? '') : $item }}
+                        <ul class="flex flex-col gap-1">
+                            @foreach($items as $item)
+                                @php($row = $normalizeItem($item))
+                                @php($tag = $row['url'] !== '' ? 'a' : 'div')
+                                <li>
+                                    <{{ $tag }} @if($row['url'] !== '') href="{{ $row['url'] }}" @endif class="group/row flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-neutral-700 transition hover:bg-surface-alt">
+                                        <span class="relative flex h-2 w-2 shrink-0">
+                                            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-75"></span>
+                                            <span class="relative inline-flex h-2 w-2 rounded-full bg-green-500"></span>
+                                        </span>
+                                        <span class="flex min-w-0 flex-1 flex-col">
+                                            <span class="truncate font-medium text-neutral-800">{{ $row['label'] }}</span>
+                                            @if($row['meta'] !== '')
+                                                <span class="truncate text-xs text-neutral-500">{{ $row['meta'] }}</span>
+                                            @endif
+                                        </span>
+                                        @if($row['url'] !== '')
+                                            <x-lucide name="chevron-right" class="ml-auto h-4 w-4 shrink-0 text-neutral-300 transition group-hover/row:translate-x-0.5 group-hover/row:text-primary" />
+                                        @endif
+                                    </{{ $tag }}>
                                 </li>
                             @endforeach
                         </ul>
-                    </a>
+                    </div>
                 @endforeach
             </div>
         @endif

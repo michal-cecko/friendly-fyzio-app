@@ -11,6 +11,7 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\Support\Enums\Width;
 use Filament\View\PanelsRenderHook;
 use Filament\Widgets\AccountWidget;
 use Filament\Widgets\FilamentInfoWidget;
@@ -45,6 +46,7 @@ class AdminPanelProvider extends PanelProvider
             ->databaseNotifications()
             ->sidebarCollapsibleOnDesktop()
             ->collapsibleNavigationGroups()
+            ->maxContentWidth(Width::Full)
             ->renderHook(
                 PanelsRenderHook::GLOBAL_SEARCH_AFTER,
                 fn (): string => view('filament.topbar.website-link')->render(),
@@ -52,7 +54,9 @@ class AdminPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::hex('#d4678a'),
             ])
-            ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
+            ->discoverClusters(in: app_path('Filament/Clusters'), for: 'App\Filament\Clusters')
+            ->discoverResources(in: app_path('Filament/Clusters'), for: 'App\Filament\Clusters')
+            ->discoverPages(in: app_path('Filament/Clusters'), for: 'App\Filament\Clusters')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([
                 Dashboard::class,
@@ -63,11 +67,9 @@ class AdminPanelProvider extends PanelProvider
                 FilamentInfoWidget::class,
             ])
             ->plugins([
-                FilamentShieldPlugin::make()
-                    ->navigationGroup('Správa přístupů'),
+                FilamentShieldPlugin::make(),
                 FilamentMediaLibrary::make()
-                    ->navigationGroup('Média')
-                    ->navigationLabel('Knihovna médií'),
+                    ->registerNavigation(false),
                 FilamentFullCalendarPlugin::make(),
                 PasskeysPlugin::make(),
             ])

@@ -2,7 +2,7 @@
 
 namespace App\Mason\Support;
 
-use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\TextInput;
 
 /**
@@ -11,7 +11,9 @@ use Filament\Forms\Components\TextInput;
 class Fields
 {
     /**
-     * Eyebrow + title + subtitle heading fields.
+     * Eyebrow + title + subtitle heading fields. Title and subtitle are rich-text
+     * editors (so words can be styled with the "Accent" color); the eyebrow stays
+     * a plain kicker label.
      *
      * @return array<int, mixed>
      */
@@ -20,12 +22,22 @@ class Fields
         return [
             TextInput::make('eyebrow')
                 ->label('Nadtitulek'),
-            TextInput::make('title')
-                ->label('Nadpis')
-                ->required($titleRequired),
-            Textarea::make('subtitle')
-                ->label('Podnadpis')
-                ->rows(2),
+            self::richText('title', 'Nadpis', $titleRequired),
+            self::richText('subtitle', 'Podnadpis'),
         ];
+    }
+
+    /**
+     * A compact rich-text editor for headings and short descriptions: inline
+     * formatting plus the global "Accent" text color, without block-level tools.
+     */
+    public static function richText(string $name, string $label, bool $required = false): RichEditor
+    {
+        return RichEditor::make($name)
+            ->label($label)
+            ->required($required)
+            ->toolbarButtons([
+                ['bold', 'italic', 'link', 'textColor'],
+            ]);
     }
 }

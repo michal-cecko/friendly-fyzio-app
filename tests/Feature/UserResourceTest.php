@@ -3,12 +3,12 @@
 namespace Tests\Feature;
 
 use App\Enums\UserRole;
-use App\Filament\Resources\Users\Pages\CreateUser;
-use App\Filament\Resources\Users\Pages\EditUser;
-use App\Filament\Resources\Users\Pages\ListUsers;
-use App\Filament\Resources\Users\Pages\ViewUser;
-use App\Filament\Resources\Users\RelationManagers\InstructedLessonsRelationManager;
-use App\Filament\Resources\Users\RelationManagers\TherapistReservationsRelationManager;
+use App\Filament\Clusters\System\Resources\Users\Pages\CreateUser;
+use App\Filament\Clusters\System\Resources\Users\Pages\EditUser;
+use App\Filament\Clusters\System\Resources\Users\Pages\ListUsers;
+use App\Filament\Clusters\System\Resources\Users\Pages\ViewUser;
+use App\Filament\Clusters\System\Resources\Users\RelationManagers\InstructedLessonsRelationManager;
+use App\Filament\Clusters\System\Resources\Users\RelationManagers\TherapistReservationsRelationManager;
 use App\Models\User;
 use Filament\Facades\Filament;
 use Illuminate\Auth\Notifications\ResetPassword;
@@ -48,14 +48,14 @@ class UserResourceTest extends TestCase
     {
         $therapist = User::factory()->therapist()->create();
 
-        $this->actingAs($therapist)->get('/admin/users')->assertForbidden();
+        $this->actingAs($therapist)->get('/admin/system/users')->assertForbidden();
     }
 
     public function test_admin_can_view_users_list(): void
     {
         $admin = User::factory()->admin()->create();
 
-        $this->actingAs($admin)->get('/admin/users')->assertSuccessful();
+        $this->actingAs($admin)->get('/admin/system/users')->assertSuccessful();
     }
 
     public function test_users_list_excludes_customers(): void
@@ -76,7 +76,7 @@ class UserResourceTest extends TestCase
 
         $customer = User::factory()->customer()->create();
 
-        $this->get("/admin/users/{$customer->getKey()}/edit")->assertNotFound();
+        $this->get("/admin/system/users/{$customer->getKey()}/edit")->assertNotFound();
     }
 
     public function test_user_can_be_created_with_account_type_and_direct_permission(): void
@@ -125,7 +125,7 @@ class UserResourceTest extends TestCase
 
         $therapist = User::factory()->therapist()->create();
 
-        $this->get("/admin/users/{$therapist->getKey()}")->assertSuccessful();
+        $this->get("/admin/system/users/{$therapist->getKey()}")->assertSuccessful();
     }
 
     public function test_therapist_relation_managers_are_visible_only_for_therapists(): void

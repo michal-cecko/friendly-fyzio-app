@@ -9,9 +9,9 @@
             @if(! empty($config['eyebrow']))
                 <p class="font-heading text-sm font-semibold uppercase tracking-[0.14em] text-white/60">{{ $config['eyebrow'] }}</p>
             @endif
-            <h2 class="font-heading text-3xl font-bold text-white">{{ $config['title'] ?? '' }}</h2>
+            <h2 class="font-heading text-3xl font-bold text-white">{!! \App\Support\RichText::inline($config['title'] ?? '') !!}</h2>
             @if(! empty($config['subtitle']))
-                <p class="leading-relaxed text-white/90">{{ $config['subtitle'] }}</p>
+                <p class="leading-relaxed text-white/90">{!! \App\Support\RichText::inline($config['subtitle']) !!}</p>
             @endif
 
             @if($buttons)

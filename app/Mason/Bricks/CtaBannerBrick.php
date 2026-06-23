@@ -3,9 +3,9 @@
 namespace App\Mason\Bricks;
 
 use App\Mason\Support\ButtonsField;
+use App\Mason\Support\Fields;
 use Awcodes\Mason\Brick;
 use Filament\Actions\Action;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Contracts\Support\Htmlable;
@@ -39,12 +39,8 @@ class CtaBannerBrick extends Brick
             ->schema([
                 TextInput::make('eyebrow')
                     ->label('Nadtitulek'),
-                TextInput::make('title')
-                    ->label('Nadpis')
-                    ->required(),
-                Textarea::make('subtitle')
-                    ->label('Popis')
-                    ->rows(2),
+                Fields::richText('title', 'Nadpis', required: true),
+                Fields::richText('subtitle', 'Popis'),
                 ButtonsField::make(),
             ]);
     }

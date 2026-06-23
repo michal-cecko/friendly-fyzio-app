@@ -3,15 +3,14 @@
 namespace App\Mason\Bricks;
 
 use App\Mason\Support\Fields;
-use App\Mason\Support\Icons;
 use App\Mason\Support\LinkPickerField;
 use Awcodes\Mason\Brick;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Support\Icons\Heroicon;
+use Guava\IconPicker\Forms\Components\IconPicker;
 use Illuminate\Contracts\Support\Htmlable;
 
 class FeatureCardsBrick extends Brick
@@ -49,16 +48,14 @@ class FeatureCardsBrick extends Brick
                 Repeater::make('cards')
                     ->label('Karty')
                     ->schema([
-                        Select::make('icon')
+                        IconPicker::make('icon')
                             ->label('Ikona')
-                            ->options(Icons::options())
+                            ->sets(['heroicons'])
                             ->searchable(),
                         TextInput::make('title')
                             ->label('Nadpis')
                             ->required(),
-                        Textarea::make('description')
-                            ->label('Popis')
-                            ->rows(2),
+                        Fields::richText('description', 'Popis'),
                         LinkPickerField::make('', 'Odkaz'),
                     ])
                     ->defaultItems(3)

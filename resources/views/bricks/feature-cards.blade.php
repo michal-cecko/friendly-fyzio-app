@@ -25,7 +25,7 @@
                         @endif
                         <h3 class="font-heading text-xl font-bold text-neutral-900">{{ $card['title'] ?? '' }}</h3>
                         @if(! empty($card['description']))
-                            <p class="mt-3 leading-relaxed text-neutral-600">{{ $card['description'] }}</p>
+                            <p class="mt-3 leading-relaxed text-neutral-600">{!! \App\Support\RichText::inline($card['description']) !!}</p>
                         @endif
                         @if($url)
                             <a href="{{ $url }}" class="mt-5 inline-flex items-center gap-1 font-semibold text-primary transition hover:text-primary-dark">

@@ -10,9 +10,12 @@ use App\Mason\Bricks\HeroBrick;
 use App\Mason\Bricks\InstagramBrick;
 use App\Mason\Bricks\LastMinuteBrick;
 use App\Mason\Bricks\NewsletterBrick;
+use App\Mason\Bricks\PricingBrick;
 use App\Mason\Bricks\RichTextBrick;
 use App\Mason\Bricks\SectionHeadingBrick;
+use App\Mason\Bricks\ServiceCardsBrick;
 use App\Mason\Bricks\StatsBrick;
+use App\Mason\Bricks\StepsBrick;
 use App\Mason\Bricks\TestimonialsBrick;
 use Awcodes\Mason\Brick;
 use Awcodes\Mason\BrickGroup;
@@ -41,11 +44,14 @@ class BrickRegistry
                 CardsBrick::class,
                 FeatureCardsBrick::class,
                 CategoryCardsBrick::class,
+                ServiceCardsBrick::class,
             ]),
             BrickGroup::make('Sekce')->bricks([
                 StatsBrick::class,
                 TestimonialsBrick::class,
                 CtaBannerBrick::class,
+                StepsBrick::class,
+                PricingBrick::class,
                 LastMinuteBrick::class,
             ]),
             BrickGroup::make('Sociální sítě')->bricks([

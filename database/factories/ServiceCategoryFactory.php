@@ -23,6 +23,12 @@ class ServiceCategoryFactory extends Factory
             'name' => $name,
             'slug' => Str::slug($name).'-'.fake()->unique()->numberBetween(1, 999999),
             'type' => fake()->randomElement(ServiceType::cases()),
+            'published_at' => now(),
         ];
+    }
+
+    public function unpublished(): static
+    {
+        return $this->state(fn (): array => ['published_at' => null]);
     }
 }

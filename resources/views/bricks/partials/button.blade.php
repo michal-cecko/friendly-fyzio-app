@@ -13,7 +13,7 @@
 
 <a href="{{ $url }}" class="inline-flex items-center justify-center gap-2.5 rounded-full px-9 py-[18px] font-heading text-base font-semibold transition {{ $classes }}">
     @if(! empty($btn['icon']))
-        <x-lucide :name="$btn['icon']" class="h-5 w-5" />
+        {!! \App\Support\Icon::render($btn['icon'], 'h-5 w-5') !!}
     @endif
     {{ $btn['text'] ?? '' }}
 </a>
