@@ -33,7 +33,7 @@
 <body class="flex min-h-screen flex-col bg-white font-sans text-neutral-900 antialiased">
     <x-site.banners :page-id="$seo['banner_page_id'] ?? ($page?->id)" />
 
-    <x-site.header />
+    <x-site.header :admin-edit-url="$adminEditUrl ?? null" />
 
     <main class="flex-1">
         @yield('content')

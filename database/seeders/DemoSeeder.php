@@ -56,12 +56,9 @@ class DemoSeeder extends Seeder
             }
         }
 
-        // --- Service categories ---
-        $categories = collect(['Fyzioterapie', 'Masáže', 'Cvičení', 'Diagnostika'])
-            ->map(fn (string $name) => ServiceCategory::factory()->create([
-                'name' => $name,
-                'slug' => Str::slug($name),
-            ]));
+        // --- Service categories (seeded as real published content by ServiceCategorySeeder) ---
+        $categories = ServiceCategory::all();
+        abort_if($categories->isEmpty(), 500, 'Run ServiceCategorySeeder before DemoSeeder.');
 
         // --- Services (+ cancellation rule + room links) ---
         $serviceNames = [

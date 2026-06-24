@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\UserRole;
+use Illuminate\Database\Eloquent\Model;
 
 abstract class Controller
 {
@@ -14,5 +15,19 @@ abstract class Controller
         $user = auth()->user();
 
         return $user !== null && in_array($user->role, [UserRole::Admin, UserRole::Therapist], true);
+    }
+
+    /**
+     * The Filament edit URL for the record backing the current public page, or
+     * null when the viewer may not edit it. Drives the staff-only "edit this
+     * page" link in the public site header.
+     *
+     * @param  class-string<\Filament\Resources\Resource>  $resource
+     */
+    protected function adminEditUrl(Model $record, string $resource): ?string
+    {
+        return auth()->user()?->can('update', $record)
+            ? $resource::getUrl('edit', ['record' => $record])
+            : null;
     }
 }

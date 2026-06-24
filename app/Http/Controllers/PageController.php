@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Filament\Clusters\Obsah\Resources\Pages\PageResource;
 use App\Mason\BrickRegistry;
 use App\Models\Page;
 use Awcodes\Mason\Support\MasonRenderer;
@@ -36,6 +37,7 @@ class PageController extends Controller
             'page' => $page,
             'renderedContent' => $renderedContent,
             'isPreview' => $isPreview,
+            'adminEditUrl' => $this->adminEditUrl($page, PageResource::class),
         ]);
     }
 }

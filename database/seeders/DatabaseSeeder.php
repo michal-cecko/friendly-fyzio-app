@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
         $this->call(PageSeeder::class);
         $this->call(NavigationSeeder::class);
         $this->call(BannerSeeder::class);
+        $this->call(ServiceCategorySeeder::class);
 
         // The User "saved" event syncs the matching Shield role from the account type
         // (Administrátor -> super_admin, Terapeut -> therapist), so no manual assignRole needed.

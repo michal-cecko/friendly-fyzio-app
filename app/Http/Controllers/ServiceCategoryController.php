@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Filament\Clusters\Obsah\Resources\Pages\PageResource;
+use App\Filament\Clusters\Provoz\Resources\ServiceCategories\ServiceCategoryResource;
 use App\Mason\BrickRegistry;
 use App\Models\ServiceCategory;
 use App\Support\Media;
@@ -33,6 +35,7 @@ class ServiceCategoryController extends Controller
                     'page' => $custom,
                     'renderedContent' => $renderedContent,
                     'isPreview' => $categoryPreview || $customPreview,
+                    'adminEditUrl' => $this->adminEditUrl($custom, PageResource::class),
                 ]);
             }
         }
@@ -42,6 +45,7 @@ class ServiceCategoryController extends Controller
             'category' => $category,
             'services' => $category->services()->public()->orderBy('name')->get(),
             'isPreview' => $categoryPreview,
+            'adminEditUrl' => $this->adminEditUrl($category, ServiceCategoryResource::class),
             'seo' => [
                 'title' => $category->name,
                 'description' => $category->description,

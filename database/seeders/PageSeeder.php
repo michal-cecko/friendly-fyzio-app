@@ -3,11 +3,13 @@
 namespace Database\Seeders;
 
 use App\Models\Page;
+use Database\Seeders\Concerns\ImportsMedia;
 use Illuminate\Database\Seeder;
-use RalphJSmit\Filament\MediaLibrary\Models\MediaLibraryItem;
 
 class PageSeeder extends Seeder
 {
+    use ImportsMedia;
+
     public function run(): void
     {
         $this->homepage();
@@ -118,18 +120,13 @@ class PageSeeder extends Seeder
                             ]],
                         ],
                     ]),
-                    $this->brick('cards', [
+                    $this->brick('service-cards', [
                         'eyebrow' => 'Naše služby',
                         'title' => 'Naše nabídka',
                         'subtitle' => 'Nabízíme komplexní péči o váš pohybový systém s důrazem na individuální přístup a specializaci na ženské zdraví.',
                         'background' => 'white',
-                        'columns' => 4,
-                        'cards' => [
-                            ['image' => $img('photo-1650044252595-cacd425982ff', 'M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3NzUyMjMyMTV8', 'home-service-fyzioterapie'), 'title' => 'Fyzioterapie', 'description' => 'Specializovaná fyzioterapie pro ženy i muže. Vstupní vyšetření, kontrolní terapie, individuální přístup.', 'link_type' => 'custom', 'url' => '/sluzby'],
-                            ['image' => $img('photo-1705999383657-c39b4d47ec2d', 'M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3NzUyMjMyMTV8', 'home-service-kurzy'), 'title' => 'Pohybové kurzy', 'description' => 'Skupinová cvičení vedená fyzioterapeutkami. Jóga, SM systém, kurzy pro těhotné a po porodu.', 'link_type' => 'custom', 'url' => '/kurzy'],
-                            ['image' => $img('photo-1671493235081-5842463637cd', 'M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3NzUyMjMyMTV8', 'home-service-masaze'), 'title' => 'Masáže a relaxace', 'description' => 'Relaxační, těhotenské a lymfatické masáže. Bylinná napářka a další relaxační rituály.', 'link_type' => 'custom', 'url' => '/sluzby'],
-                            ['image' => $img('photo-1576770075856-86b01944b92b', 'M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3NzUyMjMyMTd8', 'home-service-laser'), 'title' => 'Laser / kryoterapie', 'description' => 'Přístrojová terapie pro urychlení hojení, úlevu od bolesti a redukci otoků.', 'link_type' => 'custom', 'url' => '/sluzby'],
-                        ],
+                        'columns' => 3,
+                        'link_text' => 'Zjistit více',
                     ]),
                     $this->brick('testimonials', [
                         'eyebrow' => 'Reference',
@@ -175,33 +172,6 @@ class PageSeeder extends Seeder
                 ],
             ],
         );
-    }
-
-    /**
-     * Import a remote image into the Media Library (idempotent by name) and
-     * return its item id, so brick MediaPicker fields hold a valid key.
-     */
-    private function media(string $url, string $name): ?int
-    {
-        $existing = MediaLibraryItem::query()->where('caption', $name)->first();
-
-        if ($existing) {
-            return $existing->getKey();
-        }
-
-        $item = null;
-
-        try {
-            $item = MediaLibraryItem::create(['caption' => $name, 'alt_text' => $name]);
-            $item->addMediaFromUrl($url)->toMediaCollection('library');
-
-            return $item->getKey();
-        } catch (\Throwable $e) {
-            report($e);
-            $item?->forceDelete();
-
-            return null;
-        }
     }
 
     /**

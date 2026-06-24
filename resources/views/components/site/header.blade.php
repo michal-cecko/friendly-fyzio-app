@@ -1,3 +1,5 @@
+@props(['adminEditUrl' => null])
+
 @php
     use Illuminate\Support\Facades\Route;
 
@@ -6,6 +8,12 @@
     $loginUrl = Route::has('filament.client.auth.login') ? route('filament.client.auth.login') : url('/klientska-zona/login');
     $registerUrl = Route::has('filament.client.auth.register') ? route('filament.client.auth.register') : url('/klientska-zona/register');
     $bookingUrl = url('/klientska-zona');
+
+    // Staff land in the admin panel; customers in the client zone. The account
+    // link reflects that (label + destination), driven by the account type.
+    $isStaff = $user?->isStaff() ?? false;
+    $accountUrl = $isStaff ? url('/admin') : $bookingUrl;
+    $accountLabel = $isStaff ? 'Administrace' : 'Klientská zóna';
 
     // Icon snippets (lucide, 24x24). Stroke inherits currentColor so size/color
     // is controlled by the wrapping element's font-size and text color utilities.
@@ -18,6 +26,7 @@
         'calendar' => '<rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/>',
         'menu' => '<line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="18" y2="18"/>',
         'log-out' => '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/>',
+        'pencil' => '<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/>',
     ];
 @endphp
 
@@ -47,7 +56,13 @@
                         </button>
                         <div class="absolute right-0 top-full hidden pt-2 group-hover:block group-focus-within:block">
                             <div class="min-w-52 rounded-xl border border-line bg-white p-2 shadow-lg shadow-neutral-900/10">
-                                <a href="{{ $bookingUrl }}" class="block rounded-md px-3 py-2.5 text-sm text-neutral-900 transition hover:bg-primary-light hover:text-primary">Klientská zóna</a>
+                                <a href="{{ $accountUrl }}" class="block rounded-md px-3 py-2.5 text-sm text-neutral-900 transition hover:bg-primary-light hover:text-primary">{{ $accountLabel }}</a>
+                                @if($adminEditUrl)
+                                    <a href="{{ $adminEditUrl }}" class="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm text-neutral-900 transition hover:bg-primary-light hover:text-primary">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">{!! $icon['pencil'] !!}</svg>
+                                        Upravit tuto stránku
+                                    </a>
+                                @endif
                                 <form method="POST" action="{{ url('/klientska-zona/logout') }}">
                                     @csrf
                                     <button type="submit" class="flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-left text-sm text-neutral-900 transition hover:bg-primary-light hover:text-primary">
@@ -62,10 +77,6 @@
                     <a href="{{ $loginUrl }}" class="inline-flex items-center gap-2 rounded-full px-[18px] py-2 text-[13px] font-medium text-neutral-700 transition hover:bg-surface-alt hover:text-primary">
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">{!! $icon['log-in'] !!}</svg>
                         Přihlásit se
-                    </a>
-                    <a href="{{ $registerUrl }}" class="inline-flex items-center gap-2 rounded-full bg-primary px-[18px] py-2 text-[13px] font-semibold text-white transition hover:bg-primary-hover">
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">{!! $icon['user-plus'] !!}</svg>
-                        Registrace
                     </a>
                     <span class="h-6 w-px bg-line"></span>
                     <a href="{{ $bookingUrl }}" class="inline-flex items-center gap-2 rounded-full bg-primary px-[18px] py-2 text-[13px] font-semibold text-white transition hover:bg-primary-hover">
@@ -158,9 +169,15 @@
             @if($user)
                 <form method="POST" action="{{ url('/klientska-zona/logout') }}" class="flex flex-col gap-3">
                     @csrf
-                    <a href="{{ $bookingUrl }}" class="inline-flex w-full items-center justify-center rounded-full border border-line py-3 text-sm font-semibold text-neutral-900 transition hover:bg-surface-alt">
-                        Klientská zóna
+                    <a href="{{ $accountUrl }}" class="inline-flex w-full items-center justify-center rounded-full border border-line py-3 text-sm font-semibold text-neutral-900 transition hover:bg-surface-alt">
+                        {{ $accountLabel }}
                     </a>
+                    @if($adminEditUrl)
+                        <a href="{{ $adminEditUrl }}" class="inline-flex w-full items-center justify-center gap-2 rounded-full border border-line py-3 text-sm font-semibold text-neutral-900 transition hover:bg-surface-alt">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">{!! $icon['pencil'] !!}</svg>
+                            Upravit tuto stránku
+                        </a>
+                    @endif
                     <button type="submit" class="inline-flex w-full items-center justify-center gap-2 rounded-full bg-surface-alt py-3 text-sm font-semibold text-neutral-900">
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">{!! $icon['log-out'] !!}</svg>
                         Odhlásit se
@@ -171,10 +188,6 @@
                     <a href="{{ $loginUrl }}" class="inline-flex w-full items-center justify-center gap-2 rounded-full border border-line py-3 text-sm font-semibold text-neutral-900 transition hover:bg-surface-alt">
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">{!! $icon['log-in'] !!}</svg>
                         Přihlásit se
-                    </a>
-                    <a href="{{ $registerUrl }}" class="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary py-3 text-sm font-semibold text-white transition hover:bg-primary-hover">
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">{!! $icon['user-plus'] !!}</svg>
-                        Registrace
                     </a>
                 </div>
             @endif
