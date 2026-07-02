@@ -20,7 +20,7 @@
                     @php
                         $profile = $therapist->therapistProfile;
                         $img = \App\Support\Media::url($profile?->photo, '400');
-                        $clickable = (bool) $profile?->isPublished();
+                        $clickable = $profile && $profile->isPublished() && filled($profile->slug);
                         $specs = $profile ? $profile->specializations->pluck('name')->join(' • ') : null;
                         $cardClass = 'group flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-white text-center transition'.($clickable ? ' hover:border-primary hover:shadow-lg hover:shadow-primary/5' : '');
                     @endphp

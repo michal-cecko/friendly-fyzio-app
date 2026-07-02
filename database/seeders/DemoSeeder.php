@@ -26,16 +26,20 @@ use App\Models\RoomBlocking;
 use App\Models\Service;
 use App\Models\ServiceCategory;
 use App\Models\TherapistProfile;
+use App\Models\TherapistSpecialization;
 use App\Models\TherapistWeeklySchedule;
 use App\Models\User;
 use App\Models\Workshop;
 use App\Models\WorkshopRegistration;
+use Database\Seeders\Concerns\ImportsMedia;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 class DemoSeeder extends Seeder
 {
+    use ImportsMedia;
+
     public function run(): void
     {
         // --- Buildings + rooms ---
@@ -77,9 +81,10 @@ class DemoSeeder extends Seeder
             ['category' => $physio, 'name' => 'Těhotenská fyzioterapie', 'exam_type' => ExamType::Vstupni, 'duration' => 90, 'price' => 1300, 'visibility' => ServiceVisibility::Public],
             ['category' => $physio, 'name' => 'Kontrolní těhotenská fyzioterapie', 'exam_type' => ExamType::Kontrolni, 'duration' => 60, 'price' => 850, 'visibility' => ServiceVisibility::Clients, 'existing_client_months' => 12],
             ['category' => $massage, 'name' => 'Klasická masáž', 'duration' => 60, 'price' => 900],
-            ['category' => $massage, 'name' => 'Lymfatická drenáž', 'duration' => 60, 'price' => 950],
-            ['category' => $massage, 'name' => 'Sportovní masáž', 'duration' => 60, 'price' => 1000],
-            ['category' => $massage, 'name' => 'Těhotenská masáž', 'duration' => 60, 'price' => 1000],
+            ['category' => $massage, 'name' => 'Lymfatické masáže', 'duration' => 90, 'price' => 1100],
+            ['category' => $massage, 'name' => 'Těhotenské masáže', 'duration' => 60, 'price' => 1000],
+            ['category' => $massage, 'name' => 'Masáže miminek a dětí', 'duration' => 30, 'price' => 500],
+            ['category' => $massage, 'name' => 'Bylinná napářka', 'duration' => 60, 'price' => 1200, 'visibility' => ServiceVisibility::Hidden],
         ];
 
         $services = collect($serviceDefs)->map(function (array $def) use ($rooms) {
@@ -101,11 +106,128 @@ class DemoSeeder extends Seeder
             return $service;
         });
 
-        // --- Therapists: user + profile + weekly schedules + service links ---
+        // --- Therapists: user + published public profile + specializations + schedules + service links ---
+        // The last therapist is left unpublished on purpose to demonstrate the
+        // non-clickable card in the data-driven team grid on /o-nas.
+        $therapistPhoto = fn (string $id, string $ixid, string $name): ?int => $this->media(
+            "https://images.unsplash.com/{$id}?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid={$ixid}&ixlib=rb-4.1.0&q=80&w=1080",
+            $name,
+        );
+
+        $therapistDefs = [
+            [
+                'name' => 'Mgr. Lucie Fičkerová',
+                'email' => 'lucie@friendlyfyzio.cz',
+                'phone' => '+420 604 793 255',
+                'title' => 'Fyzioterapeutka, zakladatelka FriendlyFyzio',
+                'badge' => 'Zakladatelka & hlavní terapeutka',
+                'photo' => ['photo-1717500252172-b1840ea64f05', 'M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3NzUwMzYwOTl8'],
+                'specializations' => [
+                    ['name' => 'Pánevní dno', 'icon' => 'heart', 'description' => 'Diagnostika a terapie dysfunkcí pánevního dna, inkontinence, prolapsů a bolestí v oblasti pánve.'],
+                    ['name' => 'Těhotenství a porod', 'icon' => 'user', 'description' => 'Příprava na porod, cvičení v těhotenství, poporodní rehabilitace a péče o diastázu.'],
+                    ['name' => 'Dětská fyzioterapie', 'icon' => 'star', 'description' => 'Psychomotorický vývoj kojenců a batolat, Vojtova metoda, skoliózy a vadné držení těla u dětí.'],
+                    ['name' => 'Pohybový aparát', 'icon' => 'zap', 'description' => 'Bolesti zad a kloubů, sportovní zranění, pooperační rehabilitace a prevence.'],
+                ],
+                'bio' => '<p>Jsem zakladatelka kliniky FriendlyFyzio a fyzioterapeutka s více než 12letou praxí. Specializuji se na terapii pánevního dna, péči o ženy v těhotenství a po porodu a dětskou fyzioterapii.</p><p>Věřím, že každý pacient si zaslouží čas, pozornost a přístup šitý na míru. Proto u nás nikdy nespěcháme a každé vyšetření probíhá v klidném a přátelském prostředí.</p>',
+                'education' => [
+                    ['degree' => 'Mgr. – Fyzioterapie', 'institution' => 'Ostravská univerzita, Lékařská fakulta', 'period' => '2010 – 2012'],
+                    ['degree' => 'Bc. – Fyzioterapie', 'institution' => 'Ostravská univerzita, Lékařská fakulta', 'period' => '2007 – 2010'],
+                ],
+                'certifications' => [
+                    ['name' => 'Terapie pánevního dna – pokročilý kurz', 'institution' => 'Institut rehabilitace, Praha', 'year' => '2023'],
+                    ['name' => 'DNS – Dynamická neuromuskulární stabilizace', 'institution' => '2. LF UK, Praha', 'year' => '2021'],
+                    ['name' => 'Vojtova metoda – základní kurz', 'institution' => 'Rehabilitační ústav Kladruby', 'year' => '2019'],
+                ],
+                'published' => true,
+            ],
+            [
+                'name' => 'Mgr. Anna Kovaříková',
+                'email' => 'anna@friendlyfyzio.cz',
+                'phone' => '+420 604 793 256',
+                'title' => 'Fyzioterapeutka',
+                'badge' => null,
+                'photo' => ['photo-1758691462413-b07dee2933fe', 'M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3NzUwMzYxMDR8'],
+                'specializations' => [
+                    ['name' => 'Ortopedická rehabilitace', 'icon' => 'activity', 'description' => 'Rehabilitace po úrazech, operacích a při chronických potížích pohybového aparátu.'],
+                    ['name' => 'Sport', 'icon' => 'zap', 'description' => 'Prevence i léčba sportovních zranění a návrat k plné výkonnosti.'],
+                ],
+                'bio' => '<p>Věnuji se ortopedické rehabilitaci a sportovní fyzioterapii. Pomáhám klientům po úrazech i operacích zpět k plnému pohybu.</p>',
+                'education' => [
+                    ['degree' => 'Mgr. – Fyzioterapie', 'institution' => 'Ostravská univerzita, Lékařská fakulta', 'period' => '2013 – 2015'],
+                ],
+                'certifications' => [
+                    ['name' => 'Kineziologické tejpování', 'institution' => 'FyzioCentrum Brno', 'year' => '2018'],
+                ],
+                'published' => true,
+            ],
+            [
+                'name' => 'Bc. Petra Novotná',
+                'email' => 'petra@friendlyfyzio.cz',
+                'phone' => '+420 604 793 257',
+                'title' => 'Fyzioterapeutka, lektorka',
+                'badge' => null,
+                'photo' => ['photo-1701826510684-feb5d0c251da', 'M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3NzUwMzYxMDh8'],
+                'specializations' => [
+                    ['name' => 'Jóga', 'icon' => 'sparkles', 'description' => 'Vedení lekcí jógy zaměřených na správné držení těla a uvolnění.'],
+                    ['name' => 'SM systém', 'icon' => 'activity', 'description' => 'Spirální stabilizace páteře pro prevenci i léčbu bolestí zad.'],
+                    ['name' => 'Pilates', 'icon' => 'star', 'description' => 'Posílení hlubokého stabilizačního systému a zlepšení koordinace.'],
+                ],
+                'bio' => '<p>Kromě individuální fyzioterapie vedu pohybové kurzy jógy a Pilates. Zaměřuji se na správné držení těla a prevenci bolesti zad.</p>',
+                'education' => [
+                    ['degree' => 'Bc. – Fyzioterapie', 'institution' => 'Ostravská univerzita, Lékařská fakulta', 'period' => '2015 – 2018'],
+                ],
+                'certifications' => [
+                    ['name' => 'SM systém – stabilizace a mobilizace páteře', 'institution' => 'Spirální stabilizace, Praha', 'year' => '2020'],
+                ],
+                'published' => true,
+            ],
+            [
+                'name' => 'Jana Beránková',
+                'email' => 'jana@friendlyfyzio.cz',
+                'phone' => '+420 604 793 258',
+                'title' => 'Masérka',
+                'badge' => null,
+                'photo' => ['photo-1728497872617-d639cf6f3ee3', 'M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3NzUwMzYxMTN8'],
+                'specializations' => [
+                    ['name' => 'Relaxační masáže', 'icon' => 'heart', 'description' => 'Klasické a relaxační masáže pro uvolnění napětí a regeneraci.'],
+                    ['name' => 'Lymfodrenáž', 'icon' => 'activity', 'description' => 'Manuální lymfatická drenáž podporující odtok lymfy a detoxikaci.'],
+                ],
+                'bio' => '<p>Nová kolegyně v našem týmu. Profil právě připravujeme.</p>',
+                'education' => [],
+                'certifications' => [],
+                'published' => false,
+            ],
+        ];
+
         $therapists = collect();
-        foreach (range(1, 4) as $ignored) {
-            $user = User::factory()->therapist()->create(['name' => fake('cs_CZ')->name()]);
-            $therapist = TherapistProfile::factory()->for($user)->create();
+        foreach ($therapistDefs as $order => $def) {
+            $user = User::factory()->therapist()->create([
+                'name' => $def['name'],
+                'email' => $def['email'],
+                'phone' => $def['phone'],
+            ]);
+
+            $therapist = TherapistProfile::factory()->for($user)->create([
+                'title' => $def['title'],
+                'badge' => $def['badge'],
+                'bio' => $def['bio'],
+                'photo' => $therapistPhoto($def['photo'][0], $def['photo'][1], 'therapist-'.($order + 1)),
+                'education' => $def['education'],
+                'certifications' => $def['certifications'],
+                'display_order' => $order,
+                'published_at' => $def['published'] ? now() : null,
+            ]);
+
+            foreach ($def['specializations'] as $specOrder => $spec) {
+                TherapistSpecialization::factory()->create([
+                    'therapist_id' => $therapist->getKey(),
+                    'name' => $spec['name'],
+                    'icon' => $spec['icon'],
+                    'description' => $spec['description'],
+                    'display_order' => $specOrder,
+                ]);
+            }
+
             $therapists->push($therapist);
 
             foreach (fake()->randomElements(DayOfWeek::cases(), fake()->numberBetween(2, 3)) as $day) {

@@ -2,6 +2,7 @@
 
 namespace App\Mason;
 
+use App\Mason\Bricks\CalloutBrick;
 use App\Mason\Bricks\CardsBrick;
 use App\Mason\Bricks\CategoryCardsBrick;
 use App\Mason\Bricks\CtaBannerBrick;
@@ -10,7 +11,9 @@ use App\Mason\Bricks\HeroBrick;
 use App\Mason\Bricks\InstagramBrick;
 use App\Mason\Bricks\LastMinuteBrick;
 use App\Mason\Bricks\NewsletterBrick;
+use App\Mason\Bricks\PhotoTextBrick;
 use App\Mason\Bricks\PricingBrick;
+use App\Mason\Bricks\QuoteBannerBrick;
 use App\Mason\Bricks\RichTextBrick;
 use App\Mason\Bricks\SectionHeadingBrick;
 use App\Mason\Bricks\ServiceCardsBrick;
@@ -18,6 +21,7 @@ use App\Mason\Bricks\StatsBrick;
 use App\Mason\Bricks\StepsBrick;
 use App\Mason\Bricks\TeamBrick;
 use App\Mason\Bricks\TestimonialsBrick;
+use App\Mason\Bricks\TextListBrick;
 use Awcodes\Mason\Brick;
 use Awcodes\Mason\BrickGroup;
 
@@ -40,6 +44,8 @@ class BrickRegistry
             BrickGroup::make('Text')->bricks([
                 SectionHeadingBrick::class,
                 RichTextBrick::class,
+                PhotoTextBrick::class,
+                TextListBrick::class,
             ]),
             BrickGroup::make('Karty')->bricks([
                 CardsBrick::class,
@@ -52,6 +58,8 @@ class BrickRegistry
                 StatsBrick::class,
                 TestimonialsBrick::class,
                 CtaBannerBrick::class,
+                QuoteBannerBrick::class,
+                CalloutBrick::class,
                 StepsBrick::class,
                 PricingBrick::class,
                 LastMinuteBrick::class,

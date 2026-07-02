@@ -17,6 +17,11 @@ class ServiceController extends Controller
     {
         $custom = $service->customPage;
 
+        $breadcrumbs = [
+            ['label' => $category->name, 'url' => $category->permalink],
+            ['label' => $service->name, 'url' => null],
+        ];
+
         // A published custom page (or a draft previewed by staff) is a deliberately
         // authored public page: it renders regardless of the service's booking
         // visibility (topic pages are intentionally "Hidden" from listings/booking).
@@ -34,6 +39,7 @@ class ServiceController extends Controller
                     'renderedContent' => $renderedContent,
                     'isPreview' => $customPreview,
                     'adminEditUrl' => $this->adminEditUrl($custom, PageResource::class),
+                    'breadcrumbs' => $breadcrumbs,
                 ]);
             }
         }
@@ -52,6 +58,7 @@ class ServiceController extends Controller
             'service' => $service,
             'isPreview' => $servicePreview,
             'adminEditUrl' => $this->adminEditUrl($service, ServiceResource::class),
+            'breadcrumbs' => $breadcrumbs,
             'seo' => [
                 'title' => $service->name,
                 'description' => null,

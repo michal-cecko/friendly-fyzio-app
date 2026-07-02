@@ -36,6 +36,10 @@
 
     <x-site.header :admin-edit-url="$adminEditUrl ?? null" />
 
+    @unless(request()->routeIs('home'))
+        <x-site.breadcrumbs :items="$breadcrumbs ?? null" :page="$page ?? null" />
+    @endunless
+
     <main class="flex-1">
         @yield('content')
     </main>

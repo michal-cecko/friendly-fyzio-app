@@ -12,17 +12,6 @@
         </div>
     @endif
 
-    {{-- Breadcrumb --}}
-    <nav aria-label="Drobečková navigace" class="border-b border-line bg-white">
-        <div class="ff-container flex flex-wrap items-center gap-2 py-4 text-sm text-neutral-500">
-            <a href="{{ route('home') }}" class="transition hover:text-primary">Domov</a>
-            <x-lucide name="chevron-right" class="h-4 w-4 text-neutral-300" />
-            <a href="{{ $category->permalink }}" class="transition hover:text-primary">{{ $category->name }}</a>
-            <x-lucide name="chevron-right" class="h-4 w-4 text-neutral-300" />
-            <span class="font-medium text-neutral-900">{{ $service->name }}</span>
-        </div>
-    </nav>
-
     {{-- Hero --}}
     <section class="bg-primary-light">
         <div class="ff-container flex flex-col gap-6 py-16 lg:py-20">

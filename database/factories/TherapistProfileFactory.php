@@ -18,9 +18,21 @@ class TherapistProfileFactory extends Factory
     {
         return [
             'user_id' => User::factory()->therapist(),
-            'bio' => fake()->sentence(12),
+            'title' => fake()->randomElement(['Fyzioterapeutka', 'Fyzioterapeut', 'Masérka', 'Lektorka']),
+            'bio' => fake()->paragraphs(2, true),
             'is_collaborator' => fake()->boolean(30),
+            'display_order' => 0,
             'published_at' => fake()->boolean(80) ? now() : null,
         ];
+    }
+
+    public function published(): static
+    {
+        return $this->state(fn (): array => ['published_at' => now()]);
+    }
+
+    public function unpublished(): static
+    {
+        return $this->state(fn (): array => ['published_at' => null]);
     }
 }

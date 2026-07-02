@@ -16,6 +16,8 @@ class TherapistSpecialization extends Model
     protected $fillable = [
         'therapist_id',
         'name',
+        'icon',
+        'description',
         'display_order',
     ];
 

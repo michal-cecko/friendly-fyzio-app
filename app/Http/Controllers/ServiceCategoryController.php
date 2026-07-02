@@ -21,6 +21,10 @@ class ServiceCategoryController extends Controller
 
         $custom = $category->customPage;
 
+        $breadcrumbs = [
+            ['label' => $category->name, 'url' => null],
+        ];
+
         // A published custom page (or a draft previewed by staff) overrides the
         // default layout and renders its bricks at the category URL.
         if ($custom !== null) {
@@ -36,6 +40,7 @@ class ServiceCategoryController extends Controller
                     'renderedContent' => $renderedContent,
                     'isPreview' => $categoryPreview || $customPreview,
                     'adminEditUrl' => $this->adminEditUrl($custom, PageResource::class),
+                    'breadcrumbs' => $breadcrumbs,
                 ]);
             }
         }
@@ -46,6 +51,7 @@ class ServiceCategoryController extends Controller
             'services' => $category->services()->public()->orderBy('name')->get(),
             'isPreview' => $categoryPreview,
             'adminEditUrl' => $this->adminEditUrl($category, ServiceCategoryResource::class),
+            'breadcrumbs' => $breadcrumbs,
             'seo' => [
                 'title' => $category->name,
                 'description' => $category->description,

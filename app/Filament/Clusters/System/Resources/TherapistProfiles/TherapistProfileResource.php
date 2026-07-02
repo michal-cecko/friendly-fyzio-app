@@ -19,9 +19,28 @@ class TherapistProfileResource extends Resource
 {
     protected static ?string $model = TherapistProfile::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUserGroup;
 
     protected static ?string $cluster = SystemCluster::class;
+
+    protected static ?int $navigationSort = 2;
+
+    protected static ?string $recordTitleAttribute = 'slug';
+
+    public static function getModelLabel(): string
+    {
+        return 'terapeut';
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return 'terapeuti';
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return 'Terapeuti';
+    }
 
     public static function form(Schema $schema): Schema
     {

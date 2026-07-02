@@ -8,6 +8,9 @@ use App\Mason\BrickRegistry;
 use App\Models\Page;
 use App\Models\Service;
 use App\Models\ServiceCategory;
+use App\Models\TherapistProfile;
+use App\Models\TherapistSpecialization;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -34,6 +37,9 @@ class BricksTest extends TestCase
             'attrs' => ['id' => $id, 'config' => $config],
         ];
 
+        $therapist = User::factory()->therapist()->create(['name' => 'Klára Specialistová']);
+        TherapistProfile::factory()->for($therapist)->published()->create(['title' => 'Fyzioterapeutka']);
+
         Page::factory()->system('home')->create([
             'slug' => '/',
             'content' => [
@@ -48,9 +54,7 @@ class BricksTest extends TestCase
                 $brick('cards', ['title' => 'Kurzy', 'cards' => [
                     ['title' => 'Jóga', 'meta' => 'leden 2026', 'description' => 'Popis.'],
                 ]]),
-                $brick('team', ['title' => 'Náš tým', 'members' => [
-                    ['name' => 'Klára Specialistová', 'role' => 'Fyzioterapeutka', 'specializations' => 'Pánevní dno'],
-                ]]),
+                $brick('team', ['title' => 'Náš tým']),
                 $brick('stats', ['stats' => [['value' => '2000+', 'label' => 'Klientů']]]),
                 $brick('testimonials', ['title' => 'Reference', 'items' => [
                     ['quote' => 'Skvělé.', 'author' => 'Jana N.', 'role' => 'klientka'],
@@ -74,34 +78,49 @@ class BricksTest extends TestCase
             ->assertSee('Přihlaste se');
     }
 
-    public function test_team_brick_renders_member_cards(): void
+    public function test_team_brick_lists_all_therapists_and_links_only_published(): void
     {
         $brick = fn (string $id, array $config = []): array => [
             'type' => 'masonBrick',
             'attrs' => ['id' => $id, 'config' => $config],
         ];
 
+        $publishedUser = User::factory()->therapist()->create(['name' => 'Mgr. Lucie Fičkerová']);
+        $published = TherapistProfile::factory()->for($publishedUser)->published()->create([
+            'slug' => 'lucie-fickerova',
+            'title' => 'Fyzioterapeutka, zakladatelka',
+        ]);
+        TherapistSpecialization::factory()->create([
+            'therapist_id' => $published->getKey(),
+            'name' => 'Pánevní dno',
+            'display_order' => 0,
+        ]);
+
+        $draftUser = User::factory()->therapist()->create(['name' => 'Jana Beránková']);
+        $draft = TherapistProfile::factory()->for($draftUser)->unpublished()->create(['title' => 'Masérka']);
+
         Page::factory()->system('home')->create([
             'slug' => '/',
             'content' => [
-                $brick('team', ['eyebrow' => 'Náš tým', 'title' => 'Seznamte se s naším týmem', 'members' => [
-                    ['name' => 'Mgr. Lucie Fickerová', 'role' => 'Fyzioterapeutka, zakladatelka', 'specializations' => 'Pánevní dno • Těhotenství'],
-                    ['name' => 'Jana Beránková', 'role' => 'Masérka', 'specializations' => 'Lymfodrenáž', 'text' => 'Shlédnout profil', 'style' => 'text', 'link_type' => 'custom', 'url' => '/o-nas/jana'],
-                ]]),
+                $brick('team', ['eyebrow' => 'Náš tým', 'title' => 'Seznamte se s naším týmem']),
             ],
         ]);
 
-        $this->get('/')
+        $html = $this->get('/')
             ->assertOk()
             ->assertSee('Seznamte se s naším týmem')
-            ->assertSee('Mgr. Lucie Fickerová')
+            ->assertSee('Mgr. Lucie Fičkerová')
             ->assertSee('Fyzioterapeutka, zakladatelka')
             ->assertSee('Pánevní dno')
+            // Every therapist is listed, even one without a published profile.
             ->assertSee('Jana Beránková')
-            ->assertSee('Lymfodrenáž')
-            // A member with a link renders the unified profile button.
+            // Published profiles are clickable.
             ->assertSee('Shlédnout profil')
-            ->assertSee('href="/o-nas/jana"', false);
+            ->getContent();
+
+        $this->assertStringContainsString('href="'.$published->permalink.'"', $html);
+        // The unpublished therapist is shown but not linked to a profile page.
+        $this->assertStringNotContainsString('href="'.$draft->permalink.'"', $html);
     }
 
     public function test_category_cards_brick_renders_clickable_rows_with_pulsing_dots(): void
@@ -198,6 +217,63 @@ class BricksTest extends TestCase
             ->assertSee('30 min')
             ->assertSee('Balíček 5 vstupů')
             ->assertSee('2 000 Kč');
+    }
+
+    public function test_text_list_brick_renders_prose_and_highlighted_list_card(): void
+    {
+        $brick = fn (string $id, array $config = []): array => [
+            'type' => 'masonBrick',
+            'attrs' => ['id' => $id, 'config' => $config],
+        ];
+
+        Page::factory()->system('home')->create([
+            'slug' => '/',
+            'content' => [
+                $brick('text-list', [
+                    'eyebrow' => 'Jak to funguje',
+                    'title' => 'Lymfatický systém',
+                    'body' => '<p>Popis techniky.</p>',
+                    'card_style' => 'warning',
+                    'card_icon' => 'triangle-alert',
+                    'card_title' => 'Kontraindikace',
+                    'card_note' => 'Napářka není vhodná v těchto případech.',
+                    'items' => [
+                        ['text' => 'Infekční a horečnaté stavy'],
+                        ['text' => 'Rizikové těhotenství'],
+                    ],
+                ]),
+            ],
+        ]);
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('Jak to funguje')
+            ->assertSee('Lymfatický systém')
+            ->assertSee('Popis techniky.')
+            ->assertSee('Kontraindikace')
+            ->assertSee('Napářka není vhodná v těchto případech.')
+            ->assertSee('Infekční a horečnaté stavy')
+            ->assertSee('Rizikové těhotenství');
+    }
+
+    public function test_pricing_brick_renders_footer_note(): void
+    {
+        Page::factory()->system('home')->create([
+            'slug' => '/',
+            'content' => [[
+                'type' => 'masonBrick',
+                'attrs' => ['id' => 'pricing', 'config' => [
+                    'title' => 'Ceník',
+                    'rows' => [['name' => 'Napářka', 'note' => 'cca 60 minut', 'price' => '1 200 Kč']],
+                    'note' => 'V ceně jsou bylinky a veškeré vybavení k proceduře.',
+                ]],
+            ]],
+        ]);
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('Napářka')
+            ->assertSee('V ceně jsou bylinky a veškeré vybavení k proceduře.');
     }
 
     public function test_service_cards_brick_renders_published_categories(): void

@@ -8,6 +8,7 @@
 
     $classes = match ($style) {
         'secondary' => 'bg-neutral-900 text-white hover:bg-neutral-800',
+        'soft' => 'bg-primary-light text-primary hover:bg-primary-light/70',
         'outline' => 'border-[1.5px] border-primary bg-white text-primary hover:bg-primary-light',
         'text' => 'text-primary hover:text-primary-dark',
         'ghost' => 'text-primary hover:bg-primary-light',

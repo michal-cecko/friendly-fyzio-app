@@ -23,7 +23,6 @@ class TherapistController extends Controller
 
         return view('therapists.show', [
             'therapist' => $therapist,
-            'services' => $therapist->services()->public()->orderBy('name')->get(),
             'isPreview' => $preview,
             'adminEditUrl' => $this->adminEditUrl($therapist, TherapistProfileResource::class),
             'seo' => [

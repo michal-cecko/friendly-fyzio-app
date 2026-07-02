@@ -68,6 +68,7 @@ class PricingBrick extends Brick
                     ->reorderable()
                     ->collapsed()
                     ->itemLabel(fn (array $state): ?string => $state['name'] ?? 'Položka'),
+                Fields::richText('note', 'Poznámka pod ceníkem'),
                 ButtonsField::make(),
             ]);
     }

@@ -2,6 +2,7 @@
     $config ??= [];
     $rows ??= [];
     $buttons = $config['buttons'] ?? [];
+    $note = $config['note'] ?? null;
 @endphp
 
 <section class="bg-white py-16 lg:py-24">
@@ -24,6 +25,10 @@
                     </div>
                 @endforeach
             </div>
+        @endif
+
+        @if(! empty($note))
+            <p class="mx-auto mt-6 max-w-3xl text-center text-sm leading-relaxed text-neutral-500">{!! \App\Support\RichText::inline($note) !!}</p>
         @endif
 
         @if($buttons)

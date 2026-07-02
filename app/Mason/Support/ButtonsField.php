@@ -36,6 +36,7 @@ class ButtonsField
         return [
             'primary' => 'Primární (růžové)',
             'secondary' => 'Sekundární (tmavé)',
+            'soft' => 'Světle růžové',
             'outline' => 'Obrys',
             'text' => 'Textový odkaz (inline)',
             'ghost' => 'Tlačítko bez pozadí',

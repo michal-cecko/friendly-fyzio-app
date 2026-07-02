@@ -157,34 +157,26 @@
         </section>
     @endif
 
-    {{-- Services this therapist offers --}}
-    @if($services->isNotEmpty())
+    {{-- Areas of specialization --}}
+    @if($therapist->specializations->isNotEmpty())
         <section class="bg-white py-16 lg:py-24">
             <div class="ff-container">
                 @include('bricks.partials.heading', ['config' => [
-                    'eyebrow' => 'Specializace',
+                    'eyebrow' => 'Oblasti specializace',
                     'title' => 'V čem vám mohu pomoci',
-                    'subtitle' => 'Vyberte si službu a objednejte se online.',
                 ]])
 
-                <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                    @foreach($services as $service)
-                        <a href="{{ $service->permalink }}" class="group flex flex-col gap-4 rounded-2xl border border-line bg-white p-6 transition hover:border-primary hover:shadow-lg hover:shadow-primary/5">
-                            <h3 class="font-heading text-lg font-semibold text-neutral-900">{{ $service->name }}</h3>
-                            <div class="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-neutral-600">
-                                <span class="inline-flex items-center gap-1.5">
-                                    <x-lucide name="clock" class="h-4 w-4 text-primary" />
-                                    {{ $service->duration_minutes }} min
-                                </span>
-                                <span class="inline-flex items-center gap-1.5 font-heading font-semibold text-neutral-900">
-                                    {{ number_format($service->price, 0, ',', ' ') }} Kč
-                                </span>
+                <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                    @foreach($therapist->specializations as $specialization)
+                        <div class="flex flex-col items-center gap-4 rounded-2xl bg-surface-alt p-6 text-center">
+                            <div class="flex h-14 w-14 items-center justify-center rounded-full bg-primary-light text-primary">
+                                {!! \App\Support\Icon::render($specialization->icon ?: 'heart', 'h-6 w-6') !!}
                             </div>
-                            <span class="mt-auto inline-flex items-center gap-1.5 pt-1 font-heading text-sm font-semibold text-primary transition group-hover:gap-2.5">
-                                Více informací
-                                <x-lucide name="arrow-right" class="h-4 w-4" />
-                            </span>
-                        </a>
+                            <h3 class="font-heading text-base font-semibold text-neutral-900">{{ $specialization->name }}</h3>
+                            @if($specialization->description)
+                                <p class="text-sm leading-relaxed text-neutral-600">{{ $specialization->description }}</p>
+                            @endif
+                        </div>
                     @endforeach
                 </div>
             </div>
