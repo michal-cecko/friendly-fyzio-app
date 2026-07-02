@@ -15,6 +15,7 @@
         "laravel/framework": "^13.0",
         "laravel/octane": "^2.15",
         "laravel/tinker": "^3.0",
+        "league/flysystem-aws-s3-v3": "^3.0",
         "leandrocfe/filament-apex-charts": "^5.0",
         "mallardduck/blade-lucide-icons": "^1.26",
         "marcelweidum/filament-passkeys": "^3.0",
