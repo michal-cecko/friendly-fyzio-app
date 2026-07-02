@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\InstagramOAuthController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\ServiceCategoryController;
 use Illuminate\Http\Request;
@@ -40,6 +41,14 @@ Route::get('/rezervace-masazi', fn () => view('reservation.index', ['preset' => 
 // Public login (web guard). Also the wizard's login fallback / forgotten-password entry.
 Route::get('/prihlaseni', fn () => view('auth.login'))->name('public.login');
 
+// Instagram OAuth handshake for the admin "Instagram účty" resource. The controller
+// guards against guests (admin logs in via the Filament panel, which has no plain
+// `login` route). Registered before the catch-all and excluded from it below.
+Route::get('/instagram/authorize/{connection}', [InstagramOAuthController::class, 'redirect'])
+    ->name('instagram.oauth.redirect');
+Route::get('/instagram/callback', [InstagramOAuthController::class, 'callback'])
+    ->name('instagram.oauth.callback');
+
 Route::get('/{slug}', [PageController::class, 'show'])
-    ->where('slug', '^(?!admin|klientska-zona|livewire|passkeys|storage|dev|up|rezervace|rezervace-vstupniho-vysetreni|rezervace-masazi|prihlaseni).*$')
+    ->where('slug', '^(?!admin|klientska-zona|livewire|passkeys|storage|dev|up|rezervace|rezervace-vstupniho-vysetreni|rezervace-masazi|prihlaseni|instagram).*$')
     ->name('page.show');

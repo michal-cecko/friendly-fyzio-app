@@ -1,0 +1,10 @@
+friendly-fyzio.test {
+	# Caddy issues and manages its own certificate from its internal CA — fully
+	# self-contained in the container, no host tooling (mkcert/openssl) required.
+	# The cert/CA persist in the sail-caddy-data volume across restarts.
+	tls internal
+
+	# Proxy to the Sail app container (internal port 80). Caddy adds
+	# X-Forwarded-Proto=https, which the app trusts (see bootstrap/app.php).
+	reverse_proxy laravel.test:80
+}

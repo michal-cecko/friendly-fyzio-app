@@ -66,6 +66,13 @@ class ReservationWizardTest extends TestCase
         ]);
     }
 
+    protected function tearDown(): void
+    {
+        Carbon::setTestNow();
+
+        parent::tearDown();
+    }
+
     public function test_the_wizard_page_renders(): void
     {
         $this->get(route('reservation.wizard'))
@@ -309,5 +316,71 @@ class ReservationWizardTest extends TestCase
 
         $this->assertSame(1, User::where('email', 'dup@example.com')->count());
         $this->assertSame($existing->id, Reservation::sole()->client_id);
+    }
+
+    public function test_calendar_flags_a_fully_booked_future_day_as_full(): void
+    {
+        // The therapist is busy the whole day, so no slot remains on a future date.
+        Reservation::factory()->create([
+            'service_id' => $this->service->id,
+            'therapist_id' => $this->therapist->id,
+            'room_id' => Room::factory()->create()->id,
+            'reservation_date' => $this->date->toDateString(),
+            'start_time' => '08:00',
+            'end_time' => '16:00',
+            'status' => ReservationStatus::Confirmed,
+        ]);
+
+        $months = Livewire::test(ReservationWizard::class)
+            ->set('therapistId', $this->therapist->id)
+            ->set('categorySlug', $this->category->slug)
+            ->set('serviceSlug', $this->service->slug)
+            ->instance()
+            ->calendarMonths();
+
+        $cell = $this->findCell($months, $this->date->toDateString());
+
+        $this->assertNotNull($cell);
+        $this->assertSame('full', $cell['queue']);
+        $this->assertFalse($cell['available']);
+    }
+
+    public function test_today_cell_is_available_when_a_slot_is_free(): void
+    {
+        Carbon::setTestNow($this->date->copy()->startOfDay());
+
+        $months = Livewire::test(ReservationWizard::class)
+            ->set('therapistId', $this->therapist->id)
+            ->set('categorySlug', $this->category->slug)
+            ->set('serviceSlug', $this->service->slug)
+            ->instance()
+            ->calendarMonths();
+
+        $cell = $this->findCell($months, Carbon::today()->toDateString());
+
+        $this->assertNotNull($cell);
+        $this->assertTrue($cell['today']);
+        $this->assertTrue($cell['available']);
+    }
+
+    /**
+     * Locate a single day cell in the calendar grid by date.
+     *
+     * @param  array<int, array{weeks: array<int, array<int, ?array{date: string}>>}>  $months
+     * @return array{date: string, day: int, available: bool, today: bool, queue: ?string}|null
+     */
+    private function findCell(array $months, string $date): ?array
+    {
+        foreach ($months as $month) {
+            foreach ($month['weeks'] as $week) {
+                foreach ($week as $cell) {
+                    if ($cell !== null && $cell['date'] === $date) {
+                        return $cell;
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 }

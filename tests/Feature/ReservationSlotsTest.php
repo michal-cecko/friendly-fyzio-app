@@ -61,6 +61,13 @@ class ReservationSlotsTest extends TestCase
         $this->schedule($this->therapist, $this->room, '08:00', '16:00');
     }
 
+    protected function tearDown(): void
+    {
+        Carbon::setTestNow();
+
+        parent::tearDown();
+    }
+
     private function schedule(TherapistProfile $therapist, Room $room, string $start, string $end): void
     {
         TherapistWeeklySchedule::factory()->create([
@@ -170,6 +177,67 @@ class ReservationSlotsTest extends TestCase
 
         // Only the scheduled Monday has working time in the Mon–Sun window.
         $this->assertSame([$this->date->toDateString()], $days);
+    }
+
+    public function test_fully_booked_future_day_is_full_not_available(): void
+    {
+        // One reservation spanning the whole 08:00–16:00 block leaves no gaps.
+        Reservation::factory()->create([
+            'service_id' => $this->service->id,
+            'therapist_id' => $this->therapist->id,
+            'room_id' => $this->room->id,
+            'reservation_date' => $this->date->toDateString(),
+            'start_time' => '08:00',
+            'end_time' => '16:00',
+            'status' => ReservationStatus::Confirmed,
+        ]);
+
+        $availability = $this->slots()->dayAvailability($this->service, $this->date->copy(), $this->date->copy()->addDays(6));
+
+        $this->assertContains($this->date->toDateString(), $availability['full']);
+        $this->assertNotContains($this->date->toDateString(), $availability['available']);
+    }
+
+    public function test_day_without_a_schedule_is_neither_available_nor_full(): void
+    {
+        // The therapist only works the Monday; the Tuesday has no working time at all.
+        $tuesday = $this->date->copy()->addDay()->toDateString();
+
+        $availability = $this->slots()->dayAvailability($this->service, $this->date->copy(), $this->date->copy()->addDays(6));
+
+        $this->assertNotContains($tuesday, $availability['available']);
+        $this->assertNotContains($tuesday, $availability['full']);
+    }
+
+    public function test_today_is_available_when_a_later_slot_is_free(): void
+    {
+        // "Now" is the scheduled Monday, before opening — its 08:00+ slots are still free.
+        Carbon::setTestNow($this->date->copy()->startOfDay());
+
+        $days = $this->slots()->availableDays($this->service, Carbon::today(), Carbon::today()->copy()->addDays(6));
+
+        $this->assertContains($this->date->toDateString(), $days);
+    }
+
+    public function test_today_is_never_full_even_when_booked_out(): void
+    {
+        Carbon::setTestNow($this->date->copy()->startOfDay());
+
+        Reservation::factory()->create([
+            'service_id' => $this->service->id,
+            'therapist_id' => $this->therapist->id,
+            'room_id' => $this->room->id,
+            'reservation_date' => $this->date->toDateString(),
+            'start_time' => '08:00',
+            'end_time' => '16:00',
+            'status' => ReservationStatus::Confirmed,
+        ]);
+
+        $availability = $this->slots()->dayAvailability($this->service, Carbon::today(), Carbon::today()->copy()->addDays(6));
+
+        // A booked-out today is "late", not a waitlist candidate.
+        $this->assertNotContains($this->date->toDateString(), $availability['full']);
+        $this->assertNotContains($this->date->toDateString(), $availability['available']);
     }
 
     public function test_calendar_block_removes_the_day(): void

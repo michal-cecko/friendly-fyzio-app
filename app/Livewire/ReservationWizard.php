@@ -308,21 +308,34 @@ class ReservationWizard extends Component
     // --- Availability ---------------------------------------------------------
 
     /**
-     * @return array<int, string>
+     * Day classification for the whole booking window, resolved once per request:
+     * 'available' (>= 1 bookable slot) and 'full' (works that day but booked out —
+     * a "pořadník"/waitlist candidate).
+     *
+     * @return array{available: array<int, string>, full: array<int, string>}
      */
     #[Computed]
-    public function availableDays(): array
+    public function calendarDays(): array
     {
         if (! $this->service || blank($this->therapistId)) {
-            return [];
+            return ['available' => [], 'full' => []];
         }
 
-        return app(ReservationSlots::class)->availableDays(
+        return app(ReservationSlots::class)->dayAvailability(
             $this->service,
             Carbon::today(),
             Carbon::today()->addDays(Settings::bookingWindowDays()),
             $this->resolvedTherapistId(),
         );
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    #[Computed]
+    public function availableDays(): array
+    {
+        return $this->calendarDays['available'];
     }
 
     /**
@@ -354,7 +367,9 @@ class ReservationWizard extends Component
     public function calendarMonths(): array
     {
         [$first, $last] = $this->calendarRange();
-        $available = array_flip($this->availableDays);
+        $availability = $this->calendarDays;
+        $available = array_flip($availability['available']);
+        $full = array_flip($availability['full']);
         $today = Carbon::today();
         $months = [];
 
@@ -366,17 +381,20 @@ class ReservationWizard extends Component
             while ($cursor->lte($end)) {
                 $week = [];
                 for ($day = 0; $day < 7; $day++) {
-                    $week[] = $cursor->month === $month->month
-                        ? [
-                            'date' => $cursor->toDateString(),
+                    if ($cursor->month === $month->month) {
+                        $ds = $cursor->toDateString();
+                        $week[] = [
+                            'date' => $ds,
                             'day' => $cursor->day,
-                            'available' => isset($available[$cursor->toDateString()]),
+                            'available' => isset($available[$ds]),
                             'today' => $cursor->isSameDay($today),
-                            // Reserved for the day-waitlist ("pořadník") feature:
-                            // 'full' | 'waitlist' | null. Always null until it lands.
-                            'queue' => null,
-                        ]
-                        : null;
+                            // 'full' = works that day but fully booked ("pořadník");
+                            // 'waitlist' (per-user, already queued) awaits its backend.
+                            'queue' => isset($full[$ds]) ? 'full' : null,
+                        ];
+                    } else {
+                        $week[] = null;
+                    }
                     $cursor->addDay();
                 }
                 $weeks[] = $week;

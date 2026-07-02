@@ -41,23 +41,47 @@ class ReservationSlots
      */
     public function availableDays(Service $service, Carbon $from, Carbon $to, ?string $therapistId = null): array
     {
+        return $this->dayAvailability($service, $from, $to, $therapistId)['available'];
+    }
+
+    /**
+     * Classify every day in the range: 'available' offers at least one bookable slot;
+     * 'full' means the therapist works that day but every future slot is already taken
+     * (a "pořadník"/waitlist candidate). Days with no work at all appear in neither.
+     *
+     * Only future dates can be 'full' — a today with no slots left is simply late, not
+     * booked out. A day whose room is entirely blocked is a rare false positive.
+     *
+     * @return array{available: array<int, string>, full: array<int, string>}
+     */
+    public function dayAvailability(Service $service, Carbon $from, Carbon $to, ?string $therapistId = null): array
+    {
         $from = $from->copy()->startOfDay();
         $to = $to->copy()->startOfDay();
         $baseIds = $this->baseTherapistIds($service, $therapistId);
 
         if ($baseIds === []) {
-            return [];
+            return ['available' => [], 'full' => []];
         }
 
+        $today = Carbon::today();
         $context = $this->preload($baseIds, $from, $to);
         $gapFiller = $this->gapFiller($service);
         $surface = [$service->duration_minutes];
 
-        $days = [];
+        $available = [];
+        $full = [];
         for ($date = $from->copy(); $date->lte($to); $date->addDay()) {
             $therapistIds = array_values(array_diff($baseIds, $this->blockedFromContext($context, $date)));
 
             if ($therapistIds === []) {
+                continue;
+            }
+
+            $weekly = $this->weeklyFromContext($context, $therapistIds, $date);
+            $nonstandard = $this->nonstandardFromContext($context, $therapistIds, $date);
+
+            if ($weekly === [] && $nonstandard === []) {
                 continue;
             }
 
@@ -67,19 +91,21 @@ class ReservationSlots
                 $therapistIds,
                 $gapFiller,
                 $surface,
-                $this->weeklyFromContext($context, $therapistIds, $date),
-                $this->nonstandardFromContext($context, $therapistIds, $date),
+                $weekly,
+                $nonstandard,
                 $reservations['byTherapist'],
                 $reservations['byRoom'],
                 $this->roomBlockingsFromContext($context, $date),
             );
 
             if ($this->withoutPastSlots($slots, $date) !== []) {
-                $days[] = $date->toDateString();
+                $available[] = $date->toDateString();
+            } elseif ($date->greaterThan($today)) {
+                $full[] = $date->toDateString();
             }
         }
 
-        return $days;
+        return ['available' => $available, 'full' => $full];
     }
 
     /**

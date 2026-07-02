@@ -11,7 +11,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // Trust the reverse proxy (Valet's nginx locally, load balancer in prod) so
+        // the app detects HTTPS from X-Forwarded-* headers instead of the proxied http hop.
+        $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

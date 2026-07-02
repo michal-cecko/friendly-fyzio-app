@@ -24,6 +24,19 @@ services:
         depends_on:
             - pgsql
             - redis
+    caddy:
+        image: 'caddy:2-alpine'
+        restart: unless-stopped
+        ports:
+            - '80:80'
+            - '443:443'
+        volumes:
+            - './docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro'
+            - 'sail-caddy-data:/data'
+        networks:
+            - sail
+        depends_on:
+            - laravel.test
     pgsql:
         image: 'postgres:18-alpine'
         ports:
@@ -71,4 +84,6 @@ volumes:
     sail-pgsql:
         driver: local
     sail-redis:
+        driver: local
+    sail-caddy-data:
         driver: local

@@ -277,14 +277,12 @@
                                                                     <input type="radio" wire:model="date" value="{{ $cell['date'] }}" class="peer sr-only">
                                                                     <span @class([
                                                                         'relative flex h-10 w-10 items-center justify-center rounded-full text-sm transition',
-                                                                        'font-normal text-neutral-900 hover:bg-primary-light/50' => ! $cell['today'],
-                                                                        'border-2 border-primary font-semibold text-primary hover:bg-primary-light/50' => $cell['today'],
+                                                                        'font-normal text-neutral-900' => ! $cell['today'],
+                                                                        'border-2 border-primary font-semibold text-primary' => $cell['today'],
                                                                         'peer-checked:border-transparent peer-checked:bg-primary peer-checked:font-semibold peer-checked:text-white',
                                                                     ])>
                                                                         {{ $cell['day'] }}
-                                                                        @unless ($cell['today'])
-                                                                            <span class="absolute bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-primary"></span>
-                                                                        @endunless
+                                                                        <span class="absolute bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-primary"></span>
                                                                     </span>
                                                                 </label>
 
