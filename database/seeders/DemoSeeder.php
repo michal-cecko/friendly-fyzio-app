@@ -5,7 +5,9 @@ namespace Database\Seeders;
 use App\Enums\CourseEnrollmentStatus;
 use App\Enums\CourseSeriesStatus;
 use App\Enums\DayOfWeek;
+use App\Enums\ExamType;
 use App\Enums\PaymentStatus;
+use App\Enums\ServiceVisibility;
 use App\Enums\WeekType;
 use App\Models\Building;
 use App\Models\CancellationRule;
@@ -61,16 +63,33 @@ class DemoSeeder extends Seeder
         abort_if($categories->isEmpty(), 500, 'Run ServiceCategorySeeder before DemoSeeder.');
 
         // --- Services (+ cancellation rule + room links) ---
-        $serviceNames = [
-            'Vstupní vyšetření', 'Klasická masáž', 'Lymfatická drenáž', 'Léčebná tělesná výchova',
-            'Suché jehličkování', 'Kineziotaping', 'Mobilizace páteře', 'Sportovní masáž',
+        // Physiotherapy carries an exam type: "Vstupní" (new patients, public) is
+        // paired with a cheaper "Kontrolní" (existing patients only — gated by login
+        // + the existing_client_months recency window). Massages have no exam type.
+        $physio = $categories->firstWhere('slug', 'fyzioterapie') ?? $categories->first();
+        $massage = $categories->firstWhere('slug', 'relaxace') ?? $categories->first();
+
+        $serviceDefs = [
+            ['category' => $physio, 'name' => 'Vstupní vyšetření pohybového aparátu', 'exam_type' => ExamType::Vstupni, 'duration' => 90, 'price' => 1200, 'visibility' => ServiceVisibility::Public],
+            ['category' => $physio, 'name' => 'Kontrolní terapie pohybového aparátu', 'exam_type' => ExamType::Kontrolni, 'duration' => 60, 'price' => 800, 'visibility' => ServiceVisibility::Clients, 'existing_client_months' => 12],
+            ['category' => $physio, 'name' => 'Vstupní vyšetření pánevního dna', 'exam_type' => ExamType::Vstupni, 'duration' => 90, 'price' => 1300, 'visibility' => ServiceVisibility::Public],
+            ['category' => $physio, 'name' => 'Kontrolní terapie pánevního dna', 'exam_type' => ExamType::Kontrolni, 'duration' => 60, 'price' => 850, 'visibility' => ServiceVisibility::Clients, 'existing_client_months' => 12],
+            ['category' => $massage, 'name' => 'Klasická masáž', 'duration' => 60, 'price' => 900],
+            ['category' => $massage, 'name' => 'Lymfatická drenáž', 'duration' => 60, 'price' => 950],
+            ['category' => $massage, 'name' => 'Sportovní masáž', 'duration' => 60, 'price' => 1000],
+            ['category' => $massage, 'name' => 'Těhotenská masáž', 'duration' => 60, 'price' => 1000],
         ];
 
-        $services = collect($serviceNames)->map(function (string $name) use ($categories, $rooms) {
+        $services = collect($serviceDefs)->map(function (array $def) use ($rooms) {
             $service = Service::factory()->create([
-                'category_id' => $categories->random()->getKey(),
-                'name' => $name,
-                'slug' => Str::slug($name),
+                'category_id' => $def['category']->getKey(),
+                'name' => $def['name'],
+                'slug' => Str::slug($def['name']),
+                'exam_type' => $def['exam_type'] ?? null,
+                'duration_minutes' => $def['duration'],
+                'price' => $def['price'],
+                'visibility' => $def['visibility'] ?? ServiceVisibility::Public,
+                'existing_client_months' => $def['existing_client_months'] ?? null,
             ]);
 
             $service->rooms()->sync($rooms->random(fake()->numberBetween(1, 3))->pluck('id')->all());
@@ -127,16 +146,27 @@ class DemoSeeder extends Seeder
         }
 
         // --- Reservations across the current week (populate the calendar) ---
+        // A therapist can hold only one reservation per date + start time, so we
+        // skip any tuple already taken (the DB enforces this with a unique index).
         $weekStart = Carbon::now()->startOfWeek(Carbon::MONDAY);
+        $takenSlots = [];
         foreach (range(1, 30) as $ignored) {
+            $therapistId = $therapists->random()->getKey();
+            $date = $weekStart->copy()->addDays(fake()->numberBetween(0, 6))->toDateString();
             $hour = fake()->numberBetween(8, 17);
+
+            $slotKey = "{$therapistId}|{$date}|{$hour}";
+            if (isset($takenSlots[$slotKey])) {
+                continue;
+            }
+            $takenSlots[$slotKey] = true;
 
             Reservation::factory()->create([
                 'client_id' => $clients->random()->getKey(),
                 'service_id' => $services->random()->getKey(),
-                'therapist_id' => $therapists->random()->getKey(),
+                'therapist_id' => $therapistId,
                 'room_id' => $rooms->random()->getKey(),
-                'reservation_date' => $weekStart->copy()->addDays(fake()->numberBetween(0, 6))->toDateString(),
+                'reservation_date' => $date,
                 'start_time' => sprintf('%02d:00', $hour),
                 'end_time' => sprintf('%02d:00', $hour + 1),
             ]);

@@ -29,6 +29,7 @@
     <link href="https://fonts.bunny.net/css?family=montserrat:400,500,600,700,800|open-sans:400,500,600,700" rel="stylesheet" />
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @livewireStyles
 </head>
 <body class="flex min-h-screen flex-col bg-white font-sans text-neutral-900 antialiased">
     <x-site.banners :page-id="$seo['banner_page_id'] ?? ($page?->id)" />
@@ -40,5 +41,7 @@
     </main>
 
     <x-site.footer />
+
+    @livewireScripts
 </body>
 </html>

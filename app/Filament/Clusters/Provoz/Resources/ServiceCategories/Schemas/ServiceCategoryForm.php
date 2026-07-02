@@ -15,6 +15,7 @@ use Filament\Forms\Components\ToggleButtons;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
+use Guava\IconPicker\Forms\Components\IconPicker;
 use Illuminate\Support\Str;
 use RalphJSmit\Filament\MediaLibrary\Filament\Forms\Components\MediaPicker;
 
@@ -29,27 +30,33 @@ class ServiceCategoryForm
                     ->gridContainer()
                     ->columns(ResponsiveColumns::DENSE)
                     ->schema([
-                            TextInput::make('name')
-                                ->label('Název')
-                                ->required()
-                                ->maxLength(255)
-                                ->live(onBlur: true)
-                                ->afterStateUpdated(fn (Set $set, ?string $state) => $set('slug', Str::slug($state ?? ''))),
-                            TextInput::make('slug')
-                                ->label('Slug')
-                                ->required()
-                                ->maxLength(255)
-                                ->unique(ignoreRecord: true),
-                            ToggleButtons::make('type')
-                                ->label('Typ')
-                                ->options(ServiceType::class)
-                                ->inline()
-                                ->columnSpanFull(),
-                            DateTimePicker::make('published_at')
-                                ->label('Publikováno')
-                                ->helperText('Bez data (nebo budoucí datum) = skryté, viditelné jen pro administrátory.')
-                                ->columnSpanFull(),
-                        ]),
+                        TextInput::make('name')
+                            ->label('Název')
+                            ->required()
+                            ->maxLength(255)
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(fn (Set $set, ?string $state) => $set('slug', Str::slug($state ?? ''))),
+                        TextInput::make('slug')
+                            ->label('Slug')
+                            ->required()
+                            ->maxLength(255)
+                            ->unique(ignoreRecord: true),
+                        ToggleButtons::make('type')
+                            ->label('Typ')
+                            ->options(ServiceType::class)
+                            ->inline()
+                            ->columnSpanFull(),
+                        IconPicker::make('icon')
+                            ->label('Ikona')
+                            ->sets(['lucide'])
+                            ->searchable()
+                            ->helperText('Zobrazí se na kartě kategorie v rezervačním průvodci.')
+                            ->columnSpanFull(),
+                        DateTimePicker::make('published_at')
+                            ->label('Publikováno')
+                            ->helperText('Bez data (nebo budoucí datum) = skryté, viditelné jen pro administrátory.')
+                            ->columnSpanFull(),
+                    ]),
                 Section::make('Veřejná stránka (výchozí)')
                     ->description('Obsah výchozího rozvržení kategorie. Použije se, pokud níže nevyplníte vlastní stránku.')
                     ->schema([

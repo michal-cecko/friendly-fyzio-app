@@ -16,7 +16,7 @@ class ServiceCategory extends Model implements HasPublicPage
 {
     use HasFactory, HasUuids, InteractsWithCustomPage, Publishable;
 
-    protected $fillable = ['name', 'slug', 'type', 'description', 'hero_image', 'published_at'];
+    protected $fillable = ['name', 'slug', 'type', 'icon', 'description', 'hero_image', 'published_at'];
 
     /**
      * @return array<string, mixed>

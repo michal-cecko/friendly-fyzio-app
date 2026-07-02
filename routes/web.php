@@ -31,6 +31,15 @@ Route::get('/', [PageController::class, 'show'])->name('home');
 Route::get('/sluzby/{category:slug}', [ServiceCategoryController::class, 'show'])
     ->name('service-category.show');
 
+// Public reservation wizard. One unified component; the two SEO presets scope it
+// to a service type and start in category-first order.
+Route::get('/rezervace', fn () => view('reservation.index'))->name('reservation.wizard');
+Route::get('/rezervace-vstupniho-vysetreni', fn () => view('reservation.index', ['preset' => 'vstupni']))->name('reservation.vstupni');
+Route::get('/rezervace-masazi', fn () => view('reservation.index', ['preset' => 'masaz']))->name('reservation.masaz');
+
+// Public login (web guard). Also the wizard's login fallback / forgotten-password entry.
+Route::get('/prihlaseni', fn () => view('auth.login'))->name('public.login');
+
 Route::get('/{slug}', [PageController::class, 'show'])
-    ->where('slug', '^(?!admin|klientska-zona|livewire|passkeys|storage|dev|up).*$')
+    ->where('slug', '^(?!admin|klientska-zona|livewire|passkeys|storage|dev|up|rezervace|rezervace-vstupniho-vysetreni|rezervace-masazi|prihlaseni).*$')
     ->name('page.show');

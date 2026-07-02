@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ExamType;
 use App\Enums\ServiceType;
 use App\Enums\ServiceVisibility;
 use Illuminate\Database\Eloquent\Builder;
@@ -21,23 +22,28 @@ class Service extends Model
 
     protected $fillable = [
         'category_id',
+        'exam_type',
         'name',
         'slug',
+        'icon',
         'duration_minutes',
         'price',
         'break_minutes',
         'visibility',
+        'existing_client_months',
         'published_at',
     ];
 
     protected function casts(): array
     {
         return [
+            'exam_type' => ExamType::class,
             'visibility' => ServiceVisibility::class,
             'published_at' => 'datetime',
             'duration_minutes' => 'integer',
             'price' => 'integer',
             'break_minutes' => 'integer',
+            'existing_client_months' => 'integer',
         ];
     }
 

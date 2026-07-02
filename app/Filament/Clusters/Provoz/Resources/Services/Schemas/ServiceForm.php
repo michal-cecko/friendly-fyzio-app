@@ -2,6 +2,7 @@
 
 namespace App\Filament\Clusters\Provoz\Resources\Services\Schemas;
 
+use App\Enums\ExamType;
 use App\Enums\ServiceVisibility;
 use App\Filament\Support\Schemas\ResponsiveColumns;
 use App\Models\TherapistProfile;
@@ -12,9 +13,11 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Guava\IconPicker\Forms\Components\IconPicker;
 use Illuminate\Support\Str;
 
 class ServiceForm
@@ -52,6 +55,27 @@ class ServiceForm
                             ->searchable()
                             ->preload()
                             ->columnSpan(['default' => 1, 'lg' => 4]),
+                        IconPicker::make('icon')
+                            ->label('Ikona')
+                            ->sets(['lucide'])
+                            ->searchable()
+                            ->helperText('Volitelné. Bez ikony se použije ikona kategorie.')
+                            ->columnSpan(['default' => 1, 'lg' => 4]),
+                        Select::make('exam_type')
+                            ->label('Typ vyšetření')
+                            ->options(ExamType::class)
+                            ->native(false)
+                            ->live()
+                            ->helperText('Jen pro fyzioterapii: vstupní (noví pacienti) vs kontrolní (stávající).')
+                            ->columnSpan(['default' => 1, 'lg' => 4]),
+                        TextInput::make('existing_client_months')
+                            ->label('Stávající klient do (měsíce)')
+                            ->numeric()
+                            ->minValue(1)
+                            ->suffix('měs.')
+                            ->helperText('Klient je „stávající“, pokud byl naposledy max. před tolika měsíci.')
+                            ->visible(fn (Get $get): bool => $get('exam_type') === ExamType::Kontrolni->value)
+                            ->columnSpan(['default' => 1, 'lg' => 4]),
                     ]),
                 Grid::make()
                     ->columnSpanFull()
@@ -62,69 +86,69 @@ class ServiceForm
                             ->icon(Heroicon::OutlinedBanknotes)
                             ->gridContainer()
                             ->columns(ResponsiveColumns::DENSE)
-                    ->schema([
-                        TextInput::make('duration_minutes')
-                            ->label('Délka')
-                            ->numeric()
-                            ->required()
-                            ->suffix('min')
-                            ->step($block)
-                            ->minValue($block)
-                            ->helperText('Násobky '.$block.' min'),
-                        TextInput::make('break_minutes')
-                            ->label('Pauza')
-                            ->numeric()
-                            ->default(0)
-                            ->suffix('min')
-                            ->step($block)
-                            ->minValue(0),
-                        TextInput::make('price')
-                            ->label('Cena')
-                            ->integer()
-                            ->required()
-                            ->minValue(0)
-                            ->suffix('Kč'),
-                    ]),
-                Section::make('Viditelnost a publikování')
-                    ->icon(Heroicon::OutlinedEye)
-                    ->gridContainer()
-                    ->columns(ResponsiveColumns::PAIR)
-                    ->schema([
-                        Select::make('visibility')
-                            ->label('Viditelnost')
-                            ->options(ServiceVisibility::class)
-                            ->default(ServiceVisibility::Public)
-                            ->required()
-                            ->native(false),
-                        DateTimePicker::make('published_at')
-                            ->label('Publikováno')
-                            ->native(false)
-                            ->helperText('Datum, od kterého je služba viditelná na veřejném webu. Bez data není zveřejněna.')
-                            ->suffixAction(
-                                Action::make('clearPublishedAt')
-                                    ->icon(Heroicon::XMark)
-                                    ->label('Vymazat')
-                                    ->visible(fn (?string $state): bool => filled($state))
-                                    ->action(fn (Set $set) => $set('published_at', null)),
-                            ),
-                    ]),
-                Section::make('Storno podmínky')
-                    ->icon(Heroicon::OutlinedClock)
-                    ->relationship('cancellationRule')
-                    ->gridContainer()
-                    ->columns(ResponsiveColumns::PAIR)
-                    ->schema([
-                        TextInput::make('cancel_before_hours')
-                            ->label('Zrušit nejpozději (hodin předem)')
-                            ->integer()
-                            ->required()
-                            ->default(24)
-                            ->minValue(0),
-                        TextInput::make('auto_cancel_after_days')
-                            ->label('Automaticky zrušit po (dnech)')
-                            ->integer()
-                            ->minValue(0),
-                    ]),
+                            ->schema([
+                                TextInput::make('duration_minutes')
+                                    ->label('Délka')
+                                    ->numeric()
+                                    ->required()
+                                    ->suffix('min')
+                                    ->step($block)
+                                    ->minValue($block)
+                                    ->helperText('Násobky '.$block.' min'),
+                                TextInput::make('break_minutes')
+                                    ->label('Pauza')
+                                    ->numeric()
+                                    ->default(0)
+                                    ->suffix('min')
+                                    ->step($block)
+                                    ->minValue(0),
+                                TextInput::make('price')
+                                    ->label('Cena')
+                                    ->integer()
+                                    ->required()
+                                    ->minValue(0)
+                                    ->suffix('Kč'),
+                            ]),
+                        Section::make('Viditelnost a publikování')
+                            ->icon(Heroicon::OutlinedEye)
+                            ->gridContainer()
+                            ->columns(ResponsiveColumns::PAIR)
+                            ->schema([
+                                Select::make('visibility')
+                                    ->label('Viditelnost')
+                                    ->options(ServiceVisibility::class)
+                                    ->default(ServiceVisibility::Public)
+                                    ->required()
+                                    ->native(false),
+                                DateTimePicker::make('published_at')
+                                    ->label('Publikováno')
+                                    ->native(false)
+                                    ->helperText('Datum, od kterého je služba viditelná na veřejném webu. Bez data není zveřejněna.')
+                                    ->suffixAction(
+                                        Action::make('clearPublishedAt')
+                                            ->icon(Heroicon::XMark)
+                                            ->label('Vymazat')
+                                            ->visible(fn (?string $state): bool => filled($state))
+                                            ->action(fn (Set $set) => $set('published_at', null)),
+                                    ),
+                            ]),
+                        Section::make('Storno podmínky')
+                            ->icon(Heroicon::OutlinedClock)
+                            ->relationship('cancellationRule')
+                            ->gridContainer()
+                            ->columns(ResponsiveColumns::PAIR)
+                            ->schema([
+                                TextInput::make('cancel_before_hours')
+                                    ->label('Zrušit nejpozději (hodin předem)')
+                                    ->integer()
+                                    ->required()
+                                    ->default(24)
+                                    ->minValue(0),
+                                TextInput::make('auto_cancel_after_days')
+                                    ->label('Automaticky zrušit po (dnech)')
+                                    ->integer()
+                                    ->minValue(0),
+                            ]),
                         Section::make('Místnosti a terapeuti')
                             ->icon(Heroicon::OutlinedBuildingOffice)
                             ->gridContainer()

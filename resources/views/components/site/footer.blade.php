@@ -1,7 +1,7 @@
 @php
     use App\Support\Settings;
     $columns = $footerNav?->items ?? collect();
-    $siteName = Settings::get('web.site_name', 'Friendly Fyzio');
+    $siteName = 'Friendly Fyzio';
     $email = Settings::get('web.contact_email');
     $phone = Settings::get('web.contact_phone');
     $address = Settings::get('web.address');

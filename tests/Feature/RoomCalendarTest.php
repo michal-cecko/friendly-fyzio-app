@@ -59,14 +59,14 @@ class RoomCalendarTest extends TestCase
         ]);
     }
 
-    protected function reservationIn(Room $room, TherapistProfile $therapist): Reservation
+    protected function reservationIn(Room $room, TherapistProfile $therapist, string $start = '09:00', string $end = '10:00'): Reservation
     {
         return Reservation::factory()->create([
             'therapist_id' => $therapist->getKey(),
             'room_id' => $room->getKey(),
             'reservation_date' => $this->monday->toDateString(),
-            'start_time' => '09:00',
-            'end_time' => '10:00',
+            'start_time' => $start,
+            'end_time' => $end,
             'status' => ReservationStatus::Confirmed,
         ]);
     }
@@ -78,7 +78,9 @@ class RoomCalendarTest extends TestCase
         $therapist = $this->makeTherapist();
 
         $inA = $this->reservationIn($roomA, $therapist);
-        $inB = $this->reservationIn($roomB, $therapist);
+        // A therapist cannot be double-booked at the same time (DB-enforced), so the
+        // room-B booking used to prove room scoping sits at a different time.
+        $inB = $this->reservationIn($roomB, $therapist, '11:00', '12:00');
 
         $blockA = RoomBlocking::create([
             'room_id' => $roomA->getKey(),
@@ -154,8 +156,9 @@ class RoomCalendarTest extends TestCase
             'status' => ReservationStatus::Confirmed,
         ];
         Reservation::factory()->create([...$common, 'room_id' => $roomA->getKey(), 'start_time' => '09:00', 'end_time' => '10:00']);
-        // A booking in room B must not count toward room A's day summary.
-        Reservation::factory()->create([...$common, 'room_id' => $roomB->getKey(), 'start_time' => '09:00', 'end_time' => '11:00']);
+        // A booking in room B must not count toward room A's day summary (a different
+        // time keeps the same therapist from being double-booked, which the DB forbids).
+        Reservation::factory()->create([...$common, 'room_id' => $roomB->getKey(), 'start_time' => '11:00', 'end_time' => '13:00']);
 
         $calendar = new ReservationCalendar;
         $calendar->room = $roomA;

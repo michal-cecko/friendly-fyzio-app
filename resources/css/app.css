@@ -19,6 +19,21 @@
     --color-line: #e5e5e5;
 }
 
+/* Hide Alpine-controlled elements until Alpine initializes (e.g. the calendar's
+   non-visible months) to avoid a flash of unstyled content. */
+[x-cloak] {
+    display: none !important;
+}
+
+/* Tailwind v4's Preflight resets buttons to `cursor: default`; restore the
+   pointer for enabled buttons so every clickable control feels interactive. */
+@layer base {
+    button:not(:disabled),
+    [role='button']:not([aria-disabled='true']) {
+        cursor: pointer;
+    }
+}
+
 @layer components {
     /* Shared page container — every block aligns to the same 1440/48px gutters. */
     .ff-container {

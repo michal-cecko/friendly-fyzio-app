@@ -53,4 +53,39 @@ class Settings
     {
         return (int) self::get('reservation.block_minutes', 15);
     }
+
+    /**
+     * Months of inactivity after which a logged-in client must reactivate before
+     * booking. Inactivity is measured from the client's latest non-cancelled
+     * reservation date.
+     */
+    public static function reactivationMonths(): int
+    {
+        return (int) self::get('reservation.reactivation_months', 12);
+    }
+
+    /**
+     * Fallback recency window (in months) for a `clients`-visibility service that
+     * does not set its own `existing_client_months`.
+     */
+    public static function existingClientMonths(): int
+    {
+        return (int) self::get('reservation.default_existing_client_months', 6);
+    }
+
+    /**
+     * How many days into the future the public booking wizard offers slots.
+     */
+    public static function bookingWindowDays(): int
+    {
+        return (int) self::get('reservation.booking_window_days', 60);
+    }
+
+    /**
+     * Minimum lead time (in hours) before a slot can be booked online.
+     */
+    public static function leadTimeHours(): int
+    {
+        return (int) self::get('reservation.lead_time_hours', 0);
+    }
 }

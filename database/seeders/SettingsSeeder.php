@@ -21,8 +21,51 @@ class SettingsSeeder extends Seeder
             'sort' => 0,
         ]);
 
+        $this->upsert([
+            'key' => 'reservation.reactivation_months',
+            'value' => '12',
+            'type' => SettingValueType::Integer,
+            'label' => 'Reaktivace po (měsíce)',
+            'group' => 'Rezervace',
+            'description' => 'Po kolika měsících nečinnosti musí přihlášený klient potvrdit své údaje, než se znovu objedná.',
+            'config' => ['min' => 1, 'step' => 1, 'suffix' => 'měs.'],
+            'sort' => 1,
+        ]);
+
+        $this->upsert([
+            'key' => 'reservation.default_existing_client_months',
+            'value' => '6',
+            'type' => SettingValueType::Integer,
+            'label' => 'Okno stávajícího klienta (měsíce)',
+            'group' => 'Rezervace',
+            'description' => 'Výchozí doba, po kterou je klient považován za stávajícího u služeb „pro klienty“ bez vlastního nastavení.',
+            'config' => ['min' => 1, 'step' => 1, 'suffix' => 'měs.'],
+            'sort' => 2,
+        ]);
+
+        $this->upsert([
+            'key' => 'reservation.booking_window_days',
+            'value' => '60',
+            'type' => SettingValueType::Integer,
+            'label' => 'Okno rezervací (dny)',
+            'group' => 'Rezervace',
+            'description' => 'Jak daleko dopředu může klient online rezervovat termín.',
+            'config' => ['min' => 1, 'step' => 1, 'suffix' => 'dní'],
+            'sort' => 3,
+        ]);
+
+        $this->upsert([
+            'key' => 'reservation.lead_time_hours',
+            'value' => '0',
+            'type' => SettingValueType::Integer,
+            'label' => 'Minimální předstih (hodiny)',
+            'group' => 'Rezervace',
+            'description' => 'Minimální počet hodin před začátkem termínu, kdy je ještě možné se online objednat.',
+            'config' => ['min' => 0, 'step' => 1, 'suffix' => 'h'],
+            'sort' => 4,
+        ]);
+
         foreach ([
-            ['web.site_name', 'Friendly Fyzio', 'Název webu'],
             ['web.contact_email', 'info@friendlyfyzio.cz', 'Kontaktní e-mail'],
             ['web.contact_phone', '+420 604 793 255', 'Telefon'],
             ['web.address', 'Zednická 1109/2, Ostrava', 'Adresa'],
