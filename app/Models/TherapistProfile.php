@@ -2,22 +2,33 @@
 
 namespace App\Models;
 
+use App\Contracts\HasPermalink;
+use App\Models\Concerns\Publishable;
 use Database\Factories\TherapistProfileFactory;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
-class TherapistProfile extends Model
+class TherapistProfile extends Model implements HasPermalink
 {
     /** @use HasFactory<TherapistProfileFactory> */
-    use HasFactory, HasUuids;
+    use HasFactory, HasUuids, Publishable;
 
     protected $fillable = [
         'user_id',
+        'slug',
         'bio',
+        'title',
+        'badge',
+        'photo',
+        'education',
+        'certifications',
+        'display_order',
         'is_collaborator',
         'published_at',
     ];
@@ -26,8 +37,23 @@ class TherapistProfile extends Model
     {
         return [
             'is_collaborator' => 'boolean',
-            'published_at' => 'datetime',
+            'education' => 'array',
+            'certifications' => 'array',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::saving(function (TherapistProfile $profile): void {
+            if (blank($profile->slug)) {
+                $profile->slug = $profile->generateSlug();
+            }
+        });
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
     }
 
     public function user(): BelongsTo
@@ -58,5 +84,34 @@ class TherapistProfile extends Model
     public function calendarBlocks(): HasMany
     {
         return $this->hasMany(CalendarBlock::class, 'therapist_id');
+    }
+
+    /**
+     * Canonical public URL for this therapist's profile page.
+     */
+    public function permalink(): Attribute
+    {
+        return Attribute::get(fn (): string => route('therapist.show', $this->slug));
+    }
+
+    /**
+     * A unique URL slug derived from the therapist's name.
+     */
+    protected function generateSlug(): string
+    {
+        $base = Str::slug($this->user?->name ?? '') ?: 'terapeut';
+        $slug = $base;
+        $suffix = 2;
+
+        while (static::query()
+            ->where('slug', $slug)
+            ->when($this->getKey(), fn ($query, $key) => $query->whereKeyNot($key))
+            ->exists()
+        ) {
+            $slug = "{$base}-{$suffix}";
+            $suffix++;
+        }
+
+        return $slug;
     }
 }

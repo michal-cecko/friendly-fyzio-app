@@ -7,6 +7,8 @@
 @source '../../../../app/Filament/**/*';
 @source '../../../../resources/views/filament/**/*';
 @source '../../../../vendor/awcodes/mason/resources/**/*.blade.php';
+/* Icon picker ships uncompiled Blade — scan it so its grid/container-query classes exist. */
+@source '../../../../vendor/guava/filament-icon-picker/resources/views/**/*.blade.php';
 
 /* Table toolbars: search, filters & column toggles on the left, action buttons on the right. */
 .fi-ta-header-toolbar > :nth-child(1) {

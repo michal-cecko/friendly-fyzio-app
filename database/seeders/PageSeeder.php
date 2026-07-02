@@ -13,9 +13,9 @@ class PageSeeder extends Seeder
     public function run(): void
     {
         $this->homepage();
+        $this->aboutPage();
 
         foreach ([
-            'o-nas' => 'O nás',
             'sluzby' => 'Služby',
             'kurzy' => 'Kurzy',
             'kontakt' => 'Kontakt',
@@ -168,6 +168,32 @@ class PageSeeder extends Seeder
                         'placeholder' => 'Váš e-mail',
                         'button_text' => 'Odebírat',
                         'consent' => 'Odesláním souhlasím se zpracováním osobních údajů.',
+                    ]),
+                ],
+            ],
+        );
+    }
+
+    private function aboutPage(): void
+    {
+        Page::updateOrCreate(
+            ['system_key' => 'o-nas'],
+            [
+                'slug' => 'o-nas',
+                'title' => 'O nás',
+                'is_system' => true,
+                'published_at' => now(),
+                'meta_title' => 'O nás – FriendlyFyzio',
+                'meta_description' => 'Seznamte se s naším týmem. Naše terapeutky a lektorky jsou odbornice s dlouholetou praxí se specializací na ženské zdraví, těhotenství a pohybové kurzy.',
+                'content' => [
+                    // The team grid is data-driven — it lists all therapists and links
+                    // the published profiles. Fill profiles in the "Terapeuti" resource.
+                    $this->brick('team', [
+                        'eyebrow' => 'Náš tým',
+                        'title' => 'Seznamte se s naším týmem',
+                        'subtitle' => 'Naše terapeutky a lektorky jsou odbornice s dlouholetou praxí, které se neustále vzdělávají.',
+                        'background' => 'alt',
+                        'columns' => 4,
                     ]),
                 ],
             ],

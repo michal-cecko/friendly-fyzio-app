@@ -23,7 +23,12 @@
                 <p class="mt-3 leading-relaxed text-neutral-600">{{ $content['description'] }}</p>
             @endif
             @if($url && ! empty($content['cta_text']))
-                <a href="{{ $url }}" class="mt-6 inline-flex rounded-full bg-primary px-7 py-3 font-semibold text-white transition hover:bg-primary-dark">{{ $content['cta_text'] }}</a>
+                <a href="{{ $url }}" class="mt-6 inline-flex items-center gap-2 rounded-full bg-primary px-7 py-3 font-semibold text-white transition hover:bg-primary-dark">
+                    @if(! empty($content['cta_icon']))
+                        {!! \App\Support\Icon::render($content['cta_icon'], 'h-5 w-5 shrink-0') !!}
+                    @endif
+                    {{ $content['cta_text'] }}
+                </a>
             @endif
         </div>
     </div>

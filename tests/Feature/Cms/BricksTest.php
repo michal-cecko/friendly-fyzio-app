@@ -48,6 +48,9 @@ class BricksTest extends TestCase
                 $brick('cards', ['title' => 'Kurzy', 'cards' => [
                     ['title' => 'Jóga', 'meta' => 'leden 2026', 'description' => 'Popis.'],
                 ]]),
+                $brick('team', ['title' => 'Náš tým', 'members' => [
+                    ['name' => 'Klára Specialistová', 'role' => 'Fyzioterapeutka', 'specializations' => 'Pánevní dno'],
+                ]]),
                 $brick('stats', ['stats' => [['value' => '2000+', 'label' => 'Klientů']]]),
                 $brick('testimonials', ['title' => 'Reference', 'items' => [
                     ['quote' => 'Skvělé.', 'author' => 'Jana N.', 'role' => 'klientka'],
@@ -67,7 +70,38 @@ class BricksTest extends TestCase
             ->assertSee('Fyzioterapie')
             ->assertSee('2000+')
             ->assertSee('Reference')
+            ->assertSee('Klára Specialistová')
             ->assertSee('Přihlaste se');
+    }
+
+    public function test_team_brick_renders_member_cards(): void
+    {
+        $brick = fn (string $id, array $config = []): array => [
+            'type' => 'masonBrick',
+            'attrs' => ['id' => $id, 'config' => $config],
+        ];
+
+        Page::factory()->system('home')->create([
+            'slug' => '/',
+            'content' => [
+                $brick('team', ['eyebrow' => 'Náš tým', 'title' => 'Seznamte se s naším týmem', 'members' => [
+                    ['name' => 'Mgr. Lucie Fickerová', 'role' => 'Fyzioterapeutka, zakladatelka', 'specializations' => 'Pánevní dno • Těhotenství'],
+                    ['name' => 'Jana Beránková', 'role' => 'Masérka', 'specializations' => 'Lymfodrenáž', 'text' => 'Shlédnout profil', 'style' => 'text', 'link_type' => 'custom', 'url' => '/o-nas/jana'],
+                ]]),
+            ],
+        ]);
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('Seznamte se s naším týmem')
+            ->assertSee('Mgr. Lucie Fickerová')
+            ->assertSee('Fyzioterapeutka, zakladatelka')
+            ->assertSee('Pánevní dno')
+            ->assertSee('Jana Beránková')
+            ->assertSee('Lymfodrenáž')
+            // A member with a link renders the unified profile button.
+            ->assertSee('Shlédnout profil')
+            ->assertSee('href="/o-nas/jana"', false);
     }
 
     public function test_category_cards_brick_renders_clickable_rows_with_pulsing_dots(): void
@@ -239,11 +273,84 @@ class BricksTest extends TestCase
             ->assertDontSee('<p>Naše', false);
     }
 
-    public function test_newsletter_submission_flashes_confirmation(): void
+    public function test_unified_button_renders_style_color_and_link(): void
     {
-        $this->post('/newsletter', ['email' => 'test@example.com'])
-            ->assertRedirect();
+        $brick = fn (string $id, array $config = []): array => [
+            'type' => 'masonBrick',
+            'attrs' => ['id' => $id, 'config' => $config],
+        ];
 
-        $this->assertTrue(session()->get('newsletter_success'));
+        Page::factory()->system('home')->create([
+            'slug' => '/',
+            'content' => [
+                $brick('cards', ['title' => 'Karty', 'cards' => [
+                    [
+                        'title' => 'Jóga',
+                        'text' => 'Rezervovat',
+                        'style' => 'primary',
+                        'color' => '#ff0000',
+                        'icon' => 'calendar',
+                        'link_type' => 'custom',
+                        'url' => '/rezervace',
+                    ],
+                ]]),
+            ],
+        ]);
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('Rezervovat')
+            ->assertSee('href="/rezervace"', false)
+            // Pill wrapper for a non-text style.
+            ->assertSee('rounded-full', false)
+            // Custom color is applied inline on a solid style.
+            ->assertSee('background-color: #ff0000', false);
+    }
+
+    public function test_bricks_still_render_legacy_button_fields(): void
+    {
+        $brick = fn (string $id, array $config = []): array => [
+            'type' => 'masonBrick',
+            'attrs' => ['id' => $id, 'config' => $config],
+        ];
+
+        Page::factory()->system('home')->create([
+            'slug' => '/',
+            'content' => [
+                // Legacy: card uses link_text, feature card uses a heroicon-* icon.
+                $brick('cards', ['title' => 'Karty', 'cards' => [
+                    ['title' => 'Jóga', 'link_text' => 'Zjistit více', 'url' => '/joga'],
+                ]]),
+                $brick('feature-cards', ['title' => 'Služby', 'cards' => [
+                    ['icon' => 'heroicon-o-heart', 'title' => 'Fyzioterapie', 'url' => '/fyzio'],
+                ]]),
+                // Legacy: last-minute uses button_text/button_url.
+                $brick('last-minute', ['title' => 'Termíny', 'button_text' => 'Celý kalendář', 'button_url' => '/kalendar']),
+            ],
+        ]);
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('Zjistit více')
+            ->assertSee('href="/joga"', false)
+            ->assertSee('Fyzioterapie')
+            ->assertSee('Celý kalendář')
+            ->assertSee('href="/kalendar"', false);
+    }
+
+    public function test_newsletter_brick_renders_the_livewire_subscribe_form(): void
+    {
+        Page::factory()->system('home')->create([
+            'slug' => '/',
+            'content' => [[
+                'type' => 'masonBrick',
+                'attrs' => ['id' => 'newsletter', 'config' => ['title' => 'Newsletter', 'button_text' => 'Odebírat']],
+            ]],
+        ]);
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('wire:submit="subscribe"', false)
+            ->assertSee('Odebírat');
     }
 }

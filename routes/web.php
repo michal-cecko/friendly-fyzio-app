@@ -1,20 +1,18 @@
 <?php
 
 use App\Http\Controllers\InstagramOAuthController;
+use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\ServiceCategoryController;
-use Illuminate\Http\Request;
+use App\Http\Controllers\ServiceController;
+use App\Http\Controllers\TherapistController;
 use Illuminate\Support\Facades\Route;
 
 // Passkey (WebAuthn) authentication endpoints used by the Filament login page.
 Route::passkeys();
 
-// Newsletter signup (stub — stores nothing yet, just confirms the submission).
-Route::post('/newsletter', function (Request $request) {
-    $request->validate(['email' => ['required', 'email']]);
-
-    return back()->with('newsletter_success', true);
-})->name('newsletter.subscribe');
+// Newsletter signup — subscribes the email to the configured MailerLite group.
+Route::post('/newsletter', NewsletterController::class)->name('newsletter.subscribe');
 
 // Temporary dev route — remove before production
 Route::get('/dev/er-diagram', function () {
@@ -32,11 +30,23 @@ Route::get('/', [PageController::class, 'show'])->name('home');
 Route::get('/sluzby/{category:slug}', [ServiceCategoryController::class, 'show'])
     ->name('service-category.show');
 
-// Public reservation wizard. One unified component; the two SEO presets scope it
-// to a service type and start in category-first order.
+// Public single-service pages, nested under their category. `scopeBindings` resolves
+// the service within `category->services()` (404 if it belongs elsewhere). A service
+// may override its default layout with a custom Mason page via `pageable`.
+Route::get('/sluzby/{category:slug}/{service:slug}', [ServiceController::class, 'show'])
+    ->scopeBindings()
+    ->name('service.show');
+
+// Public therapist profile pages, nested under the about page. Published profiles
+// only; staff can preview drafts. Registered before the catch-all (which only
+// matches a single path segment, so a two-segment /o-nas/{slug} never collides).
+Route::get('/o-nas/{therapist:slug}', [TherapistController::class, 'show'])
+    ->name('therapist.show');
+
+// Public reservation wizard. One unified component; deep-link via query params
+// (?sluzba= service slug, ?terapeut= therapist id, ?kategorie= category slug) to start
+// with a service or therapist prefilled. State is query-string bound throughout.
 Route::get('/rezervace', fn () => view('reservation.index'))->name('reservation.wizard');
-Route::get('/rezervace-vstupniho-vysetreni', fn () => view('reservation.index', ['preset' => 'vstupni']))->name('reservation.vstupni');
-Route::get('/rezervace-masazi', fn () => view('reservation.index', ['preset' => 'masaz']))->name('reservation.masaz');
 
 // Public login (web guard). Also the wizard's login fallback / forgotten-password entry.
 Route::get('/prihlaseni', fn () => view('auth.login'))->name('public.login');
@@ -50,5 +60,5 @@ Route::get('/instagram/callback', [InstagramOAuthController::class, 'callback'])
     ->name('instagram.oauth.callback');
 
 Route::get('/{slug}', [PageController::class, 'show'])
-    ->where('slug', '^(?!admin|klientska-zona|livewire|passkeys|storage|dev|up|rezervace|rezervace-vstupniho-vysetreni|rezervace-masazi|prihlaseni|instagram).*$')
+    ->where('slug', '^(?!admin|klientska-zona|livewire|passkeys|storage|dev|up|rezervace|prihlaseni|instagram).*$')
     ->name('page.show');

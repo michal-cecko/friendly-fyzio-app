@@ -3,6 +3,7 @@
 namespace App\Mason\Bricks;
 
 use App\Mason\Support\Fields;
+use App\Mason\Support\LinkPickerField;
 use Awcodes\Mason\Brick;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Repeater;
@@ -39,10 +40,7 @@ class CategoryCardsBrick extends Brick
             ->slideOver()
             ->schema([
                 ...Fields::heading(),
-                TextInput::make('button_text')
-                    ->label('Text tlačítka pod sekcí'),
-                TextInput::make('button_url')
-                    ->label('Odkaz tlačítka'),
+                LinkPickerField::make('', 'Tlačítko pod sekcí', withText: true, withStyle: true, withColor: true, withIcon: true),
                 Repeater::make('categories')
                     ->label('Kategorie')
                     ->schema([
@@ -56,8 +54,7 @@ class CategoryCardsBrick extends Brick
                             ->required(),
                         TextInput::make('subtitle')
                             ->label('Podnadpis'),
-                        TextInput::make('url')
-                            ->label('Odkaz'),
+                        LinkPickerField::make('', 'Odkaz'),
                         Repeater::make('items')
                             ->label('Položky')
                             ->schema([
@@ -67,8 +64,7 @@ class CategoryCardsBrick extends Brick
                                 TextInput::make('meta')
                                     ->label('Doplňující údaj')
                                     ->placeholder('Začíná 12. 1. 2026'),
-                                TextInput::make('url')
-                                    ->label('Odkaz na detail'),
+                                LinkPickerField::make('', 'Odkaz na detail'),
                             ])
                             ->columns(2)
                             ->defaultItems(0),

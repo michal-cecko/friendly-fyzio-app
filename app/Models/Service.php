@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use App\Contracts\HasPublicPage;
 use App\Enums\ExamType;
 use App\Enums\ServiceType;
 use App\Enums\ServiceVisibility;
+use App\Models\Concerns\InteractsWithCustomPage;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -16,9 +18,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Service extends Model
+class Service extends Model implements HasPublicPage
 {
-    use HasFactory, HasUuids, SoftDeletes;
+    use HasFactory, HasUuids, InteractsWithCustomPage, SoftDeletes;
 
     protected $fillable = [
         'category_id',
@@ -53,6 +55,17 @@ class Service extends Model
     protected function type(): Attribute
     {
         return Attribute::get(fn (): ?ServiceType => $this->category?->type);
+    }
+
+    /**
+     * Canonical public URL for this service (nested under its category).
+     */
+    public function permalink(): Attribute
+    {
+        return Attribute::get(fn (): string => route('service.show', [
+            'category' => $this->category->slug,
+            'service' => $this->slug,
+        ]));
     }
 
     /**

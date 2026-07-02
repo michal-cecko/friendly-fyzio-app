@@ -43,10 +43,15 @@
 
         @if($ctaUrl && ! empty($config['cta_text']))
             <div class="mt-10 text-center">
-                <a href="{{ $ctaUrl }}" class="inline-flex items-center gap-2 rounded-full border-[1.5px] border-primary bg-white px-7 py-3 font-heading text-[15px] font-semibold text-primary transition hover:bg-primary-light">
-                    <x-lucide name="instagram" class="h-5 w-5" />
-                    {{ $config['cta_text'] }}
-                </a>
+                @include('bricks.partials.button', ['btn' => [
+                    'text' => $config['cta_text'] ?? null,
+                    'style' => $config['cta_style'] ?? 'outline',
+                    'color' => $config['cta_color'] ?? null,
+                    'icon' => $config['cta_icon'] ?? 'instagram',
+                    'link_type' => $config['cta_link_type'] ?? null,
+                    'page_id' => $config['cta_page_id'] ?? null,
+                    'url' => $config['cta_url'] ?? null,
+                ]])
             </div>
         @endif
     </div>

@@ -44,8 +44,7 @@ class NewsletterBrick extends Brick
                 TextInput::make('button_text')
                     ->label('Text tlačítka')
                     ->default('Odebírat'),
-                TextInput::make('consent')
-                    ->label('Text souhlasu')
+                Fields::richText('consent', 'Text souhlasu')
                     ->default('Odesláním souhlasím se zpracováním osobních údajů.'),
             ]);
     }

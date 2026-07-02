@@ -9,6 +9,7 @@ use App\Enums\ServiceType;
 use App\Enums\ServiceVisibility;
 use App\Enums\UserRole;
 use App\Enums\WeekType;
+use App\Jobs\SubscribeToNewsletterJob;
 use App\Models\ClientProfile;
 use App\Models\Reservation;
 use App\Models\Room;
@@ -25,6 +26,7 @@ use App\Support\Reservations\SlotTakenException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class CreateReservationFromWizardTest extends TestCase
@@ -128,6 +130,42 @@ class CreateReservationFromWizardTest extends TestCase
         $this->assertSame(1, User::where('email', 'jana@example.com')->count());
         $this->assertSame($existing->id, Reservation::sole()->client_id);
         Notification::assertNotSentTo($existing, ClientAccountCreatedNotification::class);
+    }
+
+    public function test_records_newsletter_opt_in_for_existing_client(): void
+    {
+        Notification::fake();
+        $existing = User::factory()->customer()->create([
+            'email' => 'jana@example.com',
+            'newsletter_opted_in_at' => null,
+        ]);
+
+        ($this->action())($this->data(['newsletter' => true]));
+
+        $this->assertNotNull($existing->fresh()->newsletter_opted_in_at);
+    }
+
+    public function test_dispatches_newsletter_subscribe_when_opted_in(): void
+    {
+        Notification::fake();
+        Queue::fake();
+
+        ($this->action())($this->data(['newsletter' => true]));
+
+        Queue::assertPushed(
+            SubscribeToNewsletterJob::class,
+            fn (SubscribeToNewsletterJob $job): bool => $job->email === 'jana@example.com',
+        );
+    }
+
+    public function test_does_not_dispatch_newsletter_subscribe_when_not_opted_in(): void
+    {
+        Notification::fake();
+        Queue::fake();
+
+        ($this->action())($this->data(['newsletter' => false]));
+
+        Queue::assertNotPushed(SubscribeToNewsletterJob::class);
     }
 
     public function test_uses_authenticated_client(): void

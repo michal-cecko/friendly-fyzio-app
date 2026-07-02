@@ -50,13 +50,13 @@ class FeatureCardsBrick extends Brick
                     ->schema([
                         IconPicker::make('icon')
                             ->label('Ikona')
-                            ->sets(['heroicons'])
+                            ->sets(['lucide'])
                             ->searchable(),
                         TextInput::make('title')
                             ->label('Nadpis')
                             ->required(),
                         Fields::richText('description', 'Popis'),
-                        LinkPickerField::make('', 'Odkaz'),
+                        LinkPickerField::make('', 'Odkaz', withText: true, withStyle: true, withColor: true),
                     ])
                     ->defaultItems(3)
                     ->reorderable()

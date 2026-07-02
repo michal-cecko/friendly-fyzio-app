@@ -83,7 +83,7 @@ class InstagramBrick extends Brick
                         ])
                         ->all())
                     ->visible(fn (Get $get): bool => $get('source') === 'specific'),
-                LinkPickerField::make('cta_', 'Tlačítko', withText: true),
+                LinkPickerField::make('cta_', 'Tlačítko', withText: true, withStyle: true, withColor: true, withIcon: true),
             ]);
     }
 

@@ -28,8 +28,8 @@ use Livewire\Component;
  * Public, full-page reservation wizard.
  *
  * Selections are query-string bound so any state is deep-linkable. The step order
- * is computed, never stored: arriving with a category/service (deep link or SEO
- * preset) puts the wizard in category-first order; otherwise it leads with the
+ * is computed, never stored: arriving with a category/service deep-link (e.g.
+ * ?sluzba=) puts the wizard in category-first order; otherwise it leads with the
  * therapist. The auth interstitials live in this component too (see the `gate`
  * property) but are wired in a later step.
  */
@@ -77,13 +77,10 @@ class ReservationWizard extends Component
 
     public bool $newsletter = false;
 
-    /** SEO preset: 'vstupni' (physiotherapy) or 'masaz' (massage). */
-    public ?string $preset = null;
-
     /**
      * Whether the wizard runs category-first. Decided once, from how the user
-     * arrived (deep-link or preset), so selecting a category mid-flow never
-     * reorders the steps.
+     * arrived (a category/service deep-link), so selecting a category mid-flow
+     * never reorders the steps.
      */
     public bool $categoryFirst = false;
 
@@ -102,10 +99,23 @@ class ReservationWizard extends Component
     /** Recency window (months) shown in the "lapsed client" message. */
     public ?int $lapsedMonths = null;
 
-    public function mount(?string $preset = null): void
+    public function mount(): void
     {
-        $this->preset = $preset;
-        $this->categoryFirst = filled($this->categorySlug) || filled($this->serviceSlug) || filled($this->preset);
+        // Deep-link by service alone (?sluzba=): derive its category (and physio exam
+        // type) so the service arrives fully prefilled and the wizard skips past it.
+        if (filled($this->serviceSlug) && blank($this->categorySlug)) {
+            $service = Service::query()->with('category')->where('slug', $this->serviceSlug)->first();
+
+            if ($service !== null) {
+                $this->categorySlug = $service->category?->slug;
+
+                if ($this->examType === null && $service->exam_type !== null) {
+                    $this->examType = $service->exam_type->value;
+                }
+            }
+        }
+
+        $this->categoryFirst = filled($this->categorySlug) || filled($this->serviceSlug);
 
         if (($user = auth()->user()) !== null) {
             $this->prefillContactFromUser($user);
@@ -114,6 +124,8 @@ class ReservationWizard extends Component
         if ($this->stepIndex === 0) {
             $this->stepIndex = $this->firstIncompleteStepIndex();
         }
+
+        $this->preselectSingleTherapist();
     }
 
     // --- Step model -----------------------------------------------------------
@@ -133,15 +145,6 @@ class ReservationWizard extends Component
         return $this->stepOrder()[$this->stepIndex] ?? 'contact';
     }
 
-    protected function typeFilter(): ?ServiceType
-    {
-        return match ($this->preset) {
-            'vstupni' => ServiceType::Physiotherapy,
-            'masaz' => ServiceType::Massage,
-            default => null,
-        };
-    }
-
     protected function firstIncompleteStepIndex(): int
     {
         foreach ($this->stepOrder() as $index => $step) {
@@ -151,6 +154,25 @@ class ReservationWizard extends Component
         }
 
         return 0;
+    }
+
+    /**
+     * When the user is on the therapist step and exactly one therapist qualifies
+     * for their selection, preselect that therapist — there's nothing else to pick.
+     * The step is still shown (not skipped) so the user sees who they'll be booked
+     * with and confirms by continuing.
+     */
+    protected function preselectSingleTherapist(): void
+    {
+        if ($this->currentStep() !== 'therapist' || $this->isAnyTherapist() || filled($this->therapistId)) {
+            return;
+        }
+
+        $therapists = $this->therapists();
+
+        if ($therapists->count() === 1) {
+            $this->therapistId = (string) $therapists->first()->getKey();
+        }
     }
 
     protected function stepComplete(string $step): bool
@@ -232,7 +254,6 @@ class ReservationWizard extends Component
         return ServiceCategory::query()
             ->whereNotNull('published_at')
             ->where('published_at', '<=', now())
-            ->when($this->typeFilter(), fn ($query, $type) => $query->where('type', $type))
             ->when($this->therapist, fn ($query) => $query->whereHas(
                 'services',
                 fn ($q) => $q->whereHas('therapists', fn ($t) => $t->whereKey($this->resolvedTherapistId()))
@@ -611,6 +632,7 @@ class ReservationWizard extends Component
     public function back(): void
     {
         $this->stepIndex = max(0, $this->stepIndex - 1);
+        $this->preselectSingleTherapist();
         $this->submitError = null;
     }
 
@@ -637,6 +659,7 @@ class ReservationWizard extends Component
     protected function advanceStep(): void
     {
         $this->stepIndex = min($this->stepIndex + 1, count($this->stepOrder()) - 1);
+        $this->preselectSingleTherapist();
     }
 
     protected function stepPrompt(string $step): string

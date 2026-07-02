@@ -4,13 +4,12 @@ namespace App\Filament\Clusters\Obsah\Resources\Navigations\Schemas;
 
 use App\Enums\NavigationLocation;
 use App\Filament\Support\Schemas\RecordTimestampsSection;
+use App\Mason\Support\LinkPickerField;
 use App\Models\Navigation;
-use App\Models\Page;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 
 class NavigationForm
@@ -68,24 +67,7 @@ class NavigationForm
     private static function linkFields(): array
     {
         return [
-            Select::make('link_type')
-                ->label('Typ odkazu')
-                ->options(['page' => 'Stránka', 'custom' => 'Vlastní URL'])
-                ->default('custom')
-                ->live(),
-            Select::make('page_id')
-                ->label('Stránka')
-                ->options(fn (): array => Page::query()->orderBy('title')->pluck('title', 'id')->all())
-                ->searchable()
-                ->visible(fn (Get $get): bool => $get('link_type') === 'page'),
-            TextInput::make('url')
-                ->label('URL')
-                ->placeholder('https://… nebo /slug')
-                ->visible(fn (Get $get): bool => ($get('link_type') ?? 'custom') === 'custom'),
-            Select::make('target')
-                ->label('Otevřít v')
-                ->options(['_self' => 'Stejném okně', '_blank' => 'Novém okně'])
-                ->default('_self'),
+            LinkPickerField::make('', 'Odkaz', withTarget: true),
         ];
     }
 }

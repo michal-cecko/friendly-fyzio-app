@@ -84,6 +84,10 @@ class ReservationWizardTest extends TestCase
     {
         Notification::fake();
 
+        // A second therapist keeps the therapist step in play (a single therapist is
+        // auto-selected and skipped), so this exercises the full manual flow.
+        TherapistProfile::factory()->create(['published_at' => now()]);
+
         Livewire::test(ReservationWizard::class)
             ->assertSet('stepIndex', 0)
             ->call('selectTherapist', $this->therapist->id)
@@ -118,15 +122,59 @@ class ReservationWizardTest extends TestCase
         Notification::assertSentTo($client, ReservationNotification::class);
     }
 
-    public function test_preset_starts_in_category_first_order(): void
+    public function test_category_deep_link_starts_in_category_first_order(): void
     {
-        $component = Livewire::test(ReservationWizard::class, ['preset' => 'masaz']);
+        $component = Livewire::withQueryParams(['kategorie' => $this->category->slug])
+            ->test(ReservationWizard::class);
 
-        $this->assertSame('category', $component->instance()->currentStep());
+        $this->assertSame('category', $component->instance()->stepOrder()[0]);
+        $this->assertSame('service', $component->instance()->currentStep());
+    }
+
+    public function test_service_deep_link_preselects_single_therapist_but_keeps_step(): void
+    {
+        // The service has exactly one therapist: it's preselected, but the wizard still
+        // stops on the therapist step so the user sees who they'll be booked with.
+        $component = Livewire::withQueryParams(['sluzba' => $this->service->slug])
+            ->test(ReservationWizard::class);
+        $instance = $component->instance();
+
+        $this->assertSame($this->category->slug, $instance->categorySlug);
+        $this->assertSame($this->therapist->id, $instance->therapistId);
+        $this->assertSame('therapist', $instance->currentStep());
+    }
+
+    public function test_therapist_step_shown_when_multiple_qualify(): void
+    {
+        $other = TherapistProfile::factory()->create(['published_at' => now()]);
+        $this->service->therapists()->attach($other);
+
+        $component = Livewire::withQueryParams(['sluzba' => $this->service->slug])
+            ->test(ReservationWizard::class);
+        $instance = $component->instance();
+
+        $this->assertNull($instance->therapistId);
+        $this->assertSame('therapist', $instance->currentStep());
+    }
+
+    public function test_therapist_deep_link_prefills_and_starts_therapist_first(): void
+    {
+        TherapistProfile::factory()->create(['published_at' => now()]);
+
+        $component = Livewire::withQueryParams(['terapeut' => $this->therapist->id])
+            ->test(ReservationWizard::class);
+        $instance = $component->instance();
+
+        $this->assertSame('therapist', $instance->stepOrder()[0]);
+        $this->assertSame($this->therapist->id, $instance->therapistId);
+        $this->assertSame('category', $instance->currentStep());
     }
 
     public function test_default_starts_in_therapist_first_order(): void
     {
+        // A second therapist makes the therapist step a real choice (not auto-skipped).
+        TherapistProfile::factory()->create(['published_at' => now()]);
+
         $component = Livewire::test(ReservationWizard::class);
 
         $this->assertSame('therapist', $component->instance()->currentStep());

@@ -5,8 +5,11 @@ namespace App\Filament\Clusters\Provoz\Resources\Services\Schemas;
 use App\Enums\ExamType;
 use App\Enums\ServiceVisibility;
 use App\Filament\Support\Schemas\ResponsiveColumns;
+use App\Mason\BrickRegistry;
+use App\Models\Service;
 use App\Models\TherapistProfile;
 use App\Support\Settings;
+use Awcodes\Mason\Mason;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
@@ -167,6 +170,24 @@ class ServiceForm
                                     ->multiple()
                                     ->preload(),
                             ]),
+                    ]),
+                Section::make('Vlastní stránka (přepíše výchozí rozvržení)')
+                    ->description('Sestavte vlastní vzhled z bloků. Jakmile přidáte obsah, nahradí výchozí rozvržení této služby.')
+                    ->columnSpanFull()
+                    ->relationship('customPage', condition: fn (?array $state): bool => filled($state['content'] ?? null))
+                    ->mutateRelationshipDataBeforeCreateUsing(fn (array $data, Service $record): array => [
+                        ...$data,
+                        'title' => $data['title'] ?? $record->name,
+                        'slug' => $data['slug'] ?? Str::slug($record->slug.'-vlastni-stranka'),
+                    ])
+                    ->schema([
+                        DateTimePicker::make('published_at')
+                            ->label('Datum publikování')
+                            ->helperText('Bez data = koncept, viditelný jen pro administrátory.'),
+                        Mason::make('content')
+                            ->label('Obsah')
+                            ->bricks(BrickRegistry::all())
+                            ->columnSpanFull(),
                     ]),
             ]);
     }

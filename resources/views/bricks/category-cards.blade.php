@@ -1,14 +1,15 @@
 @php
     $config ??= [];
     $categories = $config['categories'] ?? [];
-    $buttonUrl = ($config['button_url'] ?? '') ?: '#';
+    // Bottom button falls back to legacy button_text/button_url for pages not yet migrated.
+    $bottomText = $config['text'] ?? $config['button_text'] ?? null;
 
     $normalizeItem = function ($item): array {
         if (is_array($item)) {
             return [
                 'label' => $item['label'] ?? '',
                 'meta' => $item['meta'] ?? '',
-                'url' => ($item['url'] ?? '') ?: '',
+                'url' => \App\Support\LinkResolver::fromConfig($item, '') ?? '',
             ];
         }
 
@@ -23,7 +24,7 @@
         @if($categories)
             <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
                 @foreach($categories as $category)
-                    @php($url = ($category['url'] ?? '') ?: '#')
+                    @php($url = \App\Support\LinkResolver::fromConfig($category, '') ?: '#')
                     @php($items = $category['items'] ?? [])
                     <div class="flex flex-col gap-4 rounded-2xl border border-line bg-white p-6 transition hover:shadow-lg hover:shadow-primary/5">
                         <a href="{{ $url }}" class="group/head flex items-center gap-5">
@@ -67,12 +68,17 @@
             </div>
         @endif
 
-        @if(! empty($config['button_text']))
+        @if($bottomText)
             <div class="mt-12 flex justify-center">
-                <a href="{{ $buttonUrl }}" class="inline-flex items-center gap-2 rounded-full border-[1.5px] border-primary bg-white px-7 py-3 font-heading text-[15px] font-semibold text-primary transition hover:bg-primary-light">
-                    {{ $config['button_text'] }}
-                    <x-lucide name="arrow-right" class="h-4 w-4" />
-                </a>
+                @include('bricks.partials.button', ['btn' => [
+                    'text' => $bottomText,
+                    'style' => $config['style'] ?? 'outline',
+                    'color' => $config['color'] ?? null,
+                    'icon' => $config['icon'] ?? 'arrow-right',
+                    'link_type' => $config['link_type'] ?? null,
+                    'page_id' => $config['page_id'] ?? null,
+                    'url' => $config['url'] ?? $config['button_url'] ?? null,
+                ]])
             </div>
         @endif
     </div>

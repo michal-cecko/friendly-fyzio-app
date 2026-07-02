@@ -3,15 +3,13 @@
 namespace App\Mason\Support;
 
 use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
-use Guava\IconPicker\Forms\Components\IconPicker;
 
 /**
- * A reusable, reorderable repeater of buttons. Each button has a visual style,
- * an optional icon, a label, and a link (internal page or custom URL) via the
- * shared LinkPickerField. Resolve a button's URL on the frontend with
- * App\Support\LinkResolver::fromConfig($button).
+ * A reusable, reorderable repeater of buttons. Each button is a full button/link
+ * definition (label, visual style, custom color, icon, and an internal page or
+ * custom URL) built from the shared LinkPickerField. Resolve a button's URL on
+ * the frontend with App\Support\LinkResolver::fromConfig($button) and render it
+ * via the bricks/partials/button.blade.php partial.
  */
 class ButtonsField
 {
@@ -20,19 +18,7 @@ class ButtonsField
         return Repeater::make($name)
             ->label($label)
             ->schema([
-                TextInput::make('text')
-                    ->label('Text')
-                    ->required(),
-                Select::make('style')
-                    ->label('Styl')
-                    ->options(self::styles())
-                    ->default('primary')
-                    ->required(),
-                IconPicker::make('icon')
-                    ->label('Ikona (nepovinné)')
-                    ->sets(['lucide'])
-                    ->searchable(),
-                LinkPickerField::make('', 'Odkaz'),
+                LinkPickerField::make('', 'Odkaz', withText: true, withStyle: true, withColor: true, withIcon: true),
             ])
             ->reorderable()
             ->cloneable()
@@ -51,7 +37,8 @@ class ButtonsField
             'primary' => 'Primární (růžové)',
             'secondary' => 'Sekundární (tmavé)',
             'outline' => 'Obrys',
-            'ghost' => 'Text (terciární)',
+            'text' => 'Textový odkaz (inline)',
+            'ghost' => 'Tlačítko bez pozadí',
             'white' => 'Bílé (na tmavém pozadí)',
         ];
     }

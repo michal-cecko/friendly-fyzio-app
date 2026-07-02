@@ -20,6 +20,7 @@ class NavigationItem extends Model
         'parent_id',
         'label',
         'link_type',
+        'link_ref',
         'page_id',
         'url',
         'target',
@@ -53,6 +54,7 @@ class NavigationItem extends Model
     {
         return LinkResolver::resolve([
             'link_type' => $this->link_type,
+            'link_ref' => $this->link_ref,
             'page_id' => $this->page_id,
             'url' => $this->url,
         ]);

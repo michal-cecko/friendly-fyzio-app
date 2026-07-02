@@ -12,6 +12,9 @@
         <span class="font-medium">{{ $content['text'] ?? '' }}</span>
         @if($url && ! empty($content['cta_text']))
             <a href="{{ $url }}" class="inline-flex shrink-0 items-center gap-1 font-semibold underline underline-offset-2 transition hover:opacity-90">
+                @if(! empty($content['cta_icon']))
+                    {!! \App\Support\Icon::render($content['cta_icon'], 'h-4 w-4 shrink-0') !!}
+                @endif
                 {{ $content['cta_text'] }} <span aria-hidden="true">&rarr;</span>
             </a>
         @endif

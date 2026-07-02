@@ -30,10 +30,16 @@
                             @if(! empty($category->description))
                                 <p class="text-sm leading-relaxed text-neutral-600">{!! \App\Support\RichText::inline($category->description) !!}</p>
                             @endif
-                            <a href="{{ $category->permalink }}" class="mt-auto inline-flex items-center gap-1.5 pt-1 font-heading text-sm font-semibold text-primary transition hover:gap-2.5">
-                                {{ $linkText }}
-                                <x-lucide name="arrow-right" class="h-4 w-4" />
-                            </a>
+                            <div class="mt-auto pt-1">
+                                @include('bricks.partials.button', ['btn' => [
+                                    'text' => $linkText,
+                                    'style' => $config['link_style'] ?? 'text',
+                                    'color' => $config['link_color'] ?? null,
+                                    'icon' => $config['link_icon'] ?? 'arrow-right',
+                                    'link_type' => 'custom',
+                                    'url' => $category->permalink,
+                                ]])
+                            </div>
                         </div>
                     </article>
                 @endforeach

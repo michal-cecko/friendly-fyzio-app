@@ -62,7 +62,7 @@
             @if($services->isNotEmpty())
                 <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                     @foreach($services as $service)
-                        <article class="flex flex-col gap-4 rounded-2xl border border-line bg-white p-6 transition hover:shadow-lg hover:shadow-primary/5">
+                        <a href="{{ $service->permalink }}" class="group flex flex-col gap-4 rounded-2xl border border-line bg-white p-6 transition hover:border-primary hover:shadow-lg hover:shadow-primary/5">
                             <h3 class="font-heading text-lg font-semibold text-neutral-900">{{ $service->name }}</h3>
                             <div class="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-neutral-600">
                                 <span class="inline-flex items-center gap-1.5">
@@ -73,11 +73,11 @@
                                     {{ number_format($service->price, 0, ',', ' ') }} Kč
                                 </span>
                             </div>
-                            <a href="{{ $bookingUrl }}" class="mt-auto inline-flex items-center gap-1.5 pt-1 font-heading text-sm font-semibold text-primary transition hover:gap-2.5">
-                                Objednat se
+                            <span class="mt-auto inline-flex items-center gap-1.5 pt-1 font-heading text-sm font-semibold text-primary transition group-hover:gap-2.5">
+                                Více informací
                                 <x-lucide name="arrow-right" class="h-4 w-4" />
-                            </a>
-                        </article>
+                            </span>
+                        </a>
                     @endforeach
                 </div>
             @else

@@ -1,7 +1,8 @@
 @php
     $config ??= [];
     $therapists = $config['therapists'] ?? [];
-    $buttonUrl = ($config['button_url'] ?? '') ?: '#';
+    // Button falls back to legacy button_text/button_url for pages not yet migrated.
+    $buttonText = $config['text'] ?? $config['button_text'] ?? null;
 @endphp
 
 <section class="bg-white py-16 lg:py-20">
@@ -42,12 +43,17 @@
             </div>
         @endif
 
-        @if(! empty($config['button_text']))
+        @if($buttonText)
             <div class="mt-8 flex justify-center">
-                <a href="{{ $buttonUrl }}" class="inline-flex items-center gap-2 rounded-full border-[1.5px] border-primary bg-white px-7 py-3 font-heading text-[15px] font-semibold text-primary transition hover:bg-primary-light">
-                    <x-lucide name="calendar" class="h-4 w-4" />
-                    {{ $config['button_text'] }}
-                </a>
+                @include('bricks.partials.button', ['btn' => [
+                    'text' => $buttonText,
+                    'style' => $config['style'] ?? 'outline',
+                    'color' => $config['color'] ?? null,
+                    'icon' => $config['icon'] ?? 'calendar',
+                    'link_type' => $config['link_type'] ?? null,
+                    'page_id' => $config['page_id'] ?? null,
+                    'url' => $config['url'] ?? $config['button_url'] ?? null,
+                ]])
             </div>
         @endif
     </div>

@@ -7,12 +7,12 @@
     $user = auth()->user();
     $loginUrl = Route::has('filament.client.auth.login') ? route('filament.client.auth.login') : url('/klientska-zona/login');
     $registerUrl = Route::has('filament.client.auth.register') ? route('filament.client.auth.register') : url('/klientska-zona/register');
-    $bookingUrl = url('/klientska-zona');
+    $bookingUrl = route('reservation.wizard');
 
     // Staff land in the admin panel; customers in the client zone. The account
     // link reflects that (label + destination), driven by the account type.
     $isStaff = $user?->isStaff() ?? false;
-    $accountUrl = $isStaff ? url('/admin') : $bookingUrl;
+    $accountUrl = $isStaff ? url('/admin') : url('/klientska-zona');
     $accountLabel = $isStaff ? 'Administrace' : 'Klientská zóna';
 
     // Icon snippets (lucide, 24x24). Stroke inherits currentColor so size/color
@@ -27,6 +27,7 @@
         'menu' => '<line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="18" y2="18"/>',
         'log-out' => '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/>',
         'pencil' => '<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/>',
+        'layout-dashboard' => '<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>',
     ];
 @endphp
 
@@ -56,7 +57,10 @@
                         </button>
                         <div class="absolute right-0 top-full hidden pt-2 group-hover:block group-focus-within:block">
                             <div class="min-w-52 rounded-xl border border-line bg-white p-2 shadow-lg shadow-neutral-900/10">
-                                <a href="{{ $accountUrl }}" class="block rounded-md px-3 py-2.5 text-sm text-neutral-900 transition hover:bg-primary-light hover:text-primary">{{ $accountLabel }}</a>
+                                <a href="{{ $accountUrl }}" class="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm text-neutral-900 transition hover:bg-primary-light hover:text-primary">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">{!! $icon['layout-dashboard'] !!}</svg>
+                                    {{ $accountLabel }}
+                                </a>
                                 @if($adminEditUrl)
                                     <a href="{{ $adminEditUrl }}" class="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm text-neutral-900 transition hover:bg-primary-light hover:text-primary">
                                         <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">{!! $icon['pencil'] !!}</svg>
@@ -169,7 +173,8 @@
             @if($user)
                 <form method="POST" action="{{ url('/klientska-zona/logout') }}" class="flex flex-col gap-3">
                     @csrf
-                    <a href="{{ $accountUrl }}" class="inline-flex w-full items-center justify-center rounded-full border border-line py-3 text-sm font-semibold text-neutral-900 transition hover:bg-surface-alt">
+                    <a href="{{ $accountUrl }}" class="inline-flex w-full items-center justify-center gap-2 rounded-full border border-line py-3 text-sm font-semibold text-neutral-900 transition hover:bg-surface-alt">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">{!! $icon['layout-dashboard'] !!}</svg>
                         {{ $accountLabel }}
                     </a>
                     @if($adminEditUrl)

@@ -47,6 +47,18 @@ class SettingsPageTest extends TestCase
         $this->assertSame(20, SettingsHelper::blockMinutes());
     }
 
+    public function test_saving_preserves_a_large_integer_id_string(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+
+        Livewire::test(Settings::class)
+            ->fillForm(['newsletter.mailerlite_group_id' => '165960181248689315'])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $this->assertSame('165960181248689315', Setting::where('key', 'newsletter.mailerlite_group_id')->value('value'));
+    }
+
     public function test_value_type_round_trips_per_type(): void
     {
         $this->assertSame(15, SettingValueType::Integer->cast('15'));

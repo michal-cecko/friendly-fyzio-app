@@ -57,11 +57,7 @@
                 <p class="font-heading text-[15px] font-semibold text-white">Odebírejte novinky</p>
                 <p class="text-[13px] text-neutral-400">Buďte první, kdo se dozví o nových kurzech a akcích.</p>
             </div>
-            <form method="POST" action="{{ route('newsletter.subscribe') }}" class="flex gap-2.5">
-                @csrf
-                <input type="email" name="email" required placeholder="Váš e-mail" class="w-48 rounded-full border border-white/20 bg-neutral-900 px-4 py-2.5 text-sm text-white placeholder:text-neutral-500 focus:border-primary focus:outline-none sm:w-56">
-                <button type="submit" class="rounded-full bg-primary px-5 py-2.5 font-heading text-sm font-semibold text-white transition hover:bg-primary-dark">Odebírat</button>
-            </form>
+            <livewire:newsletter-form :compact="true" />
         </div>
 
         <div class="mt-8 flex flex-col gap-4 border-t border-white/10 pt-8 sm:flex-row sm:items-center sm:justify-between">

@@ -3,13 +3,16 @@
 namespace App\Mason\Bricks;
 
 use App\Enums\ServiceType;
+use App\Mason\Support\ButtonsField;
 use App\Mason\Support\Fields;
 use App\Models\ServiceCategory;
 use Awcodes\Mason\Brick;
 use Filament\Actions\Action;
+use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Support\Icons\Heroicon;
+use Guava\IconPicker\Forms\Components\IconPicker;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -73,6 +76,16 @@ class ServiceCardsBrick extends Brick
                 TextInput::make('link_text')
                     ->label('Text odkazu')
                     ->default('Zjistit více'),
+                Select::make('link_style')
+                    ->label('Styl odkazu')
+                    ->options(ButtonsField::styles())
+                    ->default('text'),
+                ColorPicker::make('link_color')
+                    ->label('Vlastní barva (nepovinné)'),
+                IconPicker::make('link_icon')
+                    ->label('Ikona (nepovinné)')
+                    ->sets(['lucide'])
+                    ->searchable(),
             ]);
     }
 }

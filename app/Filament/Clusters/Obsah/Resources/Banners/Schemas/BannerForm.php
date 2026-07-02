@@ -3,6 +3,7 @@
 namespace App\Filament\Clusters\Obsah\Resources\Banners\Schemas;
 
 use App\Enums\BannerType;
+use App\Mason\Support\LinkPickerField;
 use App\Models\Page;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\DateTimePicker;
@@ -81,11 +82,8 @@ class BannerForm
                             ->acceptedFileTypes(['image/*'])
                             ->columnSpanFull()
                             ->visible(fn (Get $get): bool => self::isType($get, BannerType::Popup)),
-                        TextInput::make('content.cta_text')
-                            ->label('Text tlačítka'),
-                        TextInput::make('content.cta_url')
-                            ->label('Odkaz tlačítka (URL)')
-                            ->placeholder('https://…'),
+                        LinkPickerField::make('content.cta_', 'Tlačítko', withText: true, withIcon: true)
+                            ->columnSpanFull(),
                     ]),
 
                 Section::make('Zobrazení')

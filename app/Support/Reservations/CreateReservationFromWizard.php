@@ -5,6 +5,7 @@ namespace App\Support\Reservations;
 use App\Enums\PaymentStatus;
 use App\Enums\ReservationStatus;
 use App\Enums\UserRole;
+use App\Jobs\SubscribeToNewsletterJob;
 use App\Models\Reservation;
 use App\Models\User;
 use App\Notifications\ClientAccountCreatedNotification;
@@ -43,6 +44,10 @@ class CreateReservationFromWizard
 
         if ($isNewAccount) {
             $client->notify(new ClientAccountCreatedNotification);
+        }
+
+        if ($data->newsletter) {
+            SubscribeToNewsletterJob::dispatch($client->email, $client->name);
         }
 
         return $reservation;
@@ -97,6 +102,10 @@ class CreateReservationFromWizard
         $existing = User::query()->where('email', $data->email)->first();
 
         if ($existing !== null) {
+            if ($data->newsletter && $existing->newsletter_opted_in_at === null) {
+                $existing->update(['newsletter_opted_in_at' => now()]);
+            }
+
             return [$existing, false];
         }
 

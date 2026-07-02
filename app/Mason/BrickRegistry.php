@@ -16,6 +16,7 @@ use App\Mason\Bricks\SectionHeadingBrick;
 use App\Mason\Bricks\ServiceCardsBrick;
 use App\Mason\Bricks\StatsBrick;
 use App\Mason\Bricks\StepsBrick;
+use App\Mason\Bricks\TeamBrick;
 use App\Mason\Bricks\TestimonialsBrick;
 use Awcodes\Mason\Brick;
 use Awcodes\Mason\BrickGroup;
@@ -45,6 +46,7 @@ class BrickRegistry
                 FeatureCardsBrick::class,
                 CategoryCardsBrick::class,
                 ServiceCardsBrick::class,
+                TeamBrick::class,
             ]),
             BrickGroup::make('Sekce')->bricks([
                 StatsBrick::class,

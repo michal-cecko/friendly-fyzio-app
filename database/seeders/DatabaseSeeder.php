@@ -15,9 +15,10 @@ class DatabaseSeeder extends Seeder
         $this->call(RolePermissionSeeder::class);
         $this->call(SettingsSeeder::class);
         $this->call(PageSeeder::class);
-        $this->call(NavigationSeeder::class);
         $this->call(BannerSeeder::class);
         $this->call(ServiceCategorySeeder::class);
+        // Navigation references categories (category:{id} link refs), so it runs after them.
+        $this->call(NavigationSeeder::class);
 
         // The User "saved" event syncs the matching Shield role from the account type
         // (Administrátor -> super_admin, Terapeut -> therapist), so no manual assignRole needed.
@@ -31,6 +32,8 @@ class DatabaseSeeder extends Seeder
             'email' => 'therapist@friendly-fyzio.test',
         ]);
 
+        // DemoSeeder creates the services; ServicePagesSeeder attaches custom pages to them.
         $this->call(DemoSeeder::class);
+        $this->call(ServicePagesSeeder::class);
     }
 }

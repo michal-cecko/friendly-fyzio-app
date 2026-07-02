@@ -65,6 +65,17 @@ class SettingsSeeder extends Seeder
             'sort' => 4,
         ]);
 
+        $this->upsert([
+            'key' => 'newsletter.mailerlite_group_id',
+            'value' => '',
+            'type' => SettingValueType::Text,
+            'label' => 'MailerLite skupina (ID)',
+            'group' => 'Newsletter',
+            'description' => 'ID skupiny (audience) v MailerLite, do které se přidávají odběratelé z webu.',
+            'config' => null,
+            'sort' => 0,
+        ]);
+
         foreach ([
             ['web.contact_email', 'info@friendlyfyzio.cz', 'Kontaktní e-mail'],
             ['web.contact_phone', '+420 604 793 255', 'Telefon'],

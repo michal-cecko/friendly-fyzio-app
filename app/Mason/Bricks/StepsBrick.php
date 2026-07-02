@@ -44,7 +44,7 @@ class StepsBrick extends Brick
                     ->schema([
                         IconPicker::make('icon')
                             ->label('Ikona')
-                            ->sets(['heroicons'])
+                            ->sets(['lucide'])
                             ->searchable(),
                         TextInput::make('title')
                             ->label('Nadpis')

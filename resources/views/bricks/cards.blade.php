@@ -31,10 +31,17 @@
                                 <p class="text-sm leading-relaxed text-neutral-600">{!! \App\Support\RichText::inline($card['description']) !!}</p>
                             @endif
                             @if($url)
-                                <a href="{{ $url }}" class="mt-auto inline-flex items-center gap-1.5 pt-1 font-heading text-sm font-semibold text-primary transition hover:gap-2.5">
-                                    {{ $card['link_text'] ?? 'Zjistit více' }}
-                                    <x-lucide name="arrow-right" class="h-4 w-4" />
-                                </a>
+                                <div class="mt-auto pt-1">
+                                    @include('bricks.partials.button', ['btn' => [
+                                        'text' => $card['text'] ?? $card['link_text'] ?? 'Zjistit více',
+                                        'style' => $card['style'] ?? 'text',
+                                        'color' => $card['color'] ?? null,
+                                        'icon' => $card['icon'] ?? 'arrow-right',
+                                        'link_type' => $card['link_type'] ?? null,
+                                        'page_id' => $card['page_id'] ?? null,
+                                        'url' => $card['url'] ?? null,
+                                    ]])
+                                </div>
                             @endif
                         </div>
                     </article>

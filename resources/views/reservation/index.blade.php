@@ -1,5 +1,5 @@
 @extends('layouts.public')
 
 @section('content')
-    <livewire:reservation-wizard :preset="$preset ?? null" />
+    <livewire:reservation-wizard />
 @endsection

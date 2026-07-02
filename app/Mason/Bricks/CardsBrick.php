@@ -59,10 +59,7 @@ class CardsBrick extends Brick
                             ->label('Nadpis')
                             ->required(),
                         Fields::richText('description', 'Popis'),
-                        TextInput::make('link_text')
-                            ->label('Text odkazu')
-                            ->default('Zjistit více'),
-                        LinkPickerField::make('', 'Odkaz'),
+                        LinkPickerField::make('', 'Odkaz', withText: true, withStyle: true, withColor: true, withIcon: true),
                     ])
                     ->defaultItems(3)
                     ->reorderable()

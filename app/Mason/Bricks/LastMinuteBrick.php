@@ -2,6 +2,7 @@
 
 namespace App\Mason\Bricks;
 
+use App\Mason\Support\LinkPickerField;
 use Awcodes\Mason\Brick;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Repeater;
@@ -43,11 +44,7 @@ class LastMinuteBrick extends Brick
                 TextInput::make('title')
                     ->label('Nadpis')
                     ->default('Last-minute termíny'),
-                TextInput::make('button_text')
-                    ->label('Text tlačítka')
-                    ->default('Zobrazit celý kalendář'),
-                TextInput::make('button_url')
-                    ->label('Odkaz tlačítka'),
+                LinkPickerField::make('', 'Tlačítko', withText: true, withStyle: true, withColor: true, withIcon: true),
                 Repeater::make('therapists')
                     ->label('Terapeuti')
                     ->schema([

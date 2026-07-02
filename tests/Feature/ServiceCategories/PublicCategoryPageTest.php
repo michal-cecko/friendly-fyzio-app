@@ -78,6 +78,22 @@ class PublicCategoryPageTest extends TestCase
             ->assertSee('60 min');
     }
 
+    public function test_default_category_page_links_services_to_their_single_page(): void
+    {
+        $category = ServiceCategory::factory()->create(['slug' => 'fyzioterapie']);
+        $service = Service::factory()->create([
+            'category_id' => $category->id,
+            'slug' => 'terapie-panevniho-dna',
+            'visibility' => ServiceVisibility::Public,
+            'published_at' => now(),
+        ]);
+
+        $this->get('/sluzby/fyzioterapie')
+            ->assertOk()
+            ->assertSee($service->permalink)
+            ->assertSee('Více informací');
+    }
+
     public function test_default_category_page_hides_non_public_services(): void
     {
         $category = ServiceCategory::factory()->create(['slug' => 'masaz']);

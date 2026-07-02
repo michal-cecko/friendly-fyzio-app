@@ -37,10 +37,14 @@ class Settings extends Page
 
     public function mount(): void
     {
+        // Setting keys contain dots, which the field bindings resolve as nested
+        // state paths; undot the values so they match (Arr::dot reverses this on save).
         $this->form->fill(
-            $this->settings()
-                ->mapWithKeys(fn (Setting $setting): array => [$setting->key => $setting->typedValue])
-                ->all()
+            Arr::undot(
+                $this->settings()
+                    ->mapWithKeys(fn (Setting $setting): array => [$setting->key => $setting->typedValue])
+                    ->all()
+            )
         );
     }
 

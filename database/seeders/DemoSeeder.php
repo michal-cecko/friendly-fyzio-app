@@ -72,8 +72,10 @@ class DemoSeeder extends Seeder
         $serviceDefs = [
             ['category' => $physio, 'name' => 'Vstupní vyšetření pohybového aparátu', 'exam_type' => ExamType::Vstupni, 'duration' => 90, 'price' => 1200, 'visibility' => ServiceVisibility::Public],
             ['category' => $physio, 'name' => 'Kontrolní terapie pohybového aparátu', 'exam_type' => ExamType::Kontrolni, 'duration' => 60, 'price' => 800, 'visibility' => ServiceVisibility::Clients, 'existing_client_months' => 12],
-            ['category' => $physio, 'name' => 'Vstupní vyšetření pánevního dna', 'exam_type' => ExamType::Vstupni, 'duration' => 90, 'price' => 1300, 'visibility' => ServiceVisibility::Public],
+            ['category' => $physio, 'name' => 'Terapie pánevního dna', 'exam_type' => ExamType::Vstupni, 'duration' => 90, 'price' => 1300, 'visibility' => ServiceVisibility::Public],
             ['category' => $physio, 'name' => 'Kontrolní terapie pánevního dna', 'exam_type' => ExamType::Kontrolni, 'duration' => 60, 'price' => 850, 'visibility' => ServiceVisibility::Clients, 'existing_client_months' => 12],
+            ['category' => $physio, 'name' => 'Těhotenská fyzioterapie', 'exam_type' => ExamType::Vstupni, 'duration' => 90, 'price' => 1300, 'visibility' => ServiceVisibility::Public],
+            ['category' => $physio, 'name' => 'Kontrolní těhotenská fyzioterapie', 'exam_type' => ExamType::Kontrolni, 'duration' => 60, 'price' => 850, 'visibility' => ServiceVisibility::Clients, 'existing_client_months' => 12],
             ['category' => $massage, 'name' => 'Klasická masáž', 'duration' => 60, 'price' => 900],
             ['category' => $massage, 'name' => 'Lymfatická drenáž', 'duration' => 60, 'price' => 950],
             ['category' => $massage, 'name' => 'Sportovní masáž', 'duration' => 60, 'price' => 1000],
@@ -90,6 +92,7 @@ class DemoSeeder extends Seeder
                 'price' => $def['price'],
                 'visibility' => $def['visibility'] ?? ServiceVisibility::Public,
                 'existing_client_months' => $def['existing_client_months'] ?? null,
+                'published_at' => now(),
             ]);
 
             $service->rooms()->sync($rooms->random(fake()->numberBetween(1, 3))->pluck('id')->all());

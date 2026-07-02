@@ -116,16 +116,18 @@
                                     <h2 class="{{ $heading }}">Vyberte terapeuta</h2>
                                     <p class="mt-1 text-sm {{ $muted }}">Vyberte preferovaného terapeuta.</p>
                                     <div class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                                        <label wire:key="th-any" class="cursor-pointer">
-                                            <input type="radio" wire:model="therapistId" value="any" class="peer sr-only">
-                                            <div class="{{ $cardFlexCol }}">
-                                                <span class="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white">
-                                                    <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18 21a8 8 0 0 0-16 0M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3" /><circle cx="10" cy="8" r="5" /></svg>
-                                                </span>
-                                                <span class="font-heading text-sm font-semibold text-neutral-900">Nezáleží</span>
-                                                <span class="text-xs {{ $muted }}">Více volných termínů</span>
-                                            </div>
-                                        </label>
+                                        @if ($this->therapists->count() > 1)
+                                            <label wire:key="th-any" class="cursor-pointer">
+                                                <input type="radio" wire:model="therapistId" value="any" class="peer sr-only">
+                                                <div class="{{ $cardFlexCol }}">
+                                                    <span class="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white">
+                                                        <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18 21a8 8 0 0 0-16 0M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3" /><circle cx="10" cy="8" r="5" /></svg>
+                                                    </span>
+                                                    <span class="font-heading text-sm font-semibold text-neutral-900">Nezáleží</span>
+                                                    <span class="text-xs {{ $muted }}">Více volných termínů</span>
+                                                </div>
+                                            </label>
+                                        @endif
                                         @foreach ($this->therapists as $therapist)
                                             @php($name = $therapist->user?->name ?? 'Terapeut')
                                             <label wire:key="th-{{ $therapist->id }}" class="cursor-pointer">
@@ -143,7 +145,7 @@
                                 @elseif ($current === 'category')
                                     <h2 class="{{ $heading }}">Vyberte kategorii</h2>
                                     <p class="mt-1 text-sm {{ $muted }}">Zvolte oblast služeb, která vás zajímá.</p>
-                                    <div class="mt-5 grid gap-3 sm:grid-cols-2">
+                                    <div class="mt-5 grid gap-3 lg:grid-cols-3">
                                         @forelse ($this->categories as $category)
                                             <label wire:key="cat-{{ $category->slug }}" class="cursor-pointer">
                                                 <input type="radio" wire:model="categorySlug" value="{{ $category->slug }}" class="peer sr-only">

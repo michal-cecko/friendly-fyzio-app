@@ -50,4 +50,8 @@ return [
         'redirect' => env('INSTAGRAM_REDIRECT_URI'),
     ],
 
+    'mailerlite' => [
+        'key' => env('MAILERLITE_API_KEY'),
+    ],
+
 ];
