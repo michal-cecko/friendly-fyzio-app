@@ -1,0 +1,15 @@
+# GitGuardian config. The values below are hardcoded TEST FIXTURES (not real
+# credentials) used only under tests/ — safe to ignore in secret scans.
+version: 2
+secret:
+  ignored-paths:
+    - "tests/**"
+  ignored-matches:
+    - name: Test fixture login password (PublicLogin / ReservationWizard feature tests)
+      match: tajneheslo
+    - name: Instagram OAuth test fixture client secret
+      match: secret-abc
+    - name: Instagram OAuth test fixture access token (short-lived)
+      match: short-token
+    - name: Instagram OAuth test fixture access token (long-lived)
+      match: long-lived-token

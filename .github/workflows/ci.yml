@@ -1,0 +1,71 @@
+# CI: build image in Actions, push to GHCR, deploy by pull on Dokploy.
+# The Docker build (composer install + npm build) is the gate — a broken build never ships.
+name: CI
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-image:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Normalize COMPOSER_AUTH to single-line JSON (multi-line secrets break build-args)
+      - name: Normalize COMPOSER_AUTH
+        env:
+          COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
+        run: echo "COMPOSER_AUTH_MIN=$(printf '%s' "$COMPOSER_AUTH" | jq -c .)" >> "$GITHUB_ENV"
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ghcr.io/michal-cecko/friendly-fyzio-app:latest
+            ghcr.io/michal-cecko/friendly-fyzio-app:sha-${{ github.sha }}
+          build-args: |
+            COMPOSER_AUTH=${{ env.COMPOSER_AUTH_MIN }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    needs: build-image
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Pin web + worker to the new image and deploy (pull, no host build)
+        env:
+          API: ${{ secrets.DOKPLOY_URL }}
+          KEY: ${{ secrets.DOKPLOY_API_KEY }}
+          IMG: ghcr.io/michal-cecko/friendly-fyzio-app:sha-${{ github.sha }}
+        run: |
+          set -e
+          for APP in nqRRiKNtonuw3lrhBT1JQ nJx1KMqRvBacdOxYrE9Mw; do
+            curl -sf -X POST -H "x-api-key: $KEY" -H "Content-Type: application/json" \
+              -d "{\"applicationId\":\"$APP\",\"dockerImage\":\"$IMG\"}" \
+              "$API/api/application.update" > /dev/null
+            curl -sf -X POST -H "x-api-key: $KEY" -H "Content-Type: application/json" \
+              -d "{\"applicationId\":\"$APP\"}" \
+              "$API/api/application.deploy" > /dev/null
+            echo "deployed $APP -> $IMG"
+          done
