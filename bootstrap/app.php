@@ -16,5 +16,6 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // Forward unhandled exceptions to Sentry (SENTRY_LARAVEL_DSN in the environment).
+        \Sentry\Laravel\Integration::handles($exceptions);
     })->create();
