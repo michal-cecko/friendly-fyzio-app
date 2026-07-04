@@ -14,11 +14,11 @@ class PageSeeder extends Seeder
     {
         $this->homepage();
         $this->aboutPage();
+        $this->contactPage();
 
         foreach ([
             'sluzby' => 'Služby',
             'kurzy' => 'Kurzy',
-            'kontakt' => 'Kontakt',
         ] as $slug => $title) {
             Page::updateOrCreate(
                 ['system_key' => $slug],
@@ -194,6 +194,29 @@ class PageSeeder extends Seeder
                         'subtitle' => 'Naše terapeutky a lektorky jsou odbornice s dlouholetou praxí, které se neustále vzdělávají.',
                         'background' => 'alt',
                         'columns' => 4,
+                    ]),
+                ],
+            ],
+        );
+    }
+
+    private function contactPage(): void
+    {
+        Page::updateOrCreate(
+            ['system_key' => 'kontakt'],
+            [
+                'slug' => 'kontakt',
+                'title' => 'Kontakt',
+                'is_system' => true,
+                'published_at' => now(),
+                'meta_title' => 'Kontakt – FriendlyFyzio',
+                'meta_description' => 'Napište nám nebo se objednejte. Najdete nás na adrese Zednická 1109/2, Ostrava. Těšíme se na vás.',
+                'content' => [
+                    $this->brick('contact', [
+                        'title' => 'Kontakt',
+                        'subtitle' => 'Máte dotaz nebo se chcete objednat? Napište nám, rádi vám odpovíme.',
+                        'form_title' => 'Napište nám',
+                        'form_button_text' => 'Odeslat zprávu',
                     ]),
                 ],
             ],

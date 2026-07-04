@@ -1,5 +1,5 @@
 {
-  "version": "2.13",
+  "version": "2.14",
   "children": [
     {
       "type": "frame",
@@ -30426,7 +30426,7 @@
                               "type": "frame",
                               "id": "hxe6r",
                               "name": "iconFrame",
-                              "width": 75.3439157113061,
+                              "width": 116.30944122376617,
                               "height": 40,
                               "fill": "$--warning",
                               "cornerRadius": "$--radius-full",
@@ -32114,7 +32114,7 @@
                               "type": "frame",
                               "id": "h3cG4",
                               "name": "iconF",
-                              "width": 759.8650421053231,
+                              "width": 943.8650421053231,
                               "height": 40,
                               "fill": "$--warning",
                               "cornerRadius": "$--radius-full",
@@ -64251,8 +64251,13 @@
                           "id": "NQKl1",
                           "type": "ref",
                           "ref": "Uy3CI",
-                          "width": "fill_container",
+                          "width": 279,
                           "name": "slot1",
+                          "height": "fit_content",
+                          "flipX": false,
+                          "flipY": false,
+                          "x": 0,
+                          "y": 0,
                           "descendants": {
                             "6dGOu": {
                               "icon": "sunrise"
@@ -64269,8 +64274,13 @@
                           "id": "rvTHo",
                           "type": "ref",
                           "ref": "5bprL",
-                          "width": "fill_container",
+                          "width": 279,
                           "name": "slot2",
+                          "height": "fit_content",
+                          "flipX": false,
+                          "flipY": false,
+                          "x": 287,
+                          "y": 0,
                           "descendants": {
                             "RwAcY": {
                               "icon": "sun"
@@ -84180,7 +84190,7 @@
                       "descendants": {
                         "MSASQ": {
                           "content": "Aktivní kurzy",
-                          "x": 24.048142350469423,
+                          "x": 24.04814235046943,
                           "y": 12,
                           "rotation": -0.16225630497652313,
                           "flipX": false,
@@ -84199,7 +84209,7 @@
                       "descendants": {
                         "MSASQ": {
                           "content": "Čekací listina",
-                          "x": 24.048142350469423,
+                          "x": 24.04814235046943,
                           "y": 12,
                           "rotation": -0.16225630497652313,
                           "flipX": false,
@@ -86376,7 +86386,7 @@
                       "type": "frame",
                       "id": "0SwEr",
                       "name": "currentCard",
-                      "width": 4151.735727061701,
+                      "width": 8241.903099060662,
                       "height": 90,
                       "fill": "$--background-alt",
                       "cornerRadius": "$--radius-md",
@@ -86430,7 +86440,7 @@
                       "type": "frame",
                       "id": "6X3KM",
                       "name": "newTermCard",
-                      "width": 4238.592123025335,
+                      "width": 8414.327850087036,
                       "height": 90,
                       "fill": "$--primary-light",
                       "cornerRadius": "$--radius-md",
@@ -102121,5 +102131,6 @@
       "type": "color",
       "value": "#FFFFFF"
     }
-  }
+  },
+  "fileToken": "de16640b-adc9-4edc-baf8-525f5f53f88b"
 }

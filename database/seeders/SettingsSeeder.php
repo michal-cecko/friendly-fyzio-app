@@ -80,6 +80,7 @@ class SettingsSeeder extends Seeder
             ['web.contact_email', 'info@friendlyfyzio.cz', 'Kontaktní e-mail'],
             ['web.contact_phone', '+420 604 793 255', 'Telefon'],
             ['web.address', 'Zednická 1109/2, Ostrava', 'Adresa'],
+            ['web.opening_hours', 'Po–Pá 8:00–17:00', 'Otevírací doba'],
             ['web.instagram_url', 'https://instagram.com/friendlyfyzio', 'Instagram URL'],
             ['web.facebook_url', 'https://facebook.com/friendlyfyzio', 'Facebook URL'],
             ['web.footer_note', 'Specializovaná fyzioterapie pro ženy i muže. Individuální přístup k vašemu zdraví.', 'Text v patičce'],

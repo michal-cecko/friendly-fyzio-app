@@ -8,11 +8,12 @@ use Database\Seeders\Concerns\ImportsMedia;
 use Illuminate\Database\Seeder;
 
 /**
- * Attaches the custom Mason pages from the Pencil designs: the Fyzioterapie and
- * Relaxace category landing pages plus their topic/service marketing pages
- * (physiotherapy: pelvic floor, pregnancy; massage: lymphatic, pregnancy, baby
- * and herbal steam — all on their real services seeded by DemoSeeder). Rendered
- * at /sluzby/{category}[/{service}]. Skips gracefully if the owning record is absent.
+ * Attaches the custom Mason pages from the Pencil designs: the Fyzioterapie,
+ * Relaxace and Přístrojová terapie category landing pages plus their topic/service
+ * marketing pages (physiotherapy: pelvic floor, pregnancy; massage: lymphatic,
+ * pregnancy, baby and herbal steam; apparatus: laser, cryotherapy — all on their
+ * real services seeded by DemoSeeder). Rendered at /sluzby/{category}[/{service}].
+ * Skips gracefully if the owning record is absent.
  */
 class ServicePagesSeeder extends Seeder
 {
@@ -29,6 +30,10 @@ class ServicePagesSeeder extends Seeder
         $this->pregnancyMassagePage();
         $this->babyMassagePage();
         $this->herbalSteamPage();
+
+        $this->pristrojovaTerapieCategoryPage();
+        $this->cryotherapyPage();
+        $this->laserPage();
     }
 
     private function fyzioterapieCategoryPage(): void
@@ -797,6 +802,270 @@ class ServicePagesSeeder extends Seeder
             $this->brick('cta-banner', [
                 'title' => 'Máte zájem o bylinnou napářku?',
                 'subtitle' => 'Tuto službu je možné objednat pouze telefonicky. Zavolejte nám a rádi vám nalezneme vhodný termín. Jsme tu pro vás Po–Pá 8:00–17:00.',
+                'buttons' => [
+                    ['text' => 'Zavolat: +420 604 791 215', 'url' => 'tel:+420604791215', 'icon' => 'phone', 'style' => 'white'],
+                ],
+            ]),
+        ]);
+    }
+
+    private function pristrojovaTerapieCategoryPage(): void
+    {
+        $category = ServiceCategory::where('slug', 'pristrojova-terapie')->first();
+
+        if ($category === null) {
+            return;
+        }
+
+        $img = fn (string $id, string $name): ?int => $this->media(
+            "https://images.unsplash.com/{$id}?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
+            $name,
+        );
+
+        $category->customPage()->updateOrCreate([], [
+            'title' => 'Přístrojová terapie',
+            'slug' => 'pristrojova-terapie-vlastni-stranka',
+            'published_at' => now(),
+            'content' => [
+                $this->brick('hero', [
+                    'eyebrow' => 'Moderní technologie',
+                    'title' => 'Přístrojová terapie',
+                    'features' => '<p>Přístrojová terapie využívá moderní technologie k urychlení hojení, úlevě od bolesti a redukci otoků. Doplňuje manuální terapii a pomáhá vám rychleji se vrátit zpět do pohody.</p>',
+                    'image' => $img('photo-1576770075856-86b01944b92b', 'pristrojova-category-hero'),
+                    'buttons' => [
+                        ['text' => 'Objednat se', 'url' => '/rezervace', 'icon' => 'calendar', 'style' => 'primary'],
+                        ['text' => 'Více informací', 'url' => '#sluzby', 'icon' => 'arrow-down', 'style' => 'outline'],
+                    ],
+                ]),
+                $this->brick('feature-cards', [
+                    'eyebrow' => 'Naše služby',
+                    'title' => 'Co nabízíme',
+                    'subtitle' => 'Přístrojová terapie u nás zahrnuje laserovou terapii a lokální kryoterapii pro rychlejší úlevu a regeneraci.',
+                    'background' => 'white',
+                    'columns' => 2,
+                    'cards' => [
+                        [
+                            'icon' => 'sun',
+                            'title' => 'Laserová terapie',
+                            'description' => '<p>Vysokovýkonný laser pro hlubší prohřátí tkání, urychlení hojení a úlevu od bolesti pohybového aparátu.</p>',
+                            'text' => 'Více informací',
+                            'style' => 'text',
+                            'url' => '/sluzby/pristrojova-terapie/laserova-terapie',
+                        ],
+                        [
+                            'icon' => 'snowflake',
+                            'title' => 'Kryoterapie',
+                            'description' => '<p>Lokální aplikace chladu pro rychlou úlevu od bolesti, snížení zánětu a otoku po akutním zranění.</p>',
+                            'text' => 'Více informací',
+                            'style' => 'text',
+                            'url' => '/sluzby/pristrojova-terapie/kryoterapie',
+                        ],
+                    ],
+                ]),
+                $this->brick('steps', [
+                    'eyebrow' => 'Jak to probíhá',
+                    'title' => 'Cesta k přístrojové terapii',
+                    'subtitle' => 'Od konzultace až po viditelné výsledky vás provedeme celým procesem.',
+                    'steps' => [
+                        ['icon' => 'message-circle', 'title' => 'Konzultace', 'description' => 'Probereme vaše potíže a doporučíme vhodnou terapii.'],
+                        ['icon' => 'search', 'title' => 'Vstupní měření', 'description' => 'Zhodnotíme váš stav a nastavíme parametry přístroje na míru.'],
+                        ['icon' => 'zap', 'title' => 'Terapie', 'description' => 'Samotná aplikace laseru nebo kryoterapie je rychlá a bezbolestná.'],
+                        ['icon' => 'check-circle', 'title' => 'Výsledky', 'description' => 'Sledujeme úlevu a v případě potřeby terapii zopakujeme.'],
+                    ],
+                ]),
+                $this->brick('pricing', [
+                    'eyebrow' => 'Ceník',
+                    'title' => 'Ceník přístrojové terapie',
+                    'subtitle' => 'Přístrojovou terapii je možné objednat telefonicky nebo využít jako doplněk k manuální terapii.',
+                    'rows' => [
+                        ['name' => 'Laserová terapie', 'note' => '30 min', 'price' => '500 Kč'],
+                        ['name' => 'Kryoterapie', 'note' => '15 min', 'price' => '490 Kč'],
+                    ],
+                    'buttons' => [
+                        ['text' => 'Objednat se', 'url' => '/rezervace', 'icon' => 'calendar', 'style' => 'primary'],
+                    ],
+                ]),
+                $this->brick('testimonials', [
+                    'eyebrow' => 'Co říkají naši klienti',
+                    'title' => 'Recenze klientů',
+                    'subtitle' => 'Přečtěte si, jak přístrojová terapie pomohla našim klientům.',
+                    'background' => 'alt',
+                    'items' => [
+                        ['quote' => 'Po zranění kotníku mi laser výrazně urychlil hojení. Otok ustoupil během pár dní. Rozhodně doporučuji!', 'author' => 'Tomáš R.', 'role' => 'Laserová terapie'],
+                        ['quote' => 'Kryoterapie mi skvěle pomohla od akutní bolesti zad. Rychlá úleva bez léků.', 'author' => 'Veronika K.', 'role' => 'Kryoterapie'],
+                        ['quote' => 'Kombinace laseru a manuální terapie mi pomohla vrátit se rychleji ke sportu. Skvělý přístup.', 'author' => 'Martin P.', 'role' => 'Přístrojová terapie'],
+                    ],
+                ]),
+                $this->brick('cta-banner', [
+                    'title' => 'Máte zájem o přístrojovou terapii?',
+                    'subtitle' => 'Objednejte se a využijte moderní technologie pro rychlejší úlevu a regeneraci.',
+                    'buttons' => [
+                        ['text' => 'Objednat se', 'url' => '/rezervace', 'icon' => 'calendar', 'style' => 'white'],
+                    ],
+                ]),
+                $this->brick('instagram', [
+                    'eyebrow' => 'Sledujte nás',
+                    'title' => '@friendlyfyzio',
+                    'subtitle' => 'Nahlédněte do našeho dění, sledujte tipy na cvičení a novinky z naší kliniky.',
+                    'handle' => '@friendlyfyzio',
+                    'images' => array_values(array_filter([
+                        $img('photo-1612676244045-b3907a062c59', 'home-instagram-1'),
+                        $img('photo-1539794830467-1f1755804d13', 'home-instagram-2'),
+                        $img('photo-1774082918671-5785138821c2', 'home-instagram-3'),
+                        $img('photo-1609858922179-97a3c4980b80', 'home-instagram-4'),
+                    ])),
+                    'cta_link_type' => 'custom',
+                    'cta_url' => 'https://instagram.com',
+                    'cta_text' => 'Sledovat na Instagramu',
+                ]),
+            ],
+        ]);
+    }
+
+    private function cryotherapyPage(): void
+    {
+        $service = Service::where('slug', 'kryoterapie')->first();
+
+        if ($service === null) {
+            return;
+        }
+
+        $img = fn (string $id, string $name): ?int => $this->media(
+            "https://images.unsplash.com/{$id}?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
+            $name,
+        );
+
+        $this->customPage($service, 'Lokální kryoterapie', [
+            $this->brick('hero', [
+                'eyebrow' => 'Přístrojová terapie',
+                'title' => 'Lokální kryoterapie',
+                'features' => '<p>Lokální kryoterapie využívá cílenou aplikaci chladu k rychlé úlevě od bolesti, snížení zánětu a otoku. Je ideální po akutním zranění i při přetížení pohybového aparátu.</p>',
+                'buttons' => [
+                    ['text' => 'Zavolat: +420 604 791 215', 'url' => 'tel:+420604791215', 'icon' => 'phone', 'style' => 'primary'],
+                    ['text' => 'Více informací', 'url' => '#o-kryoterapii', 'icon' => 'arrow-down', 'style' => 'outline'],
+                ],
+            ]),
+            $this->brick('photo-text', [
+                'image' => $img('photo-1571019613454-1cb2f99b2d8b', 'kryoterapie-about'),
+                'image_position' => 'left',
+                'title' => 'O lokální kryoterapii',
+                'body' => '<p>Lokální kryoterapie je metoda, při které se na postižené místo aplikuje proud velmi chladného vzduchu. Krátkodobé prudké ochlazení tkáně vyvolá nejprve stažení a následně rozšíření cév, čímž se výrazně zlepší prokrvení a látková výměna v ošetřované oblasti.</p><p>Aplikace je rychlá, bezbolestná a bez vedlejších účinků. Používá se samostatně pro rychlou úlevu od bolesti nebo jako doplněk manuální terapie pro urychlení hojení.</p>',
+            ]),
+            $this->brick('feature-cards', [
+                'eyebrow' => 'Indikace',
+                'title' => 'Kdy je kryoterapie vhodná?',
+                'columns' => 4,
+                'background' => 'alt',
+                'cards' => [
+                    ['icon' => 'activity', 'title' => 'Bolesti svalů', 'description' => '<p>Úleva od bolesti a napětí svalů po zátěži nebo přetížení.</p>'],
+                    ['icon' => 'flame', 'title' => 'Záněty šlach a kloubů', 'description' => '<p>Snížení zánětu u tendinitid, entezopatií a bolestivých kloubů.</p>'],
+                    ['icon' => 'bandage', 'title' => 'Akutní zranění', 'description' => '<p>Rychlé ošetření podvrtnutí, naražení a otoků po úrazu.</p>'],
+                    ['icon' => 'bone', 'title' => 'Bolesti páteře', 'description' => '<p>Úleva od akutních bolestí zad a krční páteře.</p>'],
+                ],
+            ]),
+            $this->brick('quote-banner', [
+                'text' => 'Chlad, který uleví od bolesti a nastartuje hojení.',
+                'icon' => 'snowflake',
+            ]),
+            $this->brick('testimonials', [
+                'eyebrow' => 'Co říkají naši klienti',
+                'title' => 'Recenze klientů',
+                'subtitle' => 'Přečtěte si, jak lokální kryoterapie pomohla našim klientům.',
+                'background' => 'alt',
+                'items' => [
+                    ['quote' => 'Po naražení ramene mi kryoterapie během chvíle ulevila od bolesti a otok rychle ustoupil. Skvělé!', 'author' => 'Jakub M.', 'role' => 'Kryoterapie'],
+                    ['quote' => 'Trápila mě akutní bolest zad. Po několika aplikacích chladu jsem se cítila mnohem lépe. Doporučuji.', 'author' => 'Lucie H.', 'role' => 'Kryoterapie'],
+                    ['quote' => 'Jako sportovec využívám kryoterapii po náročných trénincích. Regenerace je znatelně rychlejší.', 'author' => 'Ondřej K.', 'role' => 'Kryoterapie'],
+                ],
+            ]),
+            $this->brick('callout', [
+                'icon' => 'ban',
+                'title' => 'Kdy kryoterapii nepoužíváme',
+                'body' => '<p>Kryoterapie není vhodná při přecitlivělosti na chlad, poruchách prokrvení, otevřených ranách v místě aplikace a některých onemocněních cév. V případě nejistoty nás neváhejte kontaktovat.</p>',
+                'note' => 'Objednávky přijímáme telefonicky na čísle +420 604 791 215.',
+                'buttons' => [
+                    ['text' => 'Objednat se telefonicky', 'url' => 'tel:+420604791215', 'icon' => 'phone', 'style' => 'soft'],
+                ],
+            ]),
+            $this->brick('cta-banner', [
+                'title' => 'Máte zájem o kryoterapii?',
+                'subtitle' => 'Tuto službu je možné objednat telefonicky. Zavolejte nám a rádi vám nalezneme vhodný termín.',
+                'buttons' => [
+                    ['text' => 'Zavolat: +420 604 791 215', 'url' => 'tel:+420604791215', 'icon' => 'phone', 'style' => 'white'],
+                ],
+            ]),
+        ]);
+    }
+
+    private function laserPage(): void
+    {
+        $service = Service::where('slug', 'laserova-terapie')->first();
+
+        if ($service === null) {
+            return;
+        }
+
+        $img = fn (string $id, string $name): ?int => $this->media(
+            "https://images.unsplash.com/{$id}?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
+            $name,
+        );
+
+        $this->customPage($service, 'Laserová terapie', [
+            $this->brick('hero', [
+                'eyebrow' => 'Přístrojová terapie',
+                'title' => 'Laserová terapie',
+                'features' => '<p>Vysokovýkonná laserová terapie využívá soustředěné světlo k hlubšímu prohřátí tkání. Stimuluje látkovou výměnu buněk, tlumí bolest i zánět a výrazně urychluje hojení.</p>',
+                'buttons' => [
+                    ['text' => 'Zavolat: +420 604 791 215', 'url' => 'tel:+420604791215', 'icon' => 'phone', 'style' => 'primary'],
+                    ['text' => 'Více informací', 'url' => '#o-laseroterapii', 'icon' => 'arrow-down', 'style' => 'outline'],
+                ],
+            ]),
+            $this->brick('photo-text', [
+                'image' => $img('photo-1591343395082-e120087004b4', 'laser-about'),
+                'image_position' => 'left',
+                'title' => 'O laseroterapii',
+                'body' => '<p>Vysokovýkonný laser proniká do hlubších vrstev tkáně, kde stimuluje buněčný metabolismus a podporuje regeneraci. Díky tomu urychluje hojení, tlumí bolest a snižuje zánět.</p><p>Aplikace je příjemná a bezbolestná – klient vnímá pouze mírné teplo. Laserová terapie se používá samostatně i jako doplněk manuální terapie a rehabilitace.</p>',
+            ]),
+            $this->brick('feature-cards', [
+                'eyebrow' => 'Indikace',
+                'title' => 'Pro koho je laser vhodný?',
+                'columns' => 2,
+                'background' => 'white',
+                'cards' => [
+                    ['icon' => 'activity', 'title' => 'Bolesti pohybového aparátu', 'description' => '<ul><li>Bolesti zad, kloubů a šíje</li><li>Sportovní zranění a přetížení</li><li>Svalové a šlachové obtíže</li><li>Artróza a degenerativní změny</li><li>Pooperační a poúrazové stavy</li></ul>'],
+                    ['icon' => 'plus', 'title' => 'Další indikace', 'description' => '<ul><li>Hojení ran a jizev</li><li>Záněty šlach a burz</li><li>Otoky a hematomy</li><li>Neuralgie a nervové obtíže</li><li>Chronické bolestivé stavy</li></ul>'],
+                ],
+                'buttons' => [
+                    ['text' => 'Objednat telefonicky', 'url' => 'tel:+420604791215', 'icon' => 'phone', 'style' => 'primary'],
+                ],
+            ]),
+            $this->brick('quote-banner', [
+                'text' => 'Světlo, které urychluje hojení a uleví od bolesti.',
+                'icon' => 'sun',
+            ]),
+            $this->brick('testimonials', [
+                'eyebrow' => 'Co říkají naši klienti',
+                'title' => 'Recenze klientů',
+                'subtitle' => 'Přečtěte si, jak laserová terapie pomohla našim klientům.',
+                'background' => 'alt',
+                'items' => [
+                    ['quote' => 'Laser mi pomohl s chronickým zánětem šlachy, se kterým jsem se trápil měsíce. Konečně bez bolesti!', 'author' => 'Petr S.', 'role' => 'Laserová terapie'],
+                    ['quote' => 'Po operaci kolena mi laserová terapie urychlila hojení jizvy a návrat k pohybu. Děkuji!', 'author' => 'Alena V.', 'role' => 'Laserová terapie'],
+                    ['quote' => 'Výborná úleva od bolesti zad. Aplikace je příjemná a výsledky se dostavily rychle.', 'author' => 'David N.', 'role' => 'Laserová terapie'],
+                ],
+            ]),
+            $this->brick('callout', [
+                'icon' => 'zap',
+                'title' => 'Kdy kombinujeme laser s kryoterapií',
+                'body' => '<p>U akutních stavů s otokem často začínáme kryoterapií pro rychlé zklidnění a následně přidáme laser pro urychlení hojení. U chronických obtíží naopak volíme laser samostatně. Nejvhodnější kombinaci vám doporučíme na konzultaci.</p>',
+                'note' => 'Objednávky přijímáme telefonicky na čísle +420 604 791 215.',
+                'buttons' => [
+                    ['text' => 'Objednat se telefonicky', 'url' => 'tel:+420604791215', 'icon' => 'phone', 'style' => 'soft'],
+                ],
+            ]),
+            $this->brick('cta-banner', [
+                'title' => 'Máte zájem o laseroterapii?',
+                'subtitle' => 'Tuto službu je možné objednat telefonicky. Zavolejte nám a rádi vám nalezneme vhodný termín.',
                 'buttons' => [
                     ['text' => 'Zavolat: +420 604 791 215', 'url' => 'tel:+420604791215', 'icon' => 'phone', 'style' => 'white'],
                 ],
