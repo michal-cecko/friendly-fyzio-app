@@ -10,11 +10,13 @@
         "awcodes/mason": "^3.0",
         "bezhansalleh/filament-shield": "^4.1",
         "endroid/qr-code": "^5.0",
+        "fakerphp/faker": "^1.23",
         "filament/filament": "^5.4",
         "guava/filament-icon-picker": "^4.0",
         "laravel/framework": "^13.0",
         "laravel/octane": "^2.15",
         "laravel/tinker": "^3.0",
+        "league/flysystem-aws-s3-v3": "^3.0",
         "leandrocfe/filament-apex-charts": "^5.0",
         "mallardduck/blade-lucide-icons": "^1.26",
         "marcelweidum/filament-passkeys": "^3.0",
@@ -30,7 +32,6 @@
         "symfony/mailgun-mailer": "^7.0"
     },
     "require-dev": {
-        "fakerphp/faker": "^1.23",
         "filament/blueprint": "^2.1",
         "laravel/boost": "^2.4",
         "laravel/pail": "^1.2.5",
