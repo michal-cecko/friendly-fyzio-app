@@ -24,6 +24,8 @@ class NavigationSeeder extends Seeder
             ['label' => 'Služby', 'url' => '/sluzby', 'children' => [
                 ['label' => 'Fyzioterapie', 'ref' => 'fyzioterapie'],
                 ['label' => 'Přístrojová terapie', 'ref' => 'pristrojova-terapie'],
+                ['label' => 'Laserová terapie', 'url' => '/sluzby/pristrojova-terapie/laserova-terapie'],
+                ['label' => 'Kryoterapie', 'url' => '/sluzby/pristrojova-terapie/kryoterapie'],
                 ['label' => 'Masáže a relaxace', 'ref' => 'relaxace'],
             ]],
             ['label' => 'Kurzy', 'url' => '/kurzy'],
@@ -36,7 +38,8 @@ class NavigationSeeder extends Seeder
                 ['label' => 'Fyzioterapie', 'ref' => 'fyzioterapie'],
                 ['label' => 'Pohybové kurzy', 'url' => '/kurzy'],
                 ['label' => 'Masáže a relaxace', 'ref' => 'relaxace'],
-                ['label' => 'Laser / kryoterapie', 'ref' => 'pristrojova-terapie'],
+                ['label' => 'Laserová terapie', 'url' => '/sluzby/pristrojova-terapie/laserova-terapie'],
+                ['label' => 'Kryoterapie', 'url' => '/sluzby/pristrojova-terapie/kryoterapie'],
                 ['label' => 'Workshopy', 'url' => '/kurzy'],
             ]],
             ['label' => 'Info', 'children' => [

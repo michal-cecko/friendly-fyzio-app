@@ -5,6 +5,7 @@ namespace App\Mason;
 use App\Mason\Bricks\CalloutBrick;
 use App\Mason\Bricks\CardsBrick;
 use App\Mason\Bricks\CategoryCardsBrick;
+use App\Mason\Bricks\ContactBrick;
 use App\Mason\Bricks\CtaBannerBrick;
 use App\Mason\Bricks\FeatureCardsBrick;
 use App\Mason\Bricks\HeroBrick;
@@ -63,6 +64,7 @@ class BrickRegistry
                 StepsBrick::class,
                 PricingBrick::class,
                 LastMinuteBrick::class,
+                ContactBrick::class,
             ]),
             BrickGroup::make('Sociální sítě')->bricks([
                 InstagramBrick::class,

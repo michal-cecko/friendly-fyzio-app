@@ -72,6 +72,7 @@ class DemoSeeder extends Seeder
         // + the existing_client_months recency window). Massages have no exam type.
         $physio = $categories->firstWhere('slug', 'fyzioterapie') ?? $categories->first();
         $massage = $categories->firstWhere('slug', 'relaxace') ?? $categories->first();
+        $apparatus = $categories->firstWhere('slug', 'pristrojova-terapie') ?? $categories->first();
 
         $serviceDefs = [
             ['category' => $physio, 'name' => 'Vstupní vyšetření pohybového aparátu', 'exam_type' => ExamType::Vstupni, 'duration' => 90, 'price' => 1200, 'visibility' => ServiceVisibility::Public],
@@ -85,6 +86,9 @@ class DemoSeeder extends Seeder
             ['category' => $massage, 'name' => 'Těhotenské masáže', 'duration' => 60, 'price' => 1000],
             ['category' => $massage, 'name' => 'Masáže miminek a dětí', 'duration' => 30, 'price' => 500],
             ['category' => $massage, 'name' => 'Bylinná napářka', 'duration' => 60, 'price' => 1200, 'visibility' => ServiceVisibility::Hidden],
+            // Přístrojová terapie: phone-booked marketing pages (Hidden — kept out of the wizard).
+            ['category' => $apparatus, 'name' => 'Laserová terapie', 'duration' => 30, 'price' => 500, 'visibility' => ServiceVisibility::Hidden],
+            ['category' => $apparatus, 'name' => 'Kryoterapie', 'duration' => 15, 'price' => 490, 'visibility' => ServiceVisibility::Hidden],
         ];
 
         $services = collect($serviceDefs)->map(function (array $def) use ($rooms) {
