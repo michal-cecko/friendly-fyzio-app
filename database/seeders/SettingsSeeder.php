@@ -76,6 +76,61 @@ class SettingsSeeder extends Seeder
             'sort' => 0,
         ]);
 
+        $this->upsert([
+            'key' => 'reviews.enabled',
+            'value' => '0',
+            'type' => SettingValueType::Boolean,
+            'label' => 'Automatické žádosti o recenzi',
+            'group' => 'Recenze',
+            'description' => 'Zapíná automatické e-maily s prosbou o recenzi po skončení kurzů a workshopů.',
+            'config' => null,
+            'sort' => 0,
+        ]);
+
+        $this->upsert([
+            'key' => 'reviews.days_after',
+            'value' => '2',
+            'type' => SettingValueType::Integer,
+            'label' => 'Odeslat po (dnech)',
+            'group' => 'Recenze',
+            'description' => 'Kolik dní po skončení akce se má automaticky odeslat žádost o recenzi.',
+            'config' => ['min' => 0, 'step' => 1, 'suffix' => 'dní'],
+            'sort' => 1,
+        ]);
+
+        $this->upsert([
+            'key' => 'reviews.questionnaire_url',
+            'value' => '',
+            'type' => SettingValueType::Text,
+            'label' => 'Výchozí odkaz na dotazník',
+            'group' => 'Recenze',
+            'description' => 'Použije se, pokud kurz či workshop nemá vlastní odkaz na dotazník.',
+            'config' => null,
+            'sort' => 2,
+        ]);
+
+        $this->upsert([
+            'key' => 'reviews.email_subject',
+            'value' => 'Jak jste byli spokojeni?',
+            'type' => SettingValueType::Text,
+            'label' => 'Předmět e-mailu',
+            'group' => 'Recenze',
+            'description' => null,
+            'config' => null,
+            'sort' => 3,
+        ]);
+
+        $this->upsert([
+            'key' => 'reviews.email_intro',
+            'value' => 'Budeme moc rádi, když nám k akci zanecháte krátkou recenzi. Zabere to jen chvilku.',
+            'type' => SettingValueType::Text,
+            'label' => 'Úvodní text e-mailu',
+            'group' => 'Recenze',
+            'description' => null,
+            'config' => null,
+            'sort' => 4,
+        ]);
+
         foreach ([
             ['web.contact_email', 'info@friendlyfyzio.cz', 'Kontaktní e-mail'],
             ['web.contact_phone', '+420 604 793 255', 'Telefon'],

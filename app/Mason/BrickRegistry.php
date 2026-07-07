@@ -12,9 +12,12 @@ use App\Mason\Bricks\HeroBrick;
 use App\Mason\Bricks\InstagramBrick;
 use App\Mason\Bricks\LastMinuteBrick;
 use App\Mason\Bricks\NewsletterBrick;
+use App\Mason\Bricks\PageIntroBrick;
 use App\Mason\Bricks\PhotoTextBrick;
+use App\Mason\Bricks\PriceListBrick;
 use App\Mason\Bricks\PricingBrick;
 use App\Mason\Bricks\QuoteBannerBrick;
+use App\Mason\Bricks\ReviewsBrick;
 use App\Mason\Bricks\RichTextBrick;
 use App\Mason\Bricks\SectionHeadingBrick;
 use App\Mason\Bricks\ServiceCardsBrick;
@@ -43,6 +46,7 @@ class BrickRegistry
                 HeroBrick::class,
             ]),
             BrickGroup::make('Text')->bricks([
+                PageIntroBrick::class,
                 SectionHeadingBrick::class,
                 RichTextBrick::class,
                 PhotoTextBrick::class,
@@ -58,11 +62,13 @@ class BrickRegistry
             BrickGroup::make('Sekce')->bricks([
                 StatsBrick::class,
                 TestimonialsBrick::class,
+                ReviewsBrick::class,
                 CtaBannerBrick::class,
                 QuoteBannerBrick::class,
                 CalloutBrick::class,
                 StepsBrick::class,
                 PricingBrick::class,
+                PriceListBrick::class,
                 LastMinuteBrick::class,
                 ContactBrick::class,
             ]),

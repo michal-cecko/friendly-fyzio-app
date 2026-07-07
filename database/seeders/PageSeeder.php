@@ -15,6 +15,7 @@ class PageSeeder extends Seeder
         $this->homepage();
         $this->aboutPage();
         $this->contactPage();
+        $this->pricingPage();
 
         foreach ([
             'sluzby' => 'Služby',
@@ -217,6 +218,74 @@ class PageSeeder extends Seeder
                         'subtitle' => 'Máte dotaz nebo se chcete objednat? Napište nám, rádi vám odpovíme.',
                         'form_title' => 'Napište nám',
                         'form_button_text' => 'Odeslat zprávu',
+                    ]),
+                ],
+            ],
+        );
+    }
+
+    private function pricingPage(): void
+    {
+        Page::updateOrCreate(
+            ['system_key' => 'cenik'],
+            [
+                'slug' => 'cenik',
+                'title' => 'Ceník',
+                'is_system' => true,
+                'published_at' => now(),
+                'meta_title' => 'Ceník – FriendlyFyzio',
+                'meta_description' => 'Přehled cen fyzioterapie, masáží, přístrojové terapie i ostatních služeb a poplatků. Ceny jsou uvedeny včetně DPH.',
+                'content' => [
+                    $this->brick('page-intro', [
+                        'title' => 'Ceník služeb',
+                        'subtitle' => 'Přehled cen našich služeb. Ceny jsou uvedeny včetně DPH.',
+                    ]),
+                    $this->brick('price-list', [
+                        'categories' => [
+                            [
+                                'label' => 'Fyzioterapie a kurzy',
+                                'heading' => 'Fyzioterapie',
+                                'rows' => [
+                                    ['name' => 'Vstupní vyšetření', 'note' => '90 min', 'price' => '1 750 Kč'],
+                                    ['name' => 'Kontrolní / návazná vyšetření', 'note' => '60 min', 'price' => '1 250 Kč'],
+                                    ['name' => 'Terapie pánevního dna (vstupní)', 'note' => '90 min', 'price' => '1 300 Kč'],
+                                    ['name' => 'Kontrolní terapie pánevního dna', 'note' => '60 min', 'price' => '850 Kč'],
+                                    ['name' => 'Těhotenská fyzioterapie', 'note' => '90 min', 'price' => '1 300 Kč'],
+                                    ['name' => 'Pohybové kurzy', 'note' => 'dle rozvrhu', 'price' => 'od 200 Kč / lekce'],
+                                ],
+                            ],
+                            [
+                                'label' => 'Masáže',
+                                'heading' => 'Masáže a relaxace',
+                                'rows' => [
+                                    ['name' => 'Masáž obličeje, šíje a krku', 'note' => '60 min', 'price' => '1 000 Kč'],
+                                    ['name' => 'Těhotenská masáž', 'note' => '60 min', 'price' => '1 000 Kč'],
+                                    ['name' => 'Těhotenská masáž', 'note' => '90 min', 'price' => '1 400 Kč'],
+                                    ['name' => 'Masáž miminek a dětí do 5 let', 'note' => '30 min', 'price' => '500 Kč'],
+                                    ['name' => 'Bylinná napářka s relaxací', 'note' => 'cca 60 min', 'price' => '1 200 Kč'],
+                                ],
+                            ],
+                            [
+                                'label' => 'Laser / kryo',
+                                'heading' => 'Laser / kryo / přístrojová terapie',
+                                'rows' => [
+                                    ['name' => 'Laserová terapie', 'note' => '30 min', 'price' => '500 Kč'],
+                                    ['name' => 'Kryoterapie', 'note' => '15 min', 'price' => '490 Kč'],
+                                ],
+                            ],
+                            [
+                                'label' => 'Ostatní',
+                                'heading' => 'Ostatní služby a poplatky',
+                                'rows' => [
+                                    ['name' => 'Skupinové cvičení', 'note' => 'dle rozvrhu', 'price' => '190 Kč'],
+                                    ['name' => 'Náhradní termín / pozdní příchod', 'note' => '', 'price' => 'od 500 Kč'],
+                                    ['name' => 'Zrušení termínu méně než 24 h předem', 'note' => '', 'price' => '50 % ceny'],
+                                    ['name' => 'Storno poplatek (neomluvená absence)', 'note' => '', 'price' => '100 % ceny'],
+                                    ['name' => 'Cestovné (návštěva u klienta)', 'note' => 'dle vzdálenosti', 'price' => '200 Kč'],
+                                ],
+                            ],
+                        ],
+                        'note' => '<p>Ceny jsou orientační a mohou se lišit podle individuálních potřeb. Platit lze v hotovosti i kartou na místě.</p>',
                     ]),
                 ],
             ],

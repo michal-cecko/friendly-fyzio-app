@@ -3,6 +3,7 @@
 namespace App\Filament\Clusters\LekceWorkshopy\Resources\OneTimeLessonBookings\Tables;
 
 use App\Enums\PaymentStatus;
+use App\Filament\Support\Actions\SendReviewRequestAction;
 use App\Filament\Support\Tables\TimestampColumns;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -50,6 +51,7 @@ class OneTimeLessonBookingsTable
             ->recordActions([
                 ViewAction::make(),
                 EditAction::make(),
+                SendReviewRequestAction::make(),
                 DeleteAction::make(),
             ])
             ->toolbarActions([

@@ -19,6 +19,7 @@ class Course extends Model
         'name',
         'slug',
         'description',
+        'questionnaire_url',
         'max_substitutions',
         'early_cancel_hours',
         'published_at',
@@ -66,5 +67,10 @@ class Course extends Model
     public function invitations()
     {
         return $this->morphMany(Invitation::class, 'inviteable');
+    }
+
+    public function reviews()
+    {
+        return $this->morphMany(Review::class, 'reviewable');
     }
 }
