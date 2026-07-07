@@ -2,13 +2,9 @@
 
 namespace App\Notifications;
 
-use App\Models\CourseSeries;
-use App\Models\OneTimeLesson;
-use App\Models\Reservation;
-use App\Models\Workshop;
+use App\Models\ReviewRequest;
 use App\Support\Settings;
 use Illuminate\Bus\Queueable;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -17,8 +13,7 @@ class ReviewRequestNotification extends Notification
     use Queueable;
 
     public function __construct(
-        public Model $reviewable,
-        public string $questionnaireUrl,
+        public ReviewRequest $reviewRequest,
         public ?string $customIntro = null,
     ) {}
 
@@ -36,28 +31,13 @@ class ReviewRequestNotification extends Notification
         $intro = filled($this->customIntro)
             ? $this->customIntro
             : Settings::get('reviews.email_intro', 'Budeme moc rádi, když nám zanecháte krátkou recenzi.');
-        $label = $this->reviewableLabel();
 
         return (new MailMessage)
             ->subject($subject)
             ->greeting('Dobrý den,')
-            ->when($label, fn (MailMessage $mail): MailMessage => $mail->line("děkujeme, že jste byli součástí „{$label}“."))
+            ->line('rádi bychom vás poprosili o recenzi na '.$this->reviewRequest->targetLabel().'.')
             ->line($intro)
-            ->action('Vyplnit dotazník', $this->questionnaireUrl)
-            ->line('Děkujeme, že jste si našli čas.');
-    }
-
-    /**
-     * Human-readable name of the reviewed event, used in the e-mail body.
-     */
-    private function reviewableLabel(): ?string
-    {
-        return match (true) {
-            $this->reviewable instanceof Workshop => $this->reviewable->name,
-            $this->reviewable instanceof CourseSeries => $this->reviewable->course?->name,
-            $this->reviewable instanceof OneTimeLesson => $this->reviewable->course?->name,
-            $this->reviewable instanceof Reservation => $this->reviewable->service?->name,
-            default => null,
-        };
+            ->action('Napsat recenzi', $this->reviewRequest->formUrl())
+            ->line('Zabere to jen chvilku, děkujeme!');
     }
 }

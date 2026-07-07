@@ -14,8 +14,12 @@ return new class extends Migration
             $table->string('reviewable_type');
             $table->uuid('reviewable_id');
             $table->string('channel')->default('automatic');
-            $table->string('questionnaire_url')->nullable();
+            // Magic-link token: the only way to reach the public review form.
+            $table->string('token')->unique();
             $table->timestamp('sent_at')->nullable();
+            $table->timestamp('completed_at')->nullable();
+            // The review that was ultimately submitted through this request, if any.
+            $table->foreignUuid('review_id')->nullable()->constrained('reviews')->nullOnDelete();
             $table->timestamps();
 
             // Non-unique: manual re-sends are allowed. Automatic dedup is an

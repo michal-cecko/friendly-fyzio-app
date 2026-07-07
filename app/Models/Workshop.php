@@ -19,7 +19,6 @@ class Workshop extends Model
         'name',
         'slug',
         'description',
-        'questionnaire_url',
         'workshop_date',
         'start_time',
         'end_time',

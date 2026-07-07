@@ -19,7 +19,6 @@ class Course extends Model
         'name',
         'slug',
         'description',
-        'questionnaire_url',
         'max_substitutions',
         'early_cancel_hours',
         'published_at',

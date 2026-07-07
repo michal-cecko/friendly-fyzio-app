@@ -7,6 +7,7 @@ use App\Enums\SettingValueType;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
 use App\Models\CourseSeries;
+use App\Models\ReviewRequest;
 use App\Models\Setting;
 use App\Models\User;
 use App\Models\Workshop;
@@ -20,7 +21,7 @@ class SendReviewRequestsCommandTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function enableReviews(?string $globalUrl = null): void
+    private function enableReviews(): void
     {
         Setting::updateOrCreate(['key' => 'reviews.enabled'], [
             'value' => '1',
@@ -28,23 +29,12 @@ class SendReviewRequestsCommandTest extends TestCase
             'label' => 'Recenze',
             'group' => 'Recenze',
         ]);
-
-        if ($globalUrl !== null) {
-            Setting::updateOrCreate(['key' => 'reviews.questionnaire_url'], [
-                'value' => $globalUrl,
-                'type' => SettingValueType::Text,
-                'label' => 'URL',
-                'group' => 'Recenze',
-            ]);
-        }
     }
 
-    private function seriesEndingInWindow(?string $questionnaireUrl = 'https://forms.test/kurz'): CourseSeries
+    private function seriesEndingInWindow(): CourseSeries
     {
-        $course = Course::factory()->create(['questionnaire_url' => $questionnaireUrl]);
-
         return CourseSeries::factory()->create([
-            'course_id' => $course->getKey(),
+            'course_id' => Course::factory()->create()->getKey(),
             'end_date' => now()->subDays(2)->toDateString(),
         ]);
     }
@@ -63,6 +53,7 @@ class SendReviewRequestsCommandTest extends TestCase
         $this->artisan('reviews:send-requests')->assertSuccessful();
 
         $this->assertDatabaseCount('review_requests', 2);
+        $this->assertNotNull(ReviewRequest::where('user_id', $clientA->getKey())->first()?->token);
         Notification::assertSentTo($clientA, ReviewRequestNotification::class);
         Notification::assertSentTo($clientB, ReviewRequestNotification::class);
     }
@@ -72,10 +63,7 @@ class SendReviewRequestsCommandTest extends TestCase
         Notification::fake();
         $this->enableReviews();
 
-        $workshop = Workshop::factory()->create([
-            'workshop_date' => now()->subDays(2)->toDateString(),
-            'questionnaire_url' => 'https://forms.test/workshop',
-        ]);
+        $workshop = Workshop::factory()->create(['workshop_date' => now()->subDays(2)->toDateString()]);
         $client = User::factory()->customer()->create();
         WorkshopRegistration::factory()->create(['workshop_id' => $workshop->getKey(), 'client_id' => $client->getKey()]);
 
@@ -86,7 +74,6 @@ class SendReviewRequestsCommandTest extends TestCase
             'reviewable_type' => 'workshop',
             'reviewable_id' => $workshop->getKey(),
             'channel' => ReviewRequestChannel::Automatic->value,
-            'questionnaire_url' => 'https://forms.test/workshop',
         ]);
         Notification::assertSentTo($client, ReviewRequestNotification::class);
     }
@@ -129,11 +116,11 @@ class SendReviewRequestsCommandTest extends TestCase
         $this->enableReviews();
 
         $old = CourseSeries::factory()->create([
-            'course_id' => Course::factory()->create(['questionnaire_url' => 'https://forms.test/kurz'])->getKey(),
+            'course_id' => Course::factory()->create()->getKey(),
             'end_date' => now()->subDays(20)->toDateString(),
         ]);
         $future = CourseSeries::factory()->create([
-            'course_id' => Course::factory()->create(['questionnaire_url' => 'https://forms.test/kurz'])->getKey(),
+            'course_id' => Course::factory()->create()->getKey(),
             'end_date' => now()->addDays(5)->toDateString(),
         ]);
 
@@ -148,38 +135,5 @@ class SendReviewRequestsCommandTest extends TestCase
 
         $this->assertDatabaseCount('review_requests', 0);
         Notification::assertNothingSent();
-    }
-
-    public function test_skips_event_without_any_questionnaire_url(): void
-    {
-        Notification::fake();
-        $this->enableReviews(); // no global URL configured
-
-        $series = $this->seriesEndingInWindow(null); // course has no URL either
-        $client = User::factory()->customer()->create();
-        CourseEnrollment::factory()->create(['series_id' => $series->getKey(), 'client_id' => $client->getKey()]);
-
-        $this->artisan('reviews:send-requests')->assertSuccessful();
-
-        $this->assertDatabaseCount('review_requests', 0);
-        Notification::assertNothingSent();
-    }
-
-    public function test_falls_back_to_global_questionnaire_url(): void
-    {
-        Notification::fake();
-        $this->enableReviews('https://global.test/dotaznik');
-
-        $series = $this->seriesEndingInWindow(null); // no per-course URL
-        $client = User::factory()->customer()->create();
-        CourseEnrollment::factory()->create(['series_id' => $series->getKey(), 'client_id' => $client->getKey()]);
-
-        $this->artisan('reviews:send-requests')->assertSuccessful();
-
-        $this->assertDatabaseHas('review_requests', [
-            'user_id' => $client->getKey(),
-            'questionnaire_url' => 'https://global.test/dotaznik',
-        ]);
-        Notification::assertSentTo($client, ReviewRequestNotification::class);
     }
 }

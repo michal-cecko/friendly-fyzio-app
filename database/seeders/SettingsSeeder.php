@@ -99,17 +99,6 @@ class SettingsSeeder extends Seeder
         ]);
 
         $this->upsert([
-            'key' => 'reviews.questionnaire_url',
-            'value' => '',
-            'type' => SettingValueType::Text,
-            'label' => 'Výchozí odkaz na dotazník',
-            'group' => 'Recenze',
-            'description' => 'Použije se, pokud kurz či workshop nemá vlastní odkaz na dotazník.',
-            'config' => null,
-            'sort' => 2,
-        ]);
-
-        $this->upsert([
             'key' => 'reviews.email_subject',
             'value' => 'Jak jste byli spokojeni?',
             'type' => SettingValueType::Text,

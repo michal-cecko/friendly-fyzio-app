@@ -28,9 +28,13 @@ class Icon
 
     /**
      * Render an icon as inline SVG. Returns an empty string when the name is
-     * blank or fails to resolve, so it is always safe to echo in Blade.
+     * blank or fails to resolve, so it is always safe to echo in Blade. Pass
+     * $attributes (e.g. ['style' => 'width:16px']) for contexts like email where
+     * utility classes don't apply.
+     *
+     * @param  array<string, string>  $attributes
      */
-    public static function render(?string $icon, string $class = ''): HtmlString
+    public static function render(?string $icon, string $class = '', array $attributes = []): HtmlString
     {
         $name = self::name($icon);
 
@@ -38,6 +42,6 @@ class Icon
             return new HtmlString('');
         }
 
-        return new HtmlString(rescue(fn (): string => svg($name, $class)->toHtml(), '', false));
+        return new HtmlString(rescue(fn (): string => svg($name, $class, $attributes)->toHtml(), '', false));
     }
 }
