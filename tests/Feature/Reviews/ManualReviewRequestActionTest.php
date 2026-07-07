@@ -42,7 +42,7 @@ class ManualReviewRequestActionTest extends TestCase
         Livewire::test(ListReservations::class)
             ->callAction(
                 TestAction::make('sendReviewRequest')->table($reservation),
-                data: ['questionnaire_url' => 'https://forms.test/rezervace'],
+                data: ['message' => 'Děkujeme za návštěvu!'],
             )
             ->assertHasNoActionErrors();
 
@@ -51,7 +51,6 @@ class ManualReviewRequestActionTest extends TestCase
             'reviewable_type' => 'reservation',
             'reviewable_id' => $reservation->getKey(),
             'channel' => 'manual',
-            'questionnaire_url' => 'https://forms.test/rezervace',
         ]);
         Notification::assertSentTo($reservation->client, ReviewRequestNotification::class);
     }
@@ -68,7 +67,7 @@ class ManualReviewRequestActionTest extends TestCase
         Livewire::test(ListOneTimeLessonBookings::class)
             ->callAction(
                 TestAction::make('sendReviewRequest')->table($booking),
-                data: ['questionnaire_url' => 'https://forms.test/lekce'],
+                data: [],
             )
             ->assertHasNoActionErrors();
 

@@ -7,6 +7,7 @@ use App\Models\ReviewRequest;
 use App\Models\User;
 use App\Models\Workshop;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
 
 /**
  * @extends Factory<ReviewRequest>
@@ -18,20 +19,25 @@ class ReviewRequestFactory extends Factory
      */
     public function definition(): array
     {
-        $workshop = Workshop::factory();
-
         return [
             'user_id' => User::factory(),
             'reviewable_type' => (new Workshop)->getMorphClass(),
-            'reviewable_id' => $workshop,
+            'reviewable_id' => Workshop::factory(),
             'channel' => ReviewRequestChannel::Automatic,
-            'questionnaire_url' => fake()->url(),
+            'token' => Str::random(48),
             'sent_at' => now(),
+            'completed_at' => null,
+            'review_id' => null,
         ];
     }
 
     public function manual(): static
     {
         return $this->state(['channel' => ReviewRequestChannel::Manual]);
+    }
+
+    public function completed(): static
+    {
+        return $this->state(['completed_at' => now()]);
     }
 }

@@ -48,6 +48,11 @@ Route::get('/o-nas/{therapist:slug}', [TherapistController::class, 'show'])
 // with a service or therapist prefilled. State is query-string bound throughout.
 Route::get('/rezervace', fn () => view('reservation.index'))->name('reservation.wizard');
 
+// Public review form, reached only via the magic-link token sent in a review
+// request e-mail. Two path segments, so it never collides with the /{slug} catch-all.
+Route::get('/recenze/{token}', fn (string $token) => view('reviews.form', ['token' => $token]))
+    ->name('reviews.form');
+
 // Public login (web guard). Also the wizard's login fallback / forgotten-password entry.
 Route::get('/prihlaseni', fn () => view('auth.login'))->name('public.login');
 

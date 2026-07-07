@@ -1,0 +1,36 @@
+<?php
+
+namespace App\Filament\Clusters\Obsah\Resources\EmailTemplates\Pages;
+
+use App\Filament\Clusters\Obsah\Resources\EmailTemplates\EmailTemplateResource;
+use App\Support\EmailTemplateRenderer;
+use Filament\Actions\Action;
+use Filament\Resources\Pages\EditRecord;
+use Filament\Support\Enums\Width;
+use Filament\Support\Icons\Heroicon;
+use Illuminate\Contracts\View\View;
+
+class EditEmailTemplates extends EditRecord
+{
+    protected static string $resource = EmailTemplateResource::class;
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('preview')
+                ->label('Náhled')
+                ->icon(Heroicon::OutlinedEye)
+                ->color('gray')
+                ->modalHeading('Náhled e-mailu')
+                ->modalSubmitAction(false)
+                ->modalCancelActionLabel('Zavřít')
+                ->modalWidth(Width::FiveExtraLarge)
+                ->modalContent(fn (): View => view('filament.email-template-preview', [
+                    'html' => EmailTemplateRenderer::render(
+                        $this->getRecord(),
+                        $this->getRecord()->templateKey()?->sampleContext() ?? [],
+                    ),
+                ])),
+        ];
+    }
+}
