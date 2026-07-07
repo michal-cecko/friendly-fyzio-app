@@ -108,4 +108,9 @@ class Service extends Model implements HasPublicPage
     {
         return $this->morphMany(Invitation::class, 'inviteable');
     }
+
+    public function reviews()
+    {
+        return $this->morphMany(Review::class, 'reviewable');
+    }
 }

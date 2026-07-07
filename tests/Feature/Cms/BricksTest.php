@@ -429,4 +429,77 @@ class BricksTest extends TestCase
             ->assertSee('wire:submit="subscribe"', false)
             ->assertSee('Odebírat');
     }
+
+    public function test_page_intro_brick_renders_title_and_subtitle(): void
+    {
+        Page::factory()->system('home')->create([
+            'slug' => '/',
+            'content' => [[
+                'type' => 'masonBrick',
+                'attrs' => ['id' => 'page-intro', 'config' => [
+                    'title' => 'Ceník služeb',
+                    'subtitle' => 'Přehled cen našich služeb.',
+                ]],
+            ]],
+        ]);
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('Ceník služeb')
+            ->assertSee('Přehled cen našich služeb.');
+    }
+
+    public function test_price_list_brick_renders_tabs_with_service_and_manual_rows(): void
+    {
+        $category = ServiceCategory::factory()->create(['name' => 'Fyzioterapie', 'type' => ServiceType::Physiotherapy]);
+        // A non-public service is still shown when explicitly referenced by a row.
+        $service = Service::factory()->for($category, 'category')->create([
+            'name' => 'Vstupní vyšetření',
+            'duration_minutes' => 90,
+            'price' => 1750,
+            'visibility' => ServiceVisibility::Hidden,
+            'published_at' => null,
+        ]);
+
+        Page::factory()->system('home')->create([
+            'slug' => '/',
+            'content' => [[
+                'type' => 'masonBrick',
+                'attrs' => ['id' => 'price-list', 'config' => [
+                    'title' => 'Ceník',
+                    'categories' => [
+                        [
+                            'label' => 'Fyzioterapie a kurzy',
+                            // Heading left blank falls back to the tab label.
+                            'rows' => [
+                                ['service_id' => $service->id],
+                            ],
+                        ],
+                        [
+                            'label' => 'Ostatní',
+                            'heading' => 'Ostatní služby a poplatky',
+                            'rows' => [
+                                ['name' => 'Storno poplatek', 'note' => '', 'price' => '100 % ceny'],
+                            ],
+                        ],
+                    ],
+                    'note' => '<p>Ceny jsou orientační.</p>',
+                ]],
+            ]],
+        ]);
+
+        $this->get('/')
+            ->assertOk()
+            // Tab labels; the second category proves multiple tabs render.
+            ->assertSee('Fyzioterapie a kurzy')
+            ->assertSee('Ostatní služby a poplatky')
+            // Service-linked row pulls live name, duration and formatted price.
+            ->assertSee('Vstupní vyšetření')
+            ->assertSee('90 min')
+            ->assertSee('1 750 Kč')
+            // Manual free-text row (non-reservable fee).
+            ->assertSee('Storno poplatek')
+            ->assertSee('100 % ceny')
+            ->assertSee('Ceny jsou orientační.');
+    }
 }

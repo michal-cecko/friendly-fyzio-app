@@ -6,13 +6,14 @@ use App\Enums\PaymentStatus;
 use App\Enums\ReservationStatus;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Actions\DeleteReservationAction;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Schemas\ReservationForm;
+use App\Filament\Support\Actions\SendReviewRequestAction;
 use App\Filament\Support\Tables\TimestampColumns;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteBulkAction;
-use Filament\Actions\ViewAction;
 use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
@@ -65,6 +66,7 @@ class ReservationsTable
                 ViewAction::make(),
                 EditAction::make()
                     ->schema(ReservationForm::components()),
+                SendReviewRequestAction::make(),
                 DeleteReservationAction::make(),
             ])
             ->toolbarActions([

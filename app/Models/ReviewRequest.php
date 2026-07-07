@@ -2,39 +2,37 @@
 
 namespace App\Models;
 
+use App\Enums\ReviewRequestChannel;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
-class Review extends Model
+class ReviewRequest extends Model
 {
     use HasFactory, HasUuids;
 
     protected $fillable = [
-        'client_id',
+        'user_id',
         'reviewable_type',
         'reviewable_id',
-        'rating',
-        'content',
-        'author_name',
-        'author_role',
-        'photo',
-        'visible',
+        'channel',
+        'questionnaire_url',
+        'sent_at',
     ];
 
     protected function casts(): array
     {
         return [
-            'visible' => 'boolean',
-            'rating' => 'integer',
+            'channel' => ReviewRequestChannel::class,
+            'sent_at' => 'datetime',
         ];
     }
 
-    public function client(): BelongsTo
+    public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'client_id');
+        return $this->belongsTo(User::class);
     }
 
     public function reviewable(): MorphTo

@@ -47,6 +47,12 @@ class CourseForm
                     ->label('Popis')
                     ->rows(4)
                     ->columnSpanFull(),
+                TextInput::make('questionnaire_url')
+                    ->label('Odkaz na dotazník recenzí')
+                    ->helperText('Nechte prázdné pro použití výchozího odkazu z Nastavení → Recenze.')
+                    ->url()
+                    ->maxLength(255)
+                    ->columnSpanFull(),
                 TextInput::make('max_substitutions')
                     ->label('Max. náhrad')
                     ->integer()

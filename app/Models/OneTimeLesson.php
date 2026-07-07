@@ -56,4 +56,9 @@ class OneTimeLesson extends Model
     {
         return $this->morphMany(WaitlistEntry::class, 'waitlistable');
     }
+
+    public function reviews()
+    {
+        return $this->morphMany(Review::class, 'reviewable');
+    }
 }
