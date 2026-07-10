@@ -11,6 +11,7 @@ use App\Models\ServiceCategory;
 use App\Models\TherapistProfile;
 use App\Models\User;
 use App\Support\Reservations\CreateReservationFromWizard;
+use App\Support\Reservations\DeactivatedClientException;
 use App\Support\Reservations\ReservationBookingData;
 use App\Support\Reservations\ReservationSlots;
 use App\Support\Reservations\Slot;
@@ -730,6 +731,8 @@ class ReservationWizard extends Component
 
             $this->confirmationId = $reservation->id;
             $this->submitError = null;
+        } catch (DeactivatedClientException $exception) {
+            $this->submitError = $exception->getMessage();
         } catch (SlotTakenException $exception) {
             $this->submitError = $exception->getMessage();
             $this->startTime = null;

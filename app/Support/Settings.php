@@ -88,4 +88,72 @@ class Settings
     {
         return (int) self::get('reservation.lead_time_hours', 0);
     }
+
+    /**
+     * How many hours before the visit the customer confirmation-request e-mail goes out.
+     */
+    public static function confirmationHours(): int
+    {
+        return (int) self::get('reservation.confirmation_hours', 48);
+    }
+
+    /**
+     * How many hours before the visit a confirmed reservation gets its reminder e-mail.
+     */
+    public static function reminderHours(): int
+    {
+        return (int) self::get('reservation.reminder_hours', 24);
+    }
+
+    /**
+     * How many hours before the visit an unconfirmed reservation is automatically cancelled.
+     */
+    public static function autoCancelHours(): int
+    {
+        return (int) self::get('reservation.auto_cancel_hours', 24);
+    }
+
+    /**
+     * Clinic-wide free-cancellation cutoff (hours before the visit) for customer
+     * self-cancellation, used when a service has no CancellationRule of its own.
+     */
+    public static function cancelBeforeHours(): int
+    {
+        return (int) self::get('reservation.cancel_before_hours', 24);
+    }
+
+    /**
+     * Storno fee as a percentage of the service price, charged when a customer
+     * cancels inside the storno window and chooses to pay rather than provide a
+     * doctor's note.
+     */
+    public static function stornoFeePercent(): int
+    {
+        return (int) self::get('reservation.storno_fee_percent', 50);
+    }
+
+    /**
+     * IBAN the clinic collects QR-Platba payments to (e.g. „CZ…"). Empty until configured.
+     */
+    public static function iban(): string
+    {
+        return (string) (self::get('payments.iban') ?? '');
+    }
+
+    /**
+     * Human-readable payee name shown alongside payment instructions.
+     */
+    public static function paymentRecipient(): string
+    {
+        return (string) (self::get('payments.recipient_name') ?? '');
+    }
+
+    /**
+     * The QR/payment note (message for the recipient) template. May contain
+     * {{ tokens }} resolved from the payable + payment (see App\Support\Payments\PaymentNote).
+     */
+    public static function qrMessage(): string
+    {
+        return (string) (self::get('payments.qr_message') ?? '');
+    }
 }

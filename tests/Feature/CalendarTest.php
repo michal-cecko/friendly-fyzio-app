@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\EmailTemplateKey;
 use App\Enums\ReservationStatus;
 use App\Filament\Clusters\Provoz\Resources\Reservations\ReservationResource;
 use App\Filament\Widgets\ReservationCalendar;
@@ -11,7 +12,7 @@ use App\Models\Room;
 use App\Models\Service;
 use App\Models\TherapistProfile;
 use App\Models\User;
-use App\Notifications\ReservationNotification;
+use App\Notifications\ReservationTemplateNotification;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -200,7 +201,9 @@ class CalendarTest extends TestCase
         $this->assertSame(ReservationStatus::Cancelled, $a->status);
         $this->assertSame('Terapeut nemocný', $a->cancellation_reason);
         $this->assertSame(ReservationStatus::Confirmed, $b->refresh()->status);
-        Notification::assertSentTo($a->client, ReservationNotification::class);
+        Notification::assertSentTo($a->client, ReservationTemplateNotification::class, function (ReservationTemplateNotification $n): bool {
+            return $n->key === EmailTemplateKey::ReservationCancelled;
+        });
     }
 
     public function test_restore_selected_action_restores_trashed_reservations(): void

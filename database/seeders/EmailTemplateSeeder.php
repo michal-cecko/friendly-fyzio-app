@@ -30,21 +30,21 @@ class EmailTemplateSeeder extends Seeder
         return match ($key) {
             EmailTemplateKey::ReservationPending => [
                 $this->brick('email-greeting', ['text' => '<p>Děkujeme za vaši rezervaci, {{ jmeno }},</p>']),
-                $this->brick('email-paragraph', ['text' => '<p>Vaše rezervace zatím čeká na potvrzení od terapeuta. Jakmile ji terapeut potvrdí, dáme vám vědět.</p>']),
-                $this->brick('email-callout', ['variant' => 'info', 'icon' => 'clock', 'text' => '<p>Čekáme na potvrzení od terapeuta. Obvykle to trvá do několika hodin.</p>']),
+                $this->brick('email-paragraph', ['text' => '<p>Prosíme o potvrzení vaší rezervace. Bez potvrzení bude termín automaticky uvolněn.</p>']),
+                $this->brick('email-callout', ['variant' => 'info', 'icon' => 'clock', 'text' => '<p>Potvrďte prosím svou účast kliknutím na tlačítko níže.</p>']),
                 $this->detailsBrick('default', 'Detaily rezervace', $this->reservationRows()),
-                $this->buttonsBrick('Zobrazit detail rezervace', 'Zrušit rezervaci'),
-                $this->brick('email-note', ['text' => '<p>Pokud terapeut rezervaci nepotvrdí, budeme vás kontaktovat s návrhem alternativního termínu.</p>']),
+                $this->manageButtonBrick('Potvrdit rezervaci'),
+                $this->brick('email-note', ['text' => '<p>Pokud jste rezervaci nevytvořili, tento e-mail prosím ignorujte.</p>']),
                 $this->replyCallout(),
             ],
             EmailTemplateKey::ReservationConfirmed => [
                 $this->brick('email-greeting', ['text' => '<p>Skvělá zpráva, {{ jmeno }}!</p>']),
-                $this->brick('email-callout', ['variant' => 'success', 'icon' => 'circle-check', 'text' => '<p>Rezervace byla potvrzena terapeutem.</p>']),
-                $this->brick('email-paragraph', ['text' => '<p>Vaše rezervace byla právě potvrzena terapeutem. Těšíme se na vás!</p>']),
+                $this->brick('email-callout', ['variant' => 'success', 'icon' => 'circle-check', 'text' => '<p>Vaše rezervace je potvrzena.</p>']),
+                $this->brick('email-paragraph', ['text' => '<p>Děkujeme za potvrzení účasti. Těšíme se na vás!</p>']),
                 $this->detailsBrick('default', 'Detaily rezervace', $this->reservationRows()),
-                $this->buttonsBrick('Spravovat rezervaci', 'Zrušit rezervaci'),
+                $this->manageButtonBrick('Spravovat rezervaci'),
                 $this->brick('email-note', ['text' => '<p>Storno zdarma je možné nejpozději 24 hodin před termínem návštěvy. Pozdější zrušení je zpoplatněno dle storno podmínek.</p>']),
-                $this->brick('email-callout', ['variant' => 'info', 'icon' => 'bell', 'text' => '<p>Připomínku termínu vám pošleme 48 hodin před návštěvou.</p>']),
+                $this->brick('email-callout', ['variant' => 'info', 'icon' => 'bell', 'text' => '<p>Připomínku termínu vám pošleme 24 hodin před návštěvou.</p>']),
                 $this->replyCallout(),
             ],
             EmailTemplateKey::ReservationReminder => [
@@ -59,8 +59,8 @@ class EmailTemplateSeeder extends Seeder
                         'Dostavte se prosím 10 minut před termínem',
                     ],
                 ]),
-                $this->buttonsBrick('Potvrdit účast', 'Spravovat rezervaci'),
-                $this->brick('email-note', ['text' => '<p>Potvrďte svou účast nejpozději 24 hodin před termínem, jinak bude rezervace automaticky zrušena. Zrušení potvrzeného termínu je zpoplatněno dle storno podmínek.</p>']),
+                $this->manageButtonBrick('Spravovat rezervaci'),
+                $this->brick('email-note', ['text' => '<p>Pokud se na termín nemůžete dostavit, dejte nám prosím co nejdříve vědět.</p>']),
                 $this->replyCallout(),
             ],
             EmailTemplateKey::ReservationCancelled => [
@@ -68,7 +68,7 @@ class EmailTemplateSeeder extends Seeder
                 $this->brick('email-paragraph', ['text' => '<p>Vaše rezervace byla úspěšně zrušena. Níže naleznete přehled zrušené návštěvy.</p>']),
                 $this->detailsBrick('danger', 'Zrušená návštěva', $this->cancelledRows()),
                 $this->brick('email-paragraph', ['text' => '<p>Mrzí nás, že jste museli zrušit svou návštěvu. Pokud si budete přát, můžete si kdykoliv zarezervovat nový termín.</p>']),
-                $this->singleButtonBrick('Zarezervovat nový termín'),
+                $this->rebookButtonBrick(),
                 $this->replyCallout(),
             ],
             EmailTemplateKey::ReservationChanged => [
@@ -86,7 +86,7 @@ class EmailTemplateSeeder extends Seeder
                     ['E-mail:', '{{ email }}'],
                     ['Datum a čas:', '{{ termin }}'],
                 ]),
-                $this->buttonsBrick('Potvrdit účast', 'Spravovat rezervaci'),
+                $this->manageButtonBrick('Spravovat rezervaci'),
                 $this->replyCallout(),
             ],
             EmailTemplateKey::ReservationAutoCancelled => [
@@ -94,7 +94,22 @@ class EmailTemplateSeeder extends Seeder
                 $this->brick('email-paragraph', ['text' => '<p>Vaše rezervace byla automaticky zrušena, protože jste do 24 hodin před termínem nepotvrdili svou účast.</p>']),
                 $this->detailsBrick('danger', 'Zrušený termín', $this->cancelledRows()),
                 $this->brick('email-paragraph', ['text' => '<p>Mrzí nás, že váš termín propadl. Pokud máte stále zájem o návštěvu, můžete si níže rezervovat nový termín.</p>']),
-                $this->singleButtonBrick('Zarezervovat nový termín'),
+                $this->rebookButtonBrick(),
+                $this->replyCallout(),
+            ],
+            EmailTemplateKey::ReservationStornoPayment => [
+                $this->brick('email-greeting', ['text' => '<p>Dobrý den, {{ jmeno }},</p>']),
+                $this->brick('email-paragraph', ['text' => '<p>Vaši rezervaci jsme zrušili. Protože ke zrušení došlo v době kratší, než umožňuje bezplatná storno lhůta, je účtován storno poplatek.</p>']),
+                $this->detailsBrick('muted', 'Stornovaná návštěva', $this->stornoRows()),
+                $this->brick('email-payment', ['title' => 'Údaje k platbě', 'show_qr' => true]),
+                $this->brick('email-note', ['text' => '<p>Platbu prosím uhraďte co nejdříve – naskenováním QR kódu ve své bankovní aplikaci, nebo bankovním převodem na uvedený účet s variabilním symbolem.</p>']),
+                $this->replyCallout(),
+            ],
+            EmailTemplateKey::ReservationDoctorNote => [
+                $this->brick('email-greeting', ['text' => '<p>Dobrý den, {{ jmeno }},</p>']),
+                $this->brick('email-paragraph', ['text' => '<p>Vaši rezervaci jsme zrušili. Uvedli jste, že důvodem byla nemoc a doložíte potvrzení od lékaře – v takovém případě vám storno poplatek účtovat nebudeme.</p>']),
+                $this->detailsBrick('muted', 'Stornovaná návštěva', $this->stornoRows()),
+                $this->brick('email-callout', ['variant' => 'info', 'icon' => 'file-text', 'text' => '<p>Potvrzení od lékaře nám prosím doručte co nejdříve. Do jeho doručení evidujeme storno jako neuhrazené.</p>']),
                 $this->replyCallout(),
             ],
         };
@@ -127,6 +142,20 @@ class EmailTemplateSeeder extends Seeder
     }
 
     /**
+     * Reservation summary rows for the storno e-mails (no reason/place row).
+     *
+     * @return array<int, array{0: string, 1: string}>
+     */
+    private function stornoRows(): array
+    {
+        return [
+            ['Služba:', '{{ sluzba }}'],
+            ['Terapeut:', '{{ terapeut }}'],
+            ['Datum a čas:', '{{ termin }}'],
+        ];
+    }
+
+    /**
      * @param  array<int, array{0: string, 1: string}>  $rows
      * @return array{type: string, attrs: array{id: string, config: array<string, mixed>}}
      */
@@ -140,26 +169,30 @@ class EmailTemplateSeeder extends Seeder
     }
 
     /**
+     * The single "manage reservation" button pointing at the signed magic link
+     * ({{ odkaz }}) — the one page hosting confirm / cancel / storno actions.
+     *
      * @return array{type: string, attrs: array{id: string, config: array<string, mixed>}}
      */
-    private function buttonsBrick(string $primary, string $secondary): array
+    private function manageButtonBrick(string $text): array
     {
         return $this->brick('email-buttons', [
             'buttons' => [
-                ['text' => $primary, 'style' => 'primary', 'link_type' => 'custom', 'url' => '{{ odkaz }}'],
-                ['text' => $secondary, 'style' => 'outline', 'link_type' => 'custom', 'url' => '{{ odkaz }}'],
+                ['text' => $text, 'style' => 'primary', 'link_type' => 'custom', 'url' => '{{ odkaz }}'],
             ],
         ]);
     }
 
     /**
+     * A "book a new appointment" button pointing at the public reservation wizard.
+     *
      * @return array{type: string, attrs: array{id: string, config: array<string, mixed>}}
      */
-    private function singleButtonBrick(string $primary): array
+    private function rebookButtonBrick(): array
     {
         return $this->brick('email-buttons', [
             'buttons' => [
-                ['text' => $primary, 'style' => 'primary', 'link_type' => 'custom', 'url' => '{{ odkaz }}'],
+                ['text' => 'Zarezervovat nový termín', 'style' => 'primary', 'link_type' => 'internal', 'link_ref' => 'route:reservation.wizard'],
             ],
         ]);
     }

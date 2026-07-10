@@ -3,6 +3,7 @@
 use App\Http\Controllers\InstagramOAuthController;
 use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\PageController;
+use App\Http\Controllers\ReservationManageController;
 use App\Http\Controllers\ServiceCategoryController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\TherapistController;
@@ -47,6 +48,17 @@ Route::get('/o-nas/{therapist:slug}', [TherapistController::class, 'show'])
 // (?sluzba= service slug, ?terapeut= therapist id, ?kategorie= category slug) to start
 // with a service or therapist prefilled. State is query-string bound throughout.
 Route::get('/rezervace', fn () => view('reservation.index'))->name('reservation.wizard');
+
+// Customer self-service for a reservation via one signed magic link: the passwordless
+// "manage" page hosting confirm, free cancel, and the late-cancel storno decision. GET
+// only shows the page; POST performs the chosen action. Both share one URI so a single
+// signature validates them.
+Route::get('/rezervace/spravovat/{reservation}', [ReservationManageController::class, 'show'])
+    ->middleware('signed')
+    ->name('reservation.manage');
+Route::post('/rezervace/spravovat/{reservation}', [ReservationManageController::class, 'submit'])
+    ->middleware('signed')
+    ->name('reservation.manage.submit');
 
 // Public review form, reached only via the magic-link token sent in a review
 // request e-mail. Two path segments, so it never collides with the /{slug} catch-all.

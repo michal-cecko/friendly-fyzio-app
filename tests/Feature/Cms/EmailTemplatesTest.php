@@ -90,6 +90,57 @@ class EmailTemplatesTest extends TestCase
         $this->assertStringNotContainsString('{{', $html);
     }
 
+    public function test_lifecycle_emails_carry_a_single_manage_button(): void
+    {
+        $this->seed(SettingsSeeder::class);
+        $this->seed(EmailTemplateSeeder::class);
+
+        $expected = [
+            EmailTemplateKey::ReservationPending->value => 'Potvrdit rezervaci',
+            EmailTemplateKey::ReservationConfirmed->value => 'Spravovat rezervaci',
+            EmailTemplateKey::ReservationReminder->value => 'Spravovat rezervaci',
+        ];
+
+        foreach ($expected as $keyValue => $buttonLabel) {
+            $key = EmailTemplateKey::from($keyValue);
+            $html = EmailTemplateRenderer::render(EmailTemplate::forKey($key), $key->sampleContext());
+
+            $this->assertStringContainsString($buttonLabel, $html, "{$key->value} is missing its manage button");
+            // The confirm/cancel split collapsed into one link; no separate cancel button remains.
+            $this->assertStringNotContainsString('Zrušit rezervaci', $html);
+            $this->assertStringNotContainsString('{{', $html);
+        }
+    }
+
+    public function test_reminder_template_is_a_pure_reminder_for_confirmed_visits(): void
+    {
+        $this->seed(SettingsSeeder::class);
+        $this->seed(EmailTemplateSeeder::class);
+
+        $key = EmailTemplateKey::ReservationReminder;
+        $html = EmailTemplateRenderer::render(EmailTemplate::forKey($key), $key->sampleContext());
+
+        // Reminder goes to already-confirmed visits, so it must not nudge to confirm or warn of auto-cancel.
+        $this->assertStringNotContainsString('Potvrdit účast', $html);
+        $this->assertStringNotContainsString('automaticky zrušena', $html);
+        $this->assertStringContainsString('Spravovat rezervaci', $html);
+        $this->assertStringNotContainsString('{{', $html);
+    }
+
+    public function test_confirmed_template_reflects_customer_confirmation(): void
+    {
+        $this->seed(SettingsSeeder::class);
+        $this->seed(EmailTemplateSeeder::class);
+
+        $key = EmailTemplateKey::ReservationConfirmed;
+        $html = EmailTemplateRenderer::render(EmailTemplate::forKey($key), $key->sampleContext());
+
+        $this->assertStringContainsString('Vaše rezervace je potvrzena', $html);
+        // The customer confirms now — not the therapist.
+        $this->assertStringNotContainsString('terapeutem', $html);
+        $this->assertStringNotContainsString('{{', $html);
+    }
+
     public function test_change_template_renders_both_original_and_new_boxes(): void
     {
         $this->seed(SettingsSeeder::class);
@@ -106,6 +157,21 @@ class EmailTemplatesTest extends TestCase
         $this->assertStringContainsString('jana@example.cz', $html);
         // Success box border colour on the new-termín box.
         $this->assertStringContainsString('#22C55E', $html);
+        $this->assertStringNotContainsString('{{', $html);
+    }
+
+    public function test_storno_payment_template_renders_the_payment_box(): void
+    {
+        $this->seed(SettingsSeeder::class);
+        $this->seed(EmailTemplateSeeder::class);
+
+        $key = EmailTemplateKey::ReservationStornoPayment;
+        $html = EmailTemplateRenderer::render(EmailTemplate::forKey($key), $key->sampleContext());
+
+        $this->assertStringContainsString('Částka', $html);
+        $this->assertStringContainsString('Variabilní symbol', $html);
+        $this->assertStringContainsString('CZ65 0800 0000 1920 0014 5399', $html);
+        $this->assertStringContainsString('600 Kč', $html);
         $this->assertStringNotContainsString('{{', $html);
     }
 
