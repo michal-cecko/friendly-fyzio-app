@@ -4,6 +4,7 @@ namespace App\Filament\Clusters\Provoz\Resources\Reservations\Tables;
 
 use App\Enums\PaymentStatus;
 use App\Enums\ReservationStatus;
+use App\Filament\Clusters\Provoz\Resources\Reservations\Actions\CancelReservationAction;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Actions\DeleteReservationAction;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Schemas\ReservationForm;
 use App\Filament\Support\Actions\SendReviewRequestAction;
@@ -67,6 +68,7 @@ class ReservationsTable
                 EditAction::make()
                     ->schema(ReservationForm::components()),
                 SendReviewRequestAction::make(),
+                CancelReservationAction::make(),
                 DeleteReservationAction::make(),
             ])
             ->toolbarActions([

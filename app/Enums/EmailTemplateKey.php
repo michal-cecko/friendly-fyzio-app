@@ -15,6 +15,8 @@ enum EmailTemplateKey: string
     case ReservationCancelled = 'reservation_cancelled';
     case ReservationChanged = 'reservation_changed';
     case ReservationAutoCancelled = 'reservation_auto_cancelled';
+    case ReservationStornoPayment = 'reservation_storno_payment';
+    case ReservationDoctorNote = 'reservation_doctor_note';
 
     public function label(): string
     {
@@ -25,6 +27,8 @@ enum EmailTemplateKey: string
             self::ReservationCancelled => 'Zrušení rezervace',
             self::ReservationChanged => 'Změna rezervace',
             self::ReservationAutoCancelled => 'Automatické zrušení rezervace',
+            self::ReservationStornoPayment => 'Storno – platba poplatku',
+            self::ReservationDoctorNote => 'Storno – potvrzení od lékaře',
         };
     }
 
@@ -37,6 +41,8 @@ enum EmailTemplateKey: string
             self::ReservationCancelled => 'Vaše rezervace byla zrušena',
             self::ReservationChanged => 'Vaše rezervace byla změněna',
             self::ReservationAutoCancelled => 'Vaše rezervace byla automaticky zrušena',
+            self::ReservationStornoPayment => 'Storno poplatek k úhradě',
+            self::ReservationDoctorNote => 'Doručte prosím potvrzení od lékaře',
         };
     }
 
@@ -75,6 +81,17 @@ enum EmailTemplateKey: string
                 'puvodni_sluzba' => 'Původní služba',
                 'puvodni_terapeut' => 'Původní terapeut',
                 'puvodni_termin' => 'Původní datum a čas',
+            ],
+            self::ReservationStornoPayment => [
+                ...$base,
+                'castka' => 'Výše storno poplatku',
+                'iban' => 'Číslo účtu (IBAN)',
+                'vs' => 'Variabilní symbol',
+                'qr' => 'QR platba (obrázek)',
+            ],
+            self::ReservationDoctorNote => [
+                ...$base,
+                'misto' => 'Místo / adresa',
             ],
         };
     }
@@ -123,6 +140,21 @@ enum EmailTemplateKey: string
                 'puvodni_sluzba' => 'Sportovní masáž (60 min)',
                 'puvodni_terapeut' => 'Bc. Jan Dvořák',
                 'puvodni_termin' => '20. dubna 2026, 11:00',
+            ],
+            self::ReservationStornoPayment => [
+                ...$base,
+                'sluzba' => 'Lymfodrenáž (60 min)',
+                'termin' => '18. dubna 2026, 09:00',
+                'castka' => '600',
+                'iban' => 'CZ65 0800 0000 1920 0014 5399',
+                'vs' => '1042',
+                'qr' => '#',
+            ],
+            self::ReservationDoctorNote => [
+                ...$base,
+                'sluzba' => 'Lymfodrenáž (60 min)',
+                'termin' => '18. dubna 2026, 09:00',
+                'misto' => 'Vodičkova 20, Praha',
             ],
         };
     }

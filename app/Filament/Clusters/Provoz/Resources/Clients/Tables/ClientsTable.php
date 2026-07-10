@@ -2,6 +2,7 @@
 
 namespace App\Filament\Clusters\Provoz\Resources\Clients\Tables;
 
+use App\Filament\Support\Actions\ReactivateUserAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -14,6 +15,7 @@ use Filament\Actions\ViewAction;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -51,6 +53,12 @@ class ClientsTable
                     ->label('Ověřen email?')
                     ->boolean()
                     ->toggleable(),
+                TextColumn::make('deactivated_at')
+                    ->label('Stav')
+                    ->badge()
+                    ->color('danger')
+                    ->formatStateUsing(fn (): string => 'Deaktivováno')
+                    ->placeholder('Aktivní'),
 
                 // Additional columns — hidden by default, admins can toggle them on.
                 TextColumn::make('clientProfile.date_of_birth')
@@ -107,11 +115,22 @@ class ClientsTable
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                TernaryFilter::make('deactivated')
+                    ->label('Deaktivované')
+                    ->placeholder('Vše')
+                    ->trueLabel('Jen deaktivované')
+                    ->falseLabel('Jen aktivní')
+                    ->queries(
+                        true: fn (Builder $query): Builder => $query->whereNotNull('deactivated_at'),
+                        false: fn (Builder $query): Builder => $query->whereNull('deactivated_at'),
+                        blank: fn (Builder $query): Builder => $query,
+                    ),
                 TrashedFilter::make(),
             ])
             ->recordActions([
                 ViewAction::make(),
                 EditAction::make(),
+                ReactivateUserAction::make(),
                 Impersonate::make(),
                 DeleteAction::make(),
                 RestoreAction::make(),

@@ -31,6 +31,7 @@ class User extends Authenticatable implements FilamentUser, HasPasskeys, MustVer
         'password',
         'role',
         'newsletter_opted_in_at',
+        'deactivated_at',
     ];
 
     protected $hidden = [
@@ -43,6 +44,7 @@ class User extends Authenticatable implements FilamentUser, HasPasskeys, MustVer
         return [
             'email_verified_at' => 'datetime',
             'newsletter_opted_in_at' => 'datetime',
+            'deactivated_at' => 'datetime',
             'password' => 'hashed',
             'role' => UserRole::class,
         ];
@@ -74,18 +76,27 @@ class User extends Authenticatable implements FilamentUser, HasPasskeys, MustVer
     }
 
     /**
+     * Whether the account has been fully deactivated (e.g. a late-cancel refusal to
+     * pay the storno fee). Deactivated customers can neither sign in nor book online.
+     */
+    public function isDeactivated(): bool
+    {
+        return $this->deactivated_at !== null;
+    }
+
+    /**
      * Panel access by account type:
      * - admin panel: staff only (administrators and therapists).
-     * - client panel: any authenticated user; staff who land here are redirected
-     *   to the admin panel (see App\Http\Middleware\RedirectStaffToAdmin), but
-     *   allowing them keeps the single shared login working.
+     * - client panel: any authenticated, non-deactivated user; staff who land here are
+     *   redirected to the admin panel (see App\Http\Middleware\RedirectStaffToAdmin),
+     *   but allowing them keeps the single shared login working.
      * The account type also drives the matching Shield role (see booted()).
      */
     public function canAccessPanel(Panel $panel): bool
     {
         return match ($panel->getId()) {
             'admin' => $this->isStaff(),
-            'client' => in_array($this->role, [UserRole::Admin, UserRole::Therapist, UserRole::Customer], true),
+            'client' => ! $this->isDeactivated() && in_array($this->role, [UserRole::Admin, UserRole::Therapist, UserRole::Customer], true),
             default => false,
         };
     }

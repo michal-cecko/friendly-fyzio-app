@@ -96,12 +96,20 @@ class CreateReservationFromWizard
     protected function resolveClient(ReservationBookingData $data): array
     {
         if ($data->client !== null) {
+            if ($data->client->isDeactivated()) {
+                throw new DeactivatedClientException;
+            }
+
             return [$data->client, false];
         }
 
         $existing = User::query()->where('email', $data->email)->first();
 
         if ($existing !== null) {
+            if ($existing->isDeactivated()) {
+                throw new DeactivatedClientException;
+            }
+
             if ($data->newsletter && $existing->newsletter_opted_in_at === null) {
                 $existing->update(['newsletter_opted_in_at' => now()]);
             }

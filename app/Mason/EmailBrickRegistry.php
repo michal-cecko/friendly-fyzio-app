@@ -8,6 +8,7 @@ use App\Mason\Bricks\Email\EmailChecklistBrick;
 use App\Mason\Bricks\Email\EmailGreetingBrick;
 use App\Mason\Bricks\Email\EmailNoteBrick;
 use App\Mason\Bricks\Email\EmailParagraphBrick;
+use App\Mason\Bricks\Email\EmailPaymentBrick;
 use App\Mason\Bricks\Email\EmailReservationDetailsBrick;
 use Awcodes\Mason\Brick;
 use Awcodes\Mason\BrickGroup;
@@ -34,6 +35,9 @@ class EmailBrickRegistry
             BrickGroup::make('Rezervace')->bricks([
                 EmailReservationDetailsBrick::class,
                 EmailChecklistBrick::class,
+            ]),
+            BrickGroup::make('Platby')->bricks([
+                EmailPaymentBrick::class,
             ]),
             BrickGroup::make('Akce')->bricks([
                 EmailButtonsBrick::class,

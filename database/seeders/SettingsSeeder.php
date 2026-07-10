@@ -66,6 +66,94 @@ class SettingsSeeder extends Seeder
         ]);
 
         $this->upsert([
+            'key' => 'reservation.confirmation_hours',
+            'value' => '48',
+            'type' => SettingValueType::Integer,
+            'label' => 'Potvrzení účasti (hodiny předem)',
+            'group' => 'Rezervace',
+            'description' => 'Kolik hodin před termínem se klientovi odešle e-mail s žádostí o potvrzení účasti.',
+            'config' => ['min' => 1, 'step' => 1, 'suffix' => 'h'],
+            'sort' => 5,
+        ]);
+
+        $this->upsert([
+            'key' => 'reservation.reminder_hours',
+            'value' => '24',
+            'type' => SettingValueType::Integer,
+            'label' => 'Připomínka termínu (hodiny předem)',
+            'group' => 'Rezervace',
+            'description' => 'Kolik hodin před termínem se potvrzené rezervaci odešle připomínka návštěvy.',
+            'config' => ['min' => 1, 'step' => 1, 'suffix' => 'h'],
+            'sort' => 6,
+        ]);
+
+        $this->upsert([
+            'key' => 'reservation.auto_cancel_hours',
+            'value' => '24',
+            'type' => SettingValueType::Integer,
+            'label' => 'Automatické zrušení (hodiny předem)',
+            'group' => 'Rezervace',
+            'description' => 'Pokud klient nepotvrdí účast do tohoto počtu hodin před termínem, rezervace se automaticky zruší.',
+            'config' => ['min' => 1, 'step' => 1, 'suffix' => 'h'],
+            'sort' => 7,
+        ]);
+
+        $this->upsert([
+            'key' => 'reservation.cancel_before_hours',
+            'value' => '24',
+            'type' => SettingValueType::Integer,
+            'label' => 'Bezplatné zrušení (hodiny předem)',
+            'group' => 'Rezervace',
+            'description' => 'Do kolika hodin před termínem může klient rezervaci bezplatně zrušit online. Konkrétní služba může mít vlastní storno pravidlo.',
+            'config' => ['min' => 1, 'step' => 1, 'suffix' => 'h'],
+            'sort' => 8,
+        ]);
+
+        $this->upsert([
+            'key' => 'reservation.storno_fee_percent',
+            'value' => '50',
+            'type' => SettingValueType::Integer,
+            'label' => 'Storno poplatek (% z ceny)',
+            'group' => 'Rezervace',
+            'description' => 'Výše storno poplatku jako procento z ceny služby, pokud klient ruší v storno okně a zvolí úhradu místo potvrzení od lékaře.',
+            'config' => ['min' => 0, 'max' => 100, 'step' => 5, 'suffix' => '%'],
+            'sort' => 9,
+        ]);
+
+        $this->upsert([
+            'key' => 'payments.iban',
+            'value' => '',
+            'type' => SettingValueType::Text,
+            'label' => 'IBAN',
+            'group' => 'Platby',
+            'description' => 'Číslo účtu ve formátu IBAN (např. CZ…), na které se generují QR platby.',
+            'config' => null,
+            'sort' => 0,
+        ]);
+
+        $this->upsert([
+            'key' => 'payments.recipient_name',
+            'value' => 'FriendlyFyzio s.r.o.',
+            'type' => SettingValueType::Text,
+            'label' => 'Název příjemce',
+            'group' => 'Platby',
+            'description' => 'Jméno příjemce platby zobrazené u platebních údajů.',
+            'config' => null,
+            'sort' => 1,
+        ]);
+
+        $this->upsert([
+            'key' => 'payments.qr_message',
+            'value' => 'Storno {{ sluzba }}, VS {{ vs }}',
+            'type' => SettingValueType::Text,
+            'label' => 'Zpráva pro příjemce',
+            'group' => 'Platby',
+            'description' => 'Text zprávy pro příjemce v QR platbě. Proměnné: {{ jmeno }}, {{ sluzba }}, {{ terapeut }}, {{ termin }}, {{ vs }}, {{ castka }}.',
+            'config' => null,
+            'sort' => 2,
+        ]);
+
+        $this->upsert([
             'key' => 'newsletter.mailerlite_group_id',
             'value' => '',
             'type' => SettingValueType::Text,

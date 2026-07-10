@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets;
 
 use App\Enums\DayOfWeek;
+use App\Enums\EmailTemplateKey;
 use App\Enums\ReservationStatus;
 use App\Enums\UserRole;
 use App\Enums\WeekType;
@@ -17,6 +18,7 @@ use App\Models\TherapistProfile;
 use App\Models\TherapistWeeklySchedule;
 use App\Models\User;
 use App\Notifications\ReservationNotification;
+use App\Notifications\ReservationTemplateNotification;
 use App\Support\CalendarAvailability;
 use App\Support\Settings;
 use Filament\Actions\Action;
@@ -343,7 +345,7 @@ class ReservationCalendar extends FullCalendarWidget
                     ]);
 
                     if ($data['notify_client'] ?? false) {
-                        $reservation->client?->notify(new ReservationNotification($reservation, 'cancelled'));
+                        $reservation->client?->notify(new ReservationTemplateNotification($reservation, EmailTemplateKey::ReservationCancelled));
                     }
                 });
 
