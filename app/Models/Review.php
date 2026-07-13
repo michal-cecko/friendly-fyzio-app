@@ -19,8 +19,6 @@ class Review extends Model
         'rating',
         'content',
         'author_name',
-        'author_role',
-        'photo',
         'visible',
     ];
 

@@ -9,9 +9,9 @@
     $service = $reservation->service?->name;
     $therapist = $reservation->therapist?->user?->name;
 
-    $cancellable = in_array($status, [ReservationStatus::Pending, ReservationStatus::Confirmed], true);
-    $withinWindow = $cancellable && $reservation->withinStornoWindow();
     $fee = $reservation->stornoFee();
+    // Storno choice applies once confirmed or inside the window (and a fee applies).
+    $needsStorno = $reservation->requiresStornoDecision();
 
     // Cancelled sub-state → which result panel to show.
     $awaitingDoctorNote = $reservation->doctor_note_requested_at !== null;
@@ -90,18 +90,14 @@
                         </form>
                     @endif
 
-                    @if($withinWindow)
+                    @if($needsStorno)
                         <div class="mt-7 rounded-xl border border-amber-200 bg-amber-50 p-5 text-left">
                             <div class="flex items-center gap-2 font-heading text-base font-semibold text-neutral-900">
                                 {!! \App\Support\Icon::render('triangle-alert', 'h-5 w-5 text-amber-600') !!}
-                                <span>Zrušení blízkého termínu</span>
+                                <span>Zrušení rezervace</span>
                             </div>
                             <p class="mt-2 text-sm leading-relaxed text-neutral-600">
-                                @if($fee > 0)
-                                    Termín je již blízko. Za pozdní zrušení je účtován storno poplatek <strong class="text-neutral-900">{{ number_format($fee, 0, ',', ' ') }} Kč</strong>. Vyberte prosím jednu z možností:
-                                @else
-                                    Termín je již blízko. Vyberte prosím jednu z možností:
-                                @endif
+                                Zrušení této rezervace je zpoplatněno storno poplatkem <strong class="text-neutral-900">{{ number_format($fee, 0, ',', ' ') }} Kč</strong>. Vyberte prosím jednu z možností:
                             </p>
 
                             <div class="mt-4 space-y-3">

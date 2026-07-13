@@ -2,17 +2,21 @@
 
 namespace App\Filament\Clusters\Obsah\Resources\Reviews\Schemas;
 
+use App\Enums\UserRole;
 use App\Models\Course;
 use App\Models\Service;
+use App\Models\User;
 use App\Models\Workshop;
 use Filament\Forms\Components\MorphToSelect;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
-use RalphJSmit\Filament\MediaLibrary\Filament\Forms\Components\MediaPicker;
+use Illuminate\Database\Eloquent\Builder;
 
 class ReviewForm
 {
@@ -36,13 +40,31 @@ class ReviewForm
                             ->default(5)
                             ->required()
                             ->columnSpanFull(),
+                        Select::make('client_id')
+                            ->label('Klient (nepovinné)')
+                            ->helperText('Propojí recenzi s existujícím klientem.')
+                            ->relationship(
+                                'client',
+                                'name',
+                                fn (Builder $query) => $query->where('role', UserRole::Customer),
+                            )
+                            ->searchable()
+                            ->preload()
+                            ->live()
+                            ->afterStateUpdated(function (Set $set, ?string $state): void {
+                                if ($state === null) {
+                                    return;
+                                }
+
+                                $name = User::find($state)?->name;
+
+                                if (filled($name)) {
+                                    $set('author_name', $name);
+                                }
+                            }),
                         TextInput::make('author_name')
                             ->label('Jméno autora')
                             ->required()
-                            ->maxLength(255),
-                        TextInput::make('author_role')
-                            ->label('Role / popisek')
-                            ->helperText('Např. „účastnice kurzu“ nebo „klientka“.')
                             ->maxLength(255),
                         Textarea::make('content')
                             ->label('Text recenze')
@@ -64,9 +86,6 @@ class ReviewForm
                             ])
                             ->searchable()
                             ->columnSpanFull(),
-                        MediaPicker::make('photo')
-                            ->label('Fotka autora (nepovinné)')
-                            ->acceptedFileTypes(['image/*']),
                         Toggle::make('visible')
                             ->label('Zveřejnit na webu')
                             ->default(true),

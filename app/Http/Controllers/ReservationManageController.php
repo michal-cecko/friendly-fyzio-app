@@ -20,8 +20,11 @@ use Illuminate\View\View;
 /**
  * The single passwordless "manage reservation" page, reached via one signed magic
  * link ({@see Reservation::manageUrl()}). It hosts every customer action for a
- * reservation — confirm, free cancel (outside the storno window), and the late-cancel
- * storno decision (pay / doctor's note / deactivate) inside the window.
+ * reservation. A free self-cancel is available only while the reservation is still
+ * Pending AND outside the storno window; once it is Confirmed or inside the window
+ * (and carries a fee), cancelling instead requires the storno decision — pay / doctor's
+ * note / deactivate ({@see Reservation::requiresStornoDecision()}).
+ * The link itself expires at the visit start, so no action is possible afterwards.
  *
  * GET only renders the state-appropriate page; opening the link — including by e-mail
  * scanners — never mutates. Each action is an explicit POST, then a redirect back to
@@ -69,12 +72,15 @@ class ReservationManageController extends Controller
     }
 
     /**
-     * Free cancellation — only outside the storno window. Inside the window the
-     * customer must instead resolve the storno decision (pay / doctor / deactivate).
+     * Free cancellation — allowed for an active reservation that does not (yet) require
+     * the storno decision: still Pending and outside the storno window, or carrying no
+     * fee. Otherwise the customer must resolve the storno decision instead.
      */
     private function cancel(Reservation $reservation): void
     {
-        if (! $this->isCancellable($reservation) || $reservation->withinStornoWindow()) {
+        $isActive = in_array($reservation->status, [ReservationStatus::Pending, ReservationStatus::Confirmed], true);
+
+        if (! $isActive || $reservation->requiresStornoDecision()) {
             return;
         }
 
@@ -87,12 +93,12 @@ class ReservationManageController extends Controller
     }
 
     /**
-     * Late cancel, "I won't come but I'll pay": cancel, raise an unpaid storno Payment
+     * Storno cancel, "I won't come but I'll pay": cancel, raise an unpaid storno Payment
      * (Czech QR-Platba), and e-mail the customer the payment instructions + QR.
      */
     private function pay(Reservation $reservation): void
     {
-        if (! $this->isWithinStornoWindow($reservation)) {
+        if (! $reservation->requiresStornoDecision()) {
             return;
         }
 
@@ -114,12 +120,12 @@ class ReservationManageController extends Controller
     }
 
     /**
-     * Late cancel, "I was ill and will supply a doctor's note": cancel, waive the fee
+     * Storno cancel, "I was ill and will supply a doctor's note": cancel, waive the fee
      * pending review, flag the reservation, notify staff, and acknowledge the customer.
      */
     private function doctorNote(Reservation $reservation): void
     {
-        if (! $this->isWithinStornoWindow($reservation)) {
+        if (! $reservation->requiresStornoDecision()) {
             return;
         }
 
@@ -135,12 +141,12 @@ class ReservationManageController extends Controller
     }
 
     /**
-     * Late cancel, "I won't come and won't pay": cancel and fully deactivate the
+     * Storno cancel, "I won't come and won't pay": cancel and fully deactivate the
      * account (blocks login + online booking).
      */
     private function deactivate(Reservation $reservation): void
     {
-        if (! $this->isWithinStornoWindow($reservation)) {
+        if (! $reservation->requiresStornoDecision()) {
             return;
         }
 
@@ -168,15 +174,5 @@ class ReservationManageController extends Controller
             ->icon('heroicon-o-document-text')
             ->warning()
             ->sendToDatabase($admins);
-    }
-
-    private function isCancellable(Reservation $reservation): bool
-    {
-        return in_array($reservation->status, [ReservationStatus::Pending, ReservationStatus::Confirmed], true);
-    }
-
-    private function isWithinStornoWindow(Reservation $reservation): bool
-    {
-        return $this->isCancellable($reservation) && $reservation->withinStornoWindow();
     }
 }

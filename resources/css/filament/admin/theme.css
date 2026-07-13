@@ -10,6 +10,16 @@
 /* Icon picker ships uncompiled Blade — scan it so its grid/container-query classes exist. */
 @source '../../../../vendor/guava/filament-icon-picker/resources/views/**/*.blade.php';
 
+/* Badge table columns render inside a line-clamp (`-webkit-box`) wrapper that is
+   block-level and fills the whole cell, so a single badge stretches to the full
+   column width. Shrink the badge wrapper to its content while keeping multiple
+   badges wrapping. */
+.fi-ta-text-has-badges {
+    display: flex;
+    flex-wrap: wrap;
+    width: fit-content;
+}
+
 /* Table toolbars: search, filters & column toggles on the left, action buttons on the right. */
 .fi-ta-header-toolbar > :nth-child(1) {
     order: 2;

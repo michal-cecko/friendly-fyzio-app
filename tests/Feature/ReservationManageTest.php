@@ -69,7 +69,8 @@ class ReservationManageTest extends TestCase
     }
 
     /**
-     * A confirmed reservation whose visit is 6 hours away — inside the 24h storno window.
+     * A confirmed reservation on a priced service — cancelling it triggers the storno
+     * decision (unless $price is 0).
      *
      * @param  array<string, mixed>  $attributes
      */
@@ -164,13 +165,13 @@ class ReservationManageTest extends TestCase
         $this->assertStringNotContainsString('{{', $html);
     }
 
-    // --- Free cancel (outside the storno window) -----------------------------
+    // --- Free cancel (while Pending) -----------------------------------------
 
-    public function test_customer_free_cancels_outside_the_window(): void
+    public function test_customer_free_cancels_while_pending(): void
     {
         Notification::fake();
 
-        $reservation = $this->reservation(['status' => ReservationStatus::Confirmed]);
+        $reservation = $this->reservation();
 
         $this->get($reservation->manageUrl())
             ->assertOk()
@@ -187,22 +188,65 @@ class ReservationManageTest extends TestCase
         });
     }
 
-    public function test_free_cancel_is_refused_within_the_window(): void
+    public function test_pending_within_window_faces_storno_choice(): void
+    {
+        Notification::fake();
+
+        // Unconfirmed but only a few hours out (inside the storno window) → no free cancel:
+        // the storno choice applies, closing the "never confirm, cancel free" loophole.
+        $service = Service::factory()->create(['price' => 1000]);
+        $reservation = $this->reservation([
+            'service_id' => $service->id,
+            'reservation_date' => '2026-07-08',
+            'start_time' => '15:00',
+            'end_time' => '16:00',
+        ]);
+
+        $this->get($reservation->manageUrl())
+            ->assertOk()
+            ->assertSee('zaplatím storno poplatek');
+
+        $this->post($reservation->manageUrl(), ['action' => 'cancel'])->assertRedirect();
+
+        $this->assertSame(ReservationStatus::Pending, $reservation->fresh()->status);
+        Notification::assertNothingSent();
+    }
+
+    public function test_confirmed_cannot_free_cancel(): void
     {
         Notification::fake();
 
         $reservation = $this->stornoReservation();
 
-        // Within the window the free-cancel action does nothing; the storno choices apply.
+        // Once confirmed (and a fee applies) the free-cancel action does nothing.
         $this->post($reservation->manageUrl(), ['action' => 'cancel'])->assertRedirect();
 
         $this->assertSame(ReservationStatus::Confirmed, $reservation->fresh()->status);
         Notification::assertNothingSent();
     }
 
-    // --- Storno decision (inside the window) ---------------------------------
+    public function test_confirmed_free_cancels_when_there_is_no_fee(): void
+    {
+        Notification::fake();
 
-    public function test_manage_page_shows_storno_options_inside_the_window(): void
+        // Zero-price service → no storno fee to enforce → a confirmed cancel is free.
+        $reservation = $this->stornoReservation(0);
+
+        $this->get($reservation->manageUrl())
+            ->assertOk()
+            ->assertSee('Zrušit rezervaci');
+
+        $this->post($reservation->manageUrl(), ['action' => 'cancel'])->assertRedirect();
+
+        $this->assertSame(ReservationStatus::Cancelled, $reservation->fresh()->status);
+        Notification::assertSentTo($reservation->client, ReservationTemplateNotification::class, function (ReservationTemplateNotification $n): bool {
+            return $n->key === EmailTemplateKey::ReservationCancelled;
+        });
+    }
+
+    // --- Storno decision (Confirmed, fee applies) ----------------------------
+
+    public function test_confirmed_shows_storno_options(): void
     {
         $reservation = $this->stornoReservation(1000);
 
@@ -212,6 +256,28 @@ class ReservationManageTest extends TestCase
             ->assertSee('zaplatím storno poplatek')
             ->assertSee('potvrzení od lékaře')
             ->assertSee('storno neuhradím');
+    }
+
+    public function test_confirmed_far_out_still_faces_storno_choice(): void
+    {
+        Notification::fake();
+
+        // Visit ~12 days away (well outside the old 24h window) — status, not time, decides.
+        $service = Service::factory()->create(['price' => 1000]);
+        $reservation = $this->reservation([
+            'service_id' => $service->id,
+            'status' => ReservationStatus::Confirmed,
+        ]);
+
+        $this->get($reservation->manageUrl())
+            ->assertOk()
+            ->assertSee('zaplatím storno poplatek')
+            ->assertDontSee('Zrušit rezervaci');
+
+        $this->post($reservation->manageUrl(), ['action' => 'cancel'])->assertRedirect();
+
+        $this->assertSame(ReservationStatus::Confirmed, $reservation->fresh()->status);
+        Notification::assertNothingSent();
     }
 
     public function test_storno_pay_cancels_creates_payment_and_emails_qr(): void
