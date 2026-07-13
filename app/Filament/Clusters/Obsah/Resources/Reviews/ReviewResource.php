@@ -14,6 +14,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 
 class ReviewResource extends Resource
 {
@@ -40,6 +41,26 @@ class ReviewResource extends Resource
     public static function getNavigationLabel(): string
     {
         return 'Recenze';
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['author_name', 'content'];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        /** @var Review $record */
+        return array_filter([
+            'Hodnocení' => $record->rating ? str_repeat('★', $record->rating) : null,
+            'Přidáno' => $record->created_at?->format('j. n. Y'),
+        ]);
     }
 
     public static function form(Schema $schema): Schema

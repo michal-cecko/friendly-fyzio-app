@@ -16,7 +16,9 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 class CourseLessonResource extends Resource
 {
@@ -43,6 +45,33 @@ class CourseLessonResource extends Resource
     public static function getNavigationLabel(): string
     {
         return 'Lekce kurzů';
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['series.name', 'series.course.name'];
+    }
+
+    public static function getGlobalSearchResultTitle(Model $record): string|Htmlable
+    {
+        /** @var CourseLesson $record */
+        return trim(($record->series?->name ?? 'Neznámý běh').' — '.($record->lesson_date?->format('j. n. Y') ?? 'neznámé datum'));
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        /** @var CourseLesson $record */
+        return array_filter([
+            'Kurz' => $record->series?->course?->name,
+            'Čas' => $record->start_time ? substr($record->start_time, 0, 5) : null,
+            'Místnost' => $record->room?->name,
+        ]);
     }
 
     public static function form(Schema $schema): Schema

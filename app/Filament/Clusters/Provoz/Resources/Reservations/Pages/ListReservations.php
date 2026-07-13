@@ -3,6 +3,7 @@
 namespace App\Filament\Clusters\Provoz\Resources\Reservations\Pages;
 
 use App\Filament\Clusters\Provoz\Resources\Reservations\ReservationResource;
+use App\Filament\Clusters\Provoz\Resources\Reservations\Schemas\ReservationForm;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 
@@ -13,7 +14,8 @@ class ListReservations extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make(),
+            CreateAction::make()
+                ->schema(ReservationForm::components()),
         ];
     }
 }

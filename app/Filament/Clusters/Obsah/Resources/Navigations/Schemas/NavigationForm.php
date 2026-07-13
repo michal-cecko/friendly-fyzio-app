@@ -3,6 +3,7 @@
 namespace App\Filament\Clusters\Obsah\Resources\Navigations\Schemas;
 
 use App\Enums\NavigationLocation;
+use App\Filament\Support\Schemas\PresenceBanner;
 use App\Filament\Support\Schemas\RecordTimestampsSection;
 use App\Mason\Support\LinkPickerField;
 use App\Models\Navigation;
@@ -18,6 +19,7 @@ class NavigationForm
     {
         return $schema
             ->components([
+                PresenceBanner::make(),
                 Select::make('location')
                     ->label('Umístění')
                     ->options(NavigationLocation::class)

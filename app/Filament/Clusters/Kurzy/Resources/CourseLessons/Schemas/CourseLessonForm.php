@@ -3,6 +3,7 @@
 namespace App\Filament\Clusters\Kurzy\Resources\CourseLessons\Schemas;
 
 use App\Enums\UserRole;
+use App\Filament\Support\Schemas\PresenceBanner;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TimePicker;
@@ -16,6 +17,7 @@ class CourseLessonForm
         return $schema
             ->columns(2)
             ->components([
+                PresenceBanner::make(),
                 Select::make('series_id')
                     ->label('Běh')
                     ->relationship('series', 'name')

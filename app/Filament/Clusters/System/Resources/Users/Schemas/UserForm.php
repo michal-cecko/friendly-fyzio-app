@@ -3,6 +3,7 @@
 namespace App\Filament\Clusters\System\Resources\Users\Schemas;
 
 use App\Enums\UserRole;
+use App\Filament\Support\Schemas\PresenceBanner;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\ToggleButtons;
@@ -17,6 +18,7 @@ class UserForm
     {
         return $schema
             ->components([
+                PresenceBanner::make(),
                 Tabs::make()
                     ->columnSpanFull()
                     ->tabs([

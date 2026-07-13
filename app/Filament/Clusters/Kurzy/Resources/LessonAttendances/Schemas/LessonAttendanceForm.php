@@ -2,6 +2,7 @@
 
 namespace App\Filament\Clusters\Kurzy\Resources\LessonAttendances\Schemas;
 
+use App\Filament\Support\Schemas\PresenceBanner;
 use App\Models\CourseEnrollment;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
@@ -15,6 +16,7 @@ class LessonAttendanceForm
         return $schema
             ->columns(2)
             ->components([
+                PresenceBanner::make(),
                 Select::make('enrollment_id')
                     ->label('Přihláška')
                     ->relationship('enrollment', 'id')

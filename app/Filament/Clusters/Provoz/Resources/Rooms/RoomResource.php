@@ -16,6 +16,8 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 class RoomResource extends Resource
 {
@@ -42,6 +44,22 @@ class RoomResource extends Resource
     public static function getNavigationLabel(): string
     {
         return 'Místnosti';
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        /** @var Room $record */
+        return array_filter([
+            'Budova' => $record->building?->name,
+        ]);
+    }
+
+    public static function getGlobalSearchEloquentQuery(): Builder
+    {
+        return parent::getGlobalSearchEloquentQuery()->with(['building']);
     }
 
     public static function form(Schema $schema): Schema

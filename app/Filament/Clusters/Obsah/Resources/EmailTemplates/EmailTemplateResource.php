@@ -42,6 +42,25 @@ class EmailTemplateResource extends Resource
         return 'E-maily';
     }
 
+    /**
+     * @return array<int, string>
+     */
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['name', 'subject'];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        /** @var EmailTemplate $record */
+        return array_filter([
+            'Předmět' => $record->subject,
+        ]);
+    }
+
     // Fixed, seeded set of templates: admins edit but never create or delete.
     public static function canCreate(): bool
     {

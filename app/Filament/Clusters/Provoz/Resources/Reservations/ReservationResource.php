@@ -3,8 +3,6 @@
 namespace App\Filament\Clusters\Provoz\Resources\Reservations;
 
 use App\Filament\Clusters\Provoz\ProvozCluster;
-use App\Filament\Clusters\Provoz\Resources\Reservations\Pages\CreateReservation;
-use App\Filament\Clusters\Provoz\Resources\Reservations\Pages\EditReservation;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Pages\ListReservations;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Pages\ViewReservation;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Schemas\ReservationForm;
@@ -16,7 +14,9 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ReservationResource extends Resource
@@ -28,6 +28,8 @@ class ReservationResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCalendarDays;
 
     protected static ?int $navigationSort = 0;
+
+    protected static int $globalSearchResultsLimit = 10;
 
     public static function getModelLabel(): string
     {
@@ -42,6 +44,33 @@ class ReservationResource extends Resource
     public static function getNavigationLabel(): string
     {
         return 'Rezervace';
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['client.name', 'client.email', 'client.phone', 'service.name'];
+    }
+
+    public static function getGlobalSearchResultTitle(Model $record): string|Htmlable
+    {
+        /** @var Reservation $record */
+        return trim(($record->client?->name ?? 'Neznámý klient').' — '.($record->service?->name ?? 'Neznámá služba'));
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        /** @var Reservation $record */
+        return array_filter([
+            'Termín' => $record->startsAt()->format('j. n. Y H:i'),
+            'Terapeut' => $record->therapist?->user?->name,
+            'Stav' => $record->status?->getLabel(),
+        ]);
     }
 
     public static function form(Schema $schema): Schema
@@ -76,9 +105,7 @@ class ReservationResource extends Resource
     {
         return [
             'index' => ListReservations::route('/'),
-            'create' => CreateReservation::route('/create'),
             'view' => ViewReservation::route('/{record}'),
-            'edit' => EditReservation::route('/{record}/edit'),
         ];
     }
 

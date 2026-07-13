@@ -16,7 +16,9 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 class LessonAttendanceResource extends Resource
 {
@@ -28,7 +30,7 @@ class LessonAttendanceResource extends Resource
 
     protected static ?int $navigationSort = 6;
 
-    protected static ?string $recordTitleAttribute = 'id';
+    protected static int $globalSearchResultsLimit = 10;
 
     public static function getModelLabel(): string
     {
@@ -43,6 +45,32 @@ class LessonAttendanceResource extends Resource
     public static function getNavigationLabel(): string
     {
         return 'Docházka';
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['enrollment.client.name', 'enrollment.client.email', 'lesson.series.name'];
+    }
+
+    public static function getGlobalSearchResultTitle(Model $record): string|Htmlable
+    {
+        /** @var LessonAttendance $record */
+        return trim(($record->enrollment?->client?->name ?? 'Neznámý klient').' — '.($record->lesson?->lesson_date?->format('j. n. Y') ?? 'neznámé datum'));
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        /** @var LessonAttendance $record */
+        return array_filter([
+            'Kurz' => $record->lesson?->series?->course?->name,
+            'Přítomen' => $record->attended ? 'Ano' : 'Ne',
+        ]);
     }
 
     public static function form(Schema $schema): Schema

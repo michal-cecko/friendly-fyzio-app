@@ -2,6 +2,7 @@
 
 namespace App\Filament\Clusters\Obsah\Resources\InstagramConnections\Schemas;
 
+use App\Filament\Support\Schemas\PresenceBanner;
 use App\Models\InstagramConnection;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Toggle;
@@ -15,6 +16,7 @@ class InstagramConnectionForm
     {
         return $schema
             ->components([
+                PresenceBanner::make(),
                 Section::make('Připojený účet')
                     ->columns(2)
                     ->schema([

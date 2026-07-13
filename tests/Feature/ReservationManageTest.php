@@ -8,7 +8,7 @@ use App\Enums\PaymentStatus;
 use App\Enums\ReservationStatus;
 use App\Filament\Clusters\Provoz\Resources\Clients\Pages\ListClients;
 use App\Filament\Clusters\Provoz\Resources\Payments\Pages\ListPayments;
-use App\Filament\Clusters\Provoz\Resources\Reservations\Pages\EditReservation;
+use App\Filament\Clusters\Provoz\Resources\Reservations\Pages\ListReservations;
 use App\Models\Payment;
 use App\Models\Reservation;
 use App\Models\Service;
@@ -532,8 +532,8 @@ class ReservationManageTest extends TestCase
 
         $reservation = $this->reservation(['status' => ReservationStatus::Confirmed]);
 
-        Livewire::test(EditReservation::class, ['record' => $reservation->getKey()])
-            ->callAction('cancelReservation', [
+        Livewire::test(ListReservations::class)
+            ->callAction(TestAction::make('cancelReservation')->table($reservation), [
                 'cancellation_reason' => 'Terapeut onemocněl',
                 'notify_client' => true,
             ]);

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Clusters\Provoz\Resources\Clients\Schemas;
 
+use App\Filament\Support\Schemas\PresenceBanner;
 use App\Filament\Support\Schemas\RecordTimestampsSection;
 use App\Filament\Support\Schemas\ResponsiveColumns;
 use App\Models\User;
@@ -20,55 +21,56 @@ class ClientForm
     {
         return $schema
             ->components([
+                PresenceBanner::make(),
                 RecordTimestampsSection::firstRow(
                     Section::make('Osobní údaje')
                         ->icon(Heroicon::OutlinedUser)
                         ->gridContainer()
                         ->columns(ResponsiveColumns::DENSE)
                         ->schema([
-                        TextInput::make('name')
-                            ->label('Jméno')
-                            ->required()
-                            ->maxLength(255),
-                        TextInput::make('email')
-                            ->label('E-mail')
-                            ->email()
-                            ->required()
-                            ->unique(User::class, ignoreRecord: true)
-                            ->maxLength(255),
-                        TextInput::make('phone')
-                            ->label('Telefon')
-                            ->tel()
-                            ->maxLength(255),
-                        Group::make()
-                            ->relationship('clientProfile')
-                            ->columnSpanFull()
-                            ->gridContainer()
-                            ->columns(ResponsiveColumns::DENSE)
-                            ->schema([
-                                DatePicker::make('date_of_birth')
-                                    ->label('Datum narození')
-                                    ->native(false)
-                                    ->displayFormat('d.m.Y')
-                                    ->maxDate(now()),
-                                TextInput::make('address_city')
-                                    ->label('Město')
-                                    ->maxLength(255),
-                                TextInput::make('occupation')
-                                    ->label('Povolání')
-                                    ->maxLength(255),
-                                TextInput::make('weight')
-                                    ->label('Váha (kg)')
-                                    ->numeric()
-                                    ->minValue(0)
-                                    ->step(0.01),
-                                TextInput::make('height')
-                                    ->label('Výška (cm)')
-                                    ->numeric()
-                                    ->minValue(0)
-                                    ->step(0.01),
-                            ]),
-                    ])
+                            TextInput::make('name')
+                                ->label('Jméno')
+                                ->required()
+                                ->maxLength(255),
+                            TextInput::make('email')
+                                ->label('E-mail')
+                                ->email()
+                                ->required()
+                                ->unique(User::class, ignoreRecord: true)
+                                ->maxLength(255),
+                            TextInput::make('phone')
+                                ->label('Telefon')
+                                ->tel()
+                                ->maxLength(255),
+                            Group::make()
+                                ->relationship('clientProfile')
+                                ->columnSpanFull()
+                                ->gridContainer()
+                                ->columns(ResponsiveColumns::DENSE)
+                                ->schema([
+                                    DatePicker::make('date_of_birth')
+                                        ->label('Datum narození')
+                                        ->native(false)
+                                        ->displayFormat('d.m.Y')
+                                        ->maxDate(now()),
+                                    TextInput::make('address_city')
+                                        ->label('Město')
+                                        ->maxLength(255),
+                                    TextInput::make('occupation')
+                                        ->label('Povolání')
+                                        ->maxLength(255),
+                                    TextInput::make('weight')
+                                        ->label('Váha (kg)')
+                                        ->numeric()
+                                        ->minValue(0)
+                                        ->step(0.01),
+                                    TextInput::make('height')
+                                        ->label('Výška (cm)')
+                                        ->numeric()
+                                        ->minValue(0)
+                                        ->step(0.01),
+                                ]),
+                        ])
                 ),
                 Group::make()
                     ->relationship('clientProfile')

@@ -168,6 +168,33 @@ class CalendarTest extends TestCase
             ->assertSet('selectedIds', []);
     }
 
+    public function test_clicking_a_trashed_reservation_opens_the_edit_modal(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+
+        $reservation = $this->makeReservation();
+        $reservation->delete();
+
+        Livewire::test(ReservationCalendar::class)
+            ->call('onEventClick', ['id' => (string) $reservation->getKey()])
+            ->assertActionMounted('edit');
+    }
+
+    public function test_restoring_a_reservation_from_the_edit_modal(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+
+        $reservation = $this->makeReservation();
+        $reservation->delete();
+
+        Livewire::test(ReservationCalendar::class)
+            ->call('onEventClick', ['id' => (string) $reservation->getKey()])
+            ->mountAction('restore')
+            ->callMountedAction();
+
+        $this->assertFalse($reservation->fresh()->trashed());
+    }
+
     public function test_selection_persists_across_week_navigation(): void
     {
         $this->actingAs(User::factory()->admin()->create());

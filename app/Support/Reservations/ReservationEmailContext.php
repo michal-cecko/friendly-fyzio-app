@@ -14,9 +14,11 @@ use Illuminate\Support\Str;
 class ReservationEmailContext
 {
     /**
+     * @param  array<string, string>  $extra  Trigger-specific tokens merged over the base set
+     *                                        (e.g. the puvodni_* values for a changed reservation).
      * @return array<string, string>
      */
-    public static function for(Reservation $reservation): array
+    public static function for(Reservation $reservation, array $extra = []): array
     {
         $reservation->loadMissing('service', 'therapist.user', 'client');
 
@@ -30,15 +32,18 @@ class ReservationEmailContext
             'misto' => (string) (Settings::get('web.address') ?? ''),
             'odkaz' => $reservation->manageUrl(),
             'duvod' => (string) ($reservation->cancellation_reason ?? ''),
+            'telefon' => (string) ($reservation->client?->phone ?? ''),
+            'email' => (string) ($reservation->client?->email ?? ''),
             'pripominka_hodin' => (string) Settings::reminderHours(),
             'auto_zruseni_hodin' => (string) Settings::autoCancelHours(),
             'storno_hodin' => (string) $reservation->cancelBeforeHours(),
             'potvrzeni_hodin' => (string) Settings::confirmationHours(),
             'storno_procenta' => (string) Settings::stornoFeePercent(),
+            ...$extra,
         ];
     }
 
-    private static function formatWhen(Reservation $reservation): string
+    public static function formatWhen(Reservation $reservation): string
     {
         return $reservation->startsAt()->translatedFormat('j. F Y, H:i');
     }

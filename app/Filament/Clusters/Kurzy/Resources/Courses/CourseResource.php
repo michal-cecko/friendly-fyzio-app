@@ -17,6 +17,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class CourseResource extends Resource
@@ -52,6 +53,18 @@ class CourseResource extends Resource
     public static function getGloballySearchableAttributes(): array
     {
         return ['name', 'slug'];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        /** @var Course $record */
+        return array_filter([
+            'Kategorie' => $record->category?->name,
+            'Lektor' => $record->instructor?->name,
+        ]);
     }
 
     public static function form(Schema $schema): Schema

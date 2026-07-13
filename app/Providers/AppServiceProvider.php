@@ -11,7 +11,10 @@ use App\Models\OneTimeLesson;
 use App\Models\Reservation;
 use App\Models\Service;
 use App\Models\Workshop;
+use Filament\Actions\Action;
+use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
+use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\View\ActionsIconAlias;
 use Filament\Auth\Http\Responses\Contracts\LoginResponse as LoginResponseContract;
@@ -53,6 +56,30 @@ class AppServiceProvider extends ServiceProvider
         // base button icon so header and standalone delete buttons match too.
         DeleteAction::configureUsing(fn (DeleteAction $action) => $action->icon(Heroicon::OutlinedTrash));
         ForceDeleteAction::configureUsing(fn (ForceDeleteAction $action) => $action->icon(Heroicon::OutlinedTrash));
+
+        // Give every save/create submit button a diskette icon app-wide.
+        // Page-level buttons are matched by name; CreateAction is excluded so the
+        // "New record" trigger buttons keep their own icon.
+        Action::configureUsing(function (Action $action): void {
+            if (
+                ! $action instanceof CreateAction
+                && in_array($action->getName(), ['save', 'create', 'createAnother'], true)
+            ) {
+                $action->icon('lucide-save');
+            }
+        });
+
+        // Modal save/create submit buttons (Edit/Create modals across the app,
+        // including the calendar's FullCalendarEditAction which extends EditAction).
+        // Scoping to these parents avoids icon-ing delete/restore confirmation
+        // buttons, whose submit action shares the "submit" name.
+        foreach ([CreateAction::class, EditAction::class] as $formActionClass) {
+            $formActionClass::configureUsing(
+                fn (CreateAction|EditAction $action) => $action->modalSubmitAction(
+                    fn (Action $submit) => $submit->icon('lucide-save'),
+                ),
+            );
+        }
 
         // Extend every RichEditor globally: expose the brand "Accent" text colors
         // (pink + dark) via the textColor tool, and trim the toolbar to our set

@@ -5,6 +5,7 @@ namespace App\Providers\Filament;
 use App\Filament\Pages\Dashboard;
 use App\Http\Middleware\RedirectToClientLogin;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
+use DiscoveryDesign\FilamentGaze\FilamentGazePlugin;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -21,6 +22,7 @@ use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use MarcelWeidum\ExpirationNoticePlugin\ExpirationNoticePlugin;
 use MarcelWeidum\Passkeys\PasskeysPlugin;
 use RalphJSmit\Filament\MediaLibrary\FilamentMediaLibrary;
 use Saade\FilamentFullCalendar\FilamentFullCalendarPlugin;
@@ -47,6 +49,12 @@ class AdminPanelProvider extends PanelProvider
             ->sidebarCollapsibleOnDesktop()
             ->collapsibleNavigationGroups()
             ->maxContentWidth(Width::Full)
+            ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
+            ->globalSearchFieldKeyBindingSuffix()
+            ->renderHook(
+                PanelsRenderHook::GLOBAL_SEARCH_AFTER,
+                fn (): string => view('filament.topbar.global-search-page-link')->render(),
+            )
             ->renderHook(
                 PanelsRenderHook::GLOBAL_SEARCH_AFTER,
                 fn (): string => view('filament.topbar.website-link')->render(),
@@ -73,6 +81,8 @@ class AdminPanelProvider extends PanelProvider
                     ->registerNavigation(false),
                 FilamentFullCalendarPlugin::make(),
                 PasskeysPlugin::make(),
+                ExpirationNoticePlugin::make(),
+                FilamentGazePlugin::make(),
             ])
             ->middleware([
                 EncryptCookies::class,

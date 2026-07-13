@@ -21,6 +21,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ClientResource extends Resource
@@ -36,6 +37,8 @@ class ClientResource extends Resource
     protected static ?int $navigationSort = 5;
 
     protected static ?string $recordTitleAttribute = 'name';
+
+    protected static int $globalSearchResultsLimit = 10;
 
     public static function getModelLabel(): string
     {
@@ -57,7 +60,19 @@ class ClientResource extends Resource
      */
     public static function getGloballySearchableAttributes(): array
     {
-        return ['name', 'email'];
+        return ['name', 'email', 'phone'];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        /** @var User $record */
+        return array_filter([
+            'E-mail' => $record->email,
+            'Telefon' => $record->phone,
+        ]);
     }
 
     public static function getEloquentQuery(): Builder

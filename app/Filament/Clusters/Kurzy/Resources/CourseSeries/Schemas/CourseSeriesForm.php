@@ -3,6 +3,7 @@
 namespace App\Filament\Clusters\Kurzy\Resources\CourseSeries\Schemas;
 
 use App\Enums\CourseSeriesStatus;
+use App\Filament\Support\Schemas\PresenceBanner;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -16,6 +17,7 @@ class CourseSeriesForm
         return $schema
             ->columns(2)
             ->components([
+                PresenceBanner::make(),
                 Select::make('course_id')
                     ->label('Kurz')
                     ->relationship('course', 'name')

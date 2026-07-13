@@ -10,11 +10,12 @@
 /* Icon picker ships uncompiled Blade — scan it so its grid/container-query classes exist. */
 @source '../../../../vendor/guava/filament-icon-picker/resources/views/**/*.blade.php';
 
-/* Badge table columns render inside a line-clamp (`-webkit-box`) wrapper that is
-   block-level and fills the whole cell, so a single badge stretches to the full
-   column width. Shrink the badge wrapper to its content while keeping multiple
-   badges wrapping. */
-.fi-ta-text-has-badges {
+/* Badge text columns (tables) and badge text entries (infolists) render inside a
+   block-level, full-width wrapper, so a single badge stretches to the full column /
+   entry width. Shrink the badge wrapper to its content while keeping multiple badges
+   wrapping. Covers both surfaces app-wide (`fi-ta` = table, `fi-in` = infolist). */
+.fi-ta-text-has-badges,
+.fi-in-text-has-badges {
     display: flex;
     flex-wrap: wrap;
     width: fit-content;
@@ -28,4 +29,15 @@
 .fi-ta-header-toolbar > :nth-child(2) {
     order: 1;
     margin-inline-start: 0;
+}
+
+/* Modal footers that opt into Alignment::Between (e.g. the reservation edit modal)
+   render as a normal dialog footer: cancel/secondary actions on the left, the save
+   action pushed to the right via its start-margin. Filament ships no flex rule for
+   this alignment, so define one. Effectively scoped to modals that request it. */
+.fi-modal-footer.fi-align-between .fi-modal-footer-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    width: 100%;
 }

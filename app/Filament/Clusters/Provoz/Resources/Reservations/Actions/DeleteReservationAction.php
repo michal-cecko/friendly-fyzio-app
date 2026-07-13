@@ -4,8 +4,10 @@ namespace App\Filament\Clusters\Provoz\Resources\Reservations\Actions;
 
 use App\Models\Reservation;
 use App\Notifications\ReservationNotification;
+use App\Support\Reservations\ReservationSummary;
 use Filament\Actions\DeleteAction;
 use Filament\Forms\Components\Toggle;
+use Illuminate\Support\HtmlString;
 
 class DeleteReservationAction extends DeleteAction
 {
@@ -14,6 +16,9 @@ class DeleteReservationAction extends DeleteAction
         parent::setUp();
 
         $this
+            ->modalHeading('Smazat rezervaci?')
+            ->modalDescription(fn (Reservation $record): HtmlString => ReservationSummary::description($record))
+            ->modalSubmitActionLabel('Smazat')
             ->schema([
                 Toggle::make('notify_client')
                     ->label('Informovat klienta e-mailem')

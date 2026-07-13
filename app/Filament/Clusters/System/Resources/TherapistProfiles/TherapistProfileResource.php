@@ -14,6 +14,9 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 class TherapistProfileResource extends Resource
 {
@@ -40,6 +43,37 @@ class TherapistProfileResource extends Resource
     public static function getNavigationLabel(): string
     {
         return 'Terapeuti';
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['slug', 'user.name'];
+    }
+
+    public static function getGlobalSearchResultTitle(Model $record): string|Htmlable
+    {
+        /** @var TherapistProfile $record */
+        return $record->user?->name ?? $record->slug;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        /** @var TherapistProfile $record */
+        return array_filter([
+            'Titul' => $record->title,
+            'Stav' => $record->published_at ? 'Publikováno' : 'Koncept',
+        ]);
+    }
+
+    public static function getGlobalSearchEloquentQuery(): Builder
+    {
+        return parent::getGlobalSearchEloquentQuery()->with(['user']);
     }
 
     public static function form(Schema $schema): Schema

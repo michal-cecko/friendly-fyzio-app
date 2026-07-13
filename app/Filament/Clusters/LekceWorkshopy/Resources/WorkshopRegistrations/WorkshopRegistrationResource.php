@@ -16,7 +16,9 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 class WorkshopRegistrationResource extends Resource
 {
@@ -28,7 +30,7 @@ class WorkshopRegistrationResource extends Resource
 
     protected static ?int $navigationSort = 2;
 
-    protected static ?string $recordTitleAttribute = 'id';
+    protected static int $globalSearchResultsLimit = 10;
 
     public static function getModelLabel(): string
     {
@@ -43,6 +45,32 @@ class WorkshopRegistrationResource extends Resource
     public static function getNavigationLabel(): string
     {
         return 'Registrace';
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['client.name', 'client.email', 'workshop.name'];
+    }
+
+    public static function getGlobalSearchResultTitle(Model $record): string|Htmlable
+    {
+        /** @var WorkshopRegistration $record */
+        return trim(($record->client?->name ?? 'Neznámý klient').' — '.($record->workshop?->name ?? 'Neznámý workshop'));
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        /** @var WorkshopRegistration $record */
+        return array_filter([
+            'Termín' => $record->workshop?->workshop_date?->format('j. n. Y'),
+            'Platba' => $record->payment_status?->getLabel(),
+        ]);
     }
 
     public static function form(Schema $schema): Schema

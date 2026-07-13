@@ -19,6 +19,7 @@ use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use MarcelWeidum\ExpirationNoticePlugin\ExpirationNoticePlugin;
 use MarcelWeidum\Passkeys\PasskeysPlugin;
 
 /**
@@ -56,6 +57,7 @@ class ClientPanelProvider extends PanelProvider
             ])
             ->plugins([
                 PasskeysPlugin::make(),
+                ExpirationNoticePlugin::make(),
             ])
             ->middleware([
                 EncryptCookies::class,
