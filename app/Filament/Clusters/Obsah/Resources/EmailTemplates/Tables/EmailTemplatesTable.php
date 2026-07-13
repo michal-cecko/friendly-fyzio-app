@@ -2,9 +2,15 @@
 
 namespace App\Filament\Clusters\Obsah\Resources\EmailTemplates\Tables;
 
+use App\Models\EmailTemplate;
+use App\Support\EmailTemplateRenderer;
+use Filament\Actions\Action;
 use Filament\Actions\EditAction;
+use Filament\Support\Enums\Width;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Contracts\View\View;
 
 class EmailTemplatesTable
 {
@@ -28,6 +34,20 @@ class EmailTemplatesTable
                     ->sortable(),
             ])
             ->recordActions([
+                Action::make('preview')
+                    ->label('Náhled')
+                    ->icon(Heroicon::OutlinedEye)
+                    ->color('gray')
+                    ->modalHeading('Náhled e-mailu')
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Zavřít')
+                    ->modalWidth(Width::FiveExtraLarge)
+                    ->modalContent(fn (EmailTemplate $record): View => view('filament.email-template-preview', [
+                        'html' => EmailTemplateRenderer::render(
+                            $record,
+                            $record->templateKey()?->sampleContext() ?? [],
+                        ),
+                    ])),
                 EditAction::make(),
             ]);
     }

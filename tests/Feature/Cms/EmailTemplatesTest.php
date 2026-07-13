@@ -8,6 +8,7 @@ use App\Filament\Clusters\Obsah\Resources\EmailTemplates\Pages\EditEmailTemplate
 use App\Filament\Clusters\Obsah\Resources\EmailTemplates\Pages\ListEmailTemplates;
 use App\Mason\EmailBrickRegistry;
 use App\Models\EmailTemplate;
+use App\Models\Setting;
 use App\Models\User;
 use App\Support\EmailTemplateRenderer;
 use Database\Seeders\EmailTemplateSeeder;
@@ -186,6 +187,46 @@ class EmailTemplatesTest extends TestCase
             $this->assertStringContainsString('<!DOCTYPE html>', $html);
             $this->assertStringNotContainsString('{{', $html);
         }
+    }
+
+    public function test_hour_tokens_render_from_settings_not_hardcoded(): void
+    {
+        $this->seed(SettingsSeeder::class);
+        $this->seed(EmailTemplateSeeder::class);
+
+        // Distinct, non-default values so a hardcoded "24" would fail the assertions.
+        $this->setSetting('reservation.reminder_hours', '6');
+        $this->setSetting('reservation.auto_cancel_hours', '10');
+        $this->setSetting('reservation.storno_fee_percent', '40');
+
+        $confirmed = EmailTemplateRenderer::render(
+            EmailTemplate::forKey(EmailTemplateKey::ReservationConfirmed),
+            EmailTemplateKey::ReservationConfirmed->sampleContext(),
+        );
+        // Reminder lead (reminder_hours) and the storno-fee percentage.
+        $this->assertStringContainsString('pošleme 6 hodin', $confirmed);
+        $this->assertStringContainsString('storno poplatkem 40 %', $confirmed);
+
+        $autoCancelled = EmailTemplateRenderer::render(
+            EmailTemplate::forKey(EmailTemplateKey::ReservationAutoCancelled),
+            EmailTemplateKey::ReservationAutoCancelled->sampleContext(),
+        );
+        $this->assertStringContainsString('do 10 hodin před termínem', $autoCancelled);
+
+        $reminder = EmailTemplateRenderer::render(
+            EmailTemplate::forKey(EmailTemplateKey::ReservationReminder),
+            EmailTemplateKey::ReservationReminder->sampleContext(),
+        );
+        $this->assertStringContainsString('za 6 hodin', $reminder);
+
+        foreach ([$confirmed, $autoCancelled, $reminder] as $html) {
+            $this->assertStringNotContainsString('{{', $html);
+        }
+    }
+
+    private function setSetting(string $key, string $value): void
+    {
+        Setting::query()->where('key', $key)->firstOrFail()->update(['value' => $value]);
     }
 
     public function test_admin_sees_seeded_templates_and_cannot_create(): void

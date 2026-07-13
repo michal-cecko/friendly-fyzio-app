@@ -30,6 +30,11 @@ class ReservationEmailContext
             'misto' => (string) (Settings::get('web.address') ?? ''),
             'odkaz' => $reservation->manageUrl(),
             'duvod' => (string) ($reservation->cancellation_reason ?? ''),
+            'pripominka_hodin' => (string) Settings::reminderHours(),
+            'auto_zruseni_hodin' => (string) Settings::autoCancelHours(),
+            'storno_hodin' => (string) $reservation->cancelBeforeHours(),
+            'potvrzeni_hodin' => (string) Settings::confirmationHours(),
+            'storno_procenta' => (string) Settings::stornoFeePercent(),
         ];
     }
 

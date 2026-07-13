@@ -2,6 +2,8 @@
 
 namespace App\Enums;
 
+use App\Support\Settings;
+
 /**
  * The fixed set of transactional email triggers. Each case maps 1:1 to a seeded
  * EmailTemplate row; the value is the stable `key` stored in the database and used
@@ -18,17 +20,50 @@ enum EmailTemplateKey: string
     case ReservationStornoPayment = 'reservation_storno_payment';
     case ReservationDoctorNote = 'reservation_doctor_note';
 
+    // Therapist-facing notifications (recipient is the therapist, not the client).
+    case TherapistReservationCreated = 'therapist_reservation_created';
+    case TherapistReservationConfirmed = 'therapist_reservation_confirmed';
+    case TherapistReservationCancelled = 'therapist_reservation_cancelled';
+    case TherapistReservationChanged = 'therapist_reservation_changed';
+    case TherapistReservationAutoCancelled = 'therapist_reservation_auto_cancelled';
+    case TherapistPaymentReceived = 'therapist_payment_received';
+    case TherapistPaymentOverdue = 'therapist_payment_overdue';
+
     public function label(): string
     {
         return match ($this) {
             self::ReservationPending => 'Rezervace čeká na potvrzení',
-            self::ReservationConfirmed => 'Rezervace potvrzena terapeutem',
+            self::ReservationConfirmed => 'Rezervace potvrzena',
             self::ReservationReminder => 'Připomínka rezervace',
             self::ReservationCancelled => 'Zrušení rezervace',
             self::ReservationChanged => 'Změna rezervace',
             self::ReservationAutoCancelled => 'Automatické zrušení rezervace',
             self::ReservationStornoPayment => 'Storno – platba poplatku',
             self::ReservationDoctorNote => 'Storno – potvrzení od lékaře',
+            self::TherapistReservationCreated => 'Nová rezervace (terapeut)',
+            self::TherapistReservationConfirmed => 'Potvrzený termín (terapeut)',
+            self::TherapistReservationCancelled => 'Zrušení rezervace klientem (terapeut)',
+            self::TherapistReservationChanged => 'Změna rezervace klientem (terapeut)',
+            self::TherapistReservationAutoCancelled => 'Automatické zrušení termínu (terapeut)',
+            self::TherapistPaymentReceived => 'Přijatá platba (terapeut)',
+            self::TherapistPaymentOverdue => 'Platba po splatnosti (terapeut)',
+        };
+    }
+
+    /**
+     * Whether the recipient of this trigger is the therapist (vs. the client).
+     */
+    public function isTherapistFacing(): bool
+    {
+        return match ($this) {
+            self::TherapistReservationCreated,
+            self::TherapistReservationConfirmed,
+            self::TherapistReservationCancelled,
+            self::TherapistReservationChanged,
+            self::TherapistReservationAutoCancelled,
+            self::TherapistPaymentReceived,
+            self::TherapistPaymentOverdue => true,
+            default => false,
         };
     }
 
@@ -43,6 +78,13 @@ enum EmailTemplateKey: string
             self::ReservationAutoCancelled => 'Vaše rezervace byla automaticky zrušena',
             self::ReservationStornoPayment => 'Storno poplatek k úhradě',
             self::ReservationDoctorNote => 'Doručte prosím potvrzení od lékaře',
+            self::TherapistReservationCreated => 'Nová rezervace od klienta',
+            self::TherapistReservationConfirmed => 'Termín byl potvrzen',
+            self::TherapistReservationCancelled => 'Klient zrušil rezervaci',
+            self::TherapistReservationChanged => 'Klient změnil rezervaci',
+            self::TherapistReservationAutoCancelled => 'Termín byl automaticky zrušen',
+            self::TherapistPaymentReceived => 'Platba od klienta byla přijata',
+            self::TherapistPaymentOverdue => 'Klient má neuhrazenou platbu po splatnosti',
         };
     }
 
@@ -54,12 +96,21 @@ enum EmailTemplateKey: string
      */
     public function tokens(): array
     {
+        if ($this->isTherapistFacing()) {
+            return $this->therapistTokens();
+        }
+
         $base = [
             'jmeno' => 'Jméno klienta',
             'sluzba' => 'Název služby',
             'terapeut' => 'Jméno terapeuta',
             'termin' => 'Datum a čas',
             'odkaz' => 'Odkaz na správu rezervace',
+            'pripominka_hodin' => 'Připomínka – hodin před termínem',
+            'auto_zruseni_hodin' => 'Auto-zrušení – hodin na potvrzení',
+            'storno_hodin' => 'Bezplatné storno – hodin před termínem',
+            'potvrzeni_hodin' => 'Výzva k potvrzení – hodin předem',
+            'storno_procenta' => 'Storno poplatek – %',
         ];
 
         return match ($this) {
@@ -93,6 +144,7 @@ enum EmailTemplateKey: string
                 ...$base,
                 'misto' => 'Místo / adresa',
             ],
+            default => $base,
         };
     }
 
@@ -104,12 +156,21 @@ enum EmailTemplateKey: string
      */
     public function sampleContext(): array
     {
+        if ($this->isTherapistFacing()) {
+            return $this->therapistSampleContext();
+        }
+
         $base = [
             'jmeno' => 'Jana',
             'sluzba' => 'Klasická masáž (60 min)',
             'terapeut' => 'Mgr. Petra Nováková',
             'termin' => '15. dubna 2026, 10:00',
             'odkaz' => '#',
+            'pripominka_hodin' => (string) Settings::reminderHours(),
+            'auto_zruseni_hodin' => (string) Settings::autoCancelHours(),
+            'storno_hodin' => (string) Settings::cancelBeforeHours(),
+            'potvrzeni_hodin' => (string) Settings::confirmationHours(),
+            'storno_procenta' => (string) Settings::stornoFeePercent(),
         ];
 
         return match ($this) {
@@ -156,6 +217,124 @@ enum EmailTemplateKey: string
                 'termin' => '18. dubna 2026, 09:00',
                 'misto' => 'Vodičkova 20, Praha',
             ],
+            default => $base,
+        };
+    }
+
+    /**
+     * Placeholder tokens for the therapist-facing e-mails. The greeting addresses the
+     * therapist ({{ jmeno }}) and the details describe the client + appointment.
+     *
+     * @return array<string, string>
+     */
+    private function therapistTokens(): array
+    {
+        $base = [
+            'jmeno' => 'Jméno terapeuta',
+            'sluzba' => 'Název služby',
+            'klient' => 'Jméno klienta',
+            'telefon_klienta' => 'Telefon klienta',
+            'email_klienta' => 'E-mail klienta',
+            'termin' => 'Datum a čas',
+            'odkaz' => 'Odkaz do kalendáře / na rezervaci',
+        ];
+
+        return match ($this) {
+            self::TherapistReservationCreated => [
+                ...$base,
+                'odkaz_potvrdit' => 'Odkaz pro potvrzení termínu',
+            ],
+            self::TherapistReservationCancelled => [
+                ...$base,
+                'storno_reseni' => 'Řešení storna (jak klient řeší poplatek)',
+                'storno_castka' => 'Výše storno poplatku',
+            ],
+            self::TherapistReservationChanged => [
+                ...$base,
+                'puvodni_sluzba' => 'Původní služba',
+                'puvodni_termin' => 'Původní datum a čas',
+            ],
+            self::TherapistReservationAutoCancelled => [
+                ...$base,
+                'auto_zruseni_hodin' => 'Auto-zrušení – hodin na potvrzení',
+                'duvod' => 'Důvod zrušení',
+            ],
+            self::TherapistPaymentReceived => [
+                'klient' => 'Jméno klienta',
+                'za_co' => 'Za co (služba / položka)',
+                'castka' => 'Uhrazená částka',
+                'datum_platby' => 'Datum platby',
+                'zpusob_platby' => 'Způsob platby',
+                'odkaz_klient' => 'Odkaz na detail klienta',
+            ],
+            self::TherapistPaymentOverdue => [
+                'klient' => 'Jméno klienta',
+                'za_co' => 'Za co (služba / položka)',
+                'castka' => 'Dlužná částka',
+                'email_klienta' => 'E-mail klienta',
+                'sluzba' => 'Název služby',
+                'splatnost' => 'Splatnost',
+            ],
+            default => $base,
+        };
+    }
+
+    /**
+     * Sample values used to render the in-admin preview of the therapist e-mails.
+     *
+     * @return array<string, string>
+     */
+    private function therapistSampleContext(): array
+    {
+        $base = [
+            'jmeno' => 'Petra',
+            'sluzba' => 'Sportovní masáž (60 min)',
+            'klient' => 'Jana Kováčová',
+            'telefon_klienta' => '+420 604 123 456',
+            'email_klienta' => 'jana.kovacova@email.cz',
+            'termin' => '22. dubna 2026, 15:00',
+            'odkaz' => '#',
+        ];
+
+        return match ($this) {
+            self::TherapistReservationCreated => [
+                ...$base,
+                'odkaz_potvrdit' => '#',
+            ],
+            self::TherapistReservationCancelled => [
+                ...$base,
+                'termin' => '20. dubna 2026, 11:00',
+                'storno_reseni' => 'Klient zaplatí storno',
+                'storno_castka' => '500 Kč',
+            ],
+            self::TherapistReservationChanged => [
+                ...$base,
+                'puvodni_sluzba' => 'Sportovní masáž (60 min)',
+                'puvodni_termin' => '20. dubna 2026, 11:00',
+            ],
+            self::TherapistReservationAutoCancelled => [
+                ...$base,
+                'termin' => '20. dubna 2026, 11:00',
+                'auto_zruseni_hodin' => (string) Settings::autoCancelHours(),
+                'duvod' => 'Automatické zrušení – nepotvrzená účast',
+            ],
+            self::TherapistPaymentReceived => [
+                'klient' => 'Mario Svoboda',
+                'za_co' => 'fyzioterapii individuální',
+                'castka' => '1 250 Kč',
+                'datum_platby' => '10. dubna 2026',
+                'zpusob_platby' => 'Hotově',
+                'odkaz_klient' => '#',
+            ],
+            self::TherapistPaymentOverdue => [
+                'klient' => 'Tomáš Novák',
+                'za_co' => 'fyzioterapii individuální',
+                'castka' => '2 400 Kč',
+                'email_klienta' => 'tomas.novak@email.cz',
+                'sluzba' => 'Fyzioterapie individuální',
+                'splatnost' => '5. 4. 2026 (po splatnosti!)',
+            ],
+            default => $base,
         };
     }
 }

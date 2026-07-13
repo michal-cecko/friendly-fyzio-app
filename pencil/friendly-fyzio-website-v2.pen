@@ -30426,7 +30426,7 @@
                               "type": "frame",
                               "id": "hxe6r",
                               "name": "iconFrame",
-                              "width": 116.30944122376617,
+                              "width": 207.9096625176053,
                               "height": 40,
                               "fill": "$--warning",
                               "cornerRadius": "$--radius-full",
@@ -32114,7 +32114,7 @@
                               "type": "frame",
                               "id": "h3cG4",
                               "name": "iconF",
-                              "width": 943.8650421053231,
+                              "width": 1127.865042105323,
                               "height": 40,
                               "fill": "$--warning",
                               "cornerRadius": "$--radius-full",
@@ -45710,8 +45710,8 @@
     {
       "type": "frame",
       "id": "91oNG",
-      "x": -8018,
-      "y": 50879,
+      "x": -8125,
+      "y": 50848,
       "name": "Email Templates",
       "layout": "vertical",
       "gap": 80,
@@ -45837,7 +45837,7 @@
                           "fill": "$--foreground-muted",
                           "textGrowth": "fixed-width",
                           "width": "fill_container",
-                          "content": "Vaše rezervace zatím čeká na potvrzení od terapeuta. Jakmile ji terapeut potvrdí, dáme vám vědět.",
+                          "content": "Prosíme o potvrzení vaší rezervace. Bez potvrzení bude termín automaticky uvolněn.",
                           "lineHeight": 1.6,
                           "fontFamily": "$--font-body",
                           "fontSize": 14,
@@ -45857,7 +45857,7 @@
                               "enabled": false
                             },
                             "zQ0cQ": {
-                              "content": "Čekáme na potvrzení od terapeuta. Obvykle to trvá do několika hodin."
+                              "content": "Potvrďte prosím svou účast nejpozději 24 hodin před termínem, jinak bude rezervace automaticky zrušena."
                             }
                           }
                         },
@@ -46094,7 +46094,7 @@
                                   "id": "y64Z3",
                                   "name": "ctaConfirmTxt",
                                   "fill": "$--white",
-                                  "content": "Zobrazit detail rezervace",
+                                  "content": "Potvrdit rezervaci",
                                   "fontFamily": "$--font-body",
                                   "fontSize": 15,
                                   "fontWeight": "600"
@@ -46139,7 +46139,7 @@
                           "fill": "$--foreground-subtle",
                           "textGrowth": "fixed-width",
                           "width": "fill_container",
-                          "content": "Pokud terapeut rezervaci nepotvrdí, budeme vás kontaktovat s návrhem alternativního termínu.",
+                          "content": "Pokud jste rezervaci nevytvořili, tento e-mail prosím ignorujte.",
                           "lineHeight": 1.5,
                           "textAlign": "center",
                           "fontFamily": "$--font-body",
@@ -46257,7 +46257,7 @@
                 {
                   "type": "frame",
                   "id": "KZ0p8",
-                  "name": "Email/Rezervace potvrzena terapeutem",
+                  "name": "Email/Rezervace potvrzena",
                   "width": 600,
                   "fill": "$--background",
                   "cornerRadius": "$--radius-lg",
@@ -46366,7 +46366,7 @@
                               "fill": "$--success",
                               "textGrowth": "fixed-width",
                               "width": "fill_container",
-                              "content": "Rezervace byla potvrzena terapeutem.",
+                              "content": "Rezervace je potvrzena.",
                               "lineHeight": 1.5,
                               "fontFamily": "$--font-body",
                               "fontSize": 13,
@@ -46381,7 +46381,7 @@
                           "fill": "$--foreground-muted",
                           "textGrowth": "fixed-width",
                           "width": "fill_container",
-                          "content": "Vaše rezervace byla právě potvrzena terapeutem. Těšíme se na vás!",
+                          "content": "Děkujeme za potvrzení účasti. Těšíme se na vás!",
                           "lineHeight": 1.6,
                           "fontFamily": "$--font-body",
                           "fontSize": 14,
@@ -46665,7 +46665,7 @@
                           "fill": "$--foreground-subtle",
                           "textGrowth": "fixed-width",
                           "width": "fill_container",
-                          "content": "Storno zdarma je možné nejpozději 24 hodin před termínem návštěvy. Pozdější zrušení je zpoplatněno dle storno podmínek.",
+                          "content": "Zrušení potvrzené rezervace je zpoplatněno storno poplatkem 50 % z ceny služby. Pokud nemůžete přijít, dejte nám prosím vědět co nejdříve.",
                           "lineHeight": 1.5,
                           "textAlign": "center",
                           "fontFamily": "$--font-body",
@@ -46703,7 +46703,7 @@
                               "fill": "$--foreground-muted",
                               "textGrowth": "fixed-width",
                               "width": "fill_container",
-                              "content": "Pripomienku termínu vám pošleme 48 hodín pred návštevou.",
+                              "content": "Připomínku termínu vám pošleme 24 hodin před návštěvou.",
                               "lineHeight": 1.5,
                               "fontFamily": "$--font-body",
                               "fontSize": 13,
@@ -84190,7 +84190,7 @@
                       "descendants": {
                         "MSASQ": {
                           "content": "Aktivní kurzy",
-                          "x": 24.04814235046943,
+                          "x": 24.048142350469423,
                           "y": 12,
                           "rotation": -0.16225630497652313,
                           "flipX": false,
@@ -84209,7 +84209,7 @@
                       "descendants": {
                         "MSASQ": {
                           "content": "Čekací listina",
-                          "x": 24.04814235046943,
+                          "x": 24.048142350469423,
                           "y": 12,
                           "rotation": -0.16225630497652313,
                           "flipX": false,
@@ -86386,7 +86386,7 @@
                       "type": "frame",
                       "id": "0SwEr",
                       "name": "currentCard",
-                      "width": 8241.903099060662,
+                      "width": 16338.422937894671,
                       "height": 90,
                       "fill": "$--background-alt",
                       "cornerRadius": "$--radius-md",
@@ -86440,7 +86440,7 @@
                       "type": "frame",
                       "id": "6X3KM",
                       "name": "newTermCard",
-                      "width": 8414.327850087036,
+                      "width": 16680.2309491477,
                       "height": 90,
                       "fill": "$--primary-light",
                       "cornerRadius": "$--radius-md",
@@ -102131,5 +102131,6 @@
       "type": "color",
       "value": "#FFFFFF"
     }
-  }
+  },
+  "fileToken": "de16640b-adc9-4edc-baf8-525f5f53f88b"
 }

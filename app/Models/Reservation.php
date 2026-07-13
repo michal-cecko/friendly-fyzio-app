@@ -100,6 +100,19 @@ class Reservation extends Model
         return (int) round(($this->service?->price ?? 0) * Settings::stornoFeePercent() / 100);
     }
 
+    /**
+     * Whether cancelling now forces the storno decision (pay / doctor's note /
+     * deactivate) instead of a free self-cancel. True for an active reservation that
+     * carries a fee once it is either confirmed or already inside the storno window;
+     * a Pending reservation still outside the window (or any zero-fee one) stays free.
+     */
+    public function requiresStornoDecision(): bool
+    {
+        return in_array($this->status, [ReservationStatus::Pending, ReservationStatus::Confirmed], true)
+            && $this->stornoFee() > 0
+            && ($this->status === ReservationStatus::Confirmed || $this->withinStornoWindow());
+    }
+
     public function client(): BelongsTo
     {
         return $this->belongsTo(User::class, 'client_id');

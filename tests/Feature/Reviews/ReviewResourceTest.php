@@ -43,7 +43,6 @@ class ReviewResourceTest extends TestCase
             ->fillForm([
                 'rating' => 5,
                 'author_name' => 'Jana Nováková',
-                'author_role' => 'účastnice kurzu',
                 'content' => 'Moc mi to pomohlo, děkuji!',
                 'visible' => true,
             ])
@@ -54,6 +53,29 @@ class ReviewResourceTest extends TestCase
             'author_name' => 'Jana Nováková',
             'rating' => 5,
             'visible' => true,
+        ]);
+    }
+
+    public function test_admin_can_link_review_to_customer(): void
+    {
+        $customer = User::factory()->customer()->create(['name' => 'Petr Klient']);
+
+        $this->actingAs($this->admin());
+
+        Livewire::test(CreateReview::class)
+            ->fillForm([
+                'rating' => 4,
+                'client_id' => $customer->getKey(),
+                'author_name' => 'Petr Klient',
+                'content' => 'Skvělá péče.',
+                'visible' => true,
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $this->assertDatabaseHas('reviews', [
+            'client_id' => $customer->getKey(),
+            'author_name' => 'Petr Klient',
         ]);
     }
 

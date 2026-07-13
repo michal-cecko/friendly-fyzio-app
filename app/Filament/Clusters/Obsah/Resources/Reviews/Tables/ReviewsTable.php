@@ -40,7 +40,6 @@ class ReviewsTable
                     ->sortable(),
                 TextColumn::make('author_name')
                     ->label('Autor')
-                    ->description(fn ($record): ?string => $record->author_role)
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('content')

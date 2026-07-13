@@ -23,10 +23,6 @@ class ReviewFactory extends Factory
             'rating' => fake()->numberBetween(3, 5),
             'content' => fake()->realText(160),
             'author_name' => fake()->name(),
-            'author_role' => fake()->boolean(50)
-                ? fake()->randomElement(['klientka', 'klient', 'účastnice kurzu', 'účastník workshopu'])
-                : null,
-            'photo' => null,
             'visible' => true,
         ];
     }
