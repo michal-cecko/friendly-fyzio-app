@@ -9,16 +9,21 @@ use App\Filament\Clusters\Provoz\Resources\Reservations\Actions\DeleteReservatio
 use App\Filament\Clusters\Provoz\Resources\Reservations\Schemas\ReservationForm;
 use App\Filament\Support\Actions\SendReviewRequestAction;
 use App\Filament\Support\Tables\TimestampColumns;
+use App\Models\Reservation;
+use App\Support\Reservations\ReservationSummary;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
+use Illuminate\Support\HtmlString;
 
 class ReservationsTable
 {
@@ -70,6 +75,14 @@ class ReservationsTable
                 SendReviewRequestAction::make(),
                 CancelReservationAction::make(),
                 DeleteReservationAction::make(),
+                RestoreAction::make()
+                    ->modalHeading('Obnovit rezervaci?')
+                    ->modalDescription(fn (Reservation $record): HtmlString => ReservationSummary::description($record))
+                    ->modalSubmitActionLabel('Obnovit'),
+                ForceDeleteAction::make()
+                    ->modalHeading('Trvale smazat rezervaci?')
+                    ->modalDescription(fn (Reservation $record): HtmlString => ReservationSummary::description($record))
+                    ->modalSubmitActionLabel('Trvale smazat'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

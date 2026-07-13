@@ -2,6 +2,7 @@
 
 namespace App\Filament\Clusters\Provoz\Resources\Buildings\Schemas;
 
+use App\Filament\Support\Schemas\PresenceBanner;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -14,6 +15,7 @@ class BuildingForm
         return $schema
             ->columns(1)
             ->components([
+                PresenceBanner::make(),
                 Section::make('Informace o budově')
                     ->icon(Heroicon::OutlinedBuildingLibrary)
                     ->columns(['default' => 1, 'sm' => 2])

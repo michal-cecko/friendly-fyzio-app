@@ -2,6 +2,7 @@
 
 namespace App\Filament\Clusters\Obsah\Resources\EmailTemplates\Schemas;
 
+use App\Filament\Support\Schemas\PresenceBanner;
 use App\Mason\EmailBrickRegistry;
 use App\Models\EmailTemplate;
 use Awcodes\Mason\Mason;
@@ -17,6 +18,7 @@ class EmailTemplateForm
     {
         return $schema
             ->components([
+                PresenceBanner::make(),
                 Section::make('Nastavení')
                     ->schema([
                         TextInput::make('name')

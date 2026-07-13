@@ -4,6 +4,7 @@ namespace App\Filament\Clusters\LekceWorkshopy\Resources\OneTimeLessonBookings\S
 
 use App\Enums\PaymentStatus;
 use App\Enums\UserRole;
+use App\Filament\Support\Schemas\PresenceBanner;
 use App\Models\OneTimeLesson;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
@@ -18,6 +19,7 @@ class OneTimeLessonBookingForm
         return $schema
             ->columns(2)
             ->components([
+                PresenceBanner::make(),
                 Select::make('lesson_id')
                     ->label('Lekce')
                     ->relationship('lesson', 'lesson_date')

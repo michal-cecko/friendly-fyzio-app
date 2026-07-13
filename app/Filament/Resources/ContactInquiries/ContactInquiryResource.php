@@ -13,6 +13,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 
 class ContactInquiryResource extends Resource
 {
@@ -20,7 +21,7 @@ class ContactInquiryResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedEnvelope;
 
-    protected static ?int $navigationSort = 5;
+    protected static ?int $navigationSort = 200;
 
     protected static ?string $recordTitleAttribute = 'name';
 
@@ -37,6 +38,26 @@ class ContactInquiryResource extends Resource
     public static function getNavigationLabel(): string
     {
         return 'Zprávy z webu';
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['name', 'email', 'phone', 'message'];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        /** @var ContactInquiry $record */
+        return array_filter([
+            'E-mail' => $record->email,
+            'Přijato' => $record->created_at?->format('j. n. Y'),
+        ]);
     }
 
     public static function getNavigationBadge(): ?string

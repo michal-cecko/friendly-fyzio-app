@@ -4,9 +4,14 @@ namespace App\Filament\Clusters\Provoz\Resources\Reservations\Schemas;
 
 use App\Enums\PaymentStatus;
 use App\Enums\ReservationStatus;
+use App\Filament\Clusters\Provoz\Resources\Clients\ClientResource;
+use App\Filament\Clusters\Provoz\Resources\Services\ServiceResource;
+use App\Filament\Clusters\System\Resources\TherapistProfiles\TherapistProfileResource;
+use App\Filament\Support\Schemas\PresenceBanner;
 use App\Filament\Support\Schemas\RecordTimestampsSection;
 use App\Filament\Support\Schemas\ResponsiveColumns;
 use App\Models\TherapistProfile;
+use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -18,6 +23,7 @@ use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
 
 class ReservationForm
 {
@@ -26,6 +32,7 @@ class ReservationForm
         [$termin, $ucastnici, $stav] = self::components();
 
         return $schema->components([
+            PresenceBanner::make(),
             Grid::make(['default' => 1, 'lg' => 3])
                 ->columnSpanFull()
                 ->schema([
@@ -73,20 +80,38 @@ class ReservationForm
                         ->relationship('client', 'name')
                         ->searchable()
                         ->preload()
-                        ->required(),
+                        ->required()
+                        ->live()
+                        ->hintAction(self::openRecordAction(
+                            'openClient',
+                            'client_id',
+                            fn (string $id): string => ClientResource::getUrl('view', ['record' => $id]),
+                        )),
                     Select::make('service_id')
                         ->label('Služba')
                         ->relationship('service', 'name')
                         ->searchable()
                         ->preload()
-                        ->required(),
+                        ->required()
+                        ->live()
+                        ->hintAction(self::openRecordAction(
+                            'openService',
+                            'service_id',
+                            fn (string $id): string => ServiceResource::getUrl('view', ['record' => $id]),
+                        )),
                     Select::make('therapist_id')
                         ->label('Terapeut')
                         ->relationship('therapist')
                         ->getOptionLabelFromRecordUsing(fn (TherapistProfile $record): ?string => $record->user?->name)
                         ->searchable()
                         ->preload()
-                        ->required(),
+                        ->required()
+                        ->live()
+                        ->hintAction(self::openRecordAction(
+                            'openTherapist',
+                            'therapist_id',
+                            fn (string $id): string => TherapistProfileResource::getUrl('edit', ['record' => $id]),
+                        )),
                     Select::make('room_id')
                         ->label('Místnost')
                         ->relationship('room', 'name')
@@ -122,12 +147,24 @@ class ReservationForm
                         ->label('Poznámka')
                         ->rows(3)
                         ->columnSpanFull(),
-                    Toggle::make('notify_client')
-                        ->label('Informovat klienta e-mailem')
-                        ->helperText('Po uložení odešle klientovi potvrzovací e-mail.')
-                        ->default(false)
-                        ->columnSpanFull(),
                 ]),
         ];
+    }
+
+    /**
+     * A hint-action link (top-right of a Select) that opens the selected record's detail
+     * page in a new tab, shown only once a value is picked. Lets the admin jump straight
+     * to the chosen client / service / therapist from the reservation form.
+     *
+     * @param  callable(string): string  $url  Builds the target URL from the selected id.
+     */
+    private static function openRecordAction(string $name, string $field, callable $url): Action
+    {
+        return Action::make($name)
+            ->label('Otevřít detail')
+            ->icon(Heroicon::OutlinedArrowTopRightOnSquare)
+            ->color('gray')
+            ->visible(fn (Get $get): bool => filled($get($field)))
+            ->url(fn (Get $get): ?string => filled($get($field)) ? $url($get($field)) : null, shouldOpenInNewTab: true);
     }
 }

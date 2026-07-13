@@ -4,6 +4,7 @@ namespace App\Filament\Clusters\LekceWorkshopy\Resources\WorkshopRegistrations\S
 
 use App\Enums\PaymentStatus;
 use App\Enums\UserRole;
+use App\Filament\Support\Schemas\PresenceBanner;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\ToggleButtons;
@@ -17,6 +18,7 @@ class WorkshopRegistrationForm
         return $schema
             ->columns(2)
             ->components([
+                PresenceBanner::make(),
                 Select::make('workshop_id')
                     ->label('Workshop')
                     ->relationship('workshop', 'name')

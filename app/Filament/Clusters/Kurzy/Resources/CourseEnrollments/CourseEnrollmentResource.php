@@ -16,7 +16,9 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 class CourseEnrollmentResource extends Resource
 {
@@ -28,7 +30,7 @@ class CourseEnrollmentResource extends Resource
 
     protected static ?int $navigationSort = 5;
 
-    protected static ?string $recordTitleAttribute = 'id';
+    protected static int $globalSearchResultsLimit = 10;
 
     public static function getModelLabel(): string
     {
@@ -43,6 +45,33 @@ class CourseEnrollmentResource extends Resource
     public static function getNavigationLabel(): string
     {
         return 'Přihlášky';
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['client.name', 'client.email', 'series.name', 'series.course.name'];
+    }
+
+    public static function getGlobalSearchResultTitle(Model $record): string|Htmlable
+    {
+        /** @var CourseEnrollment $record */
+        return trim(($record->client?->name ?? 'Neznámý klient').' — '.($record->series?->name ?? 'Neznámý běh'));
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        /** @var CourseEnrollment $record */
+        return array_filter([
+            'Kurz' => $record->series?->course?->name,
+            'Stav' => $record->status?->getLabel(),
+            'Platba' => $record->payment_status?->getLabel(),
+        ]);
     }
 
     public static function form(Schema $schema): Schema

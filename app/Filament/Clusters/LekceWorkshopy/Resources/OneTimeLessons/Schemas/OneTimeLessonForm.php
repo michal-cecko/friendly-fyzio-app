@@ -3,6 +3,7 @@
 namespace App\Filament\Clusters\LekceWorkshopy\Resources\OneTimeLessons\Schemas;
 
 use App\Enums\UserRole;
+use App\Filament\Support\Schemas\PresenceBanner;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -17,6 +18,7 @@ class OneTimeLessonForm
         return $schema
             ->columns(2)
             ->components([
+                PresenceBanner::make(),
                 Select::make('course_id')
                     ->label('Kurz')
                     ->relationship('course', 'name')

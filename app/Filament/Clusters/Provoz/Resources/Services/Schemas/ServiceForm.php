@@ -4,6 +4,7 @@ namespace App\Filament\Clusters\Provoz\Resources\Services\Schemas;
 
 use App\Enums\ExamType;
 use App\Enums\ServiceVisibility;
+use App\Filament\Support\Schemas\PresenceBanner;
 use App\Filament\Support\Schemas\ResponsiveColumns;
 use App\Mason\BrickRegistry;
 use App\Models\Service;
@@ -31,6 +32,7 @@ class ServiceForm
 
         return $schema
             ->components([
+                PresenceBanner::make(),
                 Section::make('Základní údaje')
                     ->icon(Heroicon::OutlinedSparkles)
                     ->columnSpanFull()

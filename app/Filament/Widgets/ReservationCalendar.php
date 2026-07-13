@@ -7,6 +7,7 @@ use App\Enums\EmailTemplateKey;
 use App\Enums\ReservationStatus;
 use App\Enums\UserRole;
 use App\Enums\WeekType;
+use App\Filament\Clusters\Provoz\Resources\Reservations\ReservationResource;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Schemas\ReservationForm;
 use App\Filament\Support\Schemas\BlockingForm;
 use App\Filament\Support\Schemas\WorkingHoursForm;
@@ -20,18 +21,24 @@ use App\Models\User;
 use App\Notifications\ReservationNotification;
 use App\Notifications\ReservationTemplateNotification;
 use App\Support\CalendarAvailability;
+use App\Support\Reservations\ReservationChangeSnapshot;
+use App\Support\Reservations\ReservationSummary;
 use App\Support\Settings;
 use Filament\Actions\Action;
+use Filament\Actions\RestoreAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
+use Filament\Schemas\Components\Actions as SchemaActions;
 use Filament\Schemas\Schema;
+use Filament\Support\Enums\Alignment;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\HtmlString;
 use Livewire\Attributes\Url;
 use Saade\FilamentFullCalendar\Actions\CreateAction as FullCalendarCreateAction;
 use Saade\FilamentFullCalendar\Actions\DeleteAction as FullCalendarDeleteAction;
@@ -127,6 +134,15 @@ class ReservationCalendar extends FullCalendarWidget
 
     /** @var Collection<int, TherapistProfile>|null */
     protected ?Collection $therapistCache = null;
+
+    /**
+     * Pre-edit snapshot of the reservation being edited ({{ puvodni_* }} tokens),
+     * captured in the edit action's before() hook and consumed in after() so the
+     * "reservation changed" e-mail can show the original values next to the new ones.
+     *
+     * @var array<string, string>
+     */
+    protected array $reservationChangeSnapshot = [];
 
     public function getModel(): ?string
     {
@@ -1220,9 +1236,41 @@ class ReservationCalendar extends FullCalendarWidget
         JS;
     }
 
+    /**
+     * Resolve a clicked event to its record with soft-deleted reservations included,
+     * so the edit modal opens for trashed reservations (visible under the „Koš"
+     * trashed filter) instead of throwing ModelNotFoundException → 404 in the modal.
+     */
+    protected function getEloquentQuery(): Builder
+    {
+        return Reservation::query()->withTrashed();
+    }
+
     public function getFormSchema(): array
     {
-        return ReservationForm::components();
+        return [
+            // Filament action modals have no header-bar action slot, so this
+            // renders a right-aligned "open detail" link at the top of the modal
+            // content. Hidden on create because there is no record yet.
+            SchemaActions::make([
+                Action::make('openDetail')
+                    ->label('Otevřít detail')
+                    ->icon(Heroicon::OutlinedArrowTopRightOnSquare)
+                    ->color('gray')
+                    ->url(fn (?Reservation $record): ?string => $record?->exists
+                        ? ReservationResource::getUrl('view', ['record' => $record])
+                        : null),
+            ])
+                ->alignment(Alignment::End)
+                ->visible(fn (?Reservation $record): bool => (bool) $record?->exists)
+                ->columnSpanFull(),
+            ...ReservationForm::components(),
+            Toggle::make('notify_client')
+                ->label('Upozornit zákazníka?')
+                ->helperText('Po uložení odešle zákazníkovi e-mail o vytvoření či změně rezervace.')
+                ->default(true)
+                ->columnSpanFull(),
+        ];
     }
 
     /**
@@ -1302,6 +1350,8 @@ class ReservationCalendar extends FullCalendarWidget
                 ->label('Nová rezervace')
                 ->icon(Heroicon::OutlinedPlus)
                 ->modalHeading('Nová rezervace')
+                ->stickyModalHeader()
+                ->stickyModalFooter()
                 ->after(function (FullCalendarWidget $livewire, ?Model $record, array $data): void {
                     if ($record instanceof Reservation && ($data['notify_client'] ?? false)) {
                         $record->client?->notify(new ReservationNotification($record, 'created'));
@@ -1319,10 +1369,29 @@ class ReservationCalendar extends FullCalendarWidget
                 ->label('Upravit')
                 ->icon(Heroicon::OutlinedPencilSquare)
                 ->modalHeading('Upravit rezervaci')
+                // Keep the heading and footer actions in view while the (tall) form
+                // body scrolls between them.
+                ->stickyModalHeader()
+                ->stickyModalFooter()
+                // Normal dialog footer: cancel + delete on the left, save on the
+                // right. The order styles arrange the buttons; the save button's
+                // auto start-margin pins it to the right edge (see admin theme.css).
+                ->modalFooterActionsAlignment(Alignment::Between)
+                ->modalSubmitAction(fn (Action $submit) => $submit
+                    ->icon('lucide-save')
+                    ->extraAttributes(['style' => 'order:2;margin-inline-start:auto;']))
+                ->before(function (Reservation $record): void {
+                    // Snapshot the original values before the edit is saved so the
+                    // "reservation changed" e-mail can show the puvodni_* tokens.
+                    $this->reservationChangeSnapshot = ReservationChangeSnapshot::capture($record);
+                })
                 ->extraModalFooterActions([
                     FullCalendarDeleteAction::make()
                         ->label('Smazat')
-                        ->modalHeading('Smazat rezervaci')
+                        ->extraAttributes(['style' => 'order:1'])
+                        ->modalHeading('Smazat rezervaci?')
+                        ->modalDescription(fn (Reservation $record): HtmlString => ReservationSummary::description($record))
+                        ->modalSubmitActionLabel('Smazat')
                         ->schema([
                             Toggle::make('notify_client')
                                 ->label('Informovat klienta e-mailem')
@@ -1333,10 +1402,27 @@ class ReservationCalendar extends FullCalendarWidget
                                 $record->client?->notify(new ReservationNotification($record, 'cancelled'));
                             }
                         }),
+                    // Shown only when the opened reservation is soft-deleted (Filament's
+                    // RestoreAction is visible only for trashed records). Bound to the
+                    // widget's record like Saade's DeleteAction, and closes the edit modal
+                    // + refreshes the calendar afterwards.
+                    RestoreAction::make()
+                        ->label('Obnovit')
+                        ->extraAttributes(['style' => 'order:1'])
+                        ->modalHeading('Obnovit rezervaci?')
+                        ->modalDescription(fn (Reservation $record): HtmlString => ReservationSummary::description($record))
+                        ->modalSubmitActionLabel('Obnovit')
+                        ->model(fn (FullCalendarWidget $livewire): ?string => $livewire->getModel())
+                        ->record(fn (FullCalendarWidget $livewire): ?Model => $livewire->getRecord())
+                        ->cancelParentActions()
+                        ->after(function (FullCalendarWidget $livewire): void {
+                            $livewire->record = null;
+                            $livewire->refreshRecords();
+                        }),
                 ])
                 ->after(function (FullCalendarWidget $livewire, Model $record, array $data): void {
                     if ($record instanceof Reservation && ($data['notify_client'] ?? false)) {
-                        $record->client?->notify(new ReservationNotification($record, 'updated'));
+                        $record->client?->notify(new ReservationTemplateNotification($record, EmailTemplateKey::ReservationChanged, $this->reservationChangeSnapshot));
                     }
 
                     $livewire->refreshRecords();

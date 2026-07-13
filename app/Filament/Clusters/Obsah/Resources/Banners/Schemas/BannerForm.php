@@ -3,6 +3,7 @@
 namespace App\Filament\Clusters\Obsah\Resources\Banners\Schemas;
 
 use App\Enums\BannerType;
+use App\Filament\Support\Schemas\PresenceBanner;
 use App\Mason\Support\LinkPickerField;
 use App\Models\Page;
 use Filament\Forms\Components\ColorPicker;
@@ -23,6 +24,7 @@ class BannerForm
     {
         return $schema
             ->components([
+                PresenceBanner::make(),
                 Section::make('Banner')
                     ->columns(2)
                     ->schema([

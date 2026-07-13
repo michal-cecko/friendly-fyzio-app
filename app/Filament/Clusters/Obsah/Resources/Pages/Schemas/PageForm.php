@@ -2,6 +2,7 @@
 
 namespace App\Filament\Clusters\Obsah\Resources\Pages\Schemas;
 
+use App\Filament\Support\Schemas\PresenceBanner;
 use App\Mason\BrickRegistry;
 use App\Models\Page;
 use App\Models\ServiceCategory;
@@ -24,6 +25,7 @@ class PageForm
     {
         return $schema
             ->components([
+                PresenceBanner::make(),
                 Grid::make(3)
                     ->columnSpanFull()
                     ->schema([

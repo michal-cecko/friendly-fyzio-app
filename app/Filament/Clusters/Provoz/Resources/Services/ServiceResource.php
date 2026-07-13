@@ -17,6 +17,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ServiceResource extends Resource
@@ -52,6 +53,19 @@ class ServiceResource extends Resource
     public static function getGloballySearchableAttributes(): array
     {
         return ['name', 'slug'];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        /** @var Service $record */
+        return array_filter([
+            'Kategorie' => $record->category?->name,
+            'Délka' => $record->duration_minutes ? $record->duration_minutes.' min' : null,
+            'Cena' => $record->price ? number_format($record->price, 0, ',', ' ').' Kč' : null,
+        ]);
     }
 
     public static function form(Schema $schema): Schema

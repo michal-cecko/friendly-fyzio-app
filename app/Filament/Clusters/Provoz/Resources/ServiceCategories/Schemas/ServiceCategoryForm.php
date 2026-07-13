@@ -3,6 +3,7 @@
 namespace App\Filament\Clusters\Provoz\Resources\ServiceCategories\Schemas;
 
 use App\Enums\ServiceType;
+use App\Filament\Support\Schemas\PresenceBanner;
 use App\Filament\Support\Schemas\RecordTimestampsSection;
 use App\Filament\Support\Schemas\ResponsiveColumns;
 use App\Mason\BrickRegistry;
@@ -25,6 +26,7 @@ class ServiceCategoryForm
     {
         return $schema
             ->components([
+                PresenceBanner::make(),
                 Section::make('Základní údaje')
                     ->columnSpanFull()
                     ->gridContainer()

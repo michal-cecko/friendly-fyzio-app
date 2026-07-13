@@ -21,9 +21,14 @@ class ReservationTemplateNotification extends Notification
 {
     use Queueable;
 
+    /**
+     * @param  array<string, string>  $extraTokens  Trigger-specific tokens merged over the
+     *                                              reservation's base context (e.g. puvodni_*).
+     */
     public function __construct(
         public Reservation $reservation,
         public EmailTemplateKey $key,
+        public array $extraTokens = [],
     ) {}
 
     /**
@@ -45,7 +50,7 @@ class ReservationTemplateNotification extends Notification
                 ->line($this->key->label());
         }
 
-        $html = EmailTemplateRenderer::render($template, ReservationEmailContext::for($this->reservation));
+        $html = EmailTemplateRenderer::render($template, ReservationEmailContext::for($this->reservation, $this->extraTokens));
 
         return (new MailMessage)
             ->subject($template->subject)

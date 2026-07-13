@@ -3,6 +3,7 @@
 namespace App\Filament\Clusters\Provoz\Resources\Rooms\Schemas;
 
 use App\Filament\Clusters\Provoz\Resources\Buildings\Schemas\BuildingForm;
+use App\Filament\Support\Schemas\PresenceBanner;
 use App\Filament\Support\Schemas\RecordTimestampsSection;
 use App\Filament\Support\Schemas\ResponsiveColumns;
 use Filament\Forms\Components\Select;
@@ -17,6 +18,7 @@ class RoomForm
     {
         return $schema
             ->components([
+                PresenceBanner::make(),
                 RecordTimestampsSection::firstRow(
                     Section::make('Místnost')
                         ->icon(Heroicon::OutlinedRectangleGroup)

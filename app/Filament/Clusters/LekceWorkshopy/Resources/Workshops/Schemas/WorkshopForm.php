@@ -3,6 +3,7 @@
 namespace App\Filament\Clusters\LekceWorkshopy\Resources\Workshops\Schemas;
 
 use App\Enums\UserRole;
+use App\Filament\Support\Schemas\PresenceBanner;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
@@ -21,6 +22,7 @@ class WorkshopForm
         return $schema
             ->columns(2)
             ->components([
+                PresenceBanner::make(),
                 TextInput::make('name')
                     ->label('Název')
                     ->required()

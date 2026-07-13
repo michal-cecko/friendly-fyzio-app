@@ -3,6 +3,7 @@
 namespace App\Filament\Clusters\System\Resources\TherapistProfiles\Schemas;
 
 use App\Enums\UserRole;
+use App\Filament\Support\Schemas\PresenceBanner;
 use App\Filament\Support\Schemas\RecordTimestampsSection;
 use App\Mason\Support\Fields;
 use Filament\Forms\Components\DateTimePicker;
@@ -22,7 +23,10 @@ class TherapistProfileForm
 {
     public static function configure(Schema $schema): Schema
     {
-        return $schema->components(self::components(withUser: true));
+        return $schema->components([
+            PresenceBanner::make(),
+            ...self::components(withUser: true),
+        ]);
     }
 
     /**

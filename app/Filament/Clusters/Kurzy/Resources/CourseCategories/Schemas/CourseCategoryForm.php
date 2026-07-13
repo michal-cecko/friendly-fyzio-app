@@ -2,6 +2,7 @@
 
 namespace App\Filament\Clusters\Kurzy\Resources\CourseCategories\Schemas;
 
+use App\Filament\Support\Schemas\PresenceBanner;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -16,6 +17,7 @@ class CourseCategoryForm
         return $schema
             ->columns(2)
             ->components([
+                PresenceBanner::make(),
                 TextInput::make('name')
                     ->label('Název')
                     ->required()

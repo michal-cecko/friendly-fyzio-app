@@ -16,7 +16,9 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 class OneTimeLessonBookingResource extends Resource
 {
@@ -28,7 +30,7 @@ class OneTimeLessonBookingResource extends Resource
 
     protected static ?int $navigationSort = 2;
 
-    protected static ?string $recordTitleAttribute = 'id';
+    protected static int $globalSearchResultsLimit = 10;
 
     public static function getModelLabel(): string
     {
@@ -43,6 +45,32 @@ class OneTimeLessonBookingResource extends Resource
     public static function getNavigationLabel(): string
     {
         return 'Rezervace lekcí';
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['client.name', 'client.email', 'lesson.course.name'];
+    }
+
+    public static function getGlobalSearchResultTitle(Model $record): string|Htmlable
+    {
+        /** @var OneTimeLessonBooking $record */
+        return trim(($record->client?->name ?? 'Neznámý klient').' — '.($record->lesson?->course?->name ?? 'Neznámá lekce'));
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        /** @var OneTimeLessonBooking $record */
+        return array_filter([
+            'Datum lekce' => $record->lesson?->lesson_date?->format('j. n. Y'),
+            'Platba' => $record->payment_status?->getLabel(),
+        ]);
     }
 
     public static function form(Schema $schema): Schema

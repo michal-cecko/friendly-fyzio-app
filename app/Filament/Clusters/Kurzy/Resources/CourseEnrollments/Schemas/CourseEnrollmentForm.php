@@ -5,6 +5,7 @@ namespace App\Filament\Clusters\Kurzy\Resources\CourseEnrollments\Schemas;
 use App\Enums\CourseEnrollmentStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\UserRole;
+use App\Filament\Support\Schemas\PresenceBanner;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\ToggleButtons;
@@ -18,6 +19,7 @@ class CourseEnrollmentForm
         return $schema
             ->columns(2)
             ->components([
+                PresenceBanner::make(),
                 Select::make('series_id')
                     ->label('Běh')
                     ->relationship('series', 'name')

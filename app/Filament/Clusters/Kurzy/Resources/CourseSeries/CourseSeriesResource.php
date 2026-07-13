@@ -17,6 +17,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 class CourseSeriesResource extends Resource
 {
@@ -50,7 +51,20 @@ class CourseSeriesResource extends Resource
      */
     public static function getGloballySearchableAttributes(): array
     {
-        return ['name'];
+        return ['name', 'course.name'];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        /** @var CourseSeries $record */
+        return array_filter([
+            'Kurz' => $record->course?->name,
+            'Zahájení' => $record->start_date?->format('j. n. Y'),
+            'Stav' => $record->status?->getLabel(),
+        ]);
     }
 
     public static function form(Schema $schema): Schema

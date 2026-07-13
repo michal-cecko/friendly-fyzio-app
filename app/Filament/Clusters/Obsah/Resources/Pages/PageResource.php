@@ -15,6 +15,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class PageResource extends Resource
@@ -50,6 +51,18 @@ class PageResource extends Resource
     public static function getGloballySearchableAttributes(): array
     {
         return ['title', 'slug'];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        /** @var Page $record */
+        return array_filter([
+            'Adresa' => '/'.ltrim($record->slug ?? '', '/'),
+            'Stav' => $record->published_at ? 'Publikováno' : 'Koncept',
+        ]);
     }
 
     public static function form(Schema $schema): Schema

@@ -3,6 +3,7 @@
 namespace App\Filament\Clusters\Obsah\Resources\Reviews\Schemas;
 
 use App\Enums\UserRole;
+use App\Filament\Support\Schemas\PresenceBanner;
 use App\Models\Course;
 use App\Models\Service;
 use App\Models\User;
@@ -24,6 +25,7 @@ class ReviewForm
     {
         return $schema
             ->components([
+                PresenceBanner::make(),
                 Section::make('Recenze')
                     ->columns(2)
                     ->schema([
