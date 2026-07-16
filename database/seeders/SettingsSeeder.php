@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\PayableType;
 use App\Enums\SettingValueType;
 use App\Models\Setting;
 use Illuminate\Database\Seeder;
@@ -154,6 +155,30 @@ class SettingsSeeder extends Seeder
         ]);
 
         $this->upsert([
+            'key' => 'payments.due_days',
+            'value' => '7',
+            'type' => SettingValueType::Integer,
+            'label' => 'Splatnost plateb (dny)',
+            'group' => 'Platby',
+            'description' => 'Výchozí splatnost vyžádaných plateb (storno poplatky, nezaplacené termíny) ode dne vytvoření.',
+            'config' => ['min' => 1, 'step' => 1, 'suffix' => 'dní'],
+            'sort' => 3,
+        ]);
+
+        $this->upsert([
+            'key' => 'payments.no_show_fee_percent',
+            'value' => '100',
+            'type' => SettingValueType::Integer,
+            'label' => 'Poplatek za nedostavení (% z ceny)',
+            'group' => 'Platby',
+            'description' => 'Výše poplatku, když se klient bez omluvy nedostaví na potvrzený termín.',
+            'config' => ['min' => 0, 'max' => 100, 'step' => 5, 'suffix' => '%'],
+            'sort' => 4,
+        ]);
+
+        $this->seedInvoicing();
+
+        $this->upsert([
             'key' => 'newsletter.mailerlite_group_id',
             'value' => '',
             'type' => SettingValueType::Text,
@@ -229,6 +254,129 @@ class SettingsSeeder extends Seeder
                 'sort' => $sort,
             ]);
         }
+    }
+
+    /**
+     * The "Fakturace" group: supplier identity frozen onto invoices at issue time,
+     * DPH mode, due dates, the invoice text hooks and the per-payable item templates.
+     */
+    private function seedInvoicing(): void
+    {
+        $texts = [
+            ['invoices.supplier_name', 'FriendlyFyzio s.r.o.', 'Název dodavatele', null],
+            ['invoices.supplier_address', 'Zednická 1109/2, Ostrava', 'Adresa dodavatele', null],
+            ['invoices.supplier_dic', '', 'DIČ dodavatele', 'Vyplňte, pokud bylo přiděleno. Tiskne se v hlavičce dokladů.'],
+            ['invoices.supplier_registration', '', 'Zápis v rejstříku', 'Např. „Zapsáno v OR vedeném KS v Ostravě…“ — tiskne se v patičce dokladů.'],
+            ['invoices.bank_account', '', 'Číslo účtu (český formát)', 'Např. 123456789/0800. Na dokladech se zobrazuje vedle IBANu.'],
+            ['invoices.text_before_items', 'Fakturujeme Vám za poskytnuté služby:', 'Text před položkami', 'Výchozí text nad položkami faktury; u každé faktury lze upravit.'],
+            ['invoices.text_after_items', '', 'Text za položkami', 'Výchozí text pod položkami faktury; u každé faktury lze upravit.'],
+            ['invoices.footer_thank_you', 'Děkujeme za Vaši důvěru a přejeme pevné zdraví!', 'Poděkování v patičce', 'Zvýrazněný řádek v patičce faktury.'],
+            ['invoices.vat_note', 'Nejsme plátci DPH.', 'Poznámka k DPH (neplátce)', 'Tiskne se na fakturách, dokud není zapnutý režim plátce DPH.'],
+        ];
+
+        foreach ($texts as $sort => [$key, $value, $label, $description]) {
+            $this->upsert([
+                'key' => $key,
+                'value' => $value,
+                'type' => SettingValueType::Text,
+                'label' => $label,
+                'group' => 'Fakturace',
+                'description' => $description,
+                'config' => null,
+                'sort' => $sort,
+            ]);
+        }
+
+        $this->upsert([
+            'key' => 'invoices.vat_payer',
+            'value' => '0',
+            'type' => SettingValueType::Boolean,
+            'label' => 'Plátce DPH',
+            'group' => 'Fakturace',
+            'description' => 'Po zapnutí položky faktur nesou sazbu DPH a doklad obsahuje rozpis daně (ceny se berou včetně DPH).',
+            'config' => null,
+            'sort' => 9,
+        ]);
+
+        $this->upsert([
+            'key' => 'invoices.default_vat_rate',
+            'value' => '21',
+            'type' => SettingValueType::Integer,
+            'label' => 'Výchozí sazba DPH',
+            'group' => 'Fakturace',
+            'description' => null,
+            'config' => ['min' => 0, 'max' => 100, 'step' => 1, 'suffix' => '%'],
+            'sort' => 10,
+        ]);
+
+        $this->upsert([
+            'key' => 'invoices.due_days',
+            'value' => '14',
+            'type' => SettingValueType::Integer,
+            'label' => 'Splatnost faktur (dny)',
+            'group' => 'Fakturace',
+            'description' => null,
+            'config' => ['min' => 1, 'step' => 1, 'suffix' => 'dní'],
+            'sort' => 11,
+        ]);
+
+        $sort = 12;
+
+        foreach (PayableType::cases() as $type) {
+            $tokens = 'Proměnné: '.implode(', ', array_map(
+                fn (string $token): string => '{{ '.$token.' }}',
+                array_keys($type->tokens()),
+            ));
+
+            $this->upsert([
+                'key' => $type->titleSettingKey(),
+                'value' => $type->defaultTitleTemplate(),
+                'type' => SettingValueType::Text,
+                'label' => 'Položka: '.$type->label().' – název',
+                'group' => 'Fakturace',
+                'description' => $tokens,
+                'config' => null,
+                'sort' => $sort++,
+            ]);
+
+            $this->upsert([
+                'key' => $type->descriptionSettingKey(),
+                'value' => $type->defaultDescriptionTemplate(),
+                'type' => SettingValueType::Text,
+                'label' => 'Položka: '.$type->label().' – popis',
+                'group' => 'Fakturace',
+                'description' => $tokens,
+                'config' => null,
+                'sort' => $sort++,
+            ]);
+        }
+
+        $stornoTokens = 'Proměnné: '.implode(', ', array_map(
+            fn (string $token): string => '{{ '.$token.' }}',
+            array_keys(PayableType::Reservation->tokens()),
+        ));
+
+        $this->upsert([
+            'key' => PayableType::STORNO_TITLE_KEY,
+            'value' => PayableType::STORNO_TITLE_DEFAULT,
+            'type' => SettingValueType::Text,
+            'label' => 'Položka: Storno poplatek – název',
+            'group' => 'Fakturace',
+            'description' => $stornoTokens,
+            'config' => null,
+            'sort' => $sort++,
+        ]);
+
+        $this->upsert([
+            'key' => PayableType::STORNO_DESCRIPTION_KEY,
+            'value' => PayableType::STORNO_DESCRIPTION_DEFAULT,
+            'type' => SettingValueType::Text,
+            'label' => 'Položka: Storno poplatek – popis',
+            'group' => 'Fakturace',
+            'description' => $stornoTokens,
+            'config' => null,
+            'sort' => $sort,
+        ]);
     }
 
     /**

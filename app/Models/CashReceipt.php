@@ -14,7 +14,12 @@ class CashReceipt extends Model
     protected $fillable = [
         'receipt_number',
         'invoice_id',
+        'series_id',
+        'payment_id',
         'client_id',
+        'client_name',
+        'purpose',
+        'received_by',
         'amount',
         'received_at',
     ];
@@ -30,6 +35,16 @@ class CashReceipt extends Model
     public function invoice(): BelongsTo
     {
         return $this->belongsTo(Invoice::class);
+    }
+
+    public function series(): BelongsTo
+    {
+        return $this->belongsTo(InvoiceSeries::class, 'series_id');
+    }
+
+    public function payment(): BelongsTo
+    {
+        return $this->belongsTo(Payment::class);
     }
 
     public function client(): BelongsTo

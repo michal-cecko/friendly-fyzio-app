@@ -2,8 +2,7 @@
 
 namespace App\Filament\Clusters\System\Resources\Users\RelationManagers;
 
-use App\Enums\UserRole;
-use App\Filament\Clusters\System\Resources\TherapistProfiles\Schemas\TherapistProfileForm;
+use App\Filament\Clusters\Provoz\Resources\TherapistProfiles\Schemas\TherapistProfileForm;
 use App\Models\TherapistProfile;
 use App\Models\User;
 use Filament\Actions\CreateAction;
@@ -23,7 +22,7 @@ class TherapistProfileRelationManager extends RelationManager
 
     public static function canViewForRecord(Model $ownerRecord, string $pageClass): bool
     {
-        return $ownerRecord instanceof User && $ownerRecord->role === UserRole::Therapist;
+        return $ownerRecord instanceof User && $ownerRecord->isTherapist();
     }
 
     public function form(Schema $schema): Schema

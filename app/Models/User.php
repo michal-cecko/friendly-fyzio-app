@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use App\Enums\UserRole;
+use App\Notifications\Auth\ResetPasswordNotification;
+use Filament\Facades\Filament;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -30,6 +33,7 @@ class User extends Authenticatable implements FilamentUser, HasPasskeys, MustVer
         'phone',
         'password',
         'role',
+        'acts_as_therapist',
         'newsletter_opted_in_at',
         'deactivated_at',
     ];
@@ -47,6 +51,7 @@ class User extends Authenticatable implements FilamentUser, HasPasskeys, MustVer
             'deactivated_at' => 'datetime',
             'password' => 'hashed',
             'role' => UserRole::class,
+            'acts_as_therapist' => 'boolean',
         ];
     }
 
@@ -64,6 +69,30 @@ class User extends Authenticatable implements FilamentUser, HasPasskeys, MustVer
                 $user->syncRoles([]);
             }
         });
+
+        // An administrator who opts in as a practising therapist gets a therapist
+        // profile automatically (unpublished): the calendar, working hours, and
+        // booking flows all key off the profile's existence.
+        static::saved(function (self $user): void {
+            if ($user->role === UserRole::Admin && $user->acts_as_therapist && $user->therapistProfile()->doesntExist()) {
+                $user->therapistProfile()->create([]);
+            }
+        });
+    }
+
+    /**
+     * Send the password-reset link using the dashboard-editable CMS template. Filament's
+     * public "forgotten password" page builds its own (container-bound) notification, but
+     * the admin-triggered reset (Password::sendResetLink via ResetPasswordAction) goes
+     * through the broker, which calls this method — so we rebuild the Filament panel URL
+     * here and dispatch the same CMS notification.
+     */
+    public function sendPasswordResetNotification($token): void
+    {
+        $notification = new ResetPasswordNotification($token);
+        $notification->url = Filament::getPanel('client')->getResetPasswordUrl($token, $this);
+
+        $this->notify($notification);
     }
 
     /**
@@ -73,6 +102,28 @@ class User extends Authenticatable implements FilamentUser, HasPasskeys, MustVer
     public function isStaff(): bool
     {
         return in_array($this->role, [UserRole::Admin, UserRole::Therapist], true);
+    }
+
+    /**
+     * Whether this user works as a therapist: either by account type, or as an
+     * administrator who opted in via the "acts as therapist" flag.
+     */
+    public function isTherapist(): bool
+    {
+        return $this->role === UserRole::Therapist
+            || ($this->role === UserRole::Admin && $this->acts_as_therapist);
+    }
+
+    /**
+     * Users who work as therapists (see isTherapist()).
+     */
+    public function scopeTherapists(Builder $query): Builder
+    {
+        return $query->where(fn (Builder $q): Builder => $q
+            ->where('role', UserRole::Therapist)
+            ->orWhere(fn (Builder $q): Builder => $q
+                ->where('role', UserRole::Admin)
+                ->where('acts_as_therapist', true)));
     }
 
     /**

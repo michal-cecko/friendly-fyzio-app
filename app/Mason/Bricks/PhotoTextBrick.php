@@ -4,6 +4,7 @@ namespace App\Mason\Bricks;
 
 use App\Mason\Support\ButtonsField;
 use App\Mason\Support\Fields;
+use App\Support\Mentions\StaffMentions;
 use Awcodes\Mason\Brick;
 use Filament\Actions\Action;
 use Filament\Forms\Components\RichEditor;
@@ -49,6 +50,7 @@ class PhotoTextBrick extends Brick
                 Fields::richText('title', 'Nadpis', required: true),
                 RichEditor::make('body')
                     ->label('Text')
+                    ->mentions([StaffMentions::editorProvider()])
                     ->toolbarButtons([
                         ['bold', 'italic', 'link', 'bulletList', 'orderedList', 'textColor'],
                     ]),

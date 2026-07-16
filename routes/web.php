@@ -3,6 +3,9 @@
 use App\Http\Controllers\InstagramOAuthController;
 use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\PageController;
+use App\Http\Controllers\Pdf\InvoiceExportDownloadController;
+use App\Http\Controllers\Pdf\InvoicePreviewController;
+use App\Http\Controllers\Pdf\ReceiptPreviewController;
 use App\Http\Controllers\ReservationManageController;
 use App\Http\Controllers\ServiceCategoryController;
 use App\Http\Controllers\ServiceController;
@@ -76,6 +79,18 @@ Route::get('/instagram/authorize/{connection}', [InstagramOAuthController::class
 Route::get('/instagram/callback', [InstagramOAuthController::class, 'callback'])
     ->name('instagram.oauth.callback');
 
+// Staff-only HTML previews of the PDF documents (the exact markup Gotenberg
+// renders). Authorization happens in the controllers (guests get 403).
+Route::get('/nahledy/faktura/{invoice}', InvoicePreviewController::class)
+    ->name('invoices.preview');
+Route::get('/nahledy/pokladni-doklad/{cashReceipt}', ReceiptPreviewController::class)
+    ->name('cash-receipts.preview');
+
+// Download of a background-built invoice ZIP (path is a base64 pointer into the
+// private disk's invoice-exports/ folder; pruned after 24 h).
+Route::get('/nahledy/export-faktur', InvoiceExportDownloadController::class)
+    ->name('invoices.export-download');
+
 Route::get('/{slug}', [PageController::class, 'show'])
-    ->where('slug', '^(?!admin|klientska-zona|livewire|passkeys|storage|dev|up|rezervace|prihlaseni|instagram).*$')
+    ->where('slug', '^(?!admin|klientska-zona|livewire|passkeys|storage|dev|up|rezervace|prihlaseni|instagram|nahledy).*$')
     ->name('page.show');

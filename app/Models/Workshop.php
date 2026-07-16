@@ -17,6 +17,7 @@ class Workshop extends Model
         'instructor_id',
         'room_id',
         'name',
+        'invoice_title',
         'slug',
         'description',
         'workshop_date',
@@ -65,10 +66,5 @@ class Workshop extends Model
     public function invitations()
     {
         return $this->morphMany(Invitation::class, 'inviteable');
-    }
-
-    public function invoice()
-    {
-        return $this->morphOne(Invoice::class, 'invoiceable');
     }
 }

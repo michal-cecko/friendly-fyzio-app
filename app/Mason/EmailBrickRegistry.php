@@ -6,6 +6,7 @@ use App\Mason\Bricks\Email\EmailButtonsBrick;
 use App\Mason\Bricks\Email\EmailCalloutBrick;
 use App\Mason\Bricks\Email\EmailChecklistBrick;
 use App\Mason\Bricks\Email\EmailGreetingBrick;
+use App\Mason\Bricks\Email\EmailInvoiceItemsBrick;
 use App\Mason\Bricks\Email\EmailNoteBrick;
 use App\Mason\Bricks\Email\EmailParagraphBrick;
 use App\Mason\Bricks\Email\EmailPaymentBrick;
@@ -38,6 +39,7 @@ class EmailBrickRegistry
             ]),
             BrickGroup::make('Platby')->bricks([
                 EmailPaymentBrick::class,
+                EmailInvoiceItemsBrick::class,
             ]),
             BrickGroup::make('Akce')->bricks([
                 EmailButtonsBrick::class,

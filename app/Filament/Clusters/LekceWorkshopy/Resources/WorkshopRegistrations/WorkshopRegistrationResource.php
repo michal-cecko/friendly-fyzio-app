@@ -10,6 +10,7 @@ use App\Filament\Clusters\LekceWorkshopy\Resources\WorkshopRegistrations\Pages\V
 use App\Filament\Clusters\LekceWorkshopy\Resources\WorkshopRegistrations\Schemas\WorkshopRegistrationForm;
 use App\Filament\Clusters\LekceWorkshopy\Resources\WorkshopRegistrations\Schemas\WorkshopRegistrationInfolist;
 use App\Filament\Clusters\LekceWorkshopy\Resources\WorkshopRegistrations\Tables\WorkshopRegistrationsTable;
+use App\Filament\Support\RelationManagers\PaymentsRelationManager;
 use App\Models\WorkshopRegistration;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -96,7 +97,7 @@ class WorkshopRegistrationResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            PaymentsRelationManager::class,
         ];
     }
 

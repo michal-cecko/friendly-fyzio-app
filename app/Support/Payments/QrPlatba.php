@@ -2,6 +2,7 @@
 
 namespace App\Support\Payments;
 
+use App\Models\Invoice;
 use App\Models\Payment;
 use App\Support\Settings;
 use Endroid\QrCode\Builder\Builder;
@@ -44,9 +45,55 @@ class QrPlatba
      */
     public static function dataUri(Payment $payment): string
     {
+        return self::png(self::spayd($payment));
+    }
+
+    /**
+     * The account an invoice is paid to: the IBAN frozen in the supplier snapshot
+     * at issue time, falling back to the current setting when the snapshot predates
+     * the IBAN being configured. Shared by the SPAYD descriptor and the printed
+     * IBAN (see InvoicePdfData) so the QR always pays to the displayed account.
+     */
+    public static function ibanForInvoice(Invoice $invoice): string
+    {
+        $snapshot = $invoice->supplier_snapshot['iban'] ?? null;
+
+        return filled($snapshot) ? (string) $snapshot : (string) Settings::iban();
+    }
+
+    /**
+     * SPAYD descriptor for paying a whole invoice by bank transfer.
+     */
+    public static function spaydForInvoice(Invoice $invoice): string
+    {
+        $segments = [
+            'SPD',
+            '1.0',
+            'ACC:'.self::account(self::ibanForInvoice($invoice)),
+            'AM:'.number_format((int) $invoice->amount, 2, '.', ''),
+            'CC:CZK',
+            'VS:'.self::variableSymbol((string) $invoice->variable_symbol),
+        ];
+
+        $message = self::message('Faktura '.$invoice->invoice_number);
+
+        if ($message !== '') {
+            $segments[] = 'MSG:'.$message;
+        }
+
+        return implode('*', $segments);
+    }
+
+    public static function dataUriForInvoice(Invoice $invoice): string
+    {
+        return self::png(self::spaydForInvoice($invoice));
+    }
+
+    private static function png(string $data): string
+    {
         return Builder::create()
             ->writer(new PngWriter)
-            ->data(self::spayd($payment))
+            ->data($data)
             ->size(240)
             ->margin(8)
             ->build()

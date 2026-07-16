@@ -12,8 +12,11 @@ use App\Models\Room;
 use App\Models\RoomBlocking;
 use App\Models\Service;
 use App\Models\TherapistProfile;
-use App\Models\TherapistWeeklySchedule;
+use App\Models\TherapistWorkBlock;
+use App\Models\TherapistWorkBlockSeries;
 use App\Models\User;
+use App\Support\WorkBlocks\WorkBlockGenerator;
+use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -44,6 +47,17 @@ class CalendarModesTest extends TestCase
     protected function makeTherapist(): TherapistProfile
     {
         return TherapistProfile::create(['user_id' => User::factory()->therapist()->create()->getKey()]);
+    }
+
+    protected function makeWorkBlock(TherapistProfile $therapist, Room $room, array $attributes = []): TherapistWorkBlock
+    {
+        return TherapistWorkBlock::factory()->for($therapist, 'therapist')->create([
+            'room_id' => $room->getKey(),
+            'work_date' => $this->monday->toDateString(),
+            'start_time' => '09:00',
+            'end_time' => '12:00',
+            ...$attributes,
+        ]);
     }
 
     /**
@@ -117,17 +131,14 @@ class CalendarModesTest extends TestCase
             ->assertSet('editingTemplateId', (string) $blocking->getKey());
     }
 
-    public function test_template_mode_returns_working_hours_and_recurring_blockings(): void
+    public function test_template_mode_returns_dated_work_blocks_and_blockings(): void
     {
         $room = $this->makeRoom();
         $therapist = $this->makeTherapist();
 
-        $schedule = TherapistWeeklySchedule::factory()->for($therapist, 'therapist')->create([
-            'room_id' => $room->getKey(),
-            'day_of_week' => DayOfWeek::Monday,
-            'week_type' => WeekType::All,
-            'start_time' => '09:00',
-            'end_time' => '12:00',
+        $inWeek = $this->makeWorkBlock($therapist, $room);
+        $outsideWeek = $this->makeWorkBlock($therapist, $room, [
+            'work_date' => $this->monday->copy()->addWeek()->toDateString(),
         ]);
 
         $recurring = RoomBlocking::create([
@@ -148,30 +159,48 @@ class CalendarModesTest extends TestCase
             'reason' => 'Jednorázová',
         ]);
 
-        $ids = array_column($this->fetchTemplateWeek(new ReservationCalendar), 'id');
+        $events = $this->fetchTemplateWeek(new ReservationCalendar);
+        $ids = array_column($events, 'id');
 
-        $this->assertContains('schedule:'.$schedule->getKey(), $ids);
+        $this->assertContains('schedule:'.$inWeek->getKey(), $ids);
+        $this->assertNotContains('schedule:'.$outsideWeek->getKey(), $ids);
         $this->assertContains('blocking:'.$recurring->getKey(), $ids);
-        $this->assertNotContains('blocking:'.$oneTime->getKey(), $ids);
+        $this->assertContains('blocking:'.$oneTime->getKey(), $ids);
+
+        // The work block renders on its real date.
+        $blockEvent = collect($events)->firstWhere('id', 'schedule:'.$inWeek->getKey());
+        $this->assertStringStartsWith($this->monday->toDateString(), $blockEvent['start']);
     }
 
-    public function test_template_week_type_filter_limits_events(): void
+    public function test_template_mode_expands_recurring_blocking_by_week_parity(): void
     {
         $room = $this->makeRoom();
-        $therapist = $this->makeTherapist();
 
-        $base = ['room_id' => $room->getKey(), 'day_of_week' => DayOfWeek::Monday, 'start_time' => '09:00', 'end_time' => '10:00'];
-        $odd = TherapistWeeklySchedule::factory()->for($therapist, 'therapist')->create([...$base, 'week_type' => WeekType::Odd]);
-        $even = TherapistWeeklySchedule::factory()->for($therapist, 'therapist')->create([...$base, 'week_type' => WeekType::Even]);
-        $all = TherapistWeeklySchedule::factory()->for($therapist, 'therapist')->create([...$base, 'week_type' => WeekType::All]);
+        // 2026-01-05 lies in ISO week 2 (even); an odd-week blocking must not render.
+        $this->assertSame(WeekType::Even, WeekType::forDate($this->monday));
 
-        $calendar = new ReservationCalendar;
-        $calendar->templateWeekType = 'odd';
-        $ids = array_column($this->fetchTemplateWeek($calendar), 'id');
+        $oddBlocking = RoomBlocking::create([
+            'room_id' => $room->getKey(),
+            'is_recurring' => true,
+            'day_of_week' => DayOfWeek::Monday,
+            'week_type' => WeekType::Odd,
+            'start_time' => '13:00',
+            'end_time' => '14:00',
+        ]);
 
-        $this->assertContains('schedule:'.$odd->getKey(), $ids);
-        $this->assertContains('schedule:'.$all->getKey(), $ids);
-        $this->assertNotContains('schedule:'.$even->getKey(), $ids);
+        $evenBlocking = RoomBlocking::create([
+            'room_id' => $room->getKey(),
+            'is_recurring' => true,
+            'day_of_week' => DayOfWeek::Monday,
+            'week_type' => WeekType::Even,
+            'start_time' => '14:00',
+            'end_time' => '15:00',
+        ]);
+
+        $ids = array_column($this->fetchTemplateWeek(new ReservationCalendar), 'id');
+
+        $this->assertNotContains('blocking:'.$oddBlocking->getKey(), $ids);
+        $this->assertContains('blocking:'.$evenBlocking->getKey(), $ids);
     }
 
     public function test_template_room_filter_limits_events(): void
@@ -180,9 +209,8 @@ class CalendarModesTest extends TestCase
         $roomB = $this->makeRoom('Sál B');
         $therapist = $this->makeTherapist();
 
-        $base = ['day_of_week' => DayOfWeek::Monday, 'week_type' => WeekType::All, 'start_time' => '09:00', 'end_time' => '10:00'];
-        $inA = TherapistWeeklySchedule::factory()->for($therapist, 'therapist')->create([...$base, 'room_id' => $roomA->getKey()]);
-        $inB = TherapistWeeklySchedule::factory()->for($therapist, 'therapist')->create([...$base, 'room_id' => $roomB->getKey()]);
+        $inA = $this->makeWorkBlock($therapist, $roomA);
+        $inB = $this->makeWorkBlock($therapist, $roomB, ['start_time' => '13:00', 'end_time' => '15:00']);
 
         $calendar = new ReservationCalendar;
         $calendar->templateRoomId = $roomA->getKey();
@@ -199,13 +227,7 @@ class CalendarModesTest extends TestCase
         $service = Service::factory()->create();
         $client = User::factory()->customer()->create();
 
-        TherapistWeeklySchedule::factory()->for($therapist, 'therapist')->create([
-            'room_id' => $room->getKey(),
-            'day_of_week' => DayOfWeek::Monday,
-            'week_type' => WeekType::All,
-            'start_time' => '08:00',
-            'end_time' => '12:00',
-        ]);
+        $this->makeWorkBlock($therapist, $room, ['start_time' => '08:00', 'end_time' => '12:00']);
 
         $common = [
             'client_id' => $client->getKey(),
@@ -229,29 +251,98 @@ class CalendarModesTest extends TestCase
         $this->assertSame(25, $summary['utilization']);   // 60 / 240
     }
 
-    public function test_can_add_working_hours_from_template_toolbar(): void
+    public function test_can_add_single_work_block_from_template_toolbar(): void
     {
         $room = $this->makeRoom();
         $therapist = $this->makeTherapist();
         $this->actingAs(User::factory()->admin()->create());
+
+        $date = Carbon::today()->addWeek()->startOfWeek(Carbon::MONDAY);
 
         Livewire::test(ReservationCalendar::class)
             ->set('mode', 'template')
             ->callAction('addWorkingHours', [
                 'therapist_id' => $therapist->getKey(),
                 'room_id' => $room->getKey(),
-                'day_of_week' => DayOfWeek::Monday->value,
-                'week_type' => WeekType::All->value,
+                'work_date' => $date->toDateString(),
                 'start_time' => '08:00',
                 'end_time' => '14:00',
+                'repeat' => 'none',
             ])
             ->assertHasNoActionErrors();
 
-        $this->assertDatabaseHas('therapist_weekly_schedules', [
+        $this->assertDatabaseHas('therapist_work_blocks', [
             'therapist_id' => $therapist->getKey(),
-            'day_of_week' => 'monday',
-            'start_time' => '08:00',
+            'work_date' => $date->toDateString(),
+            'start_time' => '08:00:00',
+            'series_id' => null,
         ]);
+    }
+
+    public function test_adding_repeating_work_block_materializes_the_series(): void
+    {
+        $room = $this->makeRoom();
+        $therapist = $this->makeTherapist();
+        $this->actingAs(User::factory()->admin()->create());
+
+        $date = Carbon::today()->addWeek()->startOfWeek(Carbon::MONDAY);
+
+        Livewire::test(ReservationCalendar::class)
+            ->set('mode', 'template')
+            ->callAction('addWorkingHours', [
+                'therapist_id' => $therapist->getKey(),
+                'room_id' => $room->getKey(),
+                'work_date' => $date->toDateString(),
+                'start_time' => '08:00',
+                'end_time' => '14:00',
+                'repeat' => 'weekly',
+                'repeat_until' => $date->copy()->addWeeks(2)->toDateString(),
+            ])
+            ->assertHasNoActionErrors();
+
+        $series = TherapistWorkBlockSeries::sole();
+        $this->assertSame(WeekType::All, $series->week_type);
+        $this->assertSame(DayOfWeek::Monday, $series->day_of_week);
+        $this->assertSame($date->copy()->addWeeks(2)->toDateString(), $series->ends_on->toDateString());
+
+        $this->assertSame(
+            [
+                $date->toDateString(),
+                $date->copy()->addWeek()->toDateString(),
+                $date->copy()->addWeeks(2)->toDateString(),
+            ],
+            $series->blocks()->orderBy('work_date')->get()
+                ->map(fn (TherapistWorkBlock $block): string => $block->work_date->toDateString())->all(),
+        );
+    }
+
+    public function test_adding_overlapping_single_work_block_is_rejected(): void
+    {
+        $room = $this->makeRoom();
+        $therapist = $this->makeTherapist();
+        $this->actingAs(User::factory()->admin()->create());
+
+        $date = Carbon::today()->addWeek()->startOfWeek(Carbon::MONDAY);
+
+        $this->makeWorkBlock($therapist, $room, [
+            'work_date' => $date->toDateString(),
+            'start_time' => '08:00',
+            'end_time' => '12:00',
+        ]);
+
+        Livewire::test(ReservationCalendar::class)
+            ->set('mode', 'template')
+            ->callAction('addWorkingHours', [
+                'therapist_id' => $therapist->getKey(),
+                'room_id' => $room->getKey(),
+                'work_date' => $date->toDateString(),
+                'start_time' => '10:00',
+                'end_time' => '14:00',
+                'repeat' => 'none',
+            ])
+            ->assertHasActionErrors(['end_time']);
+
+        $this->assertSame(1, TherapistWorkBlock::count());
     }
 
     public function test_can_add_recurring_blocking_from_template_toolbar(): void
@@ -312,24 +403,18 @@ class CalendarModesTest extends TestCase
             ->assertSee('Vytíženost dne');
     }
 
-    public function test_clicking_template_schedule_marks_it_for_editing(): void
+    public function test_clicking_template_work_block_marks_it_for_editing(): void
     {
         $room = $this->makeRoom();
         $therapist = $this->makeTherapist();
         $this->actingAs(User::factory()->admin()->create());
 
-        $schedule = TherapistWeeklySchedule::factory()->for($therapist, 'therapist')->create([
-            'room_id' => $room->getKey(),
-            'day_of_week' => DayOfWeek::Monday,
-            'week_type' => WeekType::All,
-            'start_time' => '09:00',
-            'end_time' => '12:00',
-        ]);
+        $block = $this->makeWorkBlock($therapist, $room);
 
         Livewire::test(ReservationCalendar::class)
             ->set('mode', 'template')
-            ->call('onEventClick', ['id' => 'schedule:'.$schedule->getKey()])
-            ->assertSet('editingTemplateId', (string) $schedule->getKey());
+            ->call('onEventClick', ['id' => 'schedule:'.$block->getKey()])
+            ->assertSet('editingTemplateId', (string) $block->getKey());
     }
 
     public function test_template_selection_mode_toggles_selection_instead_of_editing(): void
@@ -338,35 +423,23 @@ class CalendarModesTest extends TestCase
         $therapist = $this->makeTherapist();
         $this->actingAs(User::factory()->admin()->create());
 
-        $schedule = TherapistWeeklySchedule::factory()->for($therapist, 'therapist')->create([
-            'room_id' => $room->getKey(),
-            'day_of_week' => DayOfWeek::Monday,
-            'week_type' => WeekType::All,
-            'start_time' => '09:00',
-            'end_time' => '12:00',
-        ]);
+        $block = $this->makeWorkBlock($therapist, $room);
 
         Livewire::test(ReservationCalendar::class)
             ->set('mode', 'template')
             ->set('selectionMode', true)
-            ->call('onEventClick', ['id' => 'schedule:'.$schedule->getKey()])
-            ->assertSet('selectedIds', ['schedule:'.$schedule->getKey()])
+            ->call('onEventClick', ['id' => 'schedule:'.$block->getKey()])
+            ->assertSet('selectedIds', ['schedule:'.$block->getKey()])
             ->assertSet('editingTemplateId', null);
     }
 
-    public function test_template_bulk_delete_removes_selected_schedules_and_blockings(): void
+    public function test_template_bulk_delete_removes_selected_work_blocks_and_blockings(): void
     {
         $room = $this->makeRoom();
         $therapist = $this->makeTherapist();
         $this->actingAs(User::factory()->admin()->create());
 
-        $schedule = TherapistWeeklySchedule::factory()->for($therapist, 'therapist')->create([
-            'room_id' => $room->getKey(),
-            'day_of_week' => DayOfWeek::Monday,
-            'week_type' => WeekType::All,
-            'start_time' => '09:00',
-            'end_time' => '12:00',
-        ]);
+        $block = $this->makeWorkBlock($therapist, $room);
 
         $blocking = RoomBlocking::create([
             'room_id' => $room->getKey(),
@@ -381,11 +454,77 @@ class CalendarModesTest extends TestCase
         Livewire::test(ReservationCalendar::class)
             ->set('mode', 'template')
             ->set('selectionMode', true)
-            ->set('selectedIds', ['schedule:'.$schedule->getKey(), 'blocking:'.$blocking->getKey()])
+            ->set('selectedIds', ['schedule:'.$block->getKey(), 'blocking:'.$blocking->getKey()])
             ->callAction('deleteSelectedTemplate')
             ->assertHasNoActionErrors();
 
-        $this->assertDatabaseMissing('therapist_weekly_schedules', ['id' => $schedule->getKey()]);
+        $this->assertDatabaseMissing('therapist_work_blocks', ['id' => $block->getKey()]);
         $this->assertDatabaseMissing('room_blockings', ['id' => $blocking->getKey()]);
+    }
+
+    public function test_delete_range_removes_only_the_therapists_blocks_in_range(): void
+    {
+        $room = $this->makeRoom();
+        $therapist = $this->makeTherapist();
+        $other = $this->makeTherapist();
+        $this->actingAs(User::factory()->admin()->create());
+
+        $inRange = $this->makeWorkBlock($therapist, $room);
+        $beforeRange = $this->makeWorkBlock($therapist, $room, [
+            'work_date' => $this->monday->copy()->subWeek()->toDateString(),
+        ]);
+        $otherTherapist = $this->makeWorkBlock($other, $room, ['start_time' => '13:00', 'end_time' => '15:00']);
+
+        Livewire::test(ReservationCalendar::class)
+            ->set('mode', 'template')
+            ->callAction('deleteWorkBlocksRange', [
+                'therapist_id' => $therapist->getKey(),
+                'from' => $this->monday->toDateString(),
+                'until' => $this->monday->copy()->addDays(6)->toDateString(),
+            ])
+            ->assertHasNoActionErrors();
+
+        $this->assertDatabaseMissing('therapist_work_blocks', ['id' => $inRange->getKey()]);
+        $this->assertDatabaseHas('therapist_work_blocks', ['id' => $beforeRange->getKey()]);
+        $this->assertDatabaseHas('therapist_work_blocks', ['id' => $otherTherapist->getKey()]);
+    }
+
+    public function test_delete_this_and_following_trims_the_series(): void
+    {
+        $room = $this->makeRoom();
+        $therapist = $this->makeTherapist();
+        $this->actingAs(User::factory()->admin()->create());
+
+        $series = TherapistWorkBlockSeries::factory()->for($therapist, 'therapist')->create([
+            'room_id' => $room->getKey(),
+            'day_of_week' => DayOfWeek::Monday,
+            'week_type' => WeekType::All,
+            'start_time' => '09:00',
+            'end_time' => '12:00',
+            'starts_on' => '2026-01-05',
+            'ends_on' => null,
+            'generated_until' => '2026-01-04',
+        ]);
+        app(WorkBlockGenerator::class)->materialize($series, Carbon::parse('2026-02-28'));
+
+        $middle = $series->blocks()->whereDate('work_date', '2026-01-19')->sole();
+
+        Livewire::test(ReservationCalendar::class)
+            ->set('mode', 'template')
+            ->set('editingTemplateId', (string) $middle->getKey())
+            ->mountAction('editSchedule')
+            ->callAction(TestAction::make('deleteScheduleFromHere'));
+
+        // 2026-01-05 and 2026-01-12 remain; everything from 2026-01-19 on is gone.
+        $this->assertSame(
+            ['2026-01-05', '2026-01-12'],
+            $series->blocks()->orderBy('work_date')->get()
+                ->map(fn (TherapistWorkBlock $block): string => $block->work_date->toDateString())->all(),
+        );
+        $this->assertSame('2026-01-18', $series->fresh()->ends_on->toDateString());
+
+        // The capped series is never re-extended.
+        $this->artisan('work-blocks:extend')->assertSuccessful();
+        $this->assertSame(2, $series->blocks()->count());
     }
 }

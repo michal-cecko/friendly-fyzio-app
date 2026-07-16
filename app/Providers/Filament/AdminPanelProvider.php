@@ -50,7 +50,6 @@ class AdminPanelProvider extends PanelProvider
             ->collapsibleNavigationGroups()
             ->maxContentWidth(Width::Full)
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
-            ->globalSearchFieldKeyBindingSuffix()
             ->renderHook(
                 PanelsRenderHook::GLOBAL_SEARCH_AFTER,
                 fn (): string => view('filament.topbar.global-search-page-link')->render(),
@@ -58,6 +57,10 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(
                 PanelsRenderHook::GLOBAL_SEARCH_AFTER,
                 fn (): string => view('filament.topbar.website-link')->render(),
+            )
+            ->renderHook(
+                PanelsRenderHook::GLOBAL_SEARCH_AFTER,
+                fn (): string => view('filament.topbar.contact-inquiries-link')->render(),
             )
             ->colors([
                 'primary' => Color::hex('#d4678a'),

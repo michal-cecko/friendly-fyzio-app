@@ -40,6 +40,10 @@ class OneTimeLessonForm
                     ->preload()
                     ->native(false)
                     ->required(),
+                TextInput::make('invoice_title')
+                    ->label('Název pro fakturaci')
+                    ->maxLength(255)
+                    ->helperText('Použije se na fakturách a v e-mailech místo názvu kurzu.'),
                 DatePicker::make('lesson_date')
                     ->label('Datum')
                     ->native(false)

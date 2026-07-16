@@ -5,12 +5,17 @@ namespace Database\Seeders;
 use App\Enums\CourseEnrollmentStatus;
 use App\Enums\CourseSeriesStatus;
 use App\Enums\DayOfWeek;
+use App\Enums\DocumentType;
 use App\Enums\ExamType;
+use App\Enums\InvoiceStatus;
+use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
+use App\Enums\ReservationStatus;
 use App\Enums\ServiceVisibility;
 use App\Enums\WeekType;
 use App\Models\Building;
 use App\Models\CancellationRule;
+use App\Models\CashReceipt;
 use App\Models\ClientProfile;
 use App\Models\Course;
 use App\Models\CourseCategory;
@@ -27,13 +32,18 @@ use App\Models\Service;
 use App\Models\ServiceCategory;
 use App\Models\TherapistProfile;
 use App\Models\TherapistSpecialization;
-use App\Models\TherapistWeeklySchedule;
+use App\Models\TherapistWorkBlockSeries;
 use App\Models\User;
 use App\Models\Workshop;
 use App\Models\WorkshopRegistration;
+use App\Support\Invoices\DocumentNumberAllocator;
+use App\Support\Invoices\InvoiceGenerator;
+use App\Support\Settings;
+use App\Support\WorkBlocks\WorkBlockGenerator;
 use Database\Seeders\Concerns\ImportsMedia;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 class DemoSeeder extends Seeder
@@ -236,15 +246,21 @@ class DemoSeeder extends Seeder
 
             foreach (fake()->randomElements(DayOfWeek::cases(), fake()->numberBetween(2, 3)) as $day) {
                 $hour = fake()->numberBetween(7, 13);
+                $startsOn = Carbon::now()->startOfWeek();
 
-                TherapistWeeklySchedule::factory()->create([
+                $series = TherapistWorkBlockSeries::factory()->create([
                     'therapist_id' => $therapist->getKey(),
                     'room_id' => $rooms->random()->getKey(),
                     'day_of_week' => $day,
                     'week_type' => WeekType::All,
                     'start_time' => sprintf('%02d:00', $hour),
                     'end_time' => sprintf('%02d:00', $hour + 4),
+                    'starts_on' => $startsOn->toDateString(),
+                    'ends_on' => null,
+                    'generated_until' => $startsOn->copy()->subDay()->toDateString(),
                 ]);
+
+                app(WorkBlockGenerator::class)->materialize($series, Carbon::now()->addWeeks(8));
             }
 
             $services->random(fake()->numberBetween(2, 4))
@@ -428,5 +444,138 @@ class DemoSeeder extends Seeder
                 ]);
             }
         });
+
+        $this->seedFinance($clients, $services, $therapists, $rooms);
+    }
+
+    /**
+     * Payments, invoices and cash receipts covering every document state the
+     * Finance cluster knows: cash on-site (auto PPD), invoiced visits, a pending
+     * QR request, a dunned overdue payment, a storno fee and a standalone firm
+     * invoice. Relies on InvoiceSeriesSeeder (FF + PPD series) having run first.
+     *
+     * @param  Collection<int, User>  $clients
+     * @param  Collection<int, Service>  $services
+     * @param  Collection<int, TherapistProfile>  $therapists
+     * @param  Collection<int, Room>  $rooms
+     */
+    private function seedFinance($clients, $services, $therapists, $rooms): void
+    {
+        $generator = app(InvoiceGenerator::class);
+        $lastWeek = Carbon::now()->startOfWeek(Carbon::MONDAY)->subWeek();
+
+        // Dedicated completed visits last week — distinct therapist+day+hour
+        // tuples so the no-double-booking index never trips.
+        $visit = function (int $day, int $hour, ReservationStatus $status = ReservationStatus::Confirmed) use ($clients, $services, $therapists, $rooms, $lastWeek): Reservation {
+            return Reservation::factory()->create([
+                'client_id' => $clients->random()->getKey(),
+                'service_id' => $services->random()->getKey(),
+                'therapist_id' => $therapists->random()->getKey(),
+                'room_id' => $rooms->random()->getKey(),
+                'reservation_date' => $lastWeek->copy()->addDays($day)->toDateString(),
+                'start_time' => sprintf('%02d:00', $hour),
+                'end_time' => sprintf('%02d:00', $hour + 1),
+                'status' => $status,
+                'payment_status' => PaymentStatus::Unpaid,
+            ]);
+        };
+
+        $payFor = function (Reservation $reservation, PaymentMethod $method, PaymentStatus $status, array $extra = []) {
+            return $reservation->payments()->create([
+                'client_id' => $reservation->client_id,
+                'amount' => (int) $reservation->service->price,
+                'method' => $method,
+                'status' => $status,
+                'paid_at' => $status === PaymentStatus::Paid ? now()->subDays(2) : null,
+                ...$extra,
+            ]);
+        };
+
+        // 1) Cash on-site, invoiced on request: auto-PPD + paid invoice linked to it.
+        $generator->fromPayment($payFor($visit(0, 8), PaymentMethod::Cash, PaymentStatus::Paid));
+
+        // 2) Cash on-site without an invoice — just the automatic PPD.
+        $payFor($visit(1, 9), PaymentMethod::Cash, PaymentStatus::Paid);
+
+        // 3) Bank transfer received and invoiced (paid invoice, UHRAZENO box).
+        $generator->fromPayment($payFor($visit(2, 10), PaymentMethod::Qr, PaymentStatus::Paid));
+
+        // 4) Requested QR payment still awaiting transfer — no invoice yet
+        //    (invoices are paid-only; this demos the QR/due side of a debt).
+        $payFor($visit(3, 11), PaymentMethod::Qr, PaymentStatus::Unpaid, [
+            'due_at' => today()->addDays(Settings::paymentDueDays()),
+        ]);
+
+        // 5) Dunned payment: past due, flipped Overdue, reminder already sent.
+        $payFor($visit(4, 12), PaymentMethod::Qr, PaymentStatus::Overdue, [
+            'due_at' => today()->subDays(5),
+            'overdue_notified_at' => now()->subDay(),
+        ]);
+
+        // 6) Late cancel with an unpaid storno fee (mirrors the manage-link flow).
+        $storno = $visit(4, 14, ReservationStatus::Cancelled);
+        $storno->update(['cancellation_reason' => 'Zrušeno klientem']);
+        $storno->payments()->create([
+            'client_id' => $storno->client_id,
+            'amount' => $storno->stornoFee(),
+            'method' => PaymentMethod::Qr,
+            'status' => PaymentStatus::Unpaid,
+            'due_at' => today()->addDays(Settings::paymentDueDays()),
+        ]);
+
+        // 7) Workshop registration paid by transfer + invoiced (workshop title template).
+        $registration = WorkshopRegistration::query()
+            ->where('payment_status', PaymentStatus::Unpaid)
+            ->with('workshop')
+            ->first();
+
+        if ($registration !== null) {
+            $generator->fromPayment($registration->payments()->create([
+                'client_id' => $registration->client_id,
+                'amount' => (int) $registration->workshop->price,
+                'method' => PaymentMethod::Qr,
+                'status' => PaymentStatus::Paid,
+                'paid_at' => now()->subDay(),
+            ]));
+        }
+
+        // 8) Course enrollment with a pending QR request (no invoice yet).
+        $enrollment = CourseEnrollment::query()
+            ->where('payment_status', PaymentStatus::Unpaid)
+            ->with('series')
+            ->first();
+
+        $enrollment?->payments()->create([
+            'client_id' => $enrollment->client_id,
+            'amount' => (int) $enrollment->series->price,
+            'method' => PaymentMethod::Qr,
+            'status' => PaymentStatus::Unpaid,
+            'due_at' => today()->addDays(Settings::paymentDueDays()),
+        ]);
+
+        // 9) Standalone firm invoice (no payable): billing profile + manual items.
+        //    The backing Unpaid payment is its payment thread and VS source.
+        $firmClient = $clients->first();
+        $firmClient->clientProfile?->update([
+            'billing_name' => 'Fit Office s.r.o.',
+            'company_ico' => '19283746',
+            'company_dic' => 'CZ19283746',
+            'billing_address' => 'Nádražní 32, 702 00 Ostrava',
+        ]);
+
+        $firmInvoice = $generator->create(
+            app(DocumentNumberAllocator::class)->defaultSeries(DocumentType::Invoice),
+            $firmClient->fresh(),
+            ['payment_method' => PaymentMethod::Qr, 'status' => InvoiceStatus::Sent],
+            [
+                ['title' => 'Pronájem tělocvičny – firemní cvičení', 'description' => 'červen 2026, 4 lekce', 'quantity' => 4, 'unit_price' => 500],
+                ['title' => 'Workshop zdravých zad na míru', 'description' => 'pro zaměstnance', 'quantity' => 1, 'unit_price' => 3500],
+            ],
+        );
+
+        $generator->ensureBackingPayment($firmInvoice);
+
+        // The seeder has no authenticated admin — stamp the owner as the receiver.
+        CashReceipt::query()->whereNull('received_by')->update(['received_by' => 'Mgr. Lucie Fičkerová']);
     }
 }

@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Filament\Clusters\System\Resources\TherapistProfiles\Pages\CreateTherapistProfile;
+use App\Filament\Clusters\Provoz\Resources\TherapistProfiles\Pages\CreateTherapistProfile;
 use App\Filament\Clusters\System\Resources\Users\Pages\ViewUser;
 use App\Filament\Clusters\System\Resources\Users\RelationManagers\TherapistProfileRelationManager;
 use App\Models\TherapistProfile;

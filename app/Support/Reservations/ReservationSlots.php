@@ -5,12 +5,10 @@ namespace App\Support\Reservations;
 use App\Enums\DayOfWeek;
 use App\Enums\ReservationStatus;
 use App\Enums\ServiceVisibility;
-use App\Models\CalendarBlock;
 use App\Models\Reservation;
 use App\Models\RoomBlocking;
 use App\Models\Service;
-use App\Models\TherapistNonstandardDate;
-use App\Models\TherapistWeeklySchedule;
+use App\Models\TherapistWorkBlock;
 use App\Support\CalendarAvailability;
 use App\Support\Settings;
 use Illuminate\Support\Carbon;
@@ -72,27 +70,19 @@ class ReservationSlots
         $available = [];
         $full = [];
         for ($date = $from->copy(); $date->lte($to); $date->addDay()) {
-            $therapistIds = array_values(array_diff($baseIds, $this->blockedFromContext($context, $date)));
+            $workBlocks = $this->workBlocksFromContext($context, $baseIds, $date);
 
-            if ($therapistIds === []) {
-                continue;
-            }
-
-            $weekly = $this->weeklyFromContext($context, $therapistIds, $date);
-            $nonstandard = $this->nonstandardFromContext($context, $therapistIds, $date);
-
-            if ($weekly === [] && $nonstandard === []) {
+            if ($workBlocks === []) {
                 continue;
             }
 
             $reservations = $this->reservationsFromContext($context, $date);
             $slots = $this->buildSlots(
                 $date,
-                $therapistIds,
+                $baseIds,
                 $gapFiller,
                 $surface,
-                $weekly,
-                $nonstandard,
+                $workBlocks,
                 $reservations['byTherapist'],
                 $reservations['byRoom'],
                 $this->roomBlockingsFromContext($context, $date),
@@ -116,7 +106,7 @@ class ReservationSlots
     public function availableTimes(Service $service, Carbon $date, ?string $therapistId = null): array
     {
         $date = $date->copy()->startOfDay();
-        $therapistIds = $this->eligibleTherapistIds($service, $date, $therapistId);
+        $therapistIds = $this->baseTherapistIds($service, $therapistId);
 
         if ($therapistIds === []) {
             return [];
@@ -128,8 +118,7 @@ class ReservationSlots
             $therapistIds,
             $this->gapFiller($service),
             [$service->duration_minutes],
-            $this->weeklyForDate($therapistIds, $date),
-            $this->nonstandardForDate($therapistIds, $date),
+            $this->workBlocksForDate($therapistIds, $date),
             $reservations['byTherapist'],
             $reservations['byRoom'],
             $this->roomBlockingsForDate($date),
@@ -205,35 +194,11 @@ class ReservationSlots
     }
 
     /**
-     * Base therapists minus any whose whole day is removed by a calendar block.
-     *
-     * @return array<int, string>
-     */
-    protected function eligibleTherapistIds(Service $service, Carbon $date, ?string $therapistId): array
-    {
-        $baseIds = $this->baseTherapistIds($service, $therapistId);
-
-        if ($baseIds === []) {
-            return [];
-        }
-
-        $blocked = CalendarBlock::query()
-            ->whereIn('therapist_id', $baseIds)
-            ->whereDate('start_date', '<=', $date)
-            ->whereDate('end_date', '>=', $date)
-            ->pluck('therapist_id')
-            ->all();
-
-        return array_values(array_diff($baseIds, $blocked));
-    }
-
-    /**
      * Turn the offers from every therapist + work block into concrete slots.
      *
      * @param  array<int, string>  $therapistIds
      * @param  array<int, int>  $surface
-     * @param  array<string, array<int, array{0: int, 1: int, 2: string}>>  $weeklyByTid
-     * @param  array<string, array<int, array{0: int, 1: int, 2: string}>>  $nonstandardByTid
+     * @param  array<string, array<int, array{0: int, 1: int, 2: string}>>  $workBlocksByTid
      * @param  array<string, array<int, array{0: int, 1: int}>>  $reservationsByTherapist
      * @param  array<string, array<int, array{0: int, 1: int}>>  $reservationsByRoom
      * @param  array<string, array<int, array{0: int, 1: int}>>  $roomBlockingsByRoom
@@ -244,8 +209,7 @@ class ReservationSlots
         array $therapistIds,
         GapFiller $gapFiller,
         array $surface,
-        array $weeklyByTid,
-        array $nonstandardByTid,
+        array $workBlocksByTid,
         array $reservationsByTherapist,
         array $reservationsByRoom,
         array $roomBlockingsByRoom,
@@ -254,7 +218,7 @@ class ReservationSlots
         $slots = [];
 
         foreach ($therapistIds as $therapistId) {
-            $workBlocks = array_merge($weeklyByTid[$therapistId] ?? [], $nonstandardByTid[$therapistId] ?? []);
+            $workBlocks = $workBlocksByTid[$therapistId] ?? [];
             $therapistBusy = $reservationsByTherapist[$therapistId] ?? [];
 
             foreach ($workBlocks as [$blockStart, $blockEnd, $roomId]) {
@@ -413,35 +377,15 @@ class ReservationSlots
      * @param  array<int, string>  $therapistIds
      * @return array<string, array<int, array{0: int, 1: int, 2: string}>>
      */
-    protected function weeklyForDate(array $therapistIds, Carbon $date): array
+    protected function workBlocksForDate(array $therapistIds, Carbon $date): array
     {
-        return TherapistWeeklySchedule::query()
-            ->whereIn('therapist_id', $therapistIds)
-            ->where('day_of_week', DayOfWeek::fromCarbon($date)->value)
-            ->get(['therapist_id', 'week_type', 'start_time', 'end_time', 'room_id'])
-            ->filter(fn (TherapistWeeklySchedule $row): bool => $row->week_type->matchesDate($date))
-            ->groupBy('therapist_id')
-            ->map(fn (Collection $rows): array => $rows
-                ->map(fn (TherapistWeeklySchedule $row): array => [
-                    Slot::toMinutes($row->start_time), Slot::toMinutes($row->end_time), $row->room_id,
-                ])
-                ->all())
-            ->all();
-    }
-
-    /**
-     * @param  array<int, string>  $therapistIds
-     * @return array<string, array<int, array{0: int, 1: int, 2: string}>>
-     */
-    protected function nonstandardForDate(array $therapistIds, Carbon $date): array
-    {
-        return TherapistNonstandardDate::query()
+        return TherapistWorkBlock::query()
             ->whereIn('therapist_id', $therapistIds)
             ->whereDate('work_date', $date)
             ->get(['therapist_id', 'start_time', 'end_time', 'room_id'])
             ->groupBy('therapist_id')
             ->map(fn (Collection $rows): array => $rows
-                ->map(fn (TherapistNonstandardDate $row): array => [
+                ->map(fn (TherapistWorkBlock $row): array => [
                     Slot::toMinutes($row->start_time), Slot::toMinutes($row->end_time), $row->room_id,
                 ])
                 ->all())
@@ -493,18 +437,10 @@ class ReservationSlots
     protected function preload(array $baseIds, Carbon $from, Carbon $to): array
     {
         return [
-            'weekly' => TherapistWeeklySchedule::query()
+            'workBlocks' => TherapistWorkBlock::query()
                 ->whereIn('therapist_id', $baseIds)
-                ->get(['therapist_id', 'day_of_week', 'week_type', 'start_time', 'end_time', 'room_id']),
-            'nonstandard' => TherapistNonstandardDate::query()
-                ->whereIn('therapist_id', $baseIds)
-                ->whereBetween('work_date', [$from, $to])
+                ->whereBetween('work_date', [$from->toDateString(), $to->toDateString()])
                 ->get(['therapist_id', 'work_date', 'start_time', 'end_time', 'room_id']),
-            'blocks' => CalendarBlock::query()
-                ->whereIn('therapist_id', $baseIds)
-                ->whereDate('start_date', '<=', $to)
-                ->whereDate('end_date', '>=', $from)
-                ->get(['therapist_id', 'start_date', 'end_date']),
             'reservations' => Reservation::query()
                 ->whereBetween('reservation_date', [$from, $to])
                 ->where('status', '!=', ReservationStatus::Cancelled->value)
@@ -521,51 +457,17 @@ class ReservationSlots
 
     /**
      * @param  array<string, Collection<int, mixed>>  $context
-     * @return array<int, string>
-     */
-    protected function blockedFromContext(array $context, Carbon $date): array
-    {
-        return $context['blocks']
-            ->filter(fn (CalendarBlock $block): bool => $date->betweenIncluded($block->start_date, $block->end_date))
-            ->pluck('therapist_id')
-            ->all();
-    }
-
-    /**
-     * @param  array<string, Collection<int, mixed>>  $context
      * @param  array<int, string>  $therapistIds
      * @return array<string, array<int, array{0: int, 1: int, 2: string}>>
      */
-    protected function weeklyFromContext(array $context, array $therapistIds, Carbon $date): array
+    protected function workBlocksFromContext(array $context, array $therapistIds, Carbon $date): array
     {
-        $day = DayOfWeek::fromCarbon($date)->value;
-
-        return $context['weekly']
+        return $context['workBlocks']
             ->whereIn('therapist_id', $therapistIds)
-            ->where('day_of_week', $day)
-            ->filter(fn (TherapistWeeklySchedule $row): bool => $row->week_type->matchesDate($date))
+            ->filter(fn (TherapistWorkBlock $row): bool => $row->work_date->isSameDay($date))
             ->groupBy('therapist_id')
             ->map(fn (Collection $rows): array => $rows
-                ->map(fn (TherapistWeeklySchedule $row): array => [
-                    Slot::toMinutes($row->start_time), Slot::toMinutes($row->end_time), $row->room_id,
-                ])
-                ->all())
-            ->all();
-    }
-
-    /**
-     * @param  array<string, Collection<int, mixed>>  $context
-     * @param  array<int, string>  $therapistIds
-     * @return array<string, array<int, array{0: int, 1: int, 2: string}>>
-     */
-    protected function nonstandardFromContext(array $context, array $therapistIds, Carbon $date): array
-    {
-        return $context['nonstandard']
-            ->whereIn('therapist_id', $therapistIds)
-            ->filter(fn (TherapistNonstandardDate $row): bool => $row->work_date->isSameDay($date))
-            ->groupBy('therapist_id')
-            ->map(fn (Collection $rows): array => $rows
-                ->map(fn (TherapistNonstandardDate $row): array => [
+                ->map(fn (TherapistWorkBlock $row): array => [
                     Slot::toMinutes($row->start_time), Slot::toMinutes($row->end_time), $row->room_id,
                 ])
                 ->all())

@@ -2,22 +2,20 @@
 
 namespace App\Filament\Clusters\Provoz\Resources\Reservations\Schemas;
 
-use App\Enums\PaymentStatus;
-use App\Enums\ReservationStatus;
 use App\Filament\Clusters\Provoz\Resources\Clients\ClientResource;
 use App\Filament\Clusters\Provoz\Resources\Services\ServiceResource;
-use App\Filament\Clusters\System\Resources\TherapistProfiles\TherapistProfileResource;
+use App\Filament\Clusters\Provoz\Resources\TherapistProfiles\TherapistProfileResource;
 use App\Filament\Support\Schemas\PresenceBanner;
 use App\Filament\Support\Schemas\RecordTimestampsSection;
 use App\Filament\Support\Schemas\ResponsiveColumns;
 use App\Models\TherapistProfile;
+use App\Support\Mentions\StaffMentions;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TimePicker;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\ToggleButtons;
 use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
@@ -29,141 +27,145 @@ class ReservationForm
 {
     public static function configure(Schema $schema): Schema
     {
-        [$termin, $ucastnici, $stav] = self::components();
-
         return $schema->components([
             PresenceBanner::make(),
-            Grid::make(['default' => 1, 'lg' => 3])
-                ->columnSpanFull()
-                ->schema([
-                    $termin->columnSpan(['default' => 'full', 'lg' => 2]),
-                    RecordTimestampsSection::make()->collapsed(false),
-                ]),
-            Grid::make(['default' => 1, 'lg' => 2])
-                ->columnSpanFull()
-                ->schema([
-                    $ucastnici->columnSpan(['default' => 'full', 'lg' => 1]),
-                    $stav->columnSpan(['default' => 'full', 'lg' => 1]),
-                ]),
+            ...self::components(),
+            RecordTimestampsSection::make()->collapsed(false),
         ]);
     }
 
     /**
+     * @param  bool  $withControlTherapy  When false the "Kontrolní terapie" toggle is left
+     *                                    out so a caller (the calendar) can place it in a
+     *                                    shared row with its own "Upozornit zákazníka" toggle.
      * @return array<int, Component>
      */
-    public static function components(): array
+    public static function components(bool $withControlTherapy = true): array
     {
         return [
-            Section::make('Termín')
-                ->columns(3)
+            // Termín + účastníci in ONE uncontained group (date/time row above the
+            // participant selects), so the modal isn't over-divided. The header holds the
+            // "Otevřít detail" links — Filament modals don't expose the window header
+            // (next to the ✕) for custom actions, so this is the closest spot.
+            Section::make()
+                ->contained(false)
+                ->headerActions([
+                    self::openRecordAction(
+                        'openClient',
+                        'Klient',
+                        'client_id',
+                        fn (string $id): string => ClientResource::getUrl('view', ['record' => $id]),
+                    ),
+                    self::openRecordAction(
+                        'openService',
+                        'Služba',
+                        'service_id',
+                        fn (string $id): string => ServiceResource::getUrl('view', ['record' => $id]),
+                    ),
+                    self::openRecordAction(
+                        'openTherapist',
+                        'Terapeut',
+                        'therapist_id',
+                        fn (string $id): string => TherapistProfileResource::getUrl('edit', ['record' => $id]),
+                    ),
+                ])
                 ->schema([
-                    DatePicker::make('reservation_date')
-                        ->label('Datum')
-                        ->required()
-                        ->native(false),
-                    TimePicker::make('start_time')
-                        ->label('Od')
-                        ->seconds(false)
-                        ->required(),
-                    TimePicker::make('end_time')
-                        ->label('Do')
-                        ->seconds(false)
-                        ->required()
-                        ->after('start_time'),
+                    Grid::make(3)->schema([
+                        DatePicker::make('reservation_date')
+                            ->label('Datum')
+                            ->required()
+                            ->native(false),
+                        TimePicker::make('start_time')
+                            ->label('Od')
+                            ->seconds(false)
+                            ->required(),
+                        TimePicker::make('end_time')
+                            ->label('Do')
+                            ->seconds(false)
+                            ->required()
+                            ->after('start_time'),
+                    ]),
+                    Grid::make(ResponsiveColumns::DENSE)->schema([
+                        Select::make('client_id')
+                            ->label('Klient')
+                            ->relationship('client', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->required()
+                            ->live()
+                            // Reassigning the client would make it a different reservation, so
+                            // the client is locked once the reservation exists.
+                            ->disabled(fn (string $operation): bool => $operation === 'edit')
+                            ->helperText(fn (string $operation): ?string => $operation === 'edit'
+                                ? 'Klienta nelze u existující rezervace změnit — vážou se na něj platby, doklady a e-mailová komunikace. Potřebujete-li rezervaci převést, zrušte ji a založte novou.'
+                                : null),
+                        Select::make('service_id')
+                            ->label('Služba')
+                            ->relationship('service', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->required()
+                            ->live(),
+                        Select::make('therapist_id')
+                            ->label('Terapeut')
+                            ->relationship('therapist')
+                            ->getOptionLabelFromRecordUsing(fn (TherapistProfile $record): ?string => $record->user?->name)
+                            ->searchable()
+                            ->preload()
+                            ->required()
+                            ->live(),
+                        Select::make('room_id')
+                            ->label('Místnost')
+                            ->relationship('room', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->required(),
+                    ]),
                 ]),
-            Section::make('Účastníci')
+            // Status is never hand-edited here: new reservations default to Pending, and
+            // confirming / unconfirming / cancelling all go through their dedicated
+            // actions so the confirmation source (who + how) is always recorded.
+            Section::make('Doplňující údaje')
+                ->contained(false)
                 ->gridContainer()
                 ->columns(ResponsiveColumns::DENSE)
                 ->schema([
-                    Select::make('client_id')
-                        ->label('Klient')
-                        ->relationship('client', 'name')
-                        ->searchable()
-                        ->preload()
-                        ->required()
-                        ->live()
-                        ->hintAction(self::openRecordAction(
-                            'openClient',
-                            'client_id',
-                            fn (string $id): string => ClientResource::getUrl('view', ['record' => $id]),
-                        )),
-                    Select::make('service_id')
-                        ->label('Služba')
-                        ->relationship('service', 'name')
-                        ->searchable()
-                        ->preload()
-                        ->required()
-                        ->live()
-                        ->hintAction(self::openRecordAction(
-                            'openService',
-                            'service_id',
-                            fn (string $id): string => ServiceResource::getUrl('view', ['record' => $id]),
-                        )),
-                    Select::make('therapist_id')
-                        ->label('Terapeut')
-                        ->relationship('therapist')
-                        ->getOptionLabelFromRecordUsing(fn (TherapistProfile $record): ?string => $record->user?->name)
-                        ->searchable()
-                        ->preload()
-                        ->required()
-                        ->live()
-                        ->hintAction(self::openRecordAction(
-                            'openTherapist',
-                            'therapist_id',
-                            fn (string $id): string => TherapistProfileResource::getUrl('edit', ['record' => $id]),
-                        )),
-                    Select::make('room_id')
-                        ->label('Místnost')
-                        ->relationship('room', 'name')
-                        ->searchable()
-                        ->preload()
-                        ->required(),
-                ]),
-            Section::make('Stav')
-                ->gridContainer()
-                ->columns(ResponsiveColumns::DENSE)
-                ->schema([
-                    ToggleButtons::make('status')
-                        ->label('Stav')
-                        ->options(ReservationStatus::class)
-                        ->default(ReservationStatus::Pending)
-                        ->required()
-                        ->live()
-                        ->inline(),
-                    ToggleButtons::make('payment_status')
-                        ->label('Platba')
-                        ->options(PaymentStatus::class)
-                        ->default(PaymentStatus::Unpaid)
-                        ->required()
-                        ->inline(),
-                    Textarea::make('cancellation_reason')
-                        ->label('Důvod zrušení')
-                        ->rows(2)
-                        ->visible(fn (Get $get): bool => in_array($get('status'), [ReservationStatus::Cancelled, ReservationStatus::Cancelled->value], true))
-                        ->columnSpanFull(),
-                    Toggle::make('is_control_therapy')
-                        ->label('Kontrolní terapie'),
-                    Textarea::make('notes')
+                    ...($withControlTherapy ? [self::controlTherapyToggle()] : []),
+                    RichEditor::make('notes')
                         ->label('Poznámka')
-                        ->rows(3)
+                        ->mentions([StaffMentions::editorProvider()])
+                        ->toolbarButtons([
+                            ['bold', 'italic', 'link', 'textColor'],
+                        ])
                         ->columnSpanFull(),
                 ]),
         ];
     }
 
     /**
-     * A hint-action link (top-right of a Select) that opens the selected record's detail
-     * page in a new tab, shown only once a value is picked. Lets the admin jump straight
-     * to the chosen client / service / therapist from the reservation form.
+     * The "Kontrolní terapie" toggle, exposed so the calendar can place it beside its own
+     * "Upozornit zákazníka" toggle (see {@see components()} `$withControlTherapy`).
+     */
+    public static function controlTherapyToggle(): Toggle
+    {
+        return Toggle::make('is_control_therapy')
+            ->label('Kontrolní terapie');
+    }
+
+    /**
+     * A header link that opens the selected record's detail page in a new tab, shown only
+     * once a value is picked. Lets the admin jump straight to the chosen client / service
+     * / therapist from the reservation form.
      *
      * @param  callable(string): string  $url  Builds the target URL from the selected id.
      */
-    private static function openRecordAction(string $name, string $field, callable $url): Action
+    private static function openRecordAction(string $name, string $label, string $field, callable $url): Action
     {
         return Action::make($name)
-            ->label('Otevřít detail')
+            ->label($label)
             ->icon(Heroicon::OutlinedArrowTopRightOnSquare)
             ->color('gray')
+            ->link()
             ->visible(fn (Get $get): bool => filled($get($field)))
             ->url(fn (Get $get): ?string => filled($get($field)) ? $url($get($field)) : null, shouldOpenInNewTab: true);
     }

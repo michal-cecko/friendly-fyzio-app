@@ -28,7 +28,7 @@
             <h2 class="font-heading text-2xl font-bold text-neutral-900 lg:text-3xl">{!! \App\Support\RichText::inline($config['title'] ?? '') !!}</h2>
 
             @if(! empty($config['body']))
-                <div class="ff-prose text-[15px] leading-relaxed text-neutral-700">{!! $config['body'] !!}</div>
+                <div class="ff-prose text-[15px] leading-relaxed text-neutral-700">{!! \App\Support\RichText::resolveMentions($config['body']) !!}</div>
             @endif
         </div>
 

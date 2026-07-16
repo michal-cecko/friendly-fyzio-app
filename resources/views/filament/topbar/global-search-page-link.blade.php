@@ -60,5 +60,6 @@
         icon="heroicon-o-document-magnifying-glass"
         color="gray"
         label="Rozšířené vyhledávání (včetně smazaných)"
+        tooltip="Rozšířené vyhledávání (včetně smazaných)"
     />
 </div>

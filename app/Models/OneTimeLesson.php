@@ -16,6 +16,7 @@ class OneTimeLesson extends Model
         'course_id',
         'instructor_id',
         'room_id',
+        'invoice_title',
         'lesson_date',
         'start_time',
         'end_time',

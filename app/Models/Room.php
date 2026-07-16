@@ -27,9 +27,9 @@ class Room extends Model
         return $this->belongsToMany(Service::class, 'service_rooms');
     }
 
-    public function weeklySchedules(): HasMany
+    public function workBlocks(): HasMany
     {
-        return $this->hasMany(TherapistWeeklySchedule::class);
+        return $this->hasMany(TherapistWorkBlock::class);
     }
 
     public function reservations(): HasMany

@@ -71,19 +71,14 @@ class TherapistProfile extends Model implements HasPermalink
         return $this->belongsToMany(Service::class, 'service_therapists', 'therapist_id', 'service_id');
     }
 
-    public function weeklySchedules(): HasMany
+    public function workBlocks(): HasMany
     {
-        return $this->hasMany(TherapistWeeklySchedule::class, 'therapist_id');
+        return $this->hasMany(TherapistWorkBlock::class, 'therapist_id');
     }
 
-    public function nonstandardDates(): HasMany
+    public function workBlockSeries(): HasMany
     {
-        return $this->hasMany(TherapistNonstandardDate::class, 'therapist_id');
-    }
-
-    public function calendarBlocks(): HasMany
-    {
-        return $this->hasMany(CalendarBlock::class, 'therapist_id');
+        return $this->hasMany(TherapistWorkBlockSeries::class, 'therapist_id');
     }
 
     /**

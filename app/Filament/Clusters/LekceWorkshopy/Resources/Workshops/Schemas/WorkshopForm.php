@@ -34,6 +34,11 @@ class WorkshopForm
                     ->required()
                     ->maxLength(255)
                     ->unique(ignoreRecord: true),
+                TextInput::make('invoice_title')
+                    ->label('Název pro fakturaci')
+                    ->maxLength(255)
+                    ->helperText('Použije se na fakturách a v e-mailech místo běžného názvu.')
+                    ->columnSpanFull(),
                 Select::make('instructor_id')
                     ->label('Lektor')
                     ->relationship('instructor', 'name', fn (Builder $query): Builder => $query->whereIn('role', [UserRole::Admin, UserRole::Therapist]))

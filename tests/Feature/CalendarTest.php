@@ -151,7 +151,7 @@ class CalendarTest extends TestCase
             ->set('mode', 'template')
             ->assertSuccessful()
             ->assertSee('Přidat pracovní dobu')
-            ->assertSee('Typ týdne');
+            ->assertSee('Smazat období');
     }
 
     public function test_selection_mode_click_toggles_selection_instead_of_editing(): void
@@ -182,17 +182,24 @@ class CalendarTest extends TestCase
 
     public function test_restoring_a_reservation_from_the_edit_modal(): void
     {
+        Notification::fake();
         $this->actingAs(User::factory()->admin()->create());
 
-        $reservation = $this->makeReservation();
+        $reservation = $this->makeReservation([
+            'status' => ReservationStatus::Cancelled,
+            'reservation_date' => today()->addDays(10)->toDateString(),
+        ]);
         $reservation->delete();
 
         Livewire::test(ReservationCalendar::class)
             ->call('onEventClick', ['id' => (string) $reservation->getKey()])
-            ->mountAction('restore')
+            ->mountAction('restoreReservation')
             ->callMountedAction();
 
-        $this->assertFalse($reservation->fresh()->trashed());
+        $reservation = $reservation->fresh();
+
+        $this->assertFalse($reservation->trashed());
+        $this->assertSame(ReservationStatus::Pending, $reservation->status);
     }
 
     public function test_selection_persists_across_week_navigation(): void
@@ -233,30 +240,68 @@ class CalendarTest extends TestCase
         });
     }
 
+    public function test_cancel_selected_with_erase_opt_in_notifies_and_moves_records_to_the_trash(): void
+    {
+        Notification::fake();
+        $this->actingAs(User::factory()->admin()->create());
+        $reservation = $this->makeReservation(['status' => ReservationStatus::Confirmed]);
+        $client = $reservation->client;
+
+        Livewire::test(ReservationCalendar::class)
+            ->set('selectedIds', [(string) $reservation->getKey()])
+            ->callAction('cancelSelected', [
+                'cancellation_reason' => 'Duplicitní rezervace',
+                'force_delete' => true,
+                'notify_client' => true,
+            ])
+            ->assertSet('selectedIds', []);
+
+        // Same modal + semantics as the reservations list: the client is told
+        // about an ordinary cancellation and the record moves to the trash,
+        // from where the daily prune erases it after 30 days.
+        Notification::assertSentTo($client, ReservationTemplateNotification::class, function (ReservationTemplateNotification $n): bool {
+            return $n->key === EmailTemplateKey::ReservationCancelled;
+        });
+        $this->assertTrue(Reservation::withTrashed()->find($reservation->getKey())->trashed());
+    }
+
     public function test_restore_selected_action_restores_trashed_reservations(): void
     {
+        Notification::fake();
         $this->actingAs(User::factory()->admin()->create());
-        $a = $this->makeReservation();
+        $a = $this->makeReservation([
+            'status' => ReservationStatus::Cancelled,
+            'cancellation_reason' => 'Zrušeno klientem',
+            'reservation_date' => today()->addDays(10)->toDateString(),
+        ]);
         $a->delete();
 
         Livewire::test(ReservationCalendar::class)
             ->set('filterData', ['trashed' => 'only'])
             ->set('selectedIds', [(string) $a->getKey()])
-            ->callAction('restoreSelected');
+            ->callAction('restoreSelected', ['notify_client' => true]);
 
-        $this->assertDatabaseHas('reservations', [
-            'id' => $a->getKey(),
-            'deleted_at' => null,
-        ]);
+        // Restore reactivates like the list action: undeleted, back to Pending
+        // (visit outside the confirmation window), reason cleared, client thanked.
+        $a = $a->fresh();
+
+        $this->assertFalse($a->trashed());
+        $this->assertSame(ReservationStatus::Pending, $a->status);
+        $this->assertNull($a->cancellation_reason);
+        Notification::assertSentTo($a->client, ReservationTemplateNotification::class, function (ReservationTemplateNotification $n): bool {
+            return $n->key === EmailTemplateKey::ReservationCreated;
+        });
     }
 
-    public function test_restore_action_hidden_when_not_viewing_trashed(): void
+    public function test_restore_action_is_available_outside_the_trashed_view_for_cancelled_events(): void
     {
         $this->actingAs(User::factory()->admin()->create());
 
+        // Cancelled (non-trashed) events are selectable in the normal view, so the
+        // restore bulk action stays visible there — it merely skips active rows.
         Livewire::test(ReservationCalendar::class)
             ->set('selectionMode', true)
-            ->assertActionHidden('restoreSelected');
+            ->assertActionVisible('restoreSelected');
     }
 
     public function test_filters_and_view_hydrate_from_url_query_params(): void
@@ -269,7 +314,6 @@ class CalendarTest extends TestCase
             'q' => 'novak',
             'mode' => 'template',
             'date' => '2026-06-04',
-            'week' => 'odd',
         ])
             ->test(ReservationCalendar::class)
             ->assertSet('filterData.statusIds', [ReservationStatus::Confirmed->value])
@@ -277,8 +321,7 @@ class CalendarTest extends TestCase
             ->assertSet('therapistIds', ['therapist-id'])
             ->assertSet('search', 'novak')
             ->assertSet('mode', 'template')
-            ->assertSet('calendarDate', '2026-06-04')
-            ->assertSet('templateWeekType', 'odd');
+            ->assertSet('calendarDate', '2026-06-04');
     }
 
     public function test_fetch_events_returns_week_reservations(): void

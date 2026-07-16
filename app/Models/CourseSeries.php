@@ -16,6 +16,7 @@ class CourseSeries extends Model
     protected $fillable = [
         'course_id',
         'name',
+        'invoice_title',
         'start_date',
         'end_date',
         'capacity',

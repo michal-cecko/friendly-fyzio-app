@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\ConfirmationSource;
 use App\Enums\PaymentStatus;
 use App\Enums\ReservationStatus;
 use App\Models\Reservation;
@@ -36,5 +37,15 @@ class ReservationFactory extends Factory
             'is_control_therapy' => fake()->boolean(15),
             'notes' => fake()->boolean(30) ? fake()->sentence() : null,
         ];
+    }
+
+    public function confirmed(ConfirmationSource $by = ConfirmationSource::Customer): static
+    {
+        return $this->state(fn (): array => [
+            'status' => ReservationStatus::Confirmed,
+            'confirmed_at' => now(),
+            'confirmed_by' => $by,
+            'confirmed_by_id' => $by === ConfirmationSource::Automatic ? null : User::factory(),
+        ]);
     }
 }

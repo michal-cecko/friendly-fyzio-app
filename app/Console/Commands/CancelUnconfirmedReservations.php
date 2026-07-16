@@ -6,6 +6,7 @@ use App\Enums\EmailTemplateKey;
 use App\Enums\ReservationStatus;
 use App\Models\Reservation;
 use App\Notifications\ReservationTemplateNotification;
+use App\Notifications\TherapistReservationAutoCancelledNotification;
 use App\Support\Settings;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
@@ -34,7 +35,7 @@ class CancelUnconfirmedReservations extends Command
             ->where('status', ReservationStatus::Pending)
             ->whereDate('reservation_date', '>=', $now->toDateString())
             ->whereDate('reservation_date', '<=', $cutoff->toDateString())
-            ->with('client')
+            ->with(['client', 'therapist.user'])
             ->get();
 
         $cancelled = 0;
@@ -58,6 +59,7 @@ class CancelUnconfirmedReservations extends Command
             ]);
 
             $reservation->client?->notify(new ReservationTemplateNotification($reservation, EmailTemplateKey::ReservationAutoCancelled));
+            $reservation->therapist?->user?->notify(new TherapistReservationAutoCancelledNotification($reservation));
             $cancelled++;
         }
 

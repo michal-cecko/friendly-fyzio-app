@@ -3,6 +3,7 @@
 namespace App\Mason\Bricks;
 
 use App\Mason\Support\ButtonsField;
+use App\Support\Mentions\StaffMentions;
 use Awcodes\Mason\Brick;
 use Filament\Actions\Action;
 use Filament\Forms\Components\RichEditor;
@@ -45,7 +46,11 @@ class HeroBrick extends Brick
                     ->label('Nadpis')
                     ->required(),
                 RichEditor::make('features')
-                    ->label('Odrážky'),
+                    ->label('Odrážky')
+                    ->mentions([StaffMentions::editorProvider()])
+                    ->toolbarButtons([
+                        ['bold', 'italic', 'link', 'bulletList', 'textColor'],
+                    ]),
                 MediaPicker::make('image')
                     ->label('Obrázek')
                     ->acceptedFileTypes(['image/*']),

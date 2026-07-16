@@ -24,6 +24,7 @@ services:
         depends_on:
             - pgsql
             - redis
+            - gotenberg
     caddy:
         image: 'caddy:2-alpine'
         restart: unless-stopped
@@ -60,6 +61,20 @@ services:
                 - '${DB_DATABASE}'
                 - '-U'
                 - '${DB_USERNAME}'
+            retries: 3
+            timeout: 5s
+    gotenberg:
+        image: 'gotenberg/gotenberg:8'
+        restart: unless-stopped
+        networks:
+            - sail
+        healthcheck:
+            test:
+                - CMD
+                - curl
+                - '--silent'
+                - '--fail'
+                - 'http://localhost:3000/health'
             retries: 3
             timeout: 5s
     redis:

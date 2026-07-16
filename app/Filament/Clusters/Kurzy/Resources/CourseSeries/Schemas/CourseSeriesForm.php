@@ -29,6 +29,11 @@ class CourseSeriesForm
                     ->label('Název')
                     ->required()
                     ->maxLength(255),
+                TextInput::make('invoice_title')
+                    ->label('Název pro fakturaci')
+                    ->maxLength(255)
+                    ->helperText('Použije se na fakturách a v e-mailech místo názvu kurzu.')
+                    ->columnSpanFull(),
                 DatePicker::make('start_date')
                     ->label('Začátek')
                     ->native(false)

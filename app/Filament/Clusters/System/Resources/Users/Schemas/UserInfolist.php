@@ -2,7 +2,6 @@
 
 namespace App\Filament\Clusters\System\Resources\Users\Schemas;
 
-use App\Enums\UserRole;
 use App\Filament\Support\Schemas\RecordTimestampsSection;
 use App\Models\User;
 use Filament\Infolists\Components\IconEntry;
@@ -32,7 +31,7 @@ class UserInfolist
                     ]),
                 Section::make('Terapeut')
                     ->columns(2)
-                    ->visible(fn (User $record): bool => $record->role === UserRole::Therapist)
+                    ->visible(fn (User $record): bool => $record->isTherapist())
                     ->schema([
                         IconEntry::make('therapistProfile.is_collaborator')
                             ->label('Spolupracovník')

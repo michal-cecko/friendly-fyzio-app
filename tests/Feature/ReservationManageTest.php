@@ -2,12 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Enums\ConfirmationSource;
 use App\Enums\EmailTemplateKey;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Enums\ReservationStatus;
+use App\Filament\Clusters\Finance\Resources\Payments\Pages\ListPayments;
 use App\Filament\Clusters\Provoz\Resources\Clients\Pages\ListClients;
-use App\Filament\Clusters\Provoz\Resources\Payments\Pages\ListPayments;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Pages\ListReservations;
 use App\Models\Payment;
 use App\Models\Reservation;
@@ -115,6 +116,8 @@ class ReservationManageTest extends TestCase
         $reservation->refresh();
         $this->assertSame(ReservationStatus::Confirmed, $reservation->status);
         $this->assertNotNull($reservation->confirmed_at);
+        $this->assertSame(ConfirmationSource::Customer, $reservation->confirmed_by);
+        $this->assertSame($reservation->client_id, $reservation->confirmed_by_id);
 
         Notification::assertSentToTimes($reservation->client, ReservationTemplateNotification::class, 1);
         Notification::assertSentTo($reservation->client, ReservationTemplateNotification::class, function (ReservationTemplateNotification $n): bool {
@@ -494,7 +497,13 @@ class ReservationManageTest extends TestCase
         Filament::setCurrentPanel('admin');
         $this->actingAs(User::factory()->admin()->create());
 
-        $reservation = $this->stornoReservation(1000);
+        // Mirrors the controller's pay() outcome: the reservation is already
+        // cancelled when its storno payment exists, so the paid fee covers the
+        // amount due and the auto-paid rule settles the reservation.
+        $reservation = $this->stornoReservation(1000, [
+            'status' => ReservationStatus::Cancelled,
+            'payment_status' => PaymentStatus::Unpaid,
+        ]);
         $payment = $reservation->payments()->create([
             'client_id' => $reservation->client_id,
             'amount' => 500,

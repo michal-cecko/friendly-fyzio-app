@@ -2,6 +2,7 @@
     $config ??= [];
     $title = $config['title'] ?? 'Platební údaje';
     $showQr = $config['show_qr'] ?? true;
+    $showDue = $config['show_due'] ?? false;
 
     $labelStyle = "font-family:'Open Sans',Arial,sans-serif;font-size:14px;font-weight:600;color:#1A1A1A;padding:6px 12px 6px 0;white-space:nowrap;";
     $valueStyle = "font-family:'Open Sans',Arial,sans-serif;font-size:14px;color:#666666;padding:6px 0;";
@@ -31,6 +32,12 @@
                     <td style="{{ $labelStyle }}">Variabilní symbol:</td>
                     <td style="{{ $valueStyle }}">@{{ vs }}</td>
                 </tr>
+                @if($showDue)
+                    <tr>
+                        <td style="{{ $labelStyle }}">Splatnost:</td>
+                        <td style="{{ $valueStyle }}"><strong style="color:#D9534F;">@{{ splatnost }}</strong></td>
+                    </tr>
+                @endif
             </table>
         </td>
     </tr>

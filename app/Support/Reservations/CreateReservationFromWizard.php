@@ -2,14 +2,19 @@
 
 namespace App\Support\Reservations;
 
+use App\Enums\ConfirmationSource;
+use App\Enums\EmailTemplateKey;
 use App\Enums\PaymentStatus;
 use App\Enums\ReservationStatus;
 use App\Enums\UserRole;
+use App\Filament\Clusters\Provoz\Resources\Reservations\ReservationResource;
 use App\Jobs\SubscribeToNewsletterJob;
 use App\Models\Reservation;
 use App\Models\User;
 use App\Notifications\ClientAccountCreatedNotification;
-use App\Notifications\ReservationNotification;
+use App\Notifications\ReservationTemplateNotification;
+use App\Notifications\TherapistReservationTemplateNotification;
+use App\Support\RichText;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -38,9 +43,20 @@ class CreateReservationFromWizard
 
         [$reservation, $client, $isNewAccount] = $result;
 
-        // After commit and outside the lock: notify the client and therapist.
-        $client->notify(new ReservationNotification($reservation, 'created'));
-        $reservation->therapist?->user?->notify(new ReservationNotification($reservation, 'created', 'therapist'));
+        // After commit and outside the lock: notify the client and therapist. A booking
+        // auto-confirmed above gets the "automatically confirmed" e-mail; otherwise the
+        // "booking received" acknowledgement (the confirmation request follows later).
+        $client->notify(new ReservationTemplateNotification(
+            $reservation,
+            $reservation->status === ReservationStatus::Confirmed
+                ? EmailTemplateKey::ReservationAutoConfirmed
+                : EmailTemplateKey::ReservationCreated,
+        ));
+        $reservation->therapist?->user?->notify(new TherapistReservationTemplateNotification(
+            $reservation,
+            EmailTemplateKey::TherapistReservationCreated,
+            ['odkaz_potvrdit' => ReservationResource::getUrl('view', ['record' => $reservation])],
+        ));
 
         if ($isNewAccount) {
             $client->notify(new ClientAccountCreatedNotification);
@@ -78,10 +94,21 @@ class CreateReservationFromWizard
                 'status' => ReservationStatus::Pending,
                 'payment_status' => PaymentStatus::Unpaid,
                 'is_control_therapy' => false,
-                'notes' => $data->note,
+                'notes' => RichText::fromPlainText($data->note),
             ]);
         } catch (UniqueConstraintViolationException $exception) {
             throw new SlotTakenException(previous: $exception);
+        }
+
+        // A booking already inside the confirmation window is auto-confirmed: asking the
+        // customer to confirm what they just booked would be pointless.
+        if ($reservation->withinConfirmationWindow()) {
+            $reservation->update([
+                'status' => ReservationStatus::Confirmed,
+                'confirmed_at' => now(),
+                'confirmed_by' => ConfirmationSource::Automatic,
+                'confirmed_by_id' => null,
+            ]);
         }
 
         return [$reservation, $client, $isNewAccount];

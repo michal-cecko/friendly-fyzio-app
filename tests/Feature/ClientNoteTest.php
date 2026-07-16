@@ -65,7 +65,7 @@ class ClientNoteTest extends TestCase
         $this->assertDatabaseHas('client_notes', [
             'client_id' => $client->getKey(),
             'author_id' => $admin->getKey(),
-            'content' => 'Klient reaguje dobře na cvičení.',
+            'content' => '<p>Klient reaguje dobře na cvičení.</p>',
         ]);
     }
 
@@ -82,7 +82,9 @@ class ClientNoteTest extends TestCase
             ->callAction(TestAction::make('create')->table(), data: [
                 'content' => null,
             ])
-            ->assertHasActionErrors(['content' => 'required']);
+            // The RichEditor replaces the `required` rule with its own closure
+            // (an empty TipTap doc is not blank), so assert any error on the field.
+            ->assertHasActionErrors(['content']);
 
         $this->assertDatabaseCount('client_notes', 0);
     }

@@ -2,6 +2,7 @@
 
 namespace App\Mason\Support;
 
+use App\Support\Mentions\StaffMentions;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\TextInput;
 
@@ -36,6 +37,7 @@ class Fields
         return RichEditor::make($name)
             ->label($label)
             ->required($required)
+            ->mentions([StaffMentions::editorProvider()])
             ->toolbarButtons([
                 ['bold', 'italic', 'link', 'textColor'],
             ]);

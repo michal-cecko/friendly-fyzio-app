@@ -2,13 +2,13 @@
 
 namespace Tests\Feature;
 
-use App\Enums\DayOfWeek;
+use App\Enums\ConfirmationSource;
+use App\Enums\EmailTemplateKey;
 use App\Enums\PaymentStatus;
 use App\Enums\ReservationStatus;
 use App\Enums\ServiceType;
 use App\Enums\ServiceVisibility;
 use App\Enums\UserRole;
-use App\Enums\WeekType;
 use App\Jobs\SubscribeToNewsletterJob;
 use App\Models\ClientProfile;
 use App\Models\Reservation;
@@ -16,10 +16,11 @@ use App\Models\Room;
 use App\Models\Service;
 use App\Models\ServiceCategory;
 use App\Models\TherapistProfile;
-use App\Models\TherapistWeeklySchedule;
+use App\Models\TherapistWorkBlock;
 use App\Models\User;
 use App\Notifications\ClientAccountCreatedNotification;
-use App\Notifications\ReservationNotification;
+use App\Notifications\ReservationTemplateNotification;
+use App\Notifications\TherapistReservationTemplateNotification;
 use App\Support\Reservations\CreateReservationFromWizard;
 use App\Support\Reservations\ReservationBookingData;
 use App\Support\Reservations\SlotTakenException;
@@ -60,11 +61,10 @@ class CreateReservationFromWizardTest extends TestCase
         $this->therapist = TherapistProfile::factory()->create(['published_at' => now()]);
         $this->service->therapists()->attach($this->therapist);
 
-        TherapistWeeklySchedule::factory()->create([
+        TherapistWorkBlock::factory()->create([
             'therapist_id' => $this->therapist->id,
             'room_id' => $this->room->id,
-            'day_of_week' => DayOfWeek::fromCarbon($this->date),
-            'week_type' => WeekType::All,
+            'work_date' => $this->date->toDateString(),
             'start_time' => '08:00',
             'end_time' => '16:00',
         ]);
@@ -106,7 +106,8 @@ class CreateReservationFromWizardTest extends TestCase
             'end_time' => '09:00:00',
             'status' => ReservationStatus::Pending->value,
             'payment_status' => PaymentStatus::Unpaid->value,
-            'notes' => 'Bolesti zad',
+            // The wizard's plain-text note is stored as rich-editor HTML.
+            'notes' => '<p>Bolesti zad</p>',
         ]);
         $this->assertSame($this->date->toDateString(), $reservation->reservation_date->toDateString());
 
@@ -115,9 +116,57 @@ class CreateReservationFromWizardTest extends TestCase
         $this->assertNotNull($client->newsletter_opted_in_at);
         $this->assertDatabaseHas(ClientProfile::class, ['user_id' => $client->id]);
 
-        Notification::assertSentTo($client, ReservationNotification::class);
+        // Booked 8 weeks out (far ahead of the confirmation window) → stays Pending and
+        // the client gets the CMS "booking received" acknowledgement.
+        $this->assertSame(ReservationStatus::Pending, $reservation->status);
+        $this->assertNull($reservation->confirmed_by);
+
+        Notification::assertSentTo(
+            $client,
+            ReservationTemplateNotification::class,
+            fn (ReservationTemplateNotification $notification): bool => $notification->key === EmailTemplateKey::ReservationCreated,
+        );
         Notification::assertSentTo($client, ClientAccountCreatedNotification::class);
-        Notification::assertSentTo($this->therapist->user, ReservationNotification::class);
+        Notification::assertSentTo(
+            $this->therapist->user,
+            TherapistReservationTemplateNotification::class,
+            fn (TherapistReservationTemplateNotification $notification): bool => $notification->key === EmailTemplateKey::TherapistReservationCreated,
+        );
+    }
+
+    public function test_last_minute_booking_is_auto_confirmed(): void
+    {
+        Notification::fake();
+
+        // Tomorrow at 08:00 is the first offerable slot of the day and is always inside
+        // the 48h confirmation window, so the booking is auto-confirmed.
+        $tomorrow = Carbon::tomorrow();
+
+        TherapistWorkBlock::factory()->create([
+            'therapist_id' => $this->therapist->id,
+            'room_id' => $this->room->id,
+            'work_date' => $tomorrow->toDateString(),
+            'start_time' => '08:00',
+            'end_time' => '16:00',
+        ]);
+
+        $reservation = ($this->action())($this->data([
+            'date' => $tomorrow->toDateString(),
+            'startTime' => '08:00',
+            'email' => 'lastminute@example.com',
+        ]));
+
+        $this->assertSame(ReservationStatus::Confirmed, $reservation->status);
+        $this->assertNotNull($reservation->confirmed_at);
+        $this->assertSame(ConfirmationSource::Automatic, $reservation->confirmed_by);
+        $this->assertNull($reservation->confirmed_by_id);
+
+        $client = User::where('email', 'lastminute@example.com')->sole();
+        Notification::assertSentTo(
+            $client,
+            ReservationTemplateNotification::class,
+            fn (ReservationTemplateNotification $notification): bool => $notification->key === EmailTemplateKey::ReservationAutoConfirmed,
+        );
     }
 
     public function test_reuses_existing_account_by_email_without_welcome(): void

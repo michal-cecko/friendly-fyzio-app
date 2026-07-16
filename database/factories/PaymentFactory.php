@@ -35,4 +35,11 @@ class PaymentFactory extends Factory
             'paid_at' => now(),
         ]);
     }
+
+    public function cash(): static
+    {
+        return $this->state(fn (): array => [
+            'method' => PaymentMethod::Cash,
+        ]);
+    }
 }
