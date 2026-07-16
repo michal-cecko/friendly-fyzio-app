@@ -403,6 +403,18 @@ class CalendarModesTest extends TestCase
             ->assertSee('Vytíženost dne');
     }
 
+    public function test_template_mode_renders_sidebar_summary_too(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+
+        Livewire::test(ReservationCalendar::class)
+            ->set('mode', 'template')
+            ->assertSuccessful()
+            ->assertSee('TERMÍNY')
+            ->assertSee('VYTÍŽENOST')
+            ->assertSee('Vytíženost dne');
+    }
+
     public function test_clicking_template_work_block_marks_it_for_editing(): void
     {
         $room = $this->makeRoom();

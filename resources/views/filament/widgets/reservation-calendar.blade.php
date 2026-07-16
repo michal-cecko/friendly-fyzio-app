@@ -185,74 +185,72 @@
         </div>
 
         <div class="ff-body">
-            @unless ($isTemplate)
-                @if ($sidebarCollapsed)
-                    <button type="button" class="ff-side-expand" wire:click="toggleSidebar" title="Zobrazit panel" aria-label="Zobrazit panel">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                    </button>
-                @else
-                    <aside class="ff-side">
-                        <div class="ff-side-top">
-                            <button type="button" class="ff-side-collapse" wire:click="toggleSidebar" title="Skrýt panel" aria-label="Skrýt panel">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                            </button>
-                        </div>
+            @if ($sidebarCollapsed)
+                <button type="button" class="ff-side-expand" wire:click="toggleSidebar" title="Zobrazit panel" aria-label="Zobrazit panel">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </button>
+            @else
+                <aside class="ff-side">
+                    <div class="ff-side-top">
+                        <button type="button" class="ff-side-collapse" wire:click="toggleSidebar" title="Skrýt panel" aria-label="Skrýt panel">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                        </button>
+                    </div>
 
-                        <div class="ff-mini">
-                            <div class="ff-mini-head">
-                                <span class="ff-mini-month">{{ $this->sidebarMonthLabel() }}</span>
-                                <div class="ff-mini-nav">
-                                    <button type="button" wire:click="sidebarPrevMonth" aria-label="Předchozí měsíc">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                                    </button>
-                                    <button type="button" wire:click="sidebarNextMonth" aria-label="Další měsíc">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                                    </button>
+                    <div class="ff-mini">
+                        <div class="ff-mini-head">
+                            <span class="ff-mini-month">{{ $this->sidebarMonthLabel() }}</span>
+                            <div class="ff-mini-nav">
+                                <button type="button" wire:click="sidebarPrevMonth" aria-label="Předchozí měsíc">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                                </button>
+                                <button type="button" wire:click="sidebarNextMonth" aria-label="Další měsíc">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="ff-mini-dow">
+                            @foreach (['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'] as $dow)
+                                <span>{{ $dow }}</span>
+                            @endforeach
+                        </div>
+                        <div class="ff-mini-grid">
+                            @foreach ($this->sidebarMonthGrid() as $week)
+                                <div class="ff-mini-week">
+                                    @foreach ($week as $day)
+                                        <button
+                                            type="button"
+                                            wire:click="goToDate('{{ $day['date'] }}')"
+                                            @class([
+                                                'ff-mini-day',
+                                                'is-out' => ! $day['inMonth'],
+                                                'is-today' => $day['isToday'],
+                                                'is-selected' => $day['isSelected'],
+                                            ])
+                                        >{{ $day['day'] }}</button>
+                                    @endforeach
                                 </div>
-                            </div>
-                            <div class="ff-mini-dow">
-                                @foreach (['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'] as $dow)
-                                    <span>{{ $dow }}</span>
-                                @endforeach
-                            </div>
-                            <div class="ff-mini-grid">
-                                @foreach ($this->sidebarMonthGrid() as $week)
-                                    <div class="ff-mini-week">
-                                        @foreach ($week as $day)
-                                            <button
-                                                type="button"
-                                                wire:click="goToDate('{{ $day['date'] }}')"
-                                                @class([
-                                                    'ff-mini-day',
-                                                    'is-out' => ! $day['inMonth'],
-                                                    'is-today' => $day['isToday'],
-                                                    'is-selected' => $day['isSelected'],
-                                                ])
-                                            >{{ $day['day'] }}</button>
-                                        @endforeach
-                                    </div>
-                                @endforeach
-                            </div>
+                            @endforeach
                         </div>
+                    </div>
 
-                        @php($summary = $this->daySummary())
-                        <div class="ff-day">
-                            <div class="ff-day-head">
-                                <span class="ff-day-title">{{ $this->selectedDate()->isToday() ? 'Dnes' : 'Vybraný den' }}</span>
-                                <span class="ff-day-sub">{{ $summary['label'] }}</span>
-                            </div>
-                            <div class="ff-day-stats">
-                                <div class="ff-stat"><span class="ff-stat-label">TERMÍNY</span><span class="ff-stat-value">{{ $summary['count'] }}</span></div>
-                                <div class="ff-stat"><span class="ff-stat-label">HODIN</span><span class="ff-stat-value">{{ $summary['hours'] }}</span></div>
-                                <div class="ff-stat"><span class="ff-stat-label">VOLNO</span><span class="ff-stat-value ff-stat-sm">{{ $summary['free'] }}</span></div>
-                                <div class="ff-stat"><span class="ff-stat-label">VYTÍŽENOST</span><span class="ff-stat-value ff-stat-sm ff-stat-util">{{ $summary['utilization'] }}%</span></div>
-                            </div>
-                            <div class="ff-day-track"><div class="ff-day-fill" style="width: {{ min(100, $summary['utilization']) }}%"></div></div>
-                            <div class="ff-day-caption">Vytíženost dne</div>
+                    @php($summary = $this->daySummary())
+                    <div class="ff-day">
+                        <div class="ff-day-head">
+                            <span class="ff-day-title">{{ $this->selectedDate()->isToday() ? 'Dnes' : 'Vybraný den' }}</span>
+                            <span class="ff-day-sub">{{ $summary['label'] }}</span>
                         </div>
-                    </aside>
-                @endif
-            @endunless
+                        <div class="ff-day-stats">
+                            <div class="ff-stat"><span class="ff-stat-label">TERMÍNY</span><span class="ff-stat-value">{{ $summary['count'] }}</span></div>
+                            <div class="ff-stat"><span class="ff-stat-label">HODIN</span><span class="ff-stat-value">{{ $summary['hours'] }}</span></div>
+                            <div class="ff-stat"><span class="ff-stat-label">VOLNO</span><span class="ff-stat-value ff-stat-sm">{{ $summary['free'] }}</span></div>
+                            <div class="ff-stat"><span class="ff-stat-label">VYTÍŽENOST</span><span class="ff-stat-value ff-stat-sm ff-stat-util">{{ $summary['utilization'] }}%</span></div>
+                        </div>
+                        <div class="ff-day-track"><div class="ff-day-fill" style="width: {{ min(100, $summary['utilization']) }}%"></div></div>
+                        <div class="ff-day-caption">Vytíženost dne</div>
+                    </div>
+                </aside>
+            @endif
 
             <div class="ff-cal-wrap" x-effect="if (cal) $nextTick(() => cal.updateSize())">
                 <div

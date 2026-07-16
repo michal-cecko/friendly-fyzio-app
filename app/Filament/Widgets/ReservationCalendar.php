@@ -1260,23 +1260,25 @@ class ReservationCalendar extends FullCalendarWidget
     }
 
     /**
-     * Stats for the selected day, following the active therapist chip filter.
+     * Stats for the selected day, following the active therapist chip filter
+     * (and, in working-hours mode, the toolbar room select).
      *
      * @return array{label: string, count: int, hours: string, free: string, utilization: int}
      */
     public function daySummary(): array
     {
         $date = $this->selectedDate();
+        $roomId = $this->room?->getKey() ?? ($this->isTemplateMode() ? $this->templateRoomId : null);
 
         $reservations = Reservation::query()
             ->whereDate('reservation_date', $date->toDateString())
             ->where('status', '!=', ReservationStatus::Cancelled->value)
             ->when($this->therapistIds, fn (Builder $query) => $query->whereIn('therapist_id', $this->therapistIds))
-            ->when($this->room, fn (Builder $query) => $query->where('room_id', $this->room->getKey()))
+            ->when($roomId, fn (Builder $query) => $query->where('room_id', $roomId))
             ->get(['start_time', 'end_time']);
 
         $booked = (int) $reservations->sum(fn (Reservation $reservation): int => $this->minutesBetween($reservation->start_time, $reservation->end_time));
-        $available = app(CalendarAvailability::class)->availableMinutes($date, $this->therapistIds, $this->room?->getKey());
+        $available = app(CalendarAvailability::class)->availableMinutes($date, $this->therapistIds, $roomId);
 
         return [
             'label' => ucfirst($date->locale('cs')->isoFormat('dd D. MMMM')),
