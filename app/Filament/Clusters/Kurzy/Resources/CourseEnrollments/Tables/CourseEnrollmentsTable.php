@@ -4,6 +4,7 @@ namespace App\Filament\Clusters\Kurzy\Resources\CourseEnrollments\Tables;
 
 use App\Enums\CourseEnrollmentStatus;
 use App\Enums\PaymentStatus;
+use App\Filament\Support\Actions\RecordPaymentAction;
 use App\Filament\Support\Tables\TimestampColumns;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -61,6 +62,7 @@ class CourseEnrollmentsTable
             ->recordActions([
                 ViewAction::make(),
                 EditAction::make(),
+                RecordPaymentAction::make(),
                 DeleteAction::make(),
             ])
             ->toolbarActions([

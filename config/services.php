@@ -60,4 +60,8 @@ return [
         'endpoint' => env('MAILGUN_ENDPOINT', 'api.eu.mailgun.net'),
         'scheme' => 'https',
     ],
+
+    'gotenberg' => [
+        'url' => env('GOTENBERG_URL', 'http://gotenberg:3000'),
+    ],
 ];

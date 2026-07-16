@@ -47,6 +47,9 @@ class EmailPaymentBrick extends Brick
                 Toggle::make('show_qr')
                     ->label('Zobrazit QR platbu')
                     ->default(true),
+                Toggle::make('show_due')
+                    ->label('Zobrazit splatnost')
+                    ->default(false),
             ]);
     }
 }

@@ -25,7 +25,7 @@
                         @endforeach
                     </ul>
                 @else
-                    <div class="hero-features text-base text-neutral-900">{!! $features !!}</div>
+                    <div class="hero-features text-base text-neutral-900">{!! \App\Support\RichText::resolveMentions($features) !!}</div>
                 @endif
             @endif
 

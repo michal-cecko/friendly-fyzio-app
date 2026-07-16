@@ -5,12 +5,19 @@ namespace App\Providers;
 use App\Enums\NavigationLocation;
 use App\Http\Responses\LoginResponse;
 use App\Models\Course;
+use App\Models\CourseEnrollment;
 use App\Models\CourseSeries;
 use App\Models\Navigation;
 use App\Models\OneTimeLesson;
+use App\Models\OneTimeLessonBooking;
 use App\Models\Reservation;
 use App\Models\Service;
 use App\Models\Workshop;
+use App\Models\WorkshopRegistration;
+use App\Notifications\Auth\ResetPasswordNotification;
+use App\Notifications\Auth\VerifyEmailChangeNotification;
+use App\Notifications\Auth\VerifyEmailNotification;
+use App\Observers\MediaLibraryItemObserver;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
@@ -18,6 +25,9 @@ use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\View\ActionsIconAlias;
 use Filament\Auth\Http\Responses\Contracts\LoginResponse as LoginResponseContract;
+use Filament\Auth\Notifications\ResetPassword as FilamentResetPassword;
+use Filament\Auth\Notifications\VerifyEmail as FilamentVerifyEmail;
+use Filament\Auth\Notifications\VerifyEmailChange as FilamentVerifyEmailChange;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\RichEditor\TextColor;
 use Filament\Support\Facades\FilamentIcon;
@@ -25,6 +35,7 @@ use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use RalphJSmit\Filament\MediaLibrary\Models\MediaLibraryItem;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -32,10 +43,23 @@ class AppServiceProvider extends ServiceProvider
     {
         // Route users to the correct panel after the single shared login.
         $this->app->bind(LoginResponseContract::class, LoginResponse::class);
+
+        // Render the framework/Filament auth e-mails from the dashboard-editable CMS
+        // templates. Filament resolves each of these notifications through the container
+        // and sets the signed action URL on them afterwards, so binding our subclasses
+        // here preserves the exact URLs while swapping the body for the CMS template.
+        $this->app->bind(FilamentVerifyEmail::class, VerifyEmailNotification::class);
+        $this->app->bind(FilamentResetPassword::class, ResetPasswordNotification::class);
+        $this->app->bind(FilamentVerifyEmailChange::class, VerifyEmailChangeNotification::class);
     }
 
     public function boot(): void
     {
+        // A media library item that is still referenced anywhere (brick images,
+        // image columns, WYSIWYG content) must not be deleted — the vendor model
+        // can't carry an #[ObservedBy] attribute, so the observer registers here.
+        MediaLibraryItem::observe(MediaLibraryItemObserver::class);
+
         Relation::morphMap([
             'service' => Service::class,
             'course_series' => CourseSeries::class,
@@ -43,6 +67,9 @@ class AppServiceProvider extends ServiceProvider
             'workshop' => Workshop::class,
             'one_time_lesson' => OneTimeLesson::class,
             'reservation' => Reservation::class,
+            'course_enrollment' => CourseEnrollment::class,
+            'workshop_registration' => WorkshopRegistration::class,
+            'one_time_lesson_booking' => OneTimeLessonBooking::class,
         ]);
 
         FilamentIcon::register([
@@ -50,12 +77,15 @@ class AppServiceProvider extends ServiceProvider
             ActionsIconAlias::DELETE_ACTION_GROUPED => Heroicon::OutlinedTrash,
             ActionsIconAlias::FORCE_DELETE_ACTION => Heroicon::OutlinedTrash,
             ActionsIconAlias::FORCE_DELETE_ACTION_GROUPED => Heroicon::OutlinedTrash,
+            ActionsIconAlias::EDIT_ACTION => Heroicon::OutlinedPencilSquare,
+            ActionsIconAlias::EDIT_ACTION_GROUPED => Heroicon::OutlinedPencilSquare,
         ]);
 
         // The icon aliases above only cover table/grouped contexts; set the
-        // base button icon so header and standalone delete buttons match too.
+        // base button icon so header and standalone delete/edit buttons match too.
         DeleteAction::configureUsing(fn (DeleteAction $action) => $action->icon(Heroicon::OutlinedTrash));
         ForceDeleteAction::configureUsing(fn (ForceDeleteAction $action) => $action->icon(Heroicon::OutlinedTrash));
+        EditAction::configureUsing(fn (EditAction $action) => $action->icon(Heroicon::OutlinedPencilSquare));
 
         // Give every save/create submit button a diskette icon app-wide.
         // Page-level buttons are matched by name; CreateAction is excluded so the
@@ -85,18 +115,22 @@ class AppServiceProvider extends ServiceProvider
         // (pink + dark) via the textColor tool, and trim the toolbar to our set
         // (Filament's default minus blockquote & code-block). Plugin buttons (e.g.
         // the media library button) are merged in separately, so they're unaffected.
+        // Direct file uploads (drag & drop, paste, the attach button) are disabled
+        // everywhere — images enter rich content only through the media library
+        // plugin, whose id-based rendering is not affected by this switch.
         RichEditor::configureUsing(fn (RichEditor $editor) => $editor
             ->textColors([
                 'accent' => TextColor::make('Akcent (růžová)', '#ed86a3'),
                 'dark' => TextColor::make('Tmavá', '#171717'),
             ])
+            ->fileAttachments(false)
             ->toolbarButtons([
                 ['bold', 'italic', 'underline', 'strike', 'subscript', 'superscript', 'link'],
                 ['h2', 'h3'],
                 ['alignStart', 'alignCenter', 'alignEnd'],
                 ['bulletList', 'orderedList'],
                 ['textColor'],
-                ['table', 'attachFiles'],
+                ['table'],
                 ['undo', 'redo'],
             ]));
 

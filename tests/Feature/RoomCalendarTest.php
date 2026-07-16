@@ -13,7 +13,7 @@ use App\Models\Room;
 use App\Models\RoomBlocking;
 use App\Models\Service;
 use App\Models\TherapistProfile;
-use App\Models\TherapistWeeklySchedule;
+use App\Models\TherapistWorkBlock;
 use App\Models\User;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -113,12 +113,13 @@ class RoomCalendarTest extends TestCase
         $roomB = $this->makeRoom('Sál B');
         $therapist = $this->makeTherapist();
 
-        $base = ['day_of_week' => DayOfWeek::Monday, 'week_type' => WeekType::All, 'start_time' => '09:00', 'end_time' => '10:00'];
-        $schedA = TherapistWeeklySchedule::factory()->for($therapist, 'therapist')->create([...$base, 'room_id' => $roomA->getKey()]);
-        $schedB = TherapistWeeklySchedule::factory()->for($therapist, 'therapist')->create([...$base, 'room_id' => $roomB->getKey()]);
+        $workBlockBase = ['work_date' => $this->monday->toDateString(), 'start_time' => '09:00', 'end_time' => '10:00'];
+        $schedA = TherapistWorkBlock::factory()->for($therapist, 'therapist')->create([...$workBlockBase, 'room_id' => $roomA->getKey()]);
+        $schedB = TherapistWorkBlock::factory()->for($therapist, 'therapist')->create([...$workBlockBase, 'room_id' => $roomB->getKey()]);
 
-        $blockA = RoomBlocking::create([...$base, 'room_id' => $roomA->getKey(), 'is_recurring' => true, 'reason' => 'Porada A']);
-        $blockB = RoomBlocking::create([...$base, 'room_id' => $roomB->getKey(), 'is_recurring' => true, 'reason' => 'Porada B']);
+        $blockingBase = ['day_of_week' => DayOfWeek::Monday, 'week_type' => WeekType::All, 'start_time' => '09:00', 'end_time' => '10:00'];
+        $blockA = RoomBlocking::create([...$blockingBase, 'room_id' => $roomA->getKey(), 'is_recurring' => true, 'reason' => 'Porada A']);
+        $blockB = RoomBlocking::create([...$blockingBase, 'room_id' => $roomB->getKey(), 'is_recurring' => true, 'reason' => 'Porada B']);
 
         $calendar = new ReservationCalendar;
         $calendar->room = $roomA;
@@ -140,12 +141,12 @@ class RoomCalendarTest extends TestCase
         $client = User::factory()->customer()->create();
 
         // Room A: 4h available (08–12).
-        TherapistWeeklySchedule::factory()->for($therapist, 'therapist')->create([
-            'room_id' => $roomA->getKey(), 'day_of_week' => DayOfWeek::Monday, 'week_type' => WeekType::All, 'start_time' => '08:00', 'end_time' => '12:00',
+        TherapistWorkBlock::factory()->for($therapist, 'therapist')->create([
+            'room_id' => $roomA->getKey(), 'work_date' => $this->monday->toDateString(), 'start_time' => '08:00', 'end_time' => '12:00',
         ]);
         // Room B: extra availability that must NOT leak into room A's summary.
-        TherapistWeeklySchedule::factory()->for($therapist, 'therapist')->create([
-            'room_id' => $roomB->getKey(), 'day_of_week' => DayOfWeek::Monday, 'week_type' => WeekType::All, 'start_time' => '08:00', 'end_time' => '16:00',
+        TherapistWorkBlock::factory()->for($therapist, 'therapist')->create([
+            'room_id' => $roomB->getKey(), 'work_date' => $this->monday->toDateString(), 'start_time' => '12:00', 'end_time' => '20:00',
         ]);
 
         $common = [
@@ -221,18 +222,18 @@ class RoomCalendarTest extends TestCase
             ->set('mode', 'template')
             ->callAction('addWorkingHours', [
                 'therapist_id' => $therapist->getKey(),
-                'day_of_week' => DayOfWeek::Monday->value,
-                'week_type' => WeekType::All->value,
+                'work_date' => $this->monday->toDateString(),
                 'start_time' => '08:00',
                 'end_time' => '14:00',
+                'repeat' => 'none',
             ])
             ->assertHasNoActionErrors();
 
-        $this->assertDatabaseHas('therapist_weekly_schedules', [
+        $this->assertDatabaseHas('therapist_work_blocks', [
             'therapist_id' => $therapist->getKey(),
             'room_id' => $room->getKey(),
-            'day_of_week' => 'monday',
-            'start_time' => '08:00',
+            'work_date' => $this->monday->toDateString(),
+            'start_time' => '08:00:00',
         ]);
     }
 

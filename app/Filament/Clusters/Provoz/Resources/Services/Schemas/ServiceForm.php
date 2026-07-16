@@ -81,6 +81,11 @@ class ServiceForm
                             ->helperText('Klient je „stávající“, pokud byl naposledy max. před tolika měsíci.')
                             ->visible(fn (Get $get): bool => $get('exam_type') === ExamType::Kontrolni->value)
                             ->columnSpan(['default' => 1, 'lg' => 4]),
+                        TextInput::make('invoice_title')
+                            ->label('Název pro fakturaci')
+                            ->maxLength(255)
+                            ->helperText('Použije se na fakturách a v e-mailech místo běžného názvu.')
+                            ->columnSpan(['default' => 1, 'lg' => 4]),
                     ]),
                 Grid::make()
                     ->columnSpanFull()

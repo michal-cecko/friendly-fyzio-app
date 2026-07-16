@@ -4,11 +4,14 @@ namespace App\Filament\Clusters\System\Resources\Users\Schemas;
 
 use App\Enums\UserRole;
 use App\Filament\Support\Schemas\PresenceBanner;
+use App\Models\User;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 
@@ -53,7 +56,15 @@ class UserForm
                                         ->all())
                                     ->required()
                                     ->inline()
+                                    ->live()
                                     ->helperText('Určuje přístup do administrace i odpovídající roli oprávnění. Klienti se spravují v sekci Klienti.'),
+                                Toggle::make('acts_as_therapist')
+                                    ->label('Působí i jako terapeut')
+                                    ->visible(fn (Get $get): bool => in_array($get('role'), [UserRole::Admin, UserRole::Admin->value], true))
+                                    ->disabled(fn (?User $record): bool => $record?->therapistProfile !== null)
+                                    ->helperText(fn (?User $record): string => $record?->therapistProfile !== null
+                                        ? 'Administrátor má terapeutický profil. Pro vypnutí nejprve smažte jeho profil v sekci Terapeuti.'
+                                        : 'Založí administrátorovi nepublikovaný profil terapeuta — objeví se v kalendáři, pracovní době a rezervacích.'),
                                 Select::make('permissions')
                                     ->label('Přímá oprávnění')
                                     ->relationship('permissions', 'name')

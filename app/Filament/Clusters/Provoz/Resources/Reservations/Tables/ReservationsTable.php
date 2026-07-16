@@ -2,22 +2,28 @@
 
 namespace App\Filament\Clusters\Provoz\Resources\Reservations\Tables;
 
+use App\Enums\ConfirmationSource;
 use App\Enums\PaymentStatus;
 use App\Enums\ReservationStatus;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Actions\CancelReservationAction;
-use App\Filament\Clusters\Provoz\Resources\Reservations\Actions\DeleteReservationAction;
+use App\Filament\Clusters\Provoz\Resources\Reservations\Actions\CancelReservationBulkAction;
+use App\Filament\Clusters\Provoz\Resources\Reservations\Actions\ConfirmReservationAction;
+use App\Filament\Clusters\Provoz\Resources\Reservations\Actions\MarkNoShowAction;
+use App\Filament\Clusters\Provoz\Resources\Reservations\Actions\RequestPaymentAction;
+use App\Filament\Clusters\Provoz\Resources\Reservations\Actions\RestoreReservationAction;
+use App\Filament\Clusters\Provoz\Resources\Reservations\Actions\RestoreReservationBulkAction;
+use App\Filament\Clusters\Provoz\Resources\Reservations\Actions\SendReservationEmailAction;
+use App\Filament\Clusters\Provoz\Resources\Reservations\Actions\UnconfirmReservationAction;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Schemas\ReservationForm;
+use App\Filament\Support\Actions\RecordPaymentAction;
 use App\Filament\Support\Actions\SendReviewRequestAction;
 use App\Filament\Support\Tables\TimestampColumns;
 use App\Models\Reservation;
 use App\Support\Reservations\ReservationSummary;
 use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\ForceDeleteBulkAction;
-use Filament\Actions\RestoreAction;
-use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -57,6 +63,10 @@ class ReservationsTable
                     ->label('Platba')
                     ->badge()
                     ->toggleable(),
+                TextColumn::make('confirmed_by')
+                    ->label('Potvrdil')
+                    ->badge()
+                    ->toggleable(),
                 ...TimestampColumns::make(),
             ])
             ->filters([
@@ -66,19 +76,24 @@ class ReservationsTable
                 SelectFilter::make('payment_status')
                     ->label('Platba')
                     ->options(PaymentStatus::class),
+                SelectFilter::make('confirmed_by')
+                    ->label('Potvrdil')
+                    ->options(ConfirmationSource::class),
                 TrashedFilter::make(),
             ])
             ->recordActions([
                 ViewAction::make(),
                 EditAction::make()
                     ->schema(ReservationForm::components()),
+                ConfirmReservationAction::make(),
+                UnconfirmReservationAction::make(),
+                SendReservationEmailAction::make(),
+                RecordPaymentAction::make(),
+                RequestPaymentAction::make(),
+                MarkNoShowAction::make(),
                 SendReviewRequestAction::make(),
                 CancelReservationAction::make(),
-                DeleteReservationAction::make(),
-                RestoreAction::make()
-                    ->modalHeading('Obnovit rezervaci?')
-                    ->modalDescription(fn (Reservation $record): HtmlString => ReservationSummary::description($record))
-                    ->modalSubmitActionLabel('Obnovit'),
+                RestoreReservationAction::make(),
                 ForceDeleteAction::make()
                     ->modalHeading('Trvale smazat rezervaci?')
                     ->modalDescription(fn (Reservation $record): HtmlString => ReservationSummary::description($record))
@@ -86,9 +101,9 @@ class ReservationsTable
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    CancelReservationBulkAction::make(),
                     ForceDeleteBulkAction::make(),
-                    RestoreBulkAction::make(),
+                    RestoreReservationBulkAction::make(),
                 ]),
             ]);
     }

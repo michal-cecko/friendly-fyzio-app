@@ -47,32 +47,22 @@
                     </button>
                     <button type="button" wire:click="$set('mode', 'template')" :class="{ 'ff-mode-active': $wire.mode === 'template' }">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
-                        <span>Šablona týdne</span>
+                        <span>Pracovní doba</span>
                     </button>
                 </div>
 
-                @unless ($isTemplate)
-                    <div class="ff-sep"></div>
-                    <button type="button" class="ff-btn-today" @click="today()">Dnes</button>
-                    <div class="ff-nav">
-                        <button type="button" class="ff-nav-btn" @click="prev()" aria-label="Předchozí">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                        </button>
-                        <button type="button" class="ff-nav-btn" @click="next()" aria-label="Další">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                        </button>
-                    </div>
-                    <h2 class="ff-title" x-text="title">&nbsp;</h2>
-                @else
-                    <div class="ff-sep"></div>
-                    <label class="ff-tsel">
-                        <span>Typ týdne:</span>
-                        <select wire:model.live="templateWeekType">
-                            <option value="all">Vše</option>
-                            <option value="odd">Lichý (A)</option>
-                            <option value="even">Sudý (B)</option>
-                        </select>
-                    </label>
+                <div class="ff-sep"></div>
+                <button type="button" class="ff-btn-today" @click="today()">Dnes</button>
+                <div class="ff-nav">
+                    <button type="button" class="ff-nav-btn" @click="prev()" aria-label="Předchozí">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                    </button>
+                    <button type="button" class="ff-nav-btn" @click="next()" aria-label="Další">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </button>
+                </div>
+                <h2 class="ff-title" x-text="title">&nbsp;</h2>
+                @if ($isTemplate)
                     @unless ($this->room ?? null)
                         <label class="ff-tsel">
                             <span>Místnost:</span>
@@ -84,7 +74,7 @@
                             </select>
                         </label>
                     @endunless
-                @endunless
+                @endif
             </div>
 
             <div class="ff-toolbar-right">
@@ -93,6 +83,7 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
                         <span>Vybrat</span>
                     </button>
+                    {{ $this->deleteWorkBlocksRangeAction }}
                     {{ $this->addBlockingAction }}
                     {{ $this->addWorkingHoursAction }}
                 @else
@@ -118,7 +109,6 @@
                         {{ $this->deleteSelectedTemplateAction }}
                     @else
                         {{ $this->cancelSelectedAction }}
-                        {{ $this->deleteSelectedAction }}
                         @if ($this->restoreSelectedAction->isVisible())
                             {{ $this->restoreSelectedAction }}
                         @endif
@@ -451,6 +441,7 @@
         .ff-event-foot { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: auto; padding-top: 4px; }
         .ff-event-avatar { width: 20px; height: 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; color: #fff; font-size: 9px; font-weight: 700; }
         .ff-event-room { font-size: 11px; color: var(--ff-muted); white-space: nowrap; }
+        .ff-event-recur { font-size: 11px; font-weight: 700; color: var(--ff-muted); flex-shrink: 0; }
 
         @media (max-width: 1024px) {
             .ff-body { flex-direction: column; }

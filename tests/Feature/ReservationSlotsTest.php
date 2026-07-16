@@ -2,19 +2,16 @@
 
 namespace Tests\Feature;
 
-use App\Enums\DayOfWeek;
 use App\Enums\ReservationStatus;
 use App\Enums\ServiceType;
 use App\Enums\ServiceVisibility;
-use App\Enums\WeekType;
-use App\Models\CalendarBlock;
 use App\Models\Reservation;
 use App\Models\Room;
 use App\Models\RoomBlocking;
 use App\Models\Service;
 use App\Models\ServiceCategory;
 use App\Models\TherapistProfile;
-use App\Models\TherapistWeeklySchedule;
+use App\Models\TherapistWorkBlock;
 use App\Support\Reservations\ReservationSlots;
 use App\Support\Reservations\Slot;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -68,13 +65,12 @@ class ReservationSlotsTest extends TestCase
         parent::tearDown();
     }
 
-    private function schedule(TherapistProfile $therapist, Room $room, string $start, string $end): void
+    private function schedule(TherapistProfile $therapist, Room $room, string $start, string $end, ?Carbon $date = null): void
     {
-        TherapistWeeklySchedule::factory()->create([
+        TherapistWorkBlock::factory()->create([
             'therapist_id' => $therapist->id,
             'room_id' => $room->id,
-            'day_of_week' => DayOfWeek::fromCarbon($this->date),
-            'week_type' => WeekType::All,
+            'work_date' => ($date ?? $this->date)->toDateString(),
             'start_time' => $start,
             'end_time' => $end,
         ]);
@@ -240,13 +236,13 @@ class ReservationSlotsTest extends TestCase
         $this->assertNotContains($this->date->toDateString(), $availability['available']);
     }
 
-    public function test_calendar_block_removes_the_day(): void
+    public function test_deleting_work_blocks_removes_the_day(): void
     {
-        CalendarBlock::factory()->create([
-            'therapist_id' => $this->therapist->id,
-            'start_date' => $this->date->copy()->subDay()->toDateString(),
-            'end_date' => $this->date->copy()->addDay()->toDateString(),
-        ]);
+        // Vacation workflow: the therapist's work blocks for the day are deleted.
+        TherapistWorkBlock::query()
+            ->where('therapist_id', $this->therapist->id)
+            ->whereDate('work_date', $this->date)
+            ->delete();
 
         $this->assertSame([], $this->slots()->availableTimes($this->service, $this->date));
         $this->assertSame([], $this->slots()->availableDays($this->service, $this->date->copy(), $this->date->copy()->addDays(6)));
@@ -306,7 +302,9 @@ class ReservationSlotsTest extends TestCase
 
     public function test_past_dates_offer_no_slots(): void
     {
+        // Even with working time on the past date, the lead-time guard drops it all.
         $past = $this->date->copy()->subWeeks(10);
+        $this->schedule($this->therapist, $this->room, '08:00', '16:00', $past);
 
         $this->assertSame([], $this->slots()->availableTimes($this->service, $past));
     }

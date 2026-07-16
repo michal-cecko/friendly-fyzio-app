@@ -2,7 +2,6 @@
 
 namespace App\Mason\Bricks;
 
-use App\Enums\UserRole;
 use App\Mason\Support\Fields;
 use App\Models\User;
 use Awcodes\Mason\Brick;
@@ -12,9 +11,11 @@ use Filament\Support\Icons\Heroicon;
 use Illuminate\Contracts\Support\Htmlable;
 
 /**
- * Team grid auto-populated from the therapists (users with the Therapist role).
- * Every therapist is listed; a card links to the therapist's public profile only
- * when that profile is published (filled in), otherwise it renders non-clickable.
+ * Team grid auto-populated from the users with a published therapist profile —
+ * staff therapists and administrators acting as therapists alike. Users without
+ * a published profile stay off the public team page (they can still be booked
+ * through the reservation wizard); a card links to the profile detail when the
+ * profile has a slug, otherwise it renders non-clickable.
  */
 class TeamBrick extends Brick
 {
@@ -36,7 +37,7 @@ class TeamBrick extends Brick
     public static function toHtml(array $config, ?array $data = null): ?string
     {
         $therapists = User::query()
-            ->where('role', UserRole::Therapist)
+            ->whereHas('therapistProfile', fn ($query) => $query->published())
             ->with(['therapistProfile.specializations' => fn ($query) => $query->orderBy('display_order')])
             ->get()
             ->sortBy(fn (User $user): string => sprintf('%04d-%s', $user->therapistProfile?->display_order ?? 999, $user->name))

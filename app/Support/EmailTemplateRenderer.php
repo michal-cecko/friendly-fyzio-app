@@ -5,6 +5,7 @@ namespace App\Support;
 use App\Mason\EmailBrickRegistry;
 use App\Models\EmailTemplate;
 use Awcodes\Mason\Support\MasonRenderer;
+use Illuminate\Support\HtmlString;
 
 /**
  * Turns a CMS EmailTemplate into a complete, email-safe HTML document: renders its
@@ -14,7 +15,7 @@ use Awcodes\Mason\Support\MasonRenderer;
 class EmailTemplateRenderer
 {
     /**
-     * @param  array<string, string>  $context  Token replacements (e.g. ['jmeno' => 'Jana']).
+     * @param  array<string, string|HtmlString>  $context  Token replacements (e.g. ['jmeno' => 'Jana']).
      */
     public static function render(EmailTemplate $template, array $context = []): string
     {
@@ -32,16 +33,22 @@ class EmailTemplateRenderer
     }
 
     /**
-     * Replace every {{ token }} with its context value (escaped). Unknown tokens
-     * resolve to an empty string.
+     * Replace every {{ token }} with its context value. Scalars are escaped;
+     * HtmlString values (server-rendered fragments like the invoice items table)
+     * are inserted raw — the type IS the raw-allowlist. Unknown tokens resolve
+     * to an empty string.
      *
-     * @param  array<string, string>  $context
+     * @param  array<string, string|HtmlString>  $context
      */
     private static function substituteTokens(string $html, array $context): string
     {
         return preg_replace_callback(
             '/\{\{\s*(\w+)\s*\}\}/',
-            fn (array $matches): string => e($context[$matches[1]] ?? ''),
+            function (array $matches) use ($context): string {
+                $value = $context[$matches[1]] ?? '';
+
+                return $value instanceof HtmlString ? $value->toHtml() : e($value);
+            },
             $html,
         ) ?? $html;
     }

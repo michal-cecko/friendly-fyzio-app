@@ -10,6 +10,7 @@ use App\Filament\Clusters\LekceWorkshopy\Resources\OneTimeLessonBookings\Pages\V
 use App\Filament\Clusters\LekceWorkshopy\Resources\OneTimeLessonBookings\Schemas\OneTimeLessonBookingForm;
 use App\Filament\Clusters\LekceWorkshopy\Resources\OneTimeLessonBookings\Schemas\OneTimeLessonBookingInfolist;
 use App\Filament\Clusters\LekceWorkshopy\Resources\OneTimeLessonBookings\Tables\OneTimeLessonBookingsTable;
+use App\Filament\Support\RelationManagers\PaymentsRelationManager;
 use App\Models\OneTimeLessonBooking;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -96,7 +97,7 @@ class OneTimeLessonBookingResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            PaymentsRelationManager::class,
         ];
     }
 

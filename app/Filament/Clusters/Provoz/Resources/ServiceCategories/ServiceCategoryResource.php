@@ -7,6 +7,7 @@ use App\Filament\Clusters\Provoz\Resources\ServiceCategories\Pages\CreateService
 use App\Filament\Clusters\Provoz\Resources\ServiceCategories\Pages\EditServiceCategory;
 use App\Filament\Clusters\Provoz\Resources\ServiceCategories\Pages\ListServiceCategories;
 use App\Filament\Clusters\Provoz\Resources\ServiceCategories\Pages\ViewServiceCategory;
+use App\Filament\Clusters\Provoz\Resources\ServiceCategories\RelationManagers\ServicesRelationManager;
 use App\Filament\Clusters\Provoz\Resources\ServiceCategories\Schemas\ServiceCategoryForm;
 use App\Filament\Clusters\Provoz\Resources\ServiceCategories\Schemas\ServiceCategoryInfolist;
 use App\Filament\Clusters\Provoz\Resources\ServiceCategories\Tables\ServiceCategoriesTable;
@@ -62,7 +63,7 @@ class ServiceCategoryResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            ServicesRelationManager::class,
         ];
     }
 

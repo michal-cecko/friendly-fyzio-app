@@ -2,9 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Filament\Clusters\System\Pages\Settings;
+use App\Filament\Clusters\System\Pages\NewsletterSettings;
 use App\Models\Setting;
 use App\Models\User;
+use App\Support\Settings;
 use Database\Seeders\SettingsSeeder;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -21,11 +22,11 @@ class SettingsRenderDebugTest extends TestCase
         Filament::setCurrentPanel('admin');
         $this->seed(SettingsSeeder::class);
         Setting::where('key', 'newsletter.mailerlite_group_id')->update(['value' => '165960181248689315']);
-        Cache::forget(\App\Support\Settings::CACHE_KEY);
+        Cache::forget(Settings::CACHE_KEY);
 
         $this->actingAs(User::factory()->admin()->create());
 
-        $html = Livewire::test(Settings::class)->html();
+        $html = Livewire::test(NewsletterSettings::class)->html();
 
         // Print any snippet mentioning the big number or the field id.
         foreach (explode("\n", $html) as $line) {

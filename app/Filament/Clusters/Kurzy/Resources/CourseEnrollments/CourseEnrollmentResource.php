@@ -10,6 +10,7 @@ use App\Filament\Clusters\Kurzy\Resources\CourseEnrollments\Pages\ViewCourseEnro
 use App\Filament\Clusters\Kurzy\Resources\CourseEnrollments\Schemas\CourseEnrollmentForm;
 use App\Filament\Clusters\Kurzy\Resources\CourseEnrollments\Schemas\CourseEnrollmentInfolist;
 use App\Filament\Clusters\Kurzy\Resources\CourseEnrollments\Tables\CourseEnrollmentsTable;
+use App\Filament\Support\RelationManagers\PaymentsRelationManager;
 use App\Models\CourseEnrollment;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -97,7 +98,7 @@ class CourseEnrollmentResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            PaymentsRelationManager::class,
         ];
     }
 

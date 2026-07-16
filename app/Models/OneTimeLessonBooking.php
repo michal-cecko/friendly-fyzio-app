@@ -2,15 +2,19 @@
 
 namespace App\Models;
 
+use App\Contracts\Payable;
+use App\Enums\PayableType;
 use App\Enums\PaymentStatus;
+use App\Models\Concerns\IsPayable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
-class OneTimeLessonBooking extends Model
+class OneTimeLessonBooking extends Model implements Payable
 {
-    use HasFactory, HasUuids;
+    use HasFactory, HasUuids, IsPayable;
 
     protected $fillable = [
         'client_id',
@@ -36,5 +40,32 @@ class OneTimeLessonBooking extends Model
     public function lesson(): BelongsTo
     {
         return $this->belongsTo(OneTimeLesson::class, 'lesson_id');
+    }
+
+    public function payableType(): PayableType
+    {
+        return PayableType::OneTimeLessonBooking;
+    }
+
+    public function paymentAmountDue(): int
+    {
+        return (int) ($this->lesson?->price ?? 0);
+    }
+
+    public function payableTitleContext(): array
+    {
+        $lesson = $this->lesson;
+
+        return [
+            'lekce' => (string) ($lesson?->invoice_title ?? $lesson?->course?->name ?? ''),
+            'datum' => $lesson?->lesson_date?->format('d. m. Y') ?? '',
+            'cas' => $lesson?->start_time ? Carbon::parse((string) $lesson->start_time)->format('H:i') : '',
+            'klient' => (string) ($this->client?->name ?? ''),
+        ];
+    }
+
+    public function payableTherapist(): ?User
+    {
+        return $this->lesson?->instructor;
     }
 }

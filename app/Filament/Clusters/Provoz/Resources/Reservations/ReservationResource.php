@@ -5,9 +5,11 @@ namespace App\Filament\Clusters\Provoz\Resources\Reservations;
 use App\Filament\Clusters\Provoz\ProvozCluster;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Pages\ListReservations;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Pages\ViewReservation;
+use App\Filament\Clusters\Provoz\Resources\Reservations\RelationManagers\NotesRelationManager;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Schemas\ReservationForm;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Schemas\ReservationInfolist;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Tables\ReservationsTable;
+use App\Filament\Support\RelationManagers\PaymentsRelationManager;
 use App\Models\Reservation;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -97,7 +99,8 @@ class ReservationResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            NotesRelationManager::class,
+            PaymentsRelationManager::class,
         ];
     }
 

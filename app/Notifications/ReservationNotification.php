@@ -14,7 +14,6 @@ class ReservationNotification extends Notification
     public function __construct(
         public Reservation $reservation,
         public string $type = 'created',
-        public string $audience = 'client',
     ) {}
 
     /**
@@ -33,17 +32,6 @@ class ReservationNotification extends Notification
         $therapist = $reservation->therapist?->user?->name;
 
         $message = (new MailMessage)->greeting('Dobrý den,');
-
-        // Therapist-facing copy for a freshly booked online reservation.
-        if ($this->audience === 'therapist' && $this->type === 'created') {
-            $client = $reservation->client?->name ?? 'klient';
-
-            return $message
-                ->subject('Nová online rezervace')
-                ->line("Klient {$client} si vytvořil rezervaci služby „{$service}“.")
-                ->line("Termín: {$when}")
-                ->line('Rezervaci najdete ve svém kalendáři.');
-        }
 
         if ($this->type === 'cancelled') {
             return $message

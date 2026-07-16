@@ -32,20 +32,44 @@ class ContactInquiryResourceTest extends TestCase
             ->assertCanSeeTableRecords($inquiries);
     }
 
-    public function test_navigation_badge_counts_only_new_inquiries(): void
+    public function test_resource_is_not_registered_in_sidebar_navigation(): void
     {
+        $this->assertFalse(ContactInquiryResource::shouldRegisterNavigation());
+    }
+
+    public function test_topbar_badge_counts_only_new_inquiries(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+
         ContactInquiry::factory()->count(2)->create();
         ContactInquiry::factory()->inProgress()->create();
         ContactInquiry::factory()->handled()->create();
 
-        $this->assertSame('2', ContactInquiryResource::getNavigationBadge());
+        $html = view('filament.topbar.contact-inquiries-link')->render();
+
+        $this->assertStringContainsString('fi-badge', $html);
+        $this->assertStringContainsString('>2<', preg_replace('/\s+/', '', $html));
     }
 
-    public function test_navigation_badge_is_hidden_when_no_new_inquiries(): void
+    public function test_topbar_badge_is_hidden_when_no_new_inquiries(): void
     {
+        $this->actingAs(User::factory()->admin()->create());
+
         ContactInquiry::factory()->handled()->create();
         ContactInquiry::factory()->inProgress()->create();
 
-        $this->assertNull(ContactInquiryResource::getNavigationBadge());
+        $html = view('filament.topbar.contact-inquiries-link')->render();
+
+        $this->assertStringContainsString('Zprávy z webu', $html);
+        $this->assertStringNotContainsString('fi-badge', $html);
+    }
+
+    public function test_topbar_link_is_hidden_without_permission(): void
+    {
+        $this->actingAs(User::factory()->create());
+
+        $html = view('filament.topbar.contact-inquiries-link')->render();
+
+        $this->assertStringNotContainsString('Zprávy z webu', $html);
     }
 }

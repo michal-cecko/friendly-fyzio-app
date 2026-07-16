@@ -78,7 +78,7 @@ class BricksTest extends TestCase
             ->assertSee('Přihlaste se');
     }
 
-    public function test_team_brick_lists_all_therapists_and_links_only_published(): void
+    public function test_team_brick_lists_only_published_profiles_and_links_them(): void
     {
         $brick = fn (string $id, array $config = []): array => [
             'type' => 'masonBrick',
@@ -112,14 +112,14 @@ class BricksTest extends TestCase
             ->assertSee('Mgr. Lucie Fičkerová')
             ->assertSee('Fyzioterapeutka, zakladatelka')
             ->assertSee('Pánevní dno')
-            // Every therapist is listed, even one without a published profile.
-            ->assertSee('Jana Beránková')
+            // A therapist without a published profile stays off the public team
+            // page (they remain bookable through the reservation wizard).
+            ->assertDontSee('Jana Beránková')
             // Published profiles are clickable.
             ->assertSee('Shlédnout profil')
             ->getContent();
 
         $this->assertStringContainsString('href="'.$published->permalink.'"', $html);
-        // The unpublished therapist is shown but not linked to a profile page.
         $this->assertStringNotContainsString('href="'.$draft->permalink.'"', $html);
     }
 

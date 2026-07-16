@@ -236,10 +236,10 @@ class ReservationWizard extends Component
     #[Computed]
     public function therapists()
     {
+        // Deliberately not filtered by published_at: publishing only controls the
+        // public team page and profile detail, not who can be booked.
         return TherapistProfile::query()
             ->with('user')
-            ->whereNotNull('published_at')
-            ->where('published_at', '<=', now())
             ->when($this->service, fn ($query) => $query->whereHas('services', fn ($q) => $q->whereKey($this->service->id)))
             ->get()
             ->sortBy(fn (TherapistProfile $therapist): string => $therapist->user?->name ?? '')

@@ -6,7 +6,8 @@ use App\Enums\DayOfWeek;
 use App\Enums\EmailTemplateKey;
 use App\Enums\ReservationStatus;
 use App\Enums\UserRole;
-use App\Enums\WeekType;
+use App\Filament\Clusters\Provoz\Resources\Reservations\Actions\CancelReservationAction;
+use App\Filament\Clusters\Provoz\Resources\Reservations\Actions\RestoreReservationAction;
 use App\Filament\Clusters\Provoz\Resources\Reservations\ReservationResource;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Schemas\ReservationForm;
 use App\Filament\Support\Schemas\BlockingForm;
@@ -16,21 +17,26 @@ use App\Models\Room;
 use App\Models\RoomBlocking;
 use App\Models\Service;
 use App\Models\TherapistProfile;
-use App\Models\TherapistWeeklySchedule;
+use App\Models\TherapistWorkBlock;
+use App\Models\TherapistWorkBlockSeries;
 use App\Models\User;
 use App\Notifications\ReservationNotification;
 use App\Notifications\ReservationTemplateNotification;
+use App\Notifications\TherapistReservationTemplateNotification;
 use App\Support\CalendarAvailability;
+use App\Support\Reservations\ReactivateReservation;
 use App\Support\Reservations\ReservationChangeSnapshot;
-use App\Support\Reservations\ReservationSummary;
+use App\Support\Reservations\SlotTakenException;
 use App\Support\Settings;
+use App\Support\WorkBlocks\WorkBlockGenerator;
 use Filament\Actions\Action;
-use Filament\Actions\RestoreAction;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Actions as SchemaActions;
+use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Schema;
 use Filament\Support\Enums\Alignment;
 use Filament\Support\Icons\Heroicon;
@@ -38,10 +44,9 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
-use Illuminate\Support\HtmlString;
+use Illuminate\Support\Str;
 use Livewire\Attributes\Url;
 use Saade\FilamentFullCalendar\Actions\CreateAction as FullCalendarCreateAction;
-use Saade\FilamentFullCalendar\Actions\DeleteAction as FullCalendarDeleteAction;
 use Saade\FilamentFullCalendar\Actions\EditAction as FullCalendarEditAction;
 use Saade\FilamentFullCalendar\Data\EventData;
 use Saade\FilamentFullCalendar\Widgets\FullCalendarWidget;
@@ -58,7 +63,7 @@ class ReservationCalendar extends FullCalendarWidget
      */
     public ?Room $room = null;
 
-    /** Calendar mode: 'reservations' (real bookings) or 'template' (recurring week). */
+    /** Calendar mode: 'reservations' (real bookings) or 'template' (working hours). */
     #[Url(as: 'mode')]
     public string $mode = 'reservations';
 
@@ -75,10 +80,6 @@ class ReservationCalendar extends FullCalendarWidget
     /** Date shown in the calendar (Y-m-d), persisted to the URL. */
     #[Url(as: 'date')]
     public ?string $calendarDate = null;
-
-    /** Template mode: which week parity to show (all / odd / even). */
-    #[Url(as: 'week')]
-    public string $templateWeekType = 'all';
 
     /** Template mode: restrict to a single room (null = all rooms). */
     #[Url(as: 'room')]
@@ -164,7 +165,7 @@ class ReservationCalendar extends FullCalendarWidget
             'dayHeaderFormat' => ['weekday' => 'short', 'day' => 'numeric', 'omitCommas' => true],
             'titleFormat' => ['year' => 'numeric', 'month' => 'long', 'day' => 'numeric'],
             'allDaySlot' => false,
-            'nowIndicator' => $this->mode === 'reservations',
+            'nowIndicator' => true,
             'expandRows' => true,
             'height' => 'auto',
             'locale' => 'cs',
@@ -229,6 +230,18 @@ class ReservationCalendar extends FullCalendarWidget
         $this->sidebarMonth ??= $this->selectedDate()->format('Y-m');
     }
 
+    public function updatedCalendarDate(): void
+    {
+        if ($this->calendarDate === null) {
+            return;
+        }
+
+        // The main calendar's top arrows update only $calendarDate (via JS), so
+        // keep the sidebar mini-calendar's month in sync when the view crosses a
+        // month boundary — mirroring what goToDate() does for day clicks.
+        $this->sidebarMonth = Carbon::parse($this->calendarDate)->format('Y-m');
+    }
+
     public function updated(string $property): void
     {
         if ($property === 'mode') {
@@ -238,7 +251,7 @@ class ReservationCalendar extends FullCalendarWidget
             $this->selectedIds = [];
         }
 
-        if (in_array($property, ['search', 'mode', 'templateWeekType', 'templateRoomId'], true)) {
+        if (in_array($property, ['search', 'mode', 'templateRoomId'], true)) {
             $this->dispatch('filament-fullcalendar--refresh');
         }
     }
@@ -310,11 +323,6 @@ class ReservationCalendar extends FullCalendarWidget
         $this->dispatch('filament-fullcalendar--refresh');
     }
 
-    public function viewingTrashed(): bool
-    {
-        return in_array($this->filterData['trashed'] ?? 'without', ['with', 'only'], true);
-    }
-
     /**
      * @return Collection<int, Reservation>
      */
@@ -336,96 +344,116 @@ class ReservationCalendar extends FullCalendarWidget
         return 'Počet vybraných rezervací: '.count($this->selectedIds);
     }
 
+    /**
+     * Mirrors CancelReservationBulkAction (the reservations list) so the calendar
+     * offers the exact same modal: required reason, "Úplně vymazat ze systému?"
+     * opt-in (trash → pruned for good after 30 days) and the client notification
+     * toggle. Replaces the old separate cancel + delete pair.
+     */
     public function cancelSelectedAction(): Action
     {
         return Action::make('cancelSelected')
             ->label('Zrušit rezervace')
-            ->icon(Heroicon::OutlinedXCircle)
-            ->color('warning')
+            ->icon(Heroicon::OutlinedTrash)
+            ->color('danger')
             ->disabled(fn (): bool => $this->selectedIds === [])
             ->modalHeading('Zrušit vybrané rezervace')
+            ->modalIcon(Heroicon::OutlinedTrash)
+            ->modalSubmitActionLabel('Zrušit rezervace')
             ->modalDescription(fn (): string => $this->selectedCountLabel())
             ->schema([
                 Textarea::make('cancellation_reason')
-                    ->label('Důvod zrušení (nepovinné)')
-                    ->rows(2),
+                    ->label('Důvod zrušení')
+                    ->rows(2)
+                    ->required(),
+                Toggle::make('force_delete')
+                    ->label('Úplně vymazat ze systému?')
+                    ->helperText('Zapnuto: klienti dostanou běžné oznámení o zrušení a rezervace se přesunou do koše — po 30 dnech se ze systému nenávratně vymažou (platby a faktury zůstávají). Vypnuto: zůstanou v evidenci jako stornované.')
+                    ->default(false),
                 Toggle::make('notify_client')
                     ->label('Informovat klienty e-mailem')
-                    ->default(false),
+                    ->default(true),
             ])
             ->action(function (array $data): void {
                 $this->selectedReservations()->each(function (Reservation $reservation) use ($data): void {
+                    if ($reservation->trashed()) {
+                        return;
+                    }
+
                     $reservation->update([
                         'status' => ReservationStatus::Cancelled,
-                        'cancellation_reason' => $data['cancellation_reason'] ?? null,
+                        'cancellation_reason' => $data['cancellation_reason'],
                     ]);
 
                     if ($data['notify_client'] ?? false) {
                         $reservation->client?->notify(new ReservationTemplateNotification($reservation, EmailTemplateKey::ReservationCancelled));
                     }
-                });
 
-                Notification::make()->success()->title('Rezervace byly zrušeny')->send();
-
-                $this->clearSelection();
-            });
-    }
-
-    public function deleteSelectedAction(): Action
-    {
-        return Action::make('deleteSelected')
-            ->label('Smazat')
-            ->icon(Heroicon::OutlinedTrash)
-            ->color('danger')
-            ->disabled(fn (): bool => $this->selectedIds === [])
-            ->modalHeading('Smazat vybrané rezervace')
-            ->modalDescription(fn (): string => $this->selectedCountLabel())
-            ->schema([
-                Toggle::make('notify_client')
-                    ->label('Informovat klienty e-mailem')
-                    ->default(false),
-            ])
-            ->action(function (array $data): void {
-                $this->selectedReservations()->each(function (Reservation $reservation) use ($data): void {
-                    if ($data['notify_client'] ?? false) {
-                        $reservation->client?->notify(new ReservationNotification($reservation, 'cancelled'));
+                    if ($data['force_delete'] ?? false) {
+                        $reservation->delete();
                     }
-
-                    $reservation->delete();
                 });
 
-                Notification::make()->success()->title('Rezervace byly smazány')->send();
-
-                $this->clearSelection();
-            });
-    }
-
-    public function restoreSelectedAction(): Action
-    {
-        return Action::make('restoreSelected')
-            ->label('Obnovit')
-            ->icon(Heroicon::OutlinedArrowPath)
-            ->color('gray')
-            ->visible(fn (): bool => $this->viewingTrashed())
-            ->disabled(fn (): bool => $this->selectedIds === [])
-            ->requiresConfirmation()
-            ->modalHeading('Obnovit vybrané rezervace')
-            ->modalDescription(fn (): string => $this->selectedCountLabel())
-            ->action(function (): void {
-                Reservation::query()
-                    ->onlyTrashed()
-                    ->whereIn('id', $this->selectedIds)
-                    ->restore();
-
-                Notification::make()->success()->title('Rezervace byly obnoveny')->send();
+                Notification::make()->success()->title('Vybrané rezervace byly zrušeny.')->send();
 
                 $this->clearSelection();
             });
     }
 
     /**
-     * Bulk-delete the items selected in template mode: recurring working-hours
-     * schedules (schedule:*) and recurring blockings (blocking:*).
+     * Mirrors RestoreReservationBulkAction (the reservations list): reactivates
+     * every selected trashed/cancelled reservation via ReactivateReservation,
+     * skipping already-active ones and meanwhile-occupied slots.
+     */
+    public function restoreSelectedAction(): Action
+    {
+        return Action::make('restoreSelected')
+            ->label('Obnovit')
+            ->icon(Heroicon::OutlinedArrowPath)
+            ->color('gray')
+            ->disabled(fn (): bool => $this->selectedIds === [])
+            ->modalHeading('Obnovit vybrané rezervace')
+            ->modalIcon(Heroicon::OutlinedArrowPath)
+            ->modalSubmitActionLabel('Obnovit rezervace')
+            ->modalDescription(fn (): string => $this->selectedCountLabel())
+            ->schema([
+                Toggle::make('notify_client')
+                    ->label('Informovat klienty e-mailem')
+                    ->helperText('Klienti dostanou běžné potvrzení rezervace; termíny už v potvrzovacím okně se rovnou potvrdí s e-mailem o automatickém potvrzení.')
+                    ->default(true),
+            ])
+            ->action(function (array $data): void {
+                $restored = 0;
+                $skipped = 0;
+
+                $this->selectedReservations()->each(function (Reservation $reservation) use ($data, &$restored, &$skipped): void {
+                    if (! $reservation->trashed() && $reservation->status !== ReservationStatus::Cancelled) {
+                        $skipped++;
+
+                        return;
+                    }
+
+                    try {
+                        app(ReactivateReservation::class)->handle($reservation, (bool) ($data['notify_client'] ?? false));
+                        $restored++;
+                    } catch (SlotTakenException) {
+                        $skipped++;
+                    }
+                });
+
+                Notification::make()
+                    ->title("Obnovené rezervace: {$restored}.")
+                    ->body($skipped > 0 ? "Přeskočeno: {$skipped} (aktivní, nebo už obsazený termín)." : null)
+                    ->success()
+                    ->send();
+
+                $this->clearSelection();
+            });
+    }
+
+    /**
+     * Bulk-delete the items selected in template mode: dated work blocks
+     * (schedule:*) and blockings (blocking:*).
      */
     public function deleteSelectedTemplateAction(): Action
     {
@@ -438,7 +466,7 @@ class ReservationCalendar extends FullCalendarWidget
             ->modalHeading('Smazat vybrané položky')
             ->modalDescription(fn (): string => 'Počet vybraných položek: '.count($this->selectedIds))
             ->action(function (): void {
-                $scheduleIds = [];
+                $workBlockIds = [];
                 $blockingIds = [];
 
                 foreach ($this->selectedIds as $selectedId) {
@@ -449,14 +477,14 @@ class ReservationCalendar extends FullCalendarWidget
                     }
 
                     if ($kind === 'schedule') {
-                        $scheduleIds[] = $id;
+                        $workBlockIds[] = $id;
                     } elseif ($kind === 'blocking') {
                         $blockingIds[] = $id;
                     }
                 }
 
-                if ($scheduleIds !== []) {
-                    TherapistWeeklySchedule::whereIn('id', $scheduleIds)->delete();
+                if ($workBlockIds !== []) {
+                    TherapistWorkBlock::whereIn('id', $workBlockIds)->delete();
                 }
 
                 if ($blockingIds !== []) {
@@ -554,7 +582,9 @@ class ReservationCalendar extends FullCalendarWidget
     }
 
     /**
-     * Recurring working-hours block, created from the template toolbar.
+     * Dated working block(s), created from the template toolbar. A repeat
+     * pattern (weekly / odd / even) materializes one row per date via
+     * WorkBlockGenerator; without repeat a single block is created.
      */
     public function addWorkingHoursAction(): Action
     {
@@ -568,22 +598,58 @@ class ReservationCalendar extends FullCalendarWidget
                     $data['room_id'] = $this->room->getKey();
                 }
 
-                TherapistWeeklySchedule::create($data);
+                $repeat = $data['repeat'] ?? 'none';
 
-                Notification::make()->success()->title('Pracovní doba byla přidána')->send();
+                if ($repeat === 'none') {
+                    TherapistWorkBlock::create([
+                        'therapist_id' => $data['therapist_id'],
+                        'room_id' => $data['room_id'],
+                        'work_date' => $data['work_date'],
+                        'start_time' => $data['start_time'],
+                        'end_time' => $data['end_time'],
+                    ]);
+
+                    Notification::make()->success()->title('Pracovní doba byla přidána')->send();
+                } else {
+                    $startsOn = Carbon::parse($data['work_date']);
+
+                    $series = TherapistWorkBlockSeries::create([
+                        'therapist_id' => $data['therapist_id'],
+                        'room_id' => $data['room_id'],
+                        'day_of_week' => DayOfWeek::fromCarbon($startsOn)->value,
+                        'week_type' => $repeat === 'weekly' ? 'all' : $repeat,
+                        'start_time' => $data['start_time'],
+                        'end_time' => $data['end_time'],
+                        'starts_on' => $startsOn->toDateString(),
+                        'ends_on' => $data['repeat_until'] ?? null,
+                        'generated_until' => $startsOn->copy()->subDay()->toDateString(),
+                    ]);
+
+                    $result = app(WorkBlockGenerator::class)->materialize($series, WorkBlockGenerator::horizon());
+
+                    Notification::make()
+                        ->success()
+                        ->title("Pracovní doba byla přidána ({$result['created']} termínů)")
+                        ->body($result['skipped'] > 0 ? "Přeskočeno kvůli překryvu: {$result['skipped']}." : null)
+                        ->send();
+                }
 
                 $this->dispatch('filament-fullcalendar--refresh');
             });
     }
 
+    /**
+     * Edits one dated work-block occurrence. Blocks generated from a series
+     * additionally offer "delete this and all following occurrences".
+     */
     public function editScheduleAction(): Action
     {
         return Action::make('editSchedule')
             ->modalHeading('Upravit pracovní dobu')
-            ->fillForm(fn (): array => TherapistWeeklySchedule::find($this->editingTemplateId)?->only([
-                'therapist_id', 'room_id', 'day_of_week', 'week_type', 'start_time', 'end_time',
+            ->fillForm(fn (): array => TherapistWorkBlock::find($this->editingTemplateId)?->only([
+                'therapist_id', 'room_id', 'work_date', 'start_time', 'end_time',
             ]) ?? [])
-            ->schema(WorkingHoursForm::components($this->room?->getKey()))
+            ->schema(fn (): array => WorkingHoursForm::occurrence($this->room?->getKey(), $this->editingTemplateId))
             ->extraModalFooterActions([
                 Action::make('deleteSchedule')
                     ->label('Smazat')
@@ -591,9 +657,36 @@ class ReservationCalendar extends FullCalendarWidget
                     ->icon(Heroicon::OutlinedTrash)
                     ->requiresConfirmation()
                     ->action(function (): void {
-                        TherapistWeeklySchedule::whereKey($this->editingTemplateId)->delete();
+                        TherapistWorkBlock::whereKey($this->editingTemplateId)->delete();
 
                         Notification::make()->success()->title('Pracovní doba byla smazána')->send();
+
+                        $this->dispatch('filament-fullcalendar--refresh');
+                    })
+                    ->cancelParentActions(),
+                Action::make('deleteScheduleFromHere')
+                    ->label('Smazat tento a následující')
+                    ->color('danger')
+                    ->icon(Heroicon::OutlinedTrash)
+                    ->visible(fn (): bool => TherapistWorkBlock::find($this->editingTemplateId)?->series_id !== null)
+                    ->requiresConfirmation()
+                    ->modalHeading('Smazat tento a všechny následující termíny')
+                    ->modalDescription('Smaže tento blok a všechny pozdější termíny stejného opakování. Dřívější termíny zůstanou.')
+                    ->action(function (): void {
+                        $block = TherapistWorkBlock::find($this->editingTemplateId);
+
+                        if ($block === null || $block->series_id === null) {
+                            return;
+                        }
+
+                        $deleted = TherapistWorkBlock::query()
+                            ->where('series_id', $block->series_id)
+                            ->whereDate('work_date', '>=', $block->work_date->toDateString())
+                            ->delete();
+
+                        $this->truncateSeries($block->series, $block->work_date->copy()->subDay());
+
+                        Notification::make()->success()->title("Smazané termíny: {$deleted}.")->send();
 
                         $this->dispatch('filament-fullcalendar--refresh');
                     })
@@ -604,12 +697,93 @@ class ReservationCalendar extends FullCalendarWidget
                     $data['room_id'] = $this->room->getKey();
                 }
 
-                TherapistWeeklySchedule::whereKey($this->editingTemplateId)->update($data);
+                TherapistWorkBlock::whereKey($this->editingTemplateId)->update($data);
 
                 Notification::make()->success()->title('Pracovní doba byla upravena')->send();
 
                 $this->dispatch('filament-fullcalendar--refresh');
             });
+    }
+
+    /**
+     * The vacation/absence workflow: bulk-delete a therapist's work blocks in a
+     * date range. Deleted occurrences are never regenerated by the series
+     * extension (it only appends dates beyond each series' cursor).
+     */
+    public function deleteWorkBlocksRangeAction(): Action
+    {
+        return Action::make('deleteWorkBlocksRange')
+            ->label('Smazat období')
+            ->icon(Heroicon::OutlinedCalendarDays)
+            ->color('danger')
+            ->modalHeading('Smazat pracovní dobu v období')
+            ->modalDescription('Smaže všechny bloky pracovní doby terapeuta ve zvoleném období (dovolená, nemoc…). Existující rezervace zůstávají — případné zrušení řešte v rezervacích.')
+            ->modalSubmitActionLabel('Smazat')
+            ->schema([
+                Select::make('therapist_id')
+                    ->label('Terapeut')
+                    ->options(fn (): array => $this->therapists()
+                        ->mapWithKeys(fn (TherapistProfile $therapist): array => [
+                            $therapist->getKey() => $therapist->user?->name ?? '—',
+                        ])
+                        ->all())
+                    ->searchable()
+                    ->required(),
+                DatePicker::make('from')
+                    ->label('Od')
+                    ->native(false)
+                    ->displayFormat('d. m. Y')
+                    ->required(),
+                DatePicker::make('until')
+                    ->label('Do')
+                    ->native(false)
+                    ->displayFormat('d. m. Y')
+                    ->required()
+                    ->afterOrEqual('from'),
+            ])
+            ->action(function (array $data): void {
+                $deleted = TherapistWorkBlock::query()
+                    ->where('therapist_id', $data['therapist_id'])
+                    ->whereBetween('work_date', [$data['from'], $data['until']])
+                    ->when($this->room, fn (Builder $query) => $query->where('room_id', $this->room->getKey()))
+                    ->delete();
+
+                $reservations = Reservation::query()
+                    ->where('therapist_id', $data['therapist_id'])
+                    ->whereBetween('reservation_date', [$data['from'], $data['until']])
+                    ->where('status', '!=', ReservationStatus::Cancelled->value)
+                    ->count();
+
+                Notification::make()
+                    ->success()
+                    ->title("Smazané bloky pracovní doby: {$deleted}.")
+                    ->body($reservations > 0 ? "Pozor: v období zůstává {$reservations} aktivních rezervací terapeuta." : null)
+                    ->send();
+
+                $this->dispatch('filament-fullcalendar--refresh');
+            });
+    }
+
+    /**
+     * Cap a series so the extension command stops regenerating past the given
+     * date; a series trimmed before its own start is deleted entirely.
+     */
+    protected function truncateSeries(?TherapistWorkBlockSeries $series, Carbon $endsOn): void
+    {
+        if ($series === null) {
+            return;
+        }
+
+        if ($endsOn->lessThan($series->starts_on)) {
+            $series->delete();
+
+            return;
+        }
+
+        $series->update([
+            'ends_on' => $endsOn->toDateString(),
+            'generated_until' => min($series->generated_until->toDateString(), $endsOn->toDateString()),
+        ]);
     }
 
     public function editBlockingAction(): Action
@@ -889,7 +1063,9 @@ class ReservationCalendar extends FullCalendarWidget
      */
     protected function fetchOneTimeBlockingEvents(array $info): array
     {
-        $roomIds = $this->room ? [] : ($this->filterData['roomIds'] ?? []);
+        $roomIds = $this->room ? [] : ($this->isTemplateMode()
+            ? array_values(array_filter([$this->templateRoomId]))
+            : ($this->filterData['roomIds'] ?? []));
         $start = substr((string) $info['start'], 0, 10);
         $end = substr((string) $info['end'], 0, 10);
 
@@ -923,9 +1099,9 @@ class ReservationCalendar extends FullCalendarWidget
     }
 
     /**
-     * Map recurring working hours + recurring blockings onto the displayed week.
-     * The week shown is a generic representation; the "Typ týdne" selector — not
-     * the real calendar parity — decides which odd/even rows appear.
+     * Real-date working hours: dated work blocks in the visible range, plus
+     * room blockings (recurring rows expanded onto their matching dates,
+     * one-off rows as-is).
      *
      * @param  array{start: string, end: string, timezone: string}  $info
      */
@@ -934,48 +1110,37 @@ class ReservationCalendar extends FullCalendarWidget
         $start = Carbon::parse(substr((string) $info['start'], 0, 10));
         $end = Carbon::parse(substr((string) $info['end'], 0, 10));
 
-        /** @var array<string, Carbon> $dates weekday value => concrete date in the displayed week */
-        $dates = [];
-        for ($day = $start->copy(); $day->lt($end); $day->addDay()) {
-            $dates[DayOfWeek::fromCarbon($day)->value] = $day->copy();
-        }
-
-        $allowedWeekTypes = $this->allowedTemplateWeekTypes();
-
         $events = [];
 
-        $schedules = TherapistWeeklySchedule::query()
+        $blocks = TherapistWorkBlock::query()
             ->with(['therapist.user', 'room'])
+            ->whereBetween('work_date', [$start->toDateString(), $end->copy()->subDay()->toDateString()])
             ->when($this->therapistIds, fn (Builder $query) => $query->whereIn('therapist_id', $this->therapistIds))
             ->when($this->templateRoomId, fn (Builder $query) => $query->where('room_id', $this->templateRoomId))
             ->when($this->room, fn (Builder $query) => $query->where('room_id', $this->room->getKey()))
-            ->when($allowedWeekTypes, fn (Builder $query) => $query->whereIn('week_type', $allowedWeekTypes))
             ->get();
 
-        foreach ($schedules as $schedule) {
-            $date = $dates[$schedule->day_of_week?->value] ?? null;
-            if ($date === null) {
-                continue;
-            }
-
-            $accent = $this->therapistColor($schedule->therapist_id);
+        foreach ($blocks as $block) {
+            $accent = $this->therapistColor($block->therapist_id);
+            $date = $block->work_date->toDateString();
 
             $events[] = EventData::make()
-                ->id('schedule:'.$schedule->getKey())
-                ->title((string) ($schedule->therapist?->user?->name ?? 'Pracovní doba'))
-                ->start($date->toDateString().'T'.$schedule->start_time)
-                ->end($date->toDateString().'T'.$schedule->end_time)
-                ->backgroundColor($this->therapistTint($schedule->therapist_id))
+                ->id('schedule:'.$block->getKey())
+                ->title((string) ($block->therapist?->user?->name ?? 'Pracovní doba'))
+                ->start($date.'T'.$block->start_time)
+                ->end($date.'T'.$block->end_time)
+                ->backgroundColor($this->therapistTint($block->therapist_id))
                 ->borderColor($accent)
                 ->textColor('#171717')
                 ->extendedProps([
                     'kind' => 'schedule',
-                    'timeLabel' => $this->timeLabel($schedule->start_time, $schedule->end_time),
-                    'therapistName' => $schedule->therapist?->user?->name,
-                    'initials' => $this->therapistInitials($schedule->therapist?->user?->name),
-                    'room' => $schedule->room?->name,
+                    'timeLabel' => $this->timeLabel($block->start_time, $block->end_time),
+                    'therapistName' => $block->therapist?->user?->name,
+                    'initials' => $this->therapistInitials($block->therapist?->user?->name),
+                    'room' => $block->room?->name,
                     'accent' => $accent,
-                    'isSelected' => in_array('schedule:'.$schedule->getKey(), $this->selectedIds, true),
+                    'isRecurring' => $block->series_id !== null,
+                    'isSelected' => in_array('schedule:'.$block->getKey(), $this->selectedIds, true),
                 ])
                 ->toArray();
         }
@@ -985,50 +1150,36 @@ class ReservationCalendar extends FullCalendarWidget
             ->where('is_recurring', true)
             ->when($this->templateRoomId, fn (Builder $query) => $query->where('room_id', $this->templateRoomId))
             ->when($this->room, fn (Builder $query) => $query->where('room_id', $this->room->getKey()))
-            ->when($allowedWeekTypes, fn (Builder $query) => $query->whereIn('week_type', $allowedWeekTypes))
             ->get();
 
         [$blockAccent, $blockTint] = self::BLOCKING_COLORS;
 
         foreach ($blockings as $blocking) {
-            $date = $dates[$blocking->day_of_week?->value] ?? null;
-            if ($date === null) {
-                continue;
-            }
+            for ($day = $start->copy(); $day->lt($end); $day->addDay()) {
+                if ($blocking->day_of_week !== DayOfWeek::fromCarbon($day) || ! $blocking->week_type->matchesDate($day)) {
+                    continue;
+                }
 
-            $events[] = EventData::make()
-                ->id('blocking:'.$blocking->getKey())
-                ->title($blocking->reason ?: 'Blokace')
-                ->start($date->toDateString().'T'.$blocking->start_time)
-                ->end($date->toDateString().'T'.$blocking->end_time)
-                ->backgroundColor($blockTint)
-                ->borderColor($blockAccent)
-                ->textColor('#3730A3')
-                ->extendedProps([
-                    'kind' => 'blocking',
-                    'timeLabel' => $this->timeLabel($blocking->start_time, $blocking->end_time),
-                    'title' => $blocking->reason ?: 'Blokace',
-                    'room' => $blocking->room?->name,
-                    'isSelected' => in_array('blocking:'.$blocking->getKey(), $this->selectedIds, true),
-                ])
-                ->toArray();
+                $events[] = EventData::make()
+                    ->id('blocking:'.$blocking->getKey())
+                    ->title($blocking->reason ?: 'Blokace')
+                    ->start($day->toDateString().'T'.$blocking->start_time)
+                    ->end($day->toDateString().'T'.$blocking->end_time)
+                    ->backgroundColor($blockTint)
+                    ->borderColor($blockAccent)
+                    ->textColor('#3730A3')
+                    ->extendedProps([
+                        'kind' => 'blocking',
+                        'timeLabel' => $this->timeLabel($blocking->start_time, $blocking->end_time),
+                        'title' => $blocking->reason ?: 'Blokace',
+                        'room' => $blocking->room?->name,
+                        'isSelected' => in_array('blocking:'.$blocking->getKey(), $this->selectedIds, true),
+                    ])
+                    ->toArray();
+            }
         }
 
-        return $events;
-    }
-
-    /**
-     * Allowed week_type values for the current template selector, or null for "all".
-     *
-     * @return array<int, string>|null
-     */
-    protected function allowedTemplateWeekTypes(): ?array
-    {
-        return match ($this->templateWeekType) {
-            'odd' => [WeekType::All->value, WeekType::Odd->value],
-            'even' => [WeekType::All->value, WeekType::Even->value],
-            default => null,
-        };
+        return [...$events, ...$this->fetchOneTimeBlockingEvents($info)];
     }
 
     protected function timeLabel(?string $start, ?string $end): string
@@ -1050,7 +1201,7 @@ class ReservationCalendar extends FullCalendarWidget
 
     public function sidebarMonthLabel(): string
     {
-        return ucfirst($this->sidebarMonthStart()->locale('cs')->isoFormat('MMMM YYYY'));
+        return Str::ucfirst($this->sidebarMonthStart()->locale('cs')->isoFormat('MMMM YYYY'));
     }
 
     /**
@@ -1185,9 +1336,10 @@ class ReservationCalendar extends FullCalendarWidget
 
                 if (p.kind === 'schedule') {
                     var sroom = p.room ? '<span class="ff-event-room">' + esc(p.room) + '</span>' : '<span></span>';
+                    var recur = p.isRecurring ? '<span class="ff-event-recur" title="Opakovaná pracovní doba">↻</span>' : '';
                     return { html:
                         '<div class="ff-event">' +
-                            '<div class="ff-event-head"><span class="ff-event-time" style="color:' + p.accent + '">' + esc(p.timeLabel) + '</span></div>' +
+                            '<div class="ff-event-head"><span class="ff-event-time" style="color:' + p.accent + '">' + esc(p.timeLabel) + '</span>' + recur + '</div>' +
                             '<div class="ff-event-title">' + esc(p.therapistName) + '</div>' +
                             '<div class="ff-event-foot">' +
                                 '<span class="ff-event-avatar" title="' + esc(p.therapistName) + '" style="background:' + p.accent + '">' + esc(p.initials) + '</span>' +
@@ -1264,12 +1416,16 @@ class ReservationCalendar extends FullCalendarWidget
                 ->alignment(Alignment::End)
                 ->visible(fn (?Reservation $record): bool => (bool) $record?->exists)
                 ->columnSpanFull(),
-            ...ReservationForm::components(),
-            Toggle::make('notify_client')
-                ->label('Upozornit zákazníka?')
-                ->helperText('Po uložení odešle zákazníkovi e-mail o vytvoření či změně rezervace.')
-                ->default(true)
-                ->columnSpanFull(),
+            // Control-therapy is pulled out of the form so it shares a row with the
+            // calendar-only "Upozornit zákazníka" toggle.
+            ...ReservationForm::components(withControlTherapy: false),
+            Grid::make(2)->schema([
+                ReservationForm::controlTherapyToggle(),
+                Toggle::make('notify_client')
+                    ->label('Upozornit zákazníka?')
+                    ->helperText('Po uložení odešle zákazníkovi e-mail o vytvoření či změně rezervace.')
+                    ->default(true),
+            ]),
         ];
     }
 
@@ -1305,7 +1461,10 @@ class ReservationCalendar extends FullCalendarWidget
             if ($kind === 'schedule') {
                 $this->mountAction('editSchedule');
             } elseif ($kind === 'blocking') {
-                $this->mountAction('editBlocking');
+                // Both recurring and one-off blockings render in this mode.
+                $isRecurring = (bool) RoomBlocking::find($id)?->is_recurring;
+
+                $this->mountAction($isRecurring ? 'editBlocking' : 'editOneTimeBlocking');
             }
 
             return;
@@ -1386,32 +1545,24 @@ class ReservationCalendar extends FullCalendarWidget
                     $this->reservationChangeSnapshot = ReservationChangeSnapshot::capture($record);
                 })
                 ->extraModalFooterActions([
-                    FullCalendarDeleteAction::make()
-                        ->label('Smazat')
+                    // The same cancel/erase modal as the reservations list — bound
+                    // to the widget's record like Saade's DeleteAction, closing the
+                    // edit modal and refreshing the calendar afterwards.
+                    CancelReservationAction::make()
                         ->extraAttributes(['style' => 'order:1'])
-                        ->modalHeading('Smazat rezervaci?')
-                        ->modalDescription(fn (Reservation $record): HtmlString => ReservationSummary::description($record))
-                        ->modalSubmitActionLabel('Smazat')
-                        ->schema([
-                            Toggle::make('notify_client')
-                                ->label('Informovat klienta e-mailem')
-                                ->default(false),
-                        ])
-                        ->before(function (Reservation $record, array $data): void {
-                            if ($data['notify_client'] ?? false) {
-                                $record->client?->notify(new ReservationNotification($record, 'cancelled'));
-                            }
+                        ->model(fn (FullCalendarWidget $livewire): ?string => $livewire->getModel())
+                        ->record(fn (FullCalendarWidget $livewire): ?Model => $livewire->getRecord())
+                        ->cancelParentActions()
+                        ->after(function (FullCalendarWidget $livewire): void {
+                            $livewire->record = null;
+                            $livewire->refreshRecords();
                         }),
-                    // Shown only when the opened reservation is soft-deleted (Filament's
-                    // RestoreAction is visible only for trashed records). Bound to the
-                    // widget's record like Saade's DeleteAction, and closes the edit modal
-                    // + refreshes the calendar afterwards.
-                    RestoreAction::make()
-                        ->label('Obnovit')
+                    // The same restore/reactivate modal as the reservations list —
+                    // shown for trashed or cancelled reservations, bound to the
+                    // widget's record like Saade's DeleteAction, closing the edit
+                    // modal and refreshing the calendar afterwards.
+                    RestoreReservationAction::make()
                         ->extraAttributes(['style' => 'order:1'])
-                        ->modalHeading('Obnovit rezervaci?')
-                        ->modalDescription(fn (Reservation $record): HtmlString => ReservationSummary::description($record))
-                        ->modalSubmitActionLabel('Obnovit')
                         ->model(fn (FullCalendarWidget $livewire): ?string => $livewire->getModel())
                         ->record(fn (FullCalendarWidget $livewire): ?Model => $livewire->getRecord())
                         ->cancelParentActions()
@@ -1423,6 +1574,7 @@ class ReservationCalendar extends FullCalendarWidget
                 ->after(function (FullCalendarWidget $livewire, Model $record, array $data): void {
                     if ($record instanceof Reservation && ($data['notify_client'] ?? false)) {
                         $record->client?->notify(new ReservationTemplateNotification($record, EmailTemplateKey::ReservationChanged, $this->reservationChangeSnapshot));
+                        $record->therapist?->user?->notify(new TherapistReservationTemplateNotification($record, EmailTemplateKey::TherapistReservationChanged, $this->reservationChangeSnapshot));
                     }
 
                     $livewire->refreshRecords();

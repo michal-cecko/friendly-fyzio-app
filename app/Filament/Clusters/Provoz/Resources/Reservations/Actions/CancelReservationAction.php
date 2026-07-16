@@ -13,10 +13,13 @@ use Filament\Notifications\Notification;
 use Filament\Support\Icons\Heroicon;
 
 /**
- * Cancels a reservation (status -> Cancelled) with a reason and, by default, e-mails
- * the client the CMS cancellation notice. This is the therapist/admin counterpart to
- * the customer self-cancel magic link; unlike delete, the record is kept (shown as
- * „Storno" in the calendar).
+ * The single reservation cancellation action (replaces the old separate Cancel +
+ * Delete actions). It always marks the reservation as storn/Cancelled with a
+ * reason and, optionally, e-mails the client. The "Úplně vymazat ze systému?"
+ * opt-in turns the cancellation into a deletion: the client still receives the
+ * ordinary cancellation notice (sent synchronously, before the delete), and the
+ * reservation moves to the trash, from where `model:prune` erases it for good
+ * after 30 days — payments and invoices survive unlinked (see Reservation::booted()).
  */
 class CancelReservationAction extends Action
 {
@@ -30,19 +33,23 @@ class CancelReservationAction extends Action
         parent::setUp();
 
         $this
-            ->label('Zrušit rezervaci')
-            ->icon(Heroicon::OutlinedXCircle)
+            ->label('Zrušit')
+            ->icon(Heroicon::OutlinedTrash)
             ->color('danger')
-            ->modalHeading('Zrušit rezervaci')
-            ->modalIcon(Heroicon::OutlinedXCircle)
-            ->modalDescription('Rezervace bude označena jako stornovaná. Klientovi můžete odeslat e-mail s oznámením o zrušení.')
+            ->modalHeading('Zrušit')
+            ->modalIcon(Heroicon::OutlinedTrash)
             ->modalSubmitActionLabel('Zrušit rezervaci')
-            ->visible(fn (Reservation $record): bool => $record->status !== ReservationStatus::Cancelled)
+            ->visible(fn (Reservation $record): bool => ! $record->trashed())
             ->schema([
                 Textarea::make('cancellation_reason')
                     ->label('Důvod zrušení')
                     ->rows(2)
-                    ->required(),
+                    ->required()
+                    ->default(fn (Reservation $record): ?string => $record->cancellation_reason),
+                Toggle::make('force_delete')
+                    ->label('Úplně vymazat ze systému?')
+                    ->helperText('Zapnuto: klient dostane běžné oznámení o zrušení a rezervace se přesune do koše — po 30 dnech se ze systému nenávratně vymaže (platby a faktury zůstávají). Vypnuto: zůstane v evidenci jako stornovaná.')
+                    ->default(false),
                 Toggle::make('notify_client')
                     ->label('Informovat klienta e-mailem')
                     ->default(true),
@@ -57,8 +64,14 @@ class CancelReservationAction extends Action
                     $record->client?->notify(new ReservationTemplateNotification($record, EmailTemplateKey::ReservationCancelled));
                 }
 
+                $erased = (bool) ($data['force_delete'] ?? false);
+
+                if ($erased) {
+                    $record->delete();
+                }
+
                 Notification::make()
-                    ->title('Rezervace byla zrušena.')
+                    ->title($erased ? 'Rezervace byla zrušena a přesunuta do koše.' : 'Rezervace byla zrušena.')
                     ->success()
                     ->send();
             });

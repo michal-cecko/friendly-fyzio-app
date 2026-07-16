@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\ContactInquiries;
 
-use App\Enums\ContactInquiryStatus;
 use App\Filament\Resources\ContactInquiries\Pages\ListContactInquiries;
 use App\Filament\Resources\ContactInquiries\Pages\ViewContactInquiry;
 use App\Filament\Resources\ContactInquiries\Schemas\ContactInquiryInfolist;
@@ -21,7 +20,10 @@ class ContactInquiryResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedEnvelope;
 
-    protected static ?int $navigationSort = 200;
+    /**
+     * Lives in the topbar instead (see filament.topbar.contact-inquiries-link).
+     */
+    protected static bool $shouldRegisterNavigation = false;
 
     protected static ?string $recordTitleAttribute = 'name';
 
@@ -58,18 +60,6 @@ class ContactInquiryResource extends Resource
             'E-mail' => $record->email,
             'Přijato' => $record->created_at?->format('j. n. Y'),
         ]);
-    }
-
-    public static function getNavigationBadge(): ?string
-    {
-        $new = static::getModel()::where('status', ContactInquiryStatus::New)->count();
-
-        return $new > 0 ? (string) $new : null;
-    }
-
-    public static function getNavigationBadgeColor(): ?string
-    {
-        return 'warning';
     }
 
     public static function canCreate(): bool

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Filament\Clusters\System\Resources\TherapistProfiles\TherapistProfileResource;
+use App\Filament\Clusters\Provoz\Resources\TherapistProfiles\TherapistProfileResource;
 use App\Models\TherapistProfile;
 use App\Support\Media;
 use Illuminate\Contracts\View\View;

@@ -2,11 +2,13 @@
 
 namespace App\Filament\Clusters\Provoz\Resources\Clients\RelationManagers;
 
+use App\Models\ClientNote;
+use App\Support\Mentions\StaffMentions;
 use BackedEnum;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
-use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\RichEditor;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -33,10 +35,13 @@ class NotesRelationManager extends RelationManager
     {
         return $schema
             ->components([
-                Textarea::make('content')
+                RichEditor::make('content')
                     ->label('Poznámka')
                     ->required()
-                    ->rows(5)
+                    ->mentions([StaffMentions::editorProvider()])
+                    ->toolbarButtons([
+                        ['bold', 'italic', 'link', 'textColor'],
+                    ])
                     ->columnSpanFull(),
             ]);
     }
@@ -48,9 +53,15 @@ class NotesRelationManager extends RelationManager
             ->columns([
                 TextColumn::make('content')
                     ->label('Poznámka')
+                    ->formatStateUsing(fn (?string $state): string => str(strip_tags((string) $state))->squish()->toString())
                     ->limit(80)
                     ->wrap()
                     ->searchable(),
+                TextColumn::make('reservation.reservation_date')
+                    ->label('Rezervace')
+                    ->date('d.m.Y')
+                    ->description(fn (ClientNote $record): ?string => $record->reservation?->service?->name)
+                    ->placeholder('—'),
                 TextColumn::make('author.name')
                     ->label('Autor')
                     ->placeholder('—'),

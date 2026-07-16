@@ -21,6 +21,73 @@
     width: fit-content;
 }
 
+/* On phones the cramped inline topbar search is dropped entirely in favour of the
+   standalone search page (reached via the document-magnifying-glass icon, which is
+   rendered by GLOBAL_SEARCH_AFTER — outside this container — so it stays visible). */
+@media (max-width: 767px) {
+    .fi-global-search-ctn {
+        display: none;
+    }
+}
+
+/* On desktop, double the topbar global search: the field has no explicit width by
+   default (~15rem intrinsic input size), and the results dropdown caps at max-w-sm.
+   Widen both together so the dropdown lines up with the field. */
+@media (min-width: 1024px) {
+    .fi-topbar .fi-global-search-field {
+        width: 30rem;
+    }
+
+    .fi-topbar .fi-global-search-results-ctn {
+        max-width: 30rem;
+    }
+}
+
+/* Otherwise-inconspicuous links inside page content get an underline and a trailing
+   external-link glyph so they unambiguously read as links. Covers two cases: plain
+   anchors with no Filament class (links authored in rich text / custom views), and
+   linked infolist entries — `TextEntry->url()` renders an `<a.fi-in-entry-content>`
+   that Filament leaves visually indistinguishable from a non-linked value. Scoped to
+   page content (`fi-main`) to leave topbar, sidebar, breadcrumbs and Filament's own
+   `.fi-btn`/`.fi-link` anchors untouched. */
+.fi-main a[href]:not([class]),
+.fi-main a.fi-in-entry-content[href] {
+    display: inline-flex;
+    align-items: center;
+    /* Infolist entry content sits in a flex column, which would stretch to the full
+       entry width — keep it hugging its own content. */
+    align-self: flex-start;
+    width: fit-content;
+    gap: 0.2em;
+    color: var(--primary-600, #2563eb);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.fi-main a[href]:not([class])::after,
+.fi-main a.fi-in-entry-content[href]::after {
+    content: '';
+    display: inline-block;
+    width: 0.85em;
+    height: 0.85em;
+    background-color: currentColor;
+    -webkit-mask: var(--plain-link-icon) center / contain no-repeat;
+    mask: var(--plain-link-icon) center / contain no-repeat;
+    opacity: 0;
+    transform: translateX(-0.25em) scale(0.7);
+    transition: opacity 150ms ease, transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.fi-main a[href]:not([class]):hover::after,
+.fi-main a.fi-in-entry-content[href]:hover::after {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+}
+
+:root {
+    --plain-link-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
 /* Table toolbars: search, filters & column toggles on the left, action buttons on the right. */
 .fi-ta-header-toolbar > :nth-child(1) {
     order: 2;

@@ -2,6 +2,7 @@
 
 namespace App\Mason\Bricks;
 
+use App\Support\Mentions\StaffMentions;
 use Awcodes\Mason\Brick;
 use Filament\Actions\Action;
 use Filament\Forms\Components\RichEditor;
@@ -39,6 +40,10 @@ class RichTextBrick extends Brick
                 RichEditor::make('content')
                     ->label('Obsah')
                     ->plugins([MediaPlugin::make()])
+                    ->mentions([StaffMentions::editorProvider()])
+                    ->toolbarButtons([
+                        ['bold', 'italic', 'link', 'bulletList', 'orderedList', 'textColor'],
+                    ])
                     ->required(),
             ]);
     }

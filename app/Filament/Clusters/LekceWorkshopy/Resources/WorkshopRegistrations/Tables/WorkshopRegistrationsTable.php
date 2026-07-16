@@ -3,6 +3,7 @@
 namespace App\Filament\Clusters\LekceWorkshopy\Resources\WorkshopRegistrations\Tables;
 
 use App\Enums\PaymentStatus;
+use App\Filament\Support\Actions\RecordPaymentAction;
 use App\Filament\Support\Tables\TimestampColumns;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -48,6 +49,7 @@ class WorkshopRegistrationsTable
             ->recordActions([
                 ViewAction::make(),
                 EditAction::make(),
+                RecordPaymentAction::make(),
                 DeleteAction::make(),
             ])
             ->toolbarActions([

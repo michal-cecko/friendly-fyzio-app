@@ -3,7 +3,6 @@
 namespace App\Filament\Clusters\System\Resources\Users\RelationManagers;
 
 use App\Enums\ReservationStatus;
-use App\Enums\UserRole;
 use App\Models\User;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables\Columns\TextColumn;
@@ -20,7 +19,7 @@ class TherapistReservationsRelationManager extends RelationManager
 
     public static function canViewForRecord(Model $ownerRecord, string $pageClass): bool
     {
-        return $ownerRecord instanceof User && $ownerRecord->role === UserRole::Therapist;
+        return $ownerRecord instanceof User && $ownerRecord->isTherapist();
     }
 
     public function table(Table $table): Table

@@ -12,6 +12,8 @@ use App\Support\Settings;
 enum EmailTemplateKey: string
 {
     case ReservationPending = 'reservation_pending';
+    case ReservationCreated = 'reservation_created';
+    case ReservationAutoConfirmed = 'reservation_auto_confirmed';
     case ReservationConfirmed = 'reservation_confirmed';
     case ReservationReminder = 'reservation_reminder';
     case ReservationCancelled = 'reservation_cancelled';
@@ -19,6 +21,22 @@ enum EmailTemplateKey: string
     case ReservationAutoCancelled = 'reservation_auto_cancelled';
     case ReservationStornoPayment = 'reservation_storno_payment';
     case ReservationDoctorNote = 'reservation_doctor_note';
+    case ReservationUnpaid = 'reservation_unpaid';
+    case ReservationNoShow = 'reservation_no_show';
+
+    // Payment & invoicing e-mails (client-facing).
+    case PaymentReceived = 'payment_received';
+    case PaymentOverdue = 'payment_overdue';
+    case InvoiceIssued = 'invoice_issued';
+
+    // Account & auth e-mails (client-facing). These replace the framework/Filament
+    // default notifications so the copy is editable in the dashboard; the {{ odkaz }}
+    // token carries the signed action URL produced by the auth flow.
+    case EmailVerification = 'email_verification';
+    case PasswordReset = 'password_reset';
+    case EmailChangeVerification = 'email_change_verification';
+    case AccountCreated = 'account_created';
+    case ReviewRequest = 'review_request';
 
     // Therapist-facing notifications (recipient is the therapist, not the client).
     case TherapistReservationCreated = 'therapist_reservation_created';
@@ -33,6 +51,8 @@ enum EmailTemplateKey: string
     {
         return match ($this) {
             self::ReservationPending => 'Rezervace čeká na potvrzení',
+            self::ReservationCreated => 'Rezervace vytvořena',
+            self::ReservationAutoConfirmed => 'Rezervace automaticky potvrzena',
             self::ReservationConfirmed => 'Rezervace potvrzena',
             self::ReservationReminder => 'Připomínka rezervace',
             self::ReservationCancelled => 'Zrušení rezervace',
@@ -40,6 +60,16 @@ enum EmailTemplateKey: string
             self::ReservationAutoCancelled => 'Automatické zrušení rezervace',
             self::ReservationStornoPayment => 'Storno – platba poplatku',
             self::ReservationDoctorNote => 'Storno – potvrzení od lékaře',
+            self::ReservationUnpaid => 'Nezaplacený termín',
+            self::ReservationNoShow => 'Nedostavení na termín',
+            self::PaymentReceived => 'Platba přijata',
+            self::PaymentOverdue => 'Platba po splatnosti',
+            self::InvoiceIssued => 'Faktura vystavena',
+            self::EmailVerification => 'Ověření e-mailu',
+            self::PasswordReset => 'Obnovení hesla',
+            self::EmailChangeVerification => 'Ověření změny e-mailu',
+            self::AccountCreated => 'Vytvoření účtu',
+            self::ReviewRequest => 'Žádost o recenzi',
             self::TherapistReservationCreated => 'Nová rezervace (terapeut)',
             self::TherapistReservationConfirmed => 'Potvrzený termín (terapeut)',
             self::TherapistReservationCancelled => 'Zrušení rezervace klientem (terapeut)',
@@ -71,6 +101,8 @@ enum EmailTemplateKey: string
     {
         return match ($this) {
             self::ReservationPending => 'Vaše rezervace čeká na potvrzení',
+            self::ReservationCreated => 'Přijali jsme vaši rezervaci',
+            self::ReservationAutoConfirmed => 'Vaše rezervace je potvrzena',
             self::ReservationConfirmed => 'Vaše rezervace byla potvrzena',
             self::ReservationReminder => 'Připomínka: zítra vás čekáme',
             self::ReservationCancelled => 'Vaše rezervace byla zrušena',
@@ -78,6 +110,16 @@ enum EmailTemplateKey: string
             self::ReservationAutoCancelled => 'Vaše rezervace byla automaticky zrušena',
             self::ReservationStornoPayment => 'Storno poplatek k úhradě',
             self::ReservationDoctorNote => 'Doručte prosím potvrzení od lékaře',
+            self::ReservationUnpaid => 'Máte nezaplacený termín',
+            self::ReservationNoShow => 'Nedostavili jste se na termín',
+            self::PaymentReceived => 'Vaše platba byla přijata',
+            self::PaymentOverdue => 'Upozornění: platba po splatnosti',
+            self::InvoiceIssued => 'Zasíláme Vám fakturu',
+            self::EmailVerification => 'Ověřte svou e-mailovou adresu',
+            self::PasswordReset => 'Obnovení hesla',
+            self::EmailChangeVerification => 'Ověřte svou novou e-mailovou adresu',
+            self::AccountCreated => 'Váš účet ve Friendly Fyzio',
+            self::ReviewRequest => 'Jak jste byli spokojeni?',
             self::TherapistReservationCreated => 'Nová rezervace od klienta',
             self::TherapistReservationConfirmed => 'Termín byl potvrzen',
             self::TherapistReservationCancelled => 'Klient zrušil rezervaci',
@@ -115,6 +157,8 @@ enum EmailTemplateKey: string
 
         return match ($this) {
             self::ReservationPending,
+            self::ReservationCreated,
+            self::ReservationAutoConfirmed,
             self::ReservationConfirmed,
             self::ReservationReminder => [
                 ...$base,
@@ -143,6 +187,61 @@ enum EmailTemplateKey: string
             self::ReservationDoctorNote => [
                 ...$base,
                 'misto' => 'Místo / adresa',
+            ],
+            self::ReservationUnpaid,
+            self::ReservationNoShow => [
+                ...$base,
+                'castka' => 'Částka k úhradě',
+                'iban' => 'Číslo účtu (IBAN)',
+                'vs' => 'Variabilní symbol',
+                'qr' => 'QR platba (obrázek)',
+                'splatnost' => 'Datum splatnosti',
+            ],
+            self::PaymentReceived => [
+                'jmeno' => 'Jméno klienta',
+                'za_co' => 'Za co bylo zaplaceno',
+                'castka' => 'Uhrazená částka',
+                'datum' => 'Datum platby',
+                'zpusob_platby' => 'Způsob platby',
+                'cislo_faktury' => 'Číslo faktury (je-li vystavena)',
+                'odkaz' => 'Odkaz do klientské zóny',
+            ],
+            self::PaymentOverdue => [
+                'jmeno' => 'Jméno klienta',
+                'za_co' => 'Za co je dlužná částka',
+                'castka' => 'Dlužná částka',
+                'iban' => 'Číslo účtu (IBAN)',
+                'vs' => 'Variabilní symbol',
+                'zprava' => 'Zpráva pro příjemce',
+                'splatnost' => 'Datum splatnosti',
+                'qr' => 'QR platba (obrázek)',
+            ],
+            self::InvoiceIssued => [
+                'jmeno' => 'Jméno klienta',
+                'cislo_faktury' => 'Číslo faktury',
+                'castka' => 'Celková částka',
+                'splatnost' => 'Datum splatnosti',
+                'zpusob_platby' => 'Způsob platby',
+                'polozky_tabulka' => 'Tabulka položek faktury (doplní se automaticky)',
+            ],
+            self::EmailVerification, self::PasswordReset => [
+                'jmeno' => 'Jméno příjemce',
+                'odkaz' => 'Odkaz s akcí (doplní se automaticky)',
+            ],
+            self::EmailChangeVerification => [
+                'jmeno' => 'Jméno příjemce',
+                'email' => 'Nová e-mailová adresa',
+                'odkaz' => 'Ověřovací odkaz (doplní se automaticky)',
+            ],
+            self::AccountCreated => [
+                'jmeno' => 'Jméno klienta',
+                'odkaz' => 'Odkaz na přihlášení',
+            ],
+            self::ReviewRequest => [
+                'jmeno' => 'Jméno klienta',
+                'cil' => 'Co recenzovat (název)',
+                'intro' => 'Úvodní text',
+                'odkaz' => 'Odkaz na formulář recenze',
             ],
             default => $base,
         };
@@ -175,6 +274,8 @@ enum EmailTemplateKey: string
 
         return match ($this) {
             self::ReservationPending,
+            self::ReservationCreated,
+            self::ReservationAutoConfirmed,
             self::ReservationConfirmed,
             self::ReservationReminder => [
                 ...$base,
@@ -216,6 +317,70 @@ enum EmailTemplateKey: string
                 'sluzba' => 'Lymfodrenáž (60 min)',
                 'termin' => '18. dubna 2026, 09:00',
                 'misto' => 'Vodičkova 20, Praha',
+            ],
+            self::ReservationUnpaid => [
+                ...$base,
+                'castka' => '800',
+                'iban' => 'CZ65 0800 0000 1920 0014 5399',
+                'vs' => '1042',
+                'qr' => '#',
+                'splatnost' => '23. dubna 2026',
+            ],
+            self::ReservationNoShow => [
+                ...$base,
+                'sluzba' => 'Přístrojová masáž (45 min)',
+                'termin' => '18. dubna 2026, 09:00',
+                'castka' => '500',
+                'iban' => 'CZ65 0800 0000 1920 0014 5399',
+                'vs' => '1043',
+                'qr' => '#',
+                'splatnost' => '25. dubna 2026',
+            ],
+            self::PaymentReceived => [
+                'jmeno' => 'Mario',
+                'za_co' => 'Fyzioterapie individuální – 10. dubna 2026',
+                'castka' => '1 250 Kč',
+                'datum' => '10. dubna 2026',
+                'zpusob_platby' => 'Hotově',
+                'cislo_faktury' => 'FF-2026-00412',
+                'odkaz' => '#',
+            ],
+            self::PaymentOverdue => [
+                'jmeno' => 'Tomáši',
+                'za_co' => 'Fyzioterapie individuální – 28. března 2026',
+                'castka' => '2 400',
+                'iban' => 'CZ65 0800 0000 1920 0014 5399',
+                'vs' => '20260415001',
+                'zprava' => 'Tomáš Novák – dlužná částka',
+                'splatnost' => '5. 4. 2026 (po splatnosti!)',
+                'qr' => '#',
+            ],
+            self::InvoiceIssued => [
+                'jmeno' => 'Lucie',
+                'cislo_faktury' => 'FF-2026-00413',
+                'castka' => '2 100 Kč',
+                'splatnost' => '24. dubna 2026',
+                'zpusob_platby' => 'Bankovní převod',
+                'polozky_tabulka' => '',
+            ],
+            self::EmailVerification, self::PasswordReset => [
+                'jmeno' => 'Jana',
+                'odkaz' => '#',
+            ],
+            self::EmailChangeVerification => [
+                'jmeno' => 'Jana',
+                'email' => 'jana.nova@example.cz',
+                'odkaz' => '#',
+            ],
+            self::AccountCreated => [
+                'jmeno' => 'Jana',
+                'odkaz' => '#',
+            ],
+            self::ReviewRequest => [
+                'jmeno' => 'Jana',
+                'cil' => 'návštěvu „Fyzioterapie individuální“',
+                'intro' => 'Budeme moc rádi, když nám zanecháte krátkou recenzi.',
+                'odkaz' => '#',
             ],
             default => $base,
         };

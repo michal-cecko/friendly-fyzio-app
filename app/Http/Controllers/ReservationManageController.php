@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ConfirmationSource;
 use App\Enums\EmailTemplateKey;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
@@ -12,6 +13,7 @@ use App\Models\Reservation;
 use App\Models\User;
 use App\Notifications\ReservationStornoPaymentNotification;
 use App\Notifications\ReservationTemplateNotification;
+use App\Notifications\TherapistReservationTemplateNotification;
 use Filament\Notifications\Notification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -66,9 +68,12 @@ class ReservationManageController extends Controller
         $reservation->update([
             'status' => ReservationStatus::Confirmed,
             'confirmed_at' => now(),
+            'confirmed_by' => ConfirmationSource::Customer,
+            'confirmed_by_id' => $reservation->client_id,
         ]);
 
         $reservation->client?->notify(new ReservationTemplateNotification($reservation, EmailTemplateKey::ReservationConfirmed));
+        $reservation->therapist?->user?->notify(new TherapistReservationTemplateNotification($reservation, EmailTemplateKey::TherapistReservationConfirmed));
     }
 
     /**
@@ -90,6 +95,7 @@ class ReservationManageController extends Controller
         ]);
 
         $reservation->client?->notify(new ReservationTemplateNotification($reservation, EmailTemplateKey::ReservationCancelled));
+        $this->notifyTherapistOfClientCancellation($reservation, 'Zrušeno v řádné lhůtě – bez storno poplatku', '');
     }
 
     /**
@@ -117,6 +123,7 @@ class ReservationManageController extends Controller
         ]);
 
         $reservation->client?->notify(new ReservationStornoPaymentNotification($reservation, $payment));
+        $this->notifyTherapistOfClientCancellation($reservation, 'Klient uhradí storno poplatek', $payment->amount.' Kč');
     }
 
     /**
@@ -136,6 +143,7 @@ class ReservationManageController extends Controller
         ]);
 
         $reservation->client?->notify(new ReservationTemplateNotification($reservation, EmailTemplateKey::ReservationDoctorNote));
+        $this->notifyTherapistOfClientCancellation($reservation, 'Klient doloží potvrzení od lékaře (poplatek pozastaven)', 'pozastaveno');
 
         $this->notifyStaffOfDoctorNote($reservation);
     }
@@ -158,6 +166,20 @@ class ReservationManageController extends Controller
         $reservation->client?->update(['deactivated_at' => now()]);
 
         $reservation->client?->notify(new ReservationTemplateNotification($reservation, EmailTemplateKey::ReservationCancelled));
+        $this->notifyTherapistOfClientCancellation($reservation, 'Klient odmítl úhradu – účet deaktivován', $reservation->stornoFee().' Kč');
+    }
+
+    /**
+     * Tell the therapist that the client cancelled, describing how the storno was
+     * resolved. Fired only from the client-initiated (magic-link) cancel paths.
+     */
+    private function notifyTherapistOfClientCancellation(Reservation $reservation, string $resolution, string $amount): void
+    {
+        $reservation->therapist?->user?->notify(new TherapistReservationTemplateNotification(
+            $reservation,
+            EmailTemplateKey::TherapistReservationCancelled,
+            ['storno_reseni' => $resolution, 'storno_castka' => $amount],
+        ));
     }
 
     private function notifyStaffOfDoctorNote(Reservation $reservation): void

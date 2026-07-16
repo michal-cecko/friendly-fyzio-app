@@ -2,22 +2,21 @@
 
 namespace Tests\Feature;
 
-use App\Enums\DayOfWeek;
+use App\Enums\EmailTemplateKey;
 use App\Enums\ExamType;
 use App\Enums\ReservationStatus;
 use App\Enums\ServiceType;
 use App\Enums\ServiceVisibility;
 use App\Enums\UserRole;
-use App\Enums\WeekType;
 use App\Livewire\ReservationWizard;
 use App\Models\Reservation;
 use App\Models\Room;
 use App\Models\Service;
 use App\Models\ServiceCategory;
 use App\Models\TherapistProfile;
-use App\Models\TherapistWeeklySchedule;
+use App\Models\TherapistWorkBlock;
 use App\Models\User;
-use App\Notifications\ReservationNotification;
+use App\Notifications\ReservationTemplateNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
@@ -56,11 +55,10 @@ class ReservationWizardTest extends TestCase
         $this->therapist = TherapistProfile::factory()->create(['published_at' => now()]);
         $this->service->therapists()->attach($this->therapist);
 
-        TherapistWeeklySchedule::factory()->create([
+        TherapistWorkBlock::factory()->create([
             'therapist_id' => $this->therapist->id,
             'room_id' => $room->id,
-            'day_of_week' => DayOfWeek::fromCarbon($this->date),
-            'week_type' => WeekType::All,
+            'work_date' => $this->date->toDateString(),
             'start_time' => '08:00',
             'end_time' => '16:00',
         ]);
@@ -119,7 +117,11 @@ class ReservationWizardTest extends TestCase
 
         $client = User::where('email', 'jana@example.com')->sole();
         $this->assertSame(UserRole::Customer, $client->role);
-        Notification::assertSentTo($client, ReservationNotification::class);
+        Notification::assertSentTo(
+            $client,
+            ReservationTemplateNotification::class,
+            fn (ReservationTemplateNotification $notification): bool => $notification->key === EmailTemplateKey::ReservationCreated,
+        );
     }
 
     public function test_category_deep_link_starts_in_category_first_order(): void
@@ -155,6 +157,21 @@ class ReservationWizardTest extends TestCase
 
         $this->assertNull($instance->therapistId);
         $this->assertSame('therapist', $instance->currentStep());
+    }
+
+    public function test_unpublished_therapist_is_offered_in_the_wizard(): void
+    {
+        // Publishing gates the public team page and profile detail only — an
+        // unpublished profile must still be bookable through the wizard.
+        $unpublished = TherapistProfile::factory()->create(['published_at' => null]);
+        $this->service->therapists()->attach($unpublished);
+
+        $component = Livewire::withQueryParams(['sluzba' => $this->service->slug])
+            ->test(ReservationWizard::class);
+
+        $this->assertTrue(
+            $component->instance()->therapists->pluck('id')->contains($unpublished->id),
+        );
     }
 
     public function test_therapist_deep_link_prefills_and_starts_therapist_first(): void

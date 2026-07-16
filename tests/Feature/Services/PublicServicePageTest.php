@@ -66,16 +66,22 @@ class PublicServicePageTest extends TestCase
     public function test_published_custom_page_overrides_default(): void
     {
         $category = ServiceCategory::factory()->create(['slug' => 'fyzioterapie']);
-        $service = $this->publicService($category, ['slug' => 'terapie-panevniho-dna', 'name' => 'Vstupní vyšetření']);
+        $service = $this->publicService($category, [
+            'slug' => 'terapie-panevniho-dna',
+            'name' => 'Vstupní vyšetření',
+            'duration_minutes' => 90,
+        ]);
         Page::factory()->for($service, 'pageable')->create([
             'slug' => 'terapie-panevniho-dna-vlastni-stranka',
             'content' => [$this->brick('hero', ['title' => 'Terapie pánevního dna'])],
         ]);
 
+        // The service name legitimately appears in the breadcrumb trail, so probe
+        // for the default layout by its duration line instead of the name.
         $this->get('/sluzby/fyzioterapie/terapie-panevniho-dna')
             ->assertOk()
             ->assertSee('Terapie pánevního dna')
-            ->assertDontSee('Vstupní vyšetření');
+            ->assertDontSee('90 min');
     }
 
     public function test_hidden_service_with_published_custom_page_is_public(): void

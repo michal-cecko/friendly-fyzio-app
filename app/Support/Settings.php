@@ -156,4 +156,94 @@ class Settings
     {
         return (string) (self::get('payments.qr_message') ?? '');
     }
+
+    /**
+     * Default due window (in days) applied to requested payments (storno fees,
+     * unpaid-visit requests) when they are created.
+     */
+    public static function paymentDueDays(): int
+    {
+        return (int) self::get('payments.due_days', 7);
+    }
+
+    /**
+     * Fee percentage charged when a client no-shows a confirmed visit.
+     */
+    public static function noShowFeePercent(): int
+    {
+        return (int) self::get('payments.no_show_fee_percent', 100);
+    }
+
+    /**
+     * Supplier identity printed on invoices/receipts (frozen into snapshots at issue time).
+     */
+    public static function supplierName(): string
+    {
+        return (string) (self::get('invoices.supplier_name') ?? '');
+    }
+
+    public static function supplierAddress(): string
+    {
+        return (string) (self::get('invoices.supplier_address') ?? '');
+    }
+
+    public static function supplierDic(): string
+    {
+        return (string) (self::get('invoices.supplier_dic') ?? '');
+    }
+
+    public static function supplierRegistration(): string
+    {
+        return (string) (self::get('invoices.supplier_registration') ?? '');
+    }
+
+    /**
+     * Whether the practice invoices as a VAT payer. Off = single gross amounts
+     * with the vat-note line; on = items carry rates and the PDF shows a recap.
+     */
+    public static function vatPayer(): bool
+    {
+        return (bool) self::get('invoices.vat_payer', false);
+    }
+
+    public static function defaultVatRate(): int
+    {
+        return (int) self::get('invoices.default_vat_rate', 21);
+    }
+
+    /**
+     * The "Nejsme plátci DPH." line printed while the VAT-payer mode is off.
+     */
+    public static function vatNote(): string
+    {
+        return (string) (self::get('invoices.vat_note') ?? '');
+    }
+
+    /**
+     * Czech-format bank account number shown next to the IBAN on documents.
+     */
+    public static function bankAccount(): string
+    {
+        return (string) (self::get('invoices.bank_account') ?? '');
+    }
+
+    public static function invoiceDueDays(): int
+    {
+        return (int) self::get('invoices.due_days', 14);
+    }
+
+    public static function invoiceTextBeforeItems(): string
+    {
+        return (string) (self::get('invoices.text_before_items') ?? '');
+    }
+
+    public static function invoiceTextAfterItems(): string
+    {
+        return (string) (self::get('invoices.text_after_items') ?? '');
+    }
+
+    public static function invoiceFooterThankYou(): string
+    {
+        return (string) (self::get('invoices.footer_thank_you') ?? '');
+    }
 }

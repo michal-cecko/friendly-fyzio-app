@@ -86,8 +86,6 @@ class ReservationResourceTest extends TestCase
             'reservation_date' => now()->addDay()->toDateString(),
             'start_time' => '09:00',
             'end_time' => '10:00',
-            'status' => 'confirmed',
-            'payment_status' => 'unpaid',
             'notify_client' => true,
             ...$overrides,
         ];
@@ -120,7 +118,9 @@ class ReservationResourceTest extends TestCase
 
         Livewire::test(ListReservations::class)
             ->filterTable('trashed', true)
-            ->callAction(TestAction::make('restore')->table($reservation));
+            ->callAction(TestAction::make('restoreReservation')->table($reservation), [
+                'notify_client' => false,
+            ]);
 
         $this->assertFalse($reservation->fresh()->trashed());
     }

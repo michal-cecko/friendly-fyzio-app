@@ -6,6 +6,7 @@ use App\Models\Payment;
 use App\Models\Reservation;
 use App\Support\Reservations\ReservationEmailContext;
 use App\Support\Settings;
+use App\Support\TokenTemplate;
 
 /**
  * Resolves the editable QR/payment note (the `payments.qr_message` setting) for a
@@ -42,17 +43,10 @@ class PaymentNote
     }
 
     /**
-     * Replace every {{ token }} with its context value. Plain text (no HTML escaping);
-     * unknown tokens resolve to an empty string.
-     *
      * @param  array<string, string>  $context
      */
     private static function substitute(string $template, array $context): string
     {
-        return preg_replace_callback(
-            '/\{\{\s*(\w+)\s*\}\}/',
-            fn (array $matches): string => $context[$matches[1]] ?? '',
-            $template,
-        ) ?? $template;
+        return TokenTemplate::render($template, $context);
     }
 }
