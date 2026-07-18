@@ -6,6 +6,7 @@ use App\Enums\EmailTemplateKey;
 use App\Enums\ReservationStatus;
 use App\Models\Reservation;
 use App\Notifications\ReservationTemplateNotification;
+use App\Support\ActivityLog\LogActivity;
 use Filament\Actions\BulkAction;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
@@ -51,7 +52,11 @@ class CancelReservationBulkAction extends BulkAction
                     ->default(true),
             ])
             ->action(function (Collection $records, array $data): void {
-                $records->each(function (Reservation $record) use ($data): void {
+                $erased = (bool) ($data['force_delete'] ?? false);
+                $notifyClients = (bool) ($data['notify_client'] ?? false);
+                $affected = 0;
+
+                $records->each(function (Reservation $record) use ($data, $erased, $notifyClients, &$affected): void {
                     if ($record->trashed()) {
                         return;
                     }
@@ -61,14 +66,28 @@ class CancelReservationBulkAction extends BulkAction
                         'cancellation_reason' => $data['cancellation_reason'],
                     ]);
 
-                    if ($data['notify_client'] ?? false) {
+                    if ($notifyClients) {
                         $record->client?->notify(new ReservationTemplateNotification($record, EmailTemplateKey::ReservationCancelled));
                     }
 
-                    if ($data['force_delete'] ?? false) {
+                    if ($erased) {
                         $record->delete();
                     }
+
+                    $affected++;
                 });
+
+                LogActivity::record(
+                    $erased ? 'bulk_deleted' : 'reservation_cancelled',
+                    null,
+                    $erased ? 'Hromadné zrušení a smazání rezervací' : 'Hromadné zrušení rezervací',
+                    [
+                        'count' => $affected,
+                        'reason' => $data['cancellation_reason'],
+                        'notified_client' => $notifyClients,
+                        'erased' => $erased,
+                    ],
+                );
 
                 Notification::make()
                     ->title('Vybrané rezervace byly zrušeny.')

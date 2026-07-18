@@ -19,6 +19,17 @@ class ActivityPresenter
         'updated' => 'Upraveno',
         'deleted' => 'Smazáno',
         'restored' => 'Obnoveno',
+        'email_sent' => 'E-mail odeslán',
+        'reservation_confirmed' => 'Rezervace potvrzena',
+        'reservation_cancelled' => 'Rezervace zrušena',
+        'reservation_edited' => 'Rezervace upravena',
+        'reservation_no_show' => 'Nedostavil se',
+        'reservation_storno_charged' => 'Storno poplatek',
+        'reservation_auto_cancelled' => 'Automaticky zrušeno',
+        'payment_requested' => 'Platba vyžádána',
+        'payment_received' => 'Platba přijata',
+        'invoice_issued' => 'Faktura vystavena',
+        'bulk_deleted' => 'Hromadné smazání',
     ];
 
     /** @var array<string, string> */
@@ -27,6 +38,17 @@ class ActivityPresenter
         'updated' => 'warning',
         'deleted' => 'danger',
         'restored' => 'info',
+        'email_sent' => 'info',
+        'reservation_confirmed' => 'success',
+        'reservation_cancelled' => 'danger',
+        'reservation_edited' => 'warning',
+        'reservation_no_show' => 'warning',
+        'reservation_storno_charged' => 'warning',
+        'reservation_auto_cancelled' => 'danger',
+        'payment_requested' => 'info',
+        'payment_received' => 'success',
+        'invoice_issued' => 'info',
+        'bulk_deleted' => 'danger',
     ];
 
     /**
@@ -157,6 +179,22 @@ class ActivityPresenter
         'payable_id' => 'Předmět platby',
         'parent_id' => 'Nadřazená položka',
         'navigation_id' => 'Navigace',
+        // Semantic-event properties (LogActivity / e-mail listener).
+        'recipients' => 'Příjemci',
+        'subject' => 'Předmět',
+        'notification' => 'Typ zprávy',
+        'body_html' => 'Obsah e-mailu',
+        'notified_client' => 'Zákazník upozorněn',
+        'notified_therapist' => 'Terapeut upozorněn',
+        'reason' => 'Důvod',
+        'template_key' => 'Šablona',
+        'count' => 'Počet záznamů',
+        'ids' => 'Dotčené záznamy',
+        'records' => 'Dotčené záznamy',
+        'source' => 'Zdroj',
+        'erased' => 'Přesunuto do koše',
+        'fee' => 'Poplatek',
+        'due_at' => 'Splatnost',
     ];
 
     /** A human-readable Czech label for a changed attribute key. */
@@ -174,6 +212,16 @@ class ActivityPresenter
     public static function eventLabel(?string $event): string
     {
         return self::EVENT_LABELS[$event] ?? ($event ?? '—');
+    }
+
+    /**
+     * All event keys → labels, for filter option lists.
+     *
+     * @return array<string, string>
+     */
+    public static function eventOptions(): array
+    {
+        return self::EVENT_LABELS;
     }
 
     public static function eventColor(?string $event): string

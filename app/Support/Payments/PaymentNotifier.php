@@ -6,6 +6,7 @@ use App\Contracts\Payable;
 use App\Models\Payment;
 use App\Notifications\PaymentReceivedNotification;
 use App\Notifications\TherapistPaymentReceivedNotification;
+use App\Support\ActivityLog\LogActivity;
 
 /**
  * Explicit payment-received notifications. Deliberately NOT observer-driven:
@@ -16,7 +17,9 @@ final class PaymentNotifier
 {
     public static function paymentReceived(Payment $payment, bool $notifyClient = true): void
     {
-        if ($notifyClient && filled($payment->client?->email)) {
+        $notifiedClient = $notifyClient && filled($payment->client?->email);
+
+        if ($notifiedClient) {
             $payment->client->notify(new PaymentReceivedNotification($payment));
         }
 
@@ -24,8 +27,16 @@ final class PaymentNotifier
             ? $payment->payable->payableTherapist()
             : null;
 
-        if ($therapist !== null && filled($therapist->email)) {
+        $notifiedTherapist = $therapist !== null && filled($therapist->email);
+
+        if ($notifiedTherapist) {
             $therapist->notify(new TherapistPaymentReceivedNotification($payment));
         }
+
+        LogActivity::record('payment_received', $payment, 'Platba přijata', [
+            'amount' => $payment->amount.' Kč',
+            'notified_client' => $notifiedClient,
+            'notified_therapist' => $notifiedTherapist,
+        ]);
     }
 }

@@ -7,6 +7,7 @@ use App\Enums\EmailTemplateKey;
 use App\Enums\ReservationStatus;
 use App\Models\Reservation;
 use App\Notifications\ReservationTemplateNotification;
+use App\Support\ActivityLog\LogActivity;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
@@ -50,9 +51,16 @@ class ConfirmReservationAction extends Action
                     'confirmed_by_id' => auth()->id(),
                 ]);
 
-                if ($data['notify_client'] ?? false) {
+                $notifyClient = ($data['notify_client'] ?? false) && filled($record->client?->email);
+
+                if ($notifyClient) {
                     $record->client?->notify(new ReservationTemplateNotification($record, EmailTemplateKey::ReservationConfirmed));
                 }
+
+                LogActivity::record('reservation_confirmed', $record, 'Rezervace potvrzena', [
+                    'source' => 'Ručně (terapeut)',
+                    'notified_client' => $notifyClient,
+                ]);
 
                 Notification::make()
                     ->title('Rezervace byla potvrzena.')

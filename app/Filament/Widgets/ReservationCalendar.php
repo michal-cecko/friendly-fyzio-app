@@ -23,6 +23,7 @@ use App\Models\User;
 use App\Notifications\ReservationNotification;
 use App\Notifications\ReservationTemplateNotification;
 use App\Notifications\TherapistReservationTemplateNotification;
+use App\Support\ActivityLog\LogActivity;
 use App\Support\Avatar;
 use App\Support\CalendarAvailability;
 use App\Support\Reservations\ReactivateReservation;
@@ -1573,9 +1574,24 @@ class ReservationCalendar extends FullCalendarWidget
                         }),
                 ])
                 ->after(function (FullCalendarWidget $livewire, Model $record, array $data): void {
-                    if ($record instanceof Reservation && ($data['notify_client'] ?? false)) {
-                        $record->client?->notify(new ReservationTemplateNotification($record, EmailTemplateKey::ReservationChanged, $this->reservationChangeSnapshot));
-                        $record->therapist?->user?->notify(new TherapistReservationTemplateNotification($record, EmailTemplateKey::TherapistReservationChanged, $this->reservationChangeSnapshot));
+                    if ($record instanceof Reservation) {
+                        $notify = (bool) ($data['notify_client'] ?? false);
+                        $notifiedClient = $notify && filled($record->client?->email);
+                        $notifiedTherapist = $notify && $record->therapist?->user !== null;
+
+                        if ($notifiedClient) {
+                            $record->client?->notify(new ReservationTemplateNotification($record, EmailTemplateKey::ReservationChanged, $this->reservationChangeSnapshot));
+                        }
+
+                        if ($notifiedTherapist) {
+                            $record->therapist?->user?->notify(new TherapistReservationTemplateNotification($record, EmailTemplateKey::TherapistReservationChanged, $this->reservationChangeSnapshot));
+                        }
+
+                        LogActivity::record('reservation_edited', $record, 'Rezervace upravena', [
+                            'source' => 'Kalendář',
+                            'notified_client' => $notifiedClient,
+                            'notified_therapist' => $notifiedTherapist,
+                        ]);
                     }
 
                     $livewire->refreshRecords();

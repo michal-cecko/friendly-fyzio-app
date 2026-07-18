@@ -7,6 +7,7 @@ use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Models\Reservation;
 use App\Notifications\ReservationTemplateNotification;
+use App\Support\ActivityLog\LogActivity;
 use App\Support\Payments\PaymentEmailTokens;
 use App\Support\Settings;
 use Filament\Actions\Action;
@@ -72,6 +73,12 @@ class RequestPaymentAction extends Action
                     EmailTemplateKey::ReservationUnpaid,
                     PaymentEmailTokens::for($payment),
                 ));
+
+                LogActivity::record('payment_requested', $record, 'Platba vyžádána', [
+                    'amount' => $payment->amount.' Kč',
+                    'due_at' => $payment->due_at?->format('d.m.Y'),
+                    'notified_client' => true,
+                ]);
 
                 Notification::make()
                     ->title('Žádost o platbu byla odeslána.')

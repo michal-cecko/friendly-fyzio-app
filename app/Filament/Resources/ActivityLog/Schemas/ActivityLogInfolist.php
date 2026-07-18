@@ -58,10 +58,21 @@ class ActivityLogInfolist
             Section::make('Změny')
                 ->icon(Heroicon::OutlinedArrowsRightLeft)
                 ->columnSpanFull()
+                ->visible(fn (Activity $record): bool => filled($record->attribute_changes))
                 ->schema([
                     ViewEntry::make('attribute_changes')
                         ->hiddenLabel()
                         ->view('filament.activity.diff'),
+                ]),
+
+            Section::make('Detaily')
+                ->icon(Heroicon::OutlinedDocumentText)
+                ->columnSpanFull()
+                ->visible(fn (Activity $record): bool => filled($record->properties))
+                ->schema([
+                    ViewEntry::make('properties')
+                        ->hiddenLabel()
+                        ->view('filament.activity.properties'),
                 ]),
         ]);
     }
