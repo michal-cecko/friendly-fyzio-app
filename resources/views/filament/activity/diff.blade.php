@@ -1,4 +1,6 @@
 @php
+    use App\Support\ActivityLog\ActivityPresenter;
+
     /** @var \Spatie\Activitylog\Models\Activity $record */
     $record = $getRecord();
     $changes = $record->attribute_changes?->toArray() ?? [];
@@ -43,7 +45,7 @@
                 @foreach ($rows as $key)
                     @php $changed = ($old[$key] ?? null) !== ($new[$key] ?? null); @endphp
                     <tr @class(['bg-warning-50/40 dark:bg-warning-400/5' => $changed])>
-                        <td class="py-2 pe-4 align-top font-medium text-gray-700 dark:text-gray-200">{{ $key }}</td>
+                        <td class="py-2 pe-4 align-top font-medium text-gray-700 dark:text-gray-200">{{ ActivityPresenter::attributeLabel($key) }}</td>
                         <td class="py-2 pe-4 align-top text-gray-500 line-through decoration-danger-400/60 dark:text-gray-400">{{ $format($old[$key] ?? null) }}</td>
                         <td class="py-2 align-top font-medium text-gray-800 dark:text-gray-100">{{ $format($new[$key] ?? null) }}</td>
                     </tr>
@@ -60,7 +62,7 @@
             <tbody class="divide-y divide-gray-100 dark:divide-white/5">
                 @foreach ($rows as $key)
                     <tr>
-                        <td class="w-1/3 py-2 pe-4 align-top font-medium text-gray-700 dark:text-gray-200">{{ $key }}</td>
+                        <td class="w-1/3 py-2 pe-4 align-top font-medium text-gray-700 dark:text-gray-200">{{ ActivityPresenter::attributeLabel($key) }}</td>
                         <td class="py-2 align-top text-gray-800 dark:text-gray-100 break-all">{{ $format($snapshot[$key] ?? null) }}</td>
                     </tr>
                 @endforeach

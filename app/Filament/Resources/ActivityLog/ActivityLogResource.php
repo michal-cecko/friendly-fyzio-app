@@ -1,13 +1,12 @@
 <?php
 
-namespace App\Filament\Clusters\System\Resources\ActivityLog;
+namespace App\Filament\Resources\ActivityLog;
 
 use App\Enums\UserRole;
-use App\Filament\Clusters\System\Resources\ActivityLog\Pages\ListActivityLog;
-use App\Filament\Clusters\System\Resources\ActivityLog\Pages\ViewActivityLog;
-use App\Filament\Clusters\System\Resources\ActivityLog\Schemas\ActivityLogInfolist;
-use App\Filament\Clusters\System\Resources\ActivityLog\Tables\ActivityLogTable;
-use App\Filament\Clusters\System\SystemCluster;
+use App\Filament\Resources\ActivityLog\Pages\ListActivityLog;
+use App\Filament\Resources\ActivityLog\Pages\ViewActivityLog;
+use App\Filament\Resources\ActivityLog\Schemas\ActivityLogInfolist;
+use App\Filament\Resources\ActivityLog\Tables\ActivityLogTable;
 use App\Models\Course;
 use App\Models\Reservation;
 use BackedEnum;
@@ -21,8 +20,6 @@ use Spatie\Activitylog\Models\Activity;
 class ActivityLogResource extends Resource
 {
     protected static ?string $model = Activity::class;
-
-    protected static ?string $cluster = SystemCluster::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClock;
 
