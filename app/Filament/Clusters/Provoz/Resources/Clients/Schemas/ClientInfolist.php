@@ -2,7 +2,7 @@
 
 namespace App\Filament\Clusters\Provoz\Resources\Clients\Schemas;
 
-use App\Filament\Support\Schemas\RecordTimestampsSection;
+use App\Filament\Support\Schemas\RecordTimestamps;
 use App\Filament\Support\Schemas\ResponsiveColumns;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\TextEntry;
@@ -16,12 +16,11 @@ class ClientInfolist
     {
         return $schema
             ->components([
-                RecordTimestampsSection::firstRow(
-                    Section::make('Osobní údaje')
-                        ->icon(Heroicon::OutlinedUser)
-                        ->gridContainer()
-                        ->columns(ResponsiveColumns::DENSE)
-                        ->schema([
+                Section::make('Osobní údaje')
+                    ->icon(Heroicon::OutlinedUser)
+                    ->gridContainer()
+                    ->columns(ResponsiveColumns::DENSE)
+                    ->schema([
                         TextEntry::make('name')->label('Jméno'),
                         TextEntry::make('email')
                             ->label('E-mail')
@@ -37,9 +36,8 @@ class ClientInfolist
                         TextEntry::make('clientProfile.weight')->label('Váha (kg)')->placeholder('—'),
                         TextEntry::make('clientProfile.height')->label('Výška (cm)')->placeholder('—'),
                         IconEntry::make('email_verified_at')->label('Ověřen email?')->boolean(),
-                        TextEntry::make('created_at')->label('Registrován')->dateTime('d.m.Y H:i'),
-                    ])
-                ),
+                        RecordTimestamps::entries(),
+                    ]),
                 Section::make('Anamnéza')
                     ->icon(Heroicon::OutlinedDocumentText)
                     ->schema([

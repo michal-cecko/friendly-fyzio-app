@@ -1,0 +1,98 @@
+<?php
+
+namespace App\Filament\Support\Actions;
+
+use App\Enums\EmailTemplateKey;
+use App\Enums\UserRole;
+use App\Models\CourseSeries;
+use App\Models\OneTimeLesson;
+use App\Models\User;
+use App\Models\Workshop;
+use App\Notifications\EnrollmentTemplateNotification;
+use App\Support\Enrollments\EnrollmentEmailContext;
+use Filament\Actions\Action;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Notifications\Notification;
+use Filament\Support\Icons\Heroicon;
+
+/**
+ * Sends the private-access invite ("předprodej / VIP pozvánka") to selected
+ * customers — one or many. Each recipient gets the offer's shared hidden link
+ * ({@see EmailTemplateKey::OfferInvitation}, `{{ odkaz }}` = presaleUrl), through
+ * which they can sign up even while the offer is Private. Shared header action
+ * across the course-series, one-time-lesson and workshop resources; only shown
+ * for a Private offer.
+ */
+class SendOfferInvitationAction extends Action
+{
+    public static function getDefaultName(): ?string
+    {
+        return 'sendInvitation';
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this
+            ->label('Poslat pozvánku')
+            ->icon(Heroicon::OutlinedEnvelope)
+            ->color('gray')
+            ->visible(fn (CourseSeries|OneTimeLesson|Workshop $record): bool => $record->isPrivate())
+            ->modalHeading('Poslat přednostní pozvánku')
+            ->modalDescription('Vybraní zákazníci dostanou e-mail s přihlašovacím odkazem, přes který se mohou přihlásit, i když termín není veřejně otevřený.')
+            ->modalSubmitActionLabel('Odeslat')
+            ->schema([
+                Select::make('recipient_ids')
+                    ->label('Příjemci')
+                    ->multiple()
+                    ->required()
+                    ->searchable()
+                    ->getSearchResultsUsing(fn (string $search): array => User::query()
+                        ->where('role', UserRole::Customer)
+                        ->whereNull('deactivated_at')
+                        ->where(fn ($query) => $query
+                            ->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%"))
+                        ->orderBy('name')
+                        ->limit(50)
+                        ->pluck('name', 'id')
+                        ->all())
+                    ->getOptionLabelsUsing(fn (array $values): array => User::query()
+                        ->whereKey($values)
+                        ->pluck('name', 'id')
+                        ->all()),
+                Textarea::make('zprava')
+                    ->label('Osobní zpráva (nepovinné)')
+                    ->rows(3),
+            ])
+            ->action(function (CourseSeries|OneTimeLesson|Workshop $record, array $data): void {
+                $url = $record->presaleUrl();
+                $offerTokens = EnrollmentEmailContext::offerTokens($record);
+                $message = (string) ($data['zprava'] ?? '');
+
+                $sent = 0;
+
+                foreach (User::query()->whereKey($data['recipient_ids'])->get() as $recipient) {
+                    if (blank($recipient->email)) {
+                        continue;
+                    }
+
+                    $recipient->notify(new EnrollmentTemplateNotification(EmailTemplateKey::OfferInvitation, [
+                        'jmeno' => EnrollmentEmailContext::firstName($recipient),
+                        ...$offerTokens,
+                        'odkaz' => $url,
+                        'zprava' => $message,
+                    ]));
+
+                    $sent++;
+                }
+
+                $notification = Notification::make()
+                    ->title($sent > 0 ? "Pozvánka odeslána ({$sent})" : 'Nebyl vybrán žádný platný příjemce');
+
+                ($sent > 0 ? $notification->success() : $notification->warning())->send();
+            });
+    }
+}

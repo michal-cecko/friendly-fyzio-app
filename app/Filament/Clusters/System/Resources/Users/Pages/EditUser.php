@@ -3,6 +3,7 @@
 namespace App\Filament\Clusters\System\Resources\Users\Pages;
 
 use App\Filament\Clusters\System\Resources\Users\UserResource;
+use App\Filament\Support\Actions\ActivityLogAction;
 use App\Filament\Support\Actions\ResetPasswordAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ForceDeleteAction;
@@ -22,6 +23,7 @@ class EditUser extends EditRecord
             DeleteAction::make(),
             ForceDeleteAction::make(),
             RestoreAction::make(),
+            ActivityLogAction::make(),
         ];
     }
 }

@@ -22,13 +22,20 @@ class OneTimeLessonController extends Controller
         $lesson->load(['room', 'instructor.therapistProfile'])->loadCount('activeTakers');
         $course->load('category');
 
+        $user = auth()->user();
+        $isCustomer = $user !== null && ! $user->isStaff();
+        $hasToken = filled($lesson->presale_token) && request()->query('predprodej') === $lesson->presale_token;
+        $unlocked = $hasToken || ($isCustomer && $lesson->isPrivate());
+
         $isPreview = ! $lesson->isPublished() || ! $course->isPublished();
 
-        abort_if($isPreview && ! $this->canPreview(), 404);
+        abort_if($isPreview && ! $hasToken && ! $this->canPreview(), 404);
+        abort_if($lesson->isPrivate() && ! $unlocked && ! $this->canPreview(), 404);
 
         return view('lessons.show', [
             'course' => $course,
             'lesson' => $lesson,
+            'presale' => $unlocked,
             'otherLessons' => $course->upcomingOneTimeLessons()
                 ->whereKeyNot($lesson->getKey())
                 ->withCount('activeTakers')

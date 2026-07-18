@@ -2,7 +2,7 @@
 
 namespace App\Filament\Clusters\Workshopy\Resources\WorkshopRegistrations\Schemas;
 
-use App\Filament\Support\Schemas\RecordTimestampsSection;
+use App\Filament\Support\Schemas\RecordTimestamps;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -32,8 +32,8 @@ class WorkshopRegistrationInfolist
                             ->label('Zaplaceno')
                             ->dateTime('d.m.Y H:i')
                             ->placeholder('—'),
+                        RecordTimestamps::entries(),
                     ]),
-                RecordTimestampsSection::make(),
             ]);
     }
 }

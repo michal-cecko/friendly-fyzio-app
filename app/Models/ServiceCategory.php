@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Contracts\HasPublicPage;
 use App\Enums\ServiceType;
+use App\Models\Concerns\Auditable;
 use App\Models\Concerns\InteractsWithCustomPage;
 use App\Models\Concerns\Publishable;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -14,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ServiceCategory extends Model implements HasPublicPage
 {
-    use HasFactory, HasUuids, InteractsWithCustomPage, Publishable;
+    use Auditable, HasFactory, HasUuids, InteractsWithCustomPage, Publishable;
 
     protected $fillable = ['name', 'slug', 'type', 'icon', 'description', 'hero_image', 'published_at'];
 

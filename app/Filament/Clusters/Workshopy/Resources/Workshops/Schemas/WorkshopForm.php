@@ -2,7 +2,9 @@
 
 namespace App\Filament\Clusters\Workshopy\Resources\Workshops\Schemas;
 
+use App\Enums\OfferVisibility;
 use App\Enums\UserRole;
+use App\Filament\Support\Schemas\NotifyParticipantsToggle;
 use App\Filament\Support\Schemas\PresenceBanner;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\DateTimePicker;
@@ -11,6 +13,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\TimePicker;
 use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\ToggleButtons;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Builder;
@@ -97,6 +100,14 @@ class WorkshopForm
                 DateTimePicker::make('published_at')
                     ->label('Publikováno')
                     ->native(false),
+                ToggleButtons::make('visibility')
+                    ->label('Viditelnost')
+                    ->options(OfferVisibility::class)
+                    ->default(OfferVisibility::Public)
+                    ->inline()
+                    ->required()
+                    ->helperText('Soukromý workshop se ve veřejném archivu nezobrazuje — vidí ho jen přihlášení zákazníci a lze na něj pozvat přes přihlašovací odkaz.'),
+                NotifyParticipantsToggle::make(),
             ]);
     }
 }

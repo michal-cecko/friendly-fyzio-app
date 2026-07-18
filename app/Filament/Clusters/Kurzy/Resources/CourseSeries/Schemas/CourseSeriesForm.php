@@ -10,6 +10,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\ToggleButtons;
+use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 
 class CourseSeriesForm
@@ -26,7 +27,8 @@ class CourseSeriesForm
                     ->searchable()
                     ->preload()
                     ->native(false)
-                    ->required(),
+                    ->required()
+                    ->hidden(fn ($livewire): bool => $livewire instanceof RelationManager),
                 TextInput::make('name')
                     ->label('Název')
                     ->required()
@@ -73,7 +75,7 @@ class CourseSeriesForm
                     ->default(CourseSeriesVisibility::Public)
                     ->inline()
                     ->required()
-                    ->helperText('Soukromý běh se na webu nikde nezobrazuje — přihlásit se lze jen přes přihlašovací odkaz.'),
+                    ->helperText('Soukromá série se na webu nikde nezobrazuje — přihlásit se lze jen přes přihlašovací odkaz.'),
             ]);
     }
 }

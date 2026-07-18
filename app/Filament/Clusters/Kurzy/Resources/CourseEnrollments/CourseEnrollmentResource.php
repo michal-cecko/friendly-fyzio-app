@@ -62,7 +62,7 @@ class CourseEnrollmentResource extends Resource
     public static function getGlobalSearchResultTitle(Model $record): string|Htmlable
     {
         /** @var CourseEnrollment $record */
-        return trim(($record->client?->name ?? 'Neznámý klient').' — '.($record->series?->name ?? 'Neznámý běh'));
+        return trim(($record->client?->name ?? 'Neznámý klient').' — '.($record->series?->name ?? 'Neznámá série'));
     }
 
     /**

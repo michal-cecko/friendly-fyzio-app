@@ -3,6 +3,7 @@
 namespace App\Filament\Clusters\Provoz\Resources\Clients\Pages;
 
 use App\Filament\Clusters\Provoz\Resources\Clients\ClientResource;
+use App\Filament\Support\Actions\ActivityLogAction;
 use App\Filament\Support\Actions\ResetPasswordAction;
 use App\Filament\Support\Concerns\RendersRelationManagersAsSections;
 use Filament\Actions\DeleteAction;
@@ -25,6 +26,7 @@ class EditClient extends EditRecord
             DeleteAction::make(),
             ForceDeleteAction::make(),
             RestoreAction::make(),
+            ActivityLogAction::make(),
         ];
     }
 }

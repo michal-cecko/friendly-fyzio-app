@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\CourseSeriesStatus;
 use App\Enums\CourseSeriesVisibility;
 use App\Enums\OfferState;
+use App\Models\Concerns\Auditable;
 use App\Models\Concerns\Publishable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,7 +16,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Course extends Model
 {
-    use HasFactory, HasUuids, Publishable, SoftDeletes;
+    use Auditable, HasFactory, HasUuids, Publishable, SoftDeletes;
 
     protected $fillable = [
         'category_id',
@@ -66,16 +67,6 @@ class Course extends Model
             ->whereDate('lesson_date', '>=', today())
             ->orderBy('lesson_date')
             ->orderBy('start_time');
-    }
-
-    public function substituteRulesAsSource(): HasMany
-    {
-        return $this->hasMany(SubstituteRule::class, 'source_course_id');
-    }
-
-    public function substituteRulesAsTarget(): HasMany
-    {
-        return $this->hasMany(SubstituteRule::class, 'target_course_id');
     }
 
     public function invitations()

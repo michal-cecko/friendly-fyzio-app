@@ -220,6 +220,12 @@ class ClientZoneDemoSeeder extends Seeder
         $series = $this->runningSeries($source);
         $targetSeries = $this->runningSeries($target);
 
+        // Link the two runs so a token minted in $series can be redeemed in $targetSeries.
+        SubstituteRule::query()->firstOrCreate([
+            'source_series_id' => $series->getKey(),
+            'target_series_id' => $targetSeries->getKey(),
+        ]);
+
         $enrollment = CourseEnrollment::create([
             'client_id' => $client->getKey(),
             'series_id' => $series->getKey(),
@@ -287,7 +293,7 @@ class ClientZoneDemoSeeder extends Seeder
 
         // A future run the client can still cancel themselves.
         $upcoming = CourseSeries::query()->firstOrCreate(
-            ['course_id' => $target->getKey(), 'name' => 'Demo běh – jaro'],
+            ['course_id' => $target->getKey(), 'name' => 'Demo série – jaro'],
             [
                 'start_date' => today()->addMonth(),
                 'end_date' => today()->addMonths(4),
@@ -332,7 +338,8 @@ class ClientZoneDemoSeeder extends Seeder
     }
 
     /**
-     * Two published courses linked by a substitute rule, so redeeming a token
+     * Two published courses whose running runs are linked by a substitute rule
+     * (created in {@see courses()} once both séries exist), so redeeming a token
      * has somewhere to go.
      *
      * @return array{0: Course, 1: Course}
@@ -347,11 +354,6 @@ class ClientZoneDemoSeeder extends Seeder
 
         [$source, $target] = [$courses[0], $courses[1]];
 
-        SubstituteRule::query()->firstOrCreate([
-            'source_course_id' => $source->getKey(),
-            'target_course_id' => $target->getKey(),
-        ]);
-
         return [$source, $target];
     }
 
@@ -362,7 +364,7 @@ class ClientZoneDemoSeeder extends Seeder
     protected function runningSeries(Course $course): CourseSeries
     {
         $series = CourseSeries::query()->firstOrCreate(
-            ['course_id' => $course->getKey(), 'name' => 'Demo běh – probíhá'],
+            ['course_id' => $course->getKey(), 'name' => 'Demo série – probíhá'],
             [
                 'start_date' => today()->subWeeks(4),
                 'end_date' => today()->addWeeks(8),

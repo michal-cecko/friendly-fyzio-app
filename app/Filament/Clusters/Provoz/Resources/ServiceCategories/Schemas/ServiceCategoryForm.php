@@ -4,7 +4,7 @@ namespace App\Filament\Clusters\Provoz\Resources\ServiceCategories\Schemas;
 
 use App\Enums\ServiceType;
 use App\Filament\Support\Schemas\PresenceBanner;
-use App\Filament\Support\Schemas\RecordTimestampsSection;
+use App\Filament\Support\Schemas\RecordTimestamps;
 use App\Filament\Support\Schemas\ResponsiveColumns;
 use App\Mason\BrickRegistry;
 use App\Mason\Support\Fields;
@@ -58,6 +58,7 @@ class ServiceCategoryForm
                             ->label('Publikováno')
                             ->helperText('Bez data (nebo budoucí datum) = skryté, viditelné jen pro administrátory.')
                             ->columnSpanFull(),
+                        RecordTimestamps::entries(),
                     ]),
                 Section::make('Veřejná stránka (výchozí)')
                     ->description('Obsah výchozího rozvržení kategorie. Použije se, pokud níže nevyplníte vlastní stránku.')
@@ -84,7 +85,6 @@ class ServiceCategoryForm
                             ->bricks(BrickRegistry::all())
                             ->columnSpanFull(),
                     ]),
-                RecordTimestampsSection::make(),
             ]);
     }
 }

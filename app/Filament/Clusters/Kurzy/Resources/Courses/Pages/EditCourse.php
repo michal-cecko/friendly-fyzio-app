@@ -3,6 +3,7 @@
 namespace App\Filament\Clusters\Kurzy\Resources\Courses\Pages;
 
 use App\Filament\Clusters\Kurzy\Resources\Courses\CourseResource;
+use App\Filament\Support\Actions\ActivityLogAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\RestoreAction;
@@ -20,6 +21,7 @@ class EditCourse extends EditRecord
             DeleteAction::make(),
             ForceDeleteAction::make(),
             RestoreAction::make(),
+            ActivityLogAction::make(),
         ];
     }
 }

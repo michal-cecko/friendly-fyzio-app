@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Enums\OfferVisibility;
 use App\Models\Workshop;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
@@ -44,6 +45,7 @@ class WorkshopArchive extends Component
         $upcoming = Workshop::query()
             ->published()
             ->upcoming()
+            ->when(! $this->includePrivate(), fn (Builder $query) => $query->where('visibility', OfferVisibility::Public))
             ->withCount('activeTakers')
             ->with('room')
             ->when(filled($this->search), fn (Builder $query) => $this->applySearch($query))
@@ -74,10 +76,22 @@ class WorkshopArchive extends Component
         return Workshop::query()
             ->published()
             ->past()
+            ->when(! $this->includePrivate(), fn (Builder $query) => $query->where('visibility', OfferVisibility::Public))
             ->withCount('activeTakers')
             ->orderByDesc('workshop_date')
             ->limit(3)
             ->get();
+    }
+
+    /**
+     * Whether the current viewer may see private/invite-only workshops in the
+     * archive: a logged-in customer (staff preview is handled separately).
+     */
+    protected function includePrivate(): bool
+    {
+        $user = auth()->user();
+
+        return $user !== null && ! $user->isStaff();
     }
 
     protected function applySearch(Builder $query): Builder

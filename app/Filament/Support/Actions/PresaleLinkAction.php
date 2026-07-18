@@ -1,18 +1,20 @@
 <?php
 
-namespace App\Filament\Clusters\Kurzy\Resources\CourseSeries\Actions;
+namespace App\Filament\Support\Actions;
 
 use App\Models\CourseSeries;
+use App\Models\OneTimeLesson;
+use App\Models\Workshop;
 use Filament\Actions\Action;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Support\Icons\Heroicon;
 
 /**
- * Reveals (and mints on first open) the hidden sign-up link of a series. Two
- * uses share one link: pre-sale ("predpredaj pre stálych klientov" — the URL
- * opens registration while the series is still Inactive, before public
- * launch) and invite-only private runs (visibility Soukromý), which never
- * appear on the web and take registrations only through this link.
+ * Reveals (and mints on first open) the hidden sign-up link of a schedulable
+ * offer — course series, one-time lesson or workshop. Whoever holds the link can
+ * sign up even when the offer isn't publicly open: pre-sale for stálí klienti and
+ * invite-only Private runs both go through this one link. Full or ended offers
+ * stay closed even with it. Shared across all three offer resources.
  */
 class PresaleLinkAction extends Action
 {
@@ -30,9 +32,9 @@ class PresaleLinkAction extends Action
             ->icon(Heroicon::OutlinedLink)
             ->color('gray')
             ->modalHeading('Skrytý přihlašovací odkaz')
-            ->modalDescription('Kdo dostane tento odkaz, může se přihlásit, i když běh není veřejně otevřený — hodí se pro předprodej (běh ve stavu Neaktivní) i pro soukromé běhy jen na pozvánku. Plně obsazený nebo ukončený běh zůstává uzavřený i s odkazem.')
+            ->modalDescription('Kdo dostane tento odkaz, může se přihlásit, i když termín není veřejně otevřený — hodí se pro předprodej i pro soukromé termíny jen na pozvánku. Plně obsazený nebo ukončený termín zůstává uzavřený i s odkazem.')
             ->modalIcon(Heroicon::OutlinedLink)
-            ->schema(fn (CourseSeries $record): array => [
+            ->schema(fn (CourseSeries|OneTimeLesson|Workshop $record): array => [
                 TextEntry::make('presale_url')
                     ->label('Odkaz')
                     ->state($record->presaleUrl())

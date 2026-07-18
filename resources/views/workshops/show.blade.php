@@ -161,7 +161,7 @@
                 <h2 class="font-heading text-3xl font-bold text-neutral-900">Přihlášení na workshop</h2>
             </div>
 
-            <livewire:offer-signup-form offer-type="workshop" :offer-id="$workshop->getKey()" />
+            <livewire:offer-signup-form offer-type="workshop" :offer-id="$workshop->getKey()" :presale="$presale" />
         </div>
     </section>
 

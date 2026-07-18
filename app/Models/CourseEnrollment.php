@@ -6,6 +6,7 @@ use App\Contracts\Payable;
 use App\Enums\CourseEnrollmentStatus;
 use App\Enums\PayableType;
 use App\Enums\PaymentStatus;
+use App\Models\Concerns\Auditable;
 use App\Models\Concerns\IsPayable;
 use App\Observers\CourseEnrollmentObserver;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
@@ -18,7 +19,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[ObservedBy(CourseEnrollmentObserver::class)]
 class CourseEnrollment extends Model implements Payable
 {
-    use HasFactory, HasUuids, IsPayable;
+    use Auditable, HasFactory, HasUuids, IsPayable;
+
+    public function logTitle(): string
+    {
+        return trim(($this->client?->name ?? 'Přihláška').' · '.($this->series?->name ?? ''), ' ·');
+    }
 
     protected $fillable = [
         'client_id',

@@ -37,10 +37,12 @@ enum EmailTemplateKey: string
     case WaitlistJoined = 'waitlist_joined';
     case WaitlistSpotAvailable = 'waitlist_spot_available';
     case CourseRegistrationOpened = 'course_registration_opened';
+    case OfferInvitation = 'offer_invitation';
     case EnrollmentCancelledByClient = 'enrollment_cancelled';
     case EnrollmentCancelledByClinic = 'enrollment_cancelled_by_clinic';
     case SubstituteTokenGenerated = 'substitute_token_generated';
     case SubstituteTokenRedeemed = 'substitute_token_redeemed';
+    case LessonScheduleChanged = 'lesson_schedule_changed';
 
     // Account & auth e-mails (client-facing). These replace the framework/Filament
     // default notifications so the copy is editable in the dashboard; the {{ odkaz }}
@@ -60,6 +62,7 @@ enum EmailTemplateKey: string
     case TherapistPaymentReceived = 'therapist_payment_received';
     case TherapistPaymentOverdue = 'therapist_payment_overdue';
     case TherapistEnrollmentCreated = 'therapist_enrollment_created';
+    case TherapistLessonScheduleChanged = 'therapist_lesson_schedule_changed';
 
     public function label(): string
     {
@@ -86,10 +89,12 @@ enum EmailTemplateKey: string
             self::WaitlistJoined => 'Zařazení na čekací listinu',
             self::WaitlistSpotAvailable => 'Uvolněné místo z čekací listiny',
             self::CourseRegistrationOpened => 'Otevření přihlašování na kurz',
+            self::OfferInvitation => 'Pozvánka na soukromý termín (předprodej)',
             self::EnrollmentCancelledByClient => 'Odhlášení klientem (klientská zóna)',
             self::EnrollmentCancelledByClinic => 'Zrušení přihlášky klinikou',
             self::SubstituteTokenGenerated => 'Náhradní vstup vydán (omluvená lekce)',
             self::SubstituteTokenRedeemed => 'Náhradní vstup uplatněn',
+            self::LessonScheduleChanged => 'Změna termínu lekce',
             self::EmailVerification => 'Ověření e-mailu',
             self::PasswordReset => 'Obnovení hesla',
             self::EmailChangeVerification => 'Ověření změny e-mailu',
@@ -103,6 +108,7 @@ enum EmailTemplateKey: string
             self::TherapistPaymentReceived => 'Přijatá platba (terapeut)',
             self::TherapistPaymentOverdue => 'Platba po splatnosti (terapeut)',
             self::TherapistEnrollmentCreated => 'Nová přihláška (lektor)',
+            self::TherapistLessonScheduleChanged => 'Změna termínu lekce (lektor)',
         };
     }
 
@@ -119,7 +125,8 @@ enum EmailTemplateKey: string
             self::TherapistReservationAutoCancelled,
             self::TherapistPaymentReceived,
             self::TherapistPaymentOverdue,
-            self::TherapistEnrollmentCreated => true,
+            self::TherapistEnrollmentCreated,
+            self::TherapistLessonScheduleChanged => true,
             default => false,
         };
     }
@@ -149,10 +156,12 @@ enum EmailTemplateKey: string
             self::WaitlistJoined => 'Jste na čekací listině',
             self::WaitlistSpotAvailable => 'Uvolnilo se místo — dokončete přihlášení',
             self::CourseRegistrationOpened => 'Otevřeli jsme přihlašování na kurz',
+            self::OfferInvitation => 'Máte přednostní pozvánku',
             self::EnrollmentCancelledByClient => 'Vaše odhlášení proběhlo',
             self::EnrollmentCancelledByClinic => 'Vaše přihláška byla zrušena',
             self::SubstituteTokenGenerated => 'Máte náhradní vstup za omluvenou lekci',
             self::SubstituteTokenRedeemed => 'Náhradní lekce je rezervována',
+            self::LessonScheduleChanged => 'Změna termínu lekce',
             self::EmailVerification => 'Ověřte svou e-mailovou adresu',
             self::PasswordReset => 'Obnovení hesla',
             self::EmailChangeVerification => 'Ověřte svou novou e-mailovou adresu',
@@ -166,6 +175,7 @@ enum EmailTemplateKey: string
             self::TherapistPaymentReceived => 'Platba od klienta byla přijata',
             self::TherapistPaymentOverdue => 'Klient má neuhrazenou platbu po splatnosti',
             self::TherapistEnrollmentCreated => 'Nová přihláška od klienta',
+            self::TherapistLessonScheduleChanged => 'Změnil se termín lekce, kterou vedete',
         };
     }
 
@@ -266,9 +276,9 @@ enum EmailTemplateKey: string
             self::CourseEnrollmentReceived => [
                 'jmeno' => 'Jméno klienta',
                 'kurz' => 'Název kurzu',
-                'beh' => 'Název běhu',
-                'obdobi' => 'Období běhu (od – do)',
-                'rozvrh' => 'Nejbližší lekce běhu',
+                'beh' => 'Název série',
+                'obdobi' => 'Období série (od – do)',
+                'rozvrh' => 'Nejbližší lekce série',
                 'rezervace_hodin' => 'Rezervace místa – hodin na zaplacení',
                 'castka' => 'Částka k úhradě',
                 'iban' => 'Číslo účtu (IBAN)',
@@ -326,9 +336,16 @@ enum EmailTemplateKey: string
             self::CourseRegistrationOpened => [
                 'jmeno' => 'Jméno klienta',
                 'kurz' => 'Název kurzu',
-                'beh' => 'Název běhu',
-                'obdobi' => 'Období běhu (od – do)',
+                'beh' => 'Název série',
+                'obdobi' => 'Období série (od – do)',
                 'odkaz' => 'Odkaz na stránku kurzu',
+            ],
+            self::OfferInvitation => [
+                'jmeno' => 'Jméno klienta',
+                'nazev' => 'Název kurzu / lekce / workshopu',
+                'termin' => 'Termín / období',
+                'odkaz' => 'Přihlašovací odkaz (předprodej)',
+                'zprava' => 'Osobní zpráva (nepovinné)',
             ],
             self::EnrollmentCancelledByClient,
             self::EnrollmentCancelledByClinic => [
@@ -348,6 +365,15 @@ enum EmailTemplateKey: string
                 'kurz' => 'Název kurzu s náhradní lekcí',
                 'lekce' => 'Náhradní lekce (datum a čas)',
                 'misto' => 'Místo / adresa',
+            ],
+            self::LessonScheduleChanged => [
+                'jmeno' => 'Jméno klienta',
+                'nazev' => 'Název kurzu / lekce / workshopu',
+                'termin' => 'Nový termín (datum a čas)',
+                'puvodni_termin' => 'Původní termín (datum a čas)',
+                'misto' => 'Nové místo / adresa',
+                'puvodni_misto' => 'Původní místo / adresa',
+                'duvod' => 'Důvod změny (nepovinné)',
             ],
             self::EmailVerification, self::PasswordReset => [
                 'jmeno' => 'Jméno příjemce',
@@ -555,6 +581,13 @@ enum EmailTemplateKey: string
                 'obdobi' => '04. 05. 2026 – 24. 08. 2026',
                 'odkaz' => '#',
             ],
+            self::OfferInvitation => [
+                'jmeno' => 'Jana',
+                'nazev' => 'Hormonální jóga (podzim 2026)',
+                'termin' => '01. 09. 2026 – 20. 10. 2026',
+                'odkaz' => '#',
+                'zprava' => 'Držíme vám místo jako našemu stálému klientovi — přihlaste se prosím do konce srpna.',
+            ],
             self::EnrollmentCancelledByClient => [
                 'jmeno' => 'Jana',
                 'nazev' => 'Hormonální jóga (leden–duben 2026)',
@@ -572,6 +605,15 @@ enum EmailTemplateKey: string
                 'kurz' => 'Somatická jóga',
                 'lekce' => '26. 01. 2026 · 17:00',
                 'misto' => 'Zednická 1109/2, Ostrava',
+            ],
+            self::LessonScheduleChanged => [
+                'jmeno' => 'Jana',
+                'nazev' => 'Hormonální jóga (leden–duben 2026)',
+                'termin' => '14. 5. 2026, 17:00',
+                'puvodni_termin' => '12. 5. 2026, 18:00',
+                'misto' => 'Zednická 1109/2, Ostrava',
+                'puvodni_misto' => 'Lípová 12, Praha 5',
+                'duvod' => 'Lektor se účastní odborné konference.',
             ],
             self::EmailVerification, self::PasswordReset => [
                 'jmeno' => 'Jana',
@@ -660,6 +702,15 @@ enum EmailTemplateKey: string
                 'poznamka' => 'Poznámka klienta',
                 'odkaz' => 'Odkaz na přihlášku v administraci',
             ],
+            self::TherapistLessonScheduleChanged => [
+                'jmeno' => 'Jméno lektora',
+                'nazev' => 'Název kurzu / lekce / workshopu',
+                'termin' => 'Nový termín (datum a čas)',
+                'puvodni_termin' => 'Původní termín (datum a čas)',
+                'misto' => 'Nové místo / adresa',
+                'puvodni_misto' => 'Původní místo / adresa',
+                'duvod' => 'Důvod změny (nepovinné)',
+            ],
             default => $base,
         };
     }
@@ -728,6 +779,15 @@ enum EmailTemplateKey: string
                 'email_klienta' => 'jana.kovacova@email.cz',
                 'poznamka' => 'Prosím o místo u okna.',
                 'odkaz' => '#',
+            ],
+            self::TherapistLessonScheduleChanged => [
+                'jmeno' => 'Petra',
+                'nazev' => 'Hormonální jóga (leden–duben 2026)',
+                'termin' => '14. 5. 2026, 17:00',
+                'puvodni_termin' => '12. 5. 2026, 18:00',
+                'misto' => 'Zednická 1109/2, Ostrava',
+                'puvodni_misto' => 'Lípová 12, Praha 5',
+                'duvod' => 'Lektor se účastní odborné konference.',
             ],
             default => $base,
         };

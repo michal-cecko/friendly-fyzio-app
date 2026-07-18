@@ -346,7 +346,7 @@ class DemoSeeder extends Seeder
                 $seriesStart = Carbon::now()->startOfWeek()->subWeeks(fake()->numberBetween(0, 2));
 
                 $series = CourseSeries::factory()->for($course)->create([
-                    'name' => $name.' – běh '.$seriesIndex,
+                    'name' => $name.' – série '.$seriesIndex,
                     'start_date' => $seriesStart->toDateString(),
                     'end_date' => $seriesStart->copy()->addWeeks(8)->toDateString(),
                     'status' => CourseSeriesStatus::Open,

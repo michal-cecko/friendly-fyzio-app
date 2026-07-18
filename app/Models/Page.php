@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Contracts\HasPermalink;
+use App\Models\Concerns\Auditable;
 use App\Models\Concerns\Publishable;
 use App\Observers\PageObserver;
 use Database\Factories\PageFactory;
@@ -19,7 +20,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Page extends Model implements HasPermalink
 {
     /** @use HasFactory<PageFactory> */
-    use HasFactory, HasUuids, Publishable, SoftDeletes;
+    use Auditable, HasFactory, HasUuids, Publishable, SoftDeletes;
 
     protected $fillable = [
         'slug',

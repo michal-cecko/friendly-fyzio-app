@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\EmailTemplateKey;
 use App\Enums\PaymentStatus;
 use App\Enums\ReservationStatus;
+use App\Filament\Clusters\Provoz\Resources\Reservations\Pages\EditReservation;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Pages\ListReservations;
 use App\Filament\Widgets\ReservationCalendar;
 use App\Models\Building;
@@ -15,6 +16,7 @@ use App\Models\TherapistProfile;
 use App\Models\User;
 use App\Notifications\ReservationNotification;
 use App\Notifications\ReservationTemplateNotification;
+use App\Notifications\TherapistReservationTemplateNotification;
 use Database\Seeders\EmailTemplateSeeder;
 use Database\Seeders\SettingsSeeder;
 use Filament\Actions\Testing\TestAction;
@@ -98,6 +100,67 @@ class ReservationResourceTest extends TestCase
             ->assertSuccessful();
     }
 
+    public function test_edit_page_saves_changes(): void
+    {
+        $deps = $this->dependencies();
+        $this->actingAs(User::factory()->admin()->create());
+
+        $reservation = $this->makeReservation($deps, ['start_time' => '09:00:00', 'end_time' => '10:00:00']);
+
+        Livewire::test(EditReservation::class, ['record' => $reservation->getKey()])
+            ->fillForm(['end_time' => '11:00', 'notify_client' => false])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $this->assertSame('11:00', substr((string) $reservation->fresh()->end_time, 0, 5));
+    }
+
+    public function test_edit_with_notify_emails_client_and_therapist_with_original_values(): void
+    {
+        Notification::fake();
+
+        $deps = $this->dependencies();
+        $this->actingAs(User::factory()->admin()->create());
+
+        $reservation = $this->makeReservation($deps);
+        $originalServiceName = $deps['service']->name;
+        $newService = Service::factory()->create();
+
+        Livewire::test(EditReservation::class, ['record' => $reservation->getKey()])
+            ->fillForm(['service_id' => $newService->getKey(), 'notify_client' => true])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        Notification::assertSentTo(
+            $deps['client'],
+            ReservationTemplateNotification::class,
+            fn (ReservationTemplateNotification $notification): bool => $notification->key === EmailTemplateKey::ReservationChanged
+                && ($notification->extraTokens['puvodni_sluzba'] ?? null) === $originalServiceName,
+        );
+        Notification::assertSentTo(
+            $deps['therapist']->user,
+            TherapistReservationTemplateNotification::class,
+            fn (TherapistReservationTemplateNotification $notification): bool => $notification->key === EmailTemplateKey::TherapistReservationChanged,
+        );
+    }
+
+    public function test_edit_without_notify_sends_nothing(): void
+    {
+        Notification::fake();
+
+        $deps = $this->dependencies();
+        $this->actingAs(User::factory()->admin()->create());
+
+        $reservation = $this->makeReservation($deps);
+
+        Livewire::test(EditReservation::class, ['record' => $reservation->getKey()])
+            ->fillForm(['end_time' => '12:00', 'notify_client' => false])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        Notification::assertNothingSent();
+    }
+
     public function test_admin_can_view_reservation_detail(): void
     {
         $deps = $this->dependencies();
@@ -132,6 +195,31 @@ class ReservationResourceTest extends TestCase
             ->filterTable('doctor_note_pending', true)
             ->assertCanSeeTableRecords([$awaiting])
             ->assertCanNotSeeTableRecords([$plain]);
+    }
+
+    public function test_conflict_banner_is_shown_only_when_the_reservation_clashes(): void
+    {
+        $deps = $this->dependencies();
+        $this->actingAs(User::factory()->admin()->create());
+
+        // Two reservations sharing the room/therapist with overlapping times.
+        $first = $this->makeReservation($deps, ['start_time' => '09:00:00', 'end_time' => '10:00:00']);
+        $this->makeReservation($deps, ['start_time' => '09:30:00', 'end_time' => '10:30:00']);
+
+        $this->get("/admin/provoz/reservations/{$first->getKey()}")
+            ->assertSuccessful()
+            ->assertSee('Konflikt rezervací');
+
+        // A lone reservation on another day has nothing to clash with.
+        $lone = $this->makeReservation($deps, [
+            'reservation_date' => now()->addDays(5)->toDateString(),
+            'start_time' => '14:00:00',
+            'end_time' => '15:00:00',
+        ]);
+
+        $this->get("/admin/provoz/reservations/{$lone->getKey()}")
+            ->assertSuccessful()
+            ->assertDontSee('Konflikt rezervací');
     }
 
     public function test_admin_can_restore_a_trashed_reservation_from_the_table(): void

@@ -95,7 +95,7 @@
                     @if($expandedEnrollmentId === $enrollment->id)
                         <div class="border-t border-line bg-surface-alt px-5 py-4">
                             @if($lessonRows === [])
-                                <p class="text-sm text-neutral-500">Tento běh už nemá naplánované další lekce.</p>
+                                <p class="text-sm text-neutral-500">Tato série už nemá naplánované další lekce.</p>
                             @else
                                 <div class="flex flex-col gap-2">
                                     @foreach($lessonRows as $row)

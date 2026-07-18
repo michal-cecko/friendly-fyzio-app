@@ -4,7 +4,10 @@ namespace App\Models;
 
 use App\Enums\BookingStatus;
 use App\Enums\OfferState;
+use App\Enums\OfferVisibility;
+use App\Models\Concerns\Auditable;
 use App\Models\Concerns\HasCapacity;
+use App\Models\Concerns\HasPresaleAccess;
 use App\Models\Concerns\Publishable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -17,11 +20,13 @@ use Illuminate\Support\Carbon;
 
 class Workshop extends Model
 {
-    use HasCapacity, HasFactory, HasUuids, Publishable, SoftDeletes;
+    use Auditable, HasCapacity, HasFactory, HasPresaleAccess, HasUuids, Publishable, SoftDeletes;
 
     protected $fillable = [
         'instructor_id',
         'room_id',
+        'visibility',
+        'presale_token',
         'name',
         'invoice_title',
         'slug',
@@ -40,6 +45,7 @@ class Workshop extends Model
     {
         return [
             'workshop_date' => 'date',
+            'visibility' => OfferVisibility::class,
             'capacity' => 'integer',
             'auto_promote_waitlist' => 'boolean',
             'price' => 'integer',
@@ -117,6 +123,7 @@ class Workshop extends Model
     {
         return match (true) {
             ! $this->isPublished() => OfferState::Preparing,
+            $this->isPrivate() => OfferState::Preparing,
             $this->isPast() => OfferState::Inactive,
             $this->isFull() => OfferState::Full,
             default => OfferState::Open,

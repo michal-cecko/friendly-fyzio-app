@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\BannerType;
+use App\Models\Concerns\Auditable;
 use Database\Factories\BannerFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Banner extends Model
 {
     /** @use HasFactory<BannerFactory> */
-    use HasFactory, HasUuids, SoftDeletes;
+    use Auditable, HasFactory, HasUuids, SoftDeletes;
 
     protected $fillable = [
         'name',

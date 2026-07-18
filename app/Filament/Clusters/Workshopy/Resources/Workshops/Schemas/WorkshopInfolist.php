@@ -2,7 +2,7 @@
 
 namespace App\Filament\Clusters\Workshopy\Resources\Workshops\Schemas;
 
-use App\Filament\Support\Schemas\RecordTimestampsSection;
+use App\Filament\Support\Schemas\RecordTimestamps;
 use App\Models\Workshop;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\TextEntry;
@@ -56,6 +56,7 @@ class WorkshopInfolist
                             ->label('Publikováno')
                             ->dateTime('d.m.Y H:i')
                             ->placeholder('—'),
+                        RecordTimestamps::entries(),
                     ]),
                 Section::make('Obsazenost')
                     ->columns(3)
@@ -70,7 +71,6 @@ class WorkshopInfolist
                             ->label('Čekací listina')
                             ->state(fn (Workshop $record): int => $record->waitlistEntries()->whereNull('notified_at')->count()),
                     ]),
-                RecordTimestampsSection::make(),
             ]);
     }
 }

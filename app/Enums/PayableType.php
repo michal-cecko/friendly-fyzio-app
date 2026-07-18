@@ -82,9 +82,9 @@ enum PayableType: string
                 'klient' => 'Jméno klienta',
             ],
             self::CourseEnrollment => [
-                'kurz' => 'Název kurzu (Název pro fakturaci běhu, jinak název kurzu)',
-                'beh' => 'Název běhu kurzu',
-                'obdobi' => 'Období běhu (od – do)',
+                'kurz' => 'Název kurzu (Název pro fakturaci série, jinak název kurzu)',
+                'beh' => 'Název série kurzu',
+                'obdobi' => 'Období série (od – do)',
                 'klient' => 'Jméno klienta',
             ],
             self::WorkshopRegistration => [

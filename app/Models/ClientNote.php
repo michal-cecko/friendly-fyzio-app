@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use App\Observers\ClientNoteObserver;
 use Database\Factories\ClientNoteFactory;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
@@ -14,7 +15,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class ClientNote extends Model
 {
     /** @use HasFactory<ClientNoteFactory> */
-    use HasFactory, HasUuids;
+    use Auditable, HasFactory, HasUuids;
+
+    public function logTitle(): string
+    {
+        return 'Poznámka'.($this->client ? ' · '.$this->client->name : '');
+    }
 
     protected $fillable = [
         'client_id',

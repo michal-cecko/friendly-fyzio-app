@@ -2,7 +2,7 @@
 
 namespace App\Filament\Clusters\Provoz\Resources\Services\Schemas;
 
-use App\Filament\Support\Schemas\RecordTimestampsSection;
+use App\Filament\Support\Schemas\RecordTimestamps;
 use App\Filament\Support\Schemas\ResponsiveColumns;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Grid;
@@ -16,11 +16,10 @@ class ServiceInfolist
     {
         return $schema
             ->components([
-                RecordTimestampsSection::firstRow(
-                    Section::make('Základní údaje')
-                        ->icon(Heroicon::OutlinedSparkles)
-                        ->columns(['default' => 1, 'lg' => 12])
-                        ->schema([
+                Section::make('Základní údaje')
+                    ->icon(Heroicon::OutlinedSparkles)
+                    ->columns(['default' => 1, 'lg' => 12])
+                    ->schema([
                         TextEntry::make('name')
                             ->label('Název')
                             ->columnSpan(['default' => 1, 'lg' => 7]),
@@ -33,8 +32,8 @@ class ServiceInfolist
                             ->badge()
                             ->placeholder('—')
                             ->columnSpanFull(),
-                    ])
-                ),
+                        RecordTimestamps::entries(),
+                    ]),
                 Grid::make()
                     ->columnSpanFull()
                     ->gridContainer()
@@ -44,31 +43,31 @@ class ServiceInfolist
                             ->icon(Heroicon::OutlinedBanknotes)
                             ->gridContainer()
                             ->columns(ResponsiveColumns::DENSE)
-                    ->schema([
-                        TextEntry::make('duration_minutes')->label('Délka')->suffix(' min'),
-                        TextEntry::make('break_minutes')->label('Pauza')->suffix(' min'),
-                        TextEntry::make('price')->label('Cena')->suffix(' Kč'),
-                    ]),
-                Section::make('Viditelnost a publikování')
-                    ->icon(Heroicon::OutlinedEye)
-                    ->gridContainer()
-                    ->columns(ResponsiveColumns::PAIR)
-                    ->schema([
-                        TextEntry::make('visibility')->label('Viditelnost')->badge(),
-                        TextEntry::make('published_at')->label('Publikováno')->dateTime()->placeholder('—'),
-                    ]),
-                Section::make('Storno podmínky')
-                    ->icon(Heroicon::OutlinedClock)
-                    ->gridContainer()
-                    ->columns(ResponsiveColumns::PAIR)
-                    ->schema([
-                        TextEntry::make('cancellationRule.cancel_before_hours')
-                            ->label('Zrušit nejpozději (hodin předem)')
-                            ->placeholder('—'),
-                        TextEntry::make('cancellationRule.auto_cancel_after_days')
-                            ->label('Automaticky zrušit po (dnech)')
-                            ->placeholder('—'),
-                    ]),
+                            ->schema([
+                                TextEntry::make('duration_minutes')->label('Délka')->suffix(' min'),
+                                TextEntry::make('break_minutes')->label('Pauza')->suffix(' min'),
+                                TextEntry::make('price')->label('Cena')->suffix(' Kč'),
+                            ]),
+                        Section::make('Viditelnost a publikování')
+                            ->icon(Heroicon::OutlinedEye)
+                            ->gridContainer()
+                            ->columns(ResponsiveColumns::PAIR)
+                            ->schema([
+                                TextEntry::make('visibility')->label('Viditelnost')->badge(),
+                                TextEntry::make('published_at')->label('Publikováno')->dateTime()->placeholder('—'),
+                            ]),
+                        Section::make('Storno podmínky')
+                            ->icon(Heroicon::OutlinedClock)
+                            ->gridContainer()
+                            ->columns(ResponsiveColumns::PAIR)
+                            ->schema([
+                                TextEntry::make('cancellationRule.cancel_before_hours')
+                                    ->label('Zrušit nejpozději (hodin předem)')
+                                    ->placeholder('—'),
+                                TextEntry::make('cancellationRule.auto_cancel_after_days')
+                                    ->label('Automaticky zrušit po (dnech)')
+                                    ->placeholder('—'),
+                            ]),
                         Section::make('Místnosti a terapeuti')
                             ->icon(Heroicon::OutlinedBuildingOffice)
                             ->gridContainer()

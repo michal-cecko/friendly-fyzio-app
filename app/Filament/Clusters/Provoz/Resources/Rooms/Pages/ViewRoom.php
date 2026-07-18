@@ -3,6 +3,7 @@
 namespace App\Filament\Clusters\Provoz\Resources\Rooms\Pages;
 
 use App\Filament\Clusters\Provoz\Resources\Rooms\RoomResource;
+use App\Filament\Support\Actions\ActivityLogAction;
 use App\Filament\Widgets\ReservationCalendar;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
@@ -15,6 +16,7 @@ class ViewRoom extends ViewRecord
     {
         return [
             EditAction::make(),
+            ActivityLogAction::make(),
         ];
     }
 

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\EmailTemplateKey;
+use App\Models\Concerns\Auditable;
 use Database\Factories\EmailTemplateFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -16,7 +17,7 @@ use Illuminate\Database\Eloquent\Model;
 class EmailTemplate extends Model
 {
     /** @use HasFactory<EmailTemplateFactory> */
-    use HasFactory, HasUuids;
+    use Auditable, HasFactory, HasUuids;
 
     protected $fillable = [
         'key',

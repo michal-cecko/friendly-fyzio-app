@@ -235,7 +235,7 @@ class SettingsSeeder extends Seeder
 
         foreach ([
             ['enrollments.hold_hours', '48', 'Rezervace místa (hodin)', 'Jak dlouho drží nezaplacená přihláška místo, než je automaticky zrušena a nabídnuta náhradníkům.', 'hodin', 0],
-            ['enrollments.course_cancel_before_days', '7', 'Odhlášení z kurzu (dní předem)', 'Do kolika dní před začátkem běhu se klient může sám odhlásit v klientské zóně.', 'dní', 1],
+            ['enrollments.course_cancel_before_days', '7', 'Odhlášení z kurzu (dní předem)', 'Do kolika dní před začátkem série se klient může sám odhlásit v klientské zóně.', 'dní', 1],
             ['enrollments.lesson_cancel_before_hours', '24', 'Odhlášení z lekce (hodin předem)', 'Do kolika hodin před jednorázovou lekcí se klient může sám odhlásit.', 'hodin', 2],
             ['enrollments.workshop_cancel_before_days', '7', 'Odhlášení z workshopu (dní předem)', 'Do kolika dní před workshopem se klient může sám odhlásit.', 'dní', 3],
             ['substitutes.token_validity_days', '30', 'Platnost náhradního vstupu (dní)', 'Jak dlouho po včasné omluvě z lekce platí náhradní vstup.', 'dní', 4],

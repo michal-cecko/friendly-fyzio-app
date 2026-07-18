@@ -2,15 +2,22 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 class CourseLesson extends Model
 {
-    use HasFactory, HasUuids;
+    use Auditable, HasFactory, HasUuids;
+
+    public function logTitle(): string
+    {
+        return trim(($this->series?->course?->name ?? $this->series?->name ?? 'Lekce').' · '.$this->lesson_date?->format('j. n. Y'), ' ·');
+    }
 
     protected $fillable = [
         'series_id',
@@ -56,5 +63,15 @@ class CourseLesson extends Model
     public function substituteTokensUsedHere(): HasMany
     {
         return $this->hasMany(SubstituteToken::class, 'used_for_lesson_id');
+    }
+
+    public function startsAt(): Carbon
+    {
+        return Carbon::parse($this->lesson_date->format('Y-m-d').' '.$this->start_time);
+    }
+
+    public function endsAt(): Carbon
+    {
+        return Carbon::parse($this->lesson_date->format('Y-m-d').' '.$this->end_time);
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\NavigationLocation;
+use App\Models\Concerns\Auditable;
 use Database\Factories\NavigationFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,7 +13,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Navigation extends Model
 {
     /** @use HasFactory<NavigationFactory> */
-    use HasFactory, HasUuids;
+    use Auditable, HasFactory, HasUuids;
+
+    public function logTitle(): string
+    {
+        return 'Navigace · '.($this->location?->getLabel() ?? '');
+    }
 
     protected $fillable = ['location'];
 

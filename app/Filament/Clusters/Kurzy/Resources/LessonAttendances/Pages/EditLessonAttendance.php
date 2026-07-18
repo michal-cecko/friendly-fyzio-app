@@ -3,6 +3,7 @@
 namespace App\Filament\Clusters\Kurzy\Resources\LessonAttendances\Pages;
 
 use App\Filament\Clusters\Kurzy\Resources\LessonAttendances\LessonAttendanceResource;
+use App\Filament\Support\Actions\ActivityLogAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ViewAction;
 use Filament\Resources\Pages\EditRecord;
@@ -16,6 +17,7 @@ class EditLessonAttendance extends EditRecord
         return [
             ViewAction::make(),
             DeleteAction::make(),
+            ActivityLogAction::make(),
         ];
     }
 }

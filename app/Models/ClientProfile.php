@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Database\Factories\ClientProfileFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -11,7 +12,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class ClientProfile extends Model
 {
     /** @use HasFactory<ClientProfileFactory> */
-    use HasFactory, HasUuids;
+    use Auditable, HasFactory, HasUuids;
+
+    public function logTitle(): string
+    {
+        return 'Profil klienta'.($this->user ? ' · '.$this->user->name : '');
+    }
 
     protected $fillable = [
         'user_id',

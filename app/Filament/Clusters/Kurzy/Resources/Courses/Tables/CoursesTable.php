@@ -35,7 +35,7 @@ class CoursesTable
                     ->label('Lektor')
                     ->toggleable(),
                 TextColumn::make('series_count')
-                    ->label('Běhů')
+                    ->label('Sérií')
                     ->counts('series'),
                 TextColumn::make('published_at')
                     ->label('Publikováno')

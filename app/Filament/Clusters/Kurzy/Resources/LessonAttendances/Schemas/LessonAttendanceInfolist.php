@@ -2,7 +2,7 @@
 
 namespace App\Filament\Clusters\Kurzy\Resources\LessonAttendances\Schemas;
 
-use App\Filament\Support\Schemas\RecordTimestampsSection;
+use App\Filament\Support\Schemas\RecordTimestamps;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
@@ -37,8 +37,8 @@ class LessonAttendanceInfolist
                         IconEntry::make('token_generated')
                             ->label('Token vygenerován')
                             ->boolean(),
+                        RecordTimestamps::entries(),
                     ]),
-                RecordTimestampsSection::make(),
             ]);
     }
 }

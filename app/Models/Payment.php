@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Contracts\Payable;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
+use App\Models\Concerns\Auditable;
 use App\Observers\PaymentObserver;
 use App\Support\Invoices\PayableTitle;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
@@ -18,7 +19,12 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 #[ObservedBy(PaymentObserver::class)]
 class Payment extends Model
 {
-    use HasFactory, HasUuids;
+    use Auditable, HasFactory, HasUuids;
+
+    public function logTitle(): string
+    {
+        return 'Platba č. '.$this->number.($this->payable_label ? ' · '.$this->payable_label : '');
+    }
 
     protected $fillable = [
         'client_id',

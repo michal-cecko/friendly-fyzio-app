@@ -2,7 +2,7 @@
 
 namespace App\Filament\Resources\ContactInquiries\Schemas;
 
-use App\Filament\Support\Schemas\RecordTimestampsSection;
+use App\Filament\Support\Schemas\RecordTimestamps;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -36,8 +36,8 @@ class ContactInquiryInfolist
                             ->hiddenLabel()
                             ->prose()
                             ->columnSpanFull(),
+                        RecordTimestamps::entries(),
                     ]),
-                RecordTimestampsSection::make(),
             ]);
     }
 }

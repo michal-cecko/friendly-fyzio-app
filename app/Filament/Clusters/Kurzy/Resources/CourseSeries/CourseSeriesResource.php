@@ -7,6 +7,8 @@ use App\Filament\Clusters\Kurzy\Resources\CourseSeries\Pages\CreateCourseSeries;
 use App\Filament\Clusters\Kurzy\Resources\CourseSeries\Pages\EditCourseSeries;
 use App\Filament\Clusters\Kurzy\Resources\CourseSeries\Pages\ListCourseSeries;
 use App\Filament\Clusters\Kurzy\Resources\CourseSeries\Pages\ViewCourseSeries;
+use App\Filament\Clusters\Kurzy\Resources\CourseSeries\RelationManagers\LessonsRelationManager;
+use App\Filament\Clusters\Kurzy\Resources\CourseSeries\RelationManagers\SubstituteRulesRelationManager;
 use App\Filament\Clusters\Kurzy\Resources\CourseSeries\Schemas\CourseSeriesForm;
 use App\Filament\Clusters\Kurzy\Resources\CourseSeries\Schemas\CourseSeriesInfolist;
 use App\Filament\Clusters\Kurzy\Resources\CourseSeries\Tables\CourseSeriesTable;
@@ -31,21 +33,23 @@ class CourseSeriesResource extends Resource
 
     protected static ?int $navigationSort = 3;
 
+    protected static bool $shouldRegisterNavigation = false;
+
     protected static ?string $recordTitleAttribute = 'name';
 
     public static function getModelLabel(): string
     {
-        return 'běh kurzu';
+        return 'série kurzu';
     }
 
     public static function getPluralModelLabel(): string
     {
-        return 'běhy kurzů';
+        return 'série kurzů';
     }
 
     public static function getNavigationLabel(): string
     {
-        return 'Běhy kurzů';
+        return 'Série kurzů';
     }
 
     /**
@@ -92,8 +96,10 @@ class CourseSeriesResource extends Resource
     public static function getRelations(): array
     {
         return [
+            LessonsRelationManager::class,
             CourseSeriesEnrollmentsRelationManager::class,
             WaitlistEntriesRelationManager::class,
+            SubstituteRulesRelationManager::class,
         ];
     }
 
