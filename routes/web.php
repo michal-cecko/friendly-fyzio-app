@@ -1,15 +1,26 @@
 <?php
 
+use App\Http\Controllers\Auth\VerifyEmailController;
+use App\Http\Controllers\CourseController;
 use App\Http\Controllers\InstagramOAuthController;
 use App\Http\Controllers\NewsletterController;
+use App\Http\Controllers\OneTimeLessonController;
 use App\Http\Controllers\PageController;
+use App\Http\Controllers\Pdf\CustomerInvoiceDownloadController;
 use App\Http\Controllers\Pdf\InvoiceExportDownloadController;
 use App\Http\Controllers\Pdf\InvoicePreviewController;
 use App\Http\Controllers\Pdf\ReceiptPreviewController;
 use App\Http\Controllers\ReservationManageController;
 use App\Http\Controllers\ServiceCategoryController;
 use App\Http\Controllers\ServiceController;
+use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\TherapistController;
+use App\Http\Controllers\WorkshopController;
+use App\Http\Middleware\EnsureZoneCustomer;
+use App\Models\Reservation;
+use App\Support\Seo\LegacyRedirects;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 // Passkey (WebAuthn) authentication endpoints used by the Filament login page.
@@ -47,8 +58,19 @@ Route::get('/sluzby/{category:slug}/{service:slug}', [ServiceController::class, 
 Route::get('/o-nas/{therapist:slug}', [TherapistController::class, 'show'])
     ->name('therapist.show');
 
+// Public course, one-time lesson and workshop detail pages. The archives at
+// /kurzy and /workshopy are CMS pages (served by the catch-all); these deeper
+// paths have two+ segments, so they never collide with it. A course's hidden
+// pre-sale link (?predprodej=token) unlocks an otherwise closed course page.
+Route::get('/kurzy/{course:slug}', [CourseController::class, 'show'])
+    ->name('course.show');
+Route::get('/kurzy/{course:slug}/lekce/{lesson}', [OneTimeLessonController::class, 'show'])
+    ->name('lesson.show');
+Route::get('/workshopy/{workshop:slug}', [WorkshopController::class, 'show'])
+    ->name('workshop.show');
+
 // Public reservation wizard. One unified component; deep-link via query params
-// (?sluzba= service slug, ?terapeut= therapist id, ?kategorie= category slug) to start
+// (?sluzba= service slug, ?terapeut= therapist slug, ?kategorie= category slug) to start
 // with a service or therapist prefilled. State is query-string bound throughout.
 Route::get('/rezervace', fn () => view('reservation.index'))->name('reservation.wizard');
 
@@ -68,8 +90,61 @@ Route::post('/rezervace/spravovat/{reservation}', [ReservationManageController::
 Route::get('/recenze/{token}', fn (string $token) => view('reviews.form', ['token' => $token]))
     ->name('reviews.form');
 
-// Public login (web guard). Also the wizard's login fallback / forgotten-password entry.
+// Public auth (web guard): login, self-service registration, password reset and
+// e-mail verification — the whole customer auth surface (staff use /admin/login).
+// Route names matter: `verified` middleware and the reset-link notification build
+// URLs from verification.notice / verification.verify / password.reset.
 Route::get('/prihlaseni', fn () => view('auth.login'))->name('public.login');
+Route::get('/registrace', fn () => view('auth.register'))->name('public.register');
+Route::get('/prihlaseni/zapomenute-heslo', fn () => view('auth.forgot-password'))->name('password.request');
+Route::get('/prihlaseni/obnova-hesla/{token}', fn (string $token) => view('auth.reset-password', ['token' => $token]))->name('password.reset');
+Route::get('/overeni-emailu', fn () => view('auth.verify-email'))
+    ->middleware('auth')
+    ->name('verification.notice');
+Route::get('/overeni-emailu/{id}/{hash}', VerifyEmailController::class)
+    ->middleware(['signed', 'throttle:6,1'])
+    ->name('verification.verify');
+Route::post('/odhlaseni', function (Request $request) {
+    Auth::logout();
+    $request->session()->invalidate();
+    $request->session()->regenerateToken();
+
+    return redirect()->to('/');
+})->name('logout');
+
+// The client zone used to live in a Filament panel at /klientska-zona; keep old
+// links (delivered e-mails, bookmarks) working.
+Route::redirect('/klientska-zona', '/muj-ucet', 301);
+Route::get('/klientska-zona/{any}', fn () => redirect('/muj-ucet', 301))->where('any', '.*');
+
+// Klientská zóna — the authenticated customer area ("Můj účet"). Verified,
+// non-deactivated customers only; staff are bounced to /admin. Every page is a
+// Livewire component inside the shared zone layout; ownership checks live in
+// the components (foreign records 404).
+Route::middleware(['auth', 'verified', EnsureZoneCustomer::class])
+    ->prefix('muj-ucet')
+    ->name('zone.')
+    ->group(function (): void {
+        Route::get('/', fn () => view('zone.dashboard', ['seo' => ['title' => 'Můj účet'], 'breadcrumbs' => [['label' => 'Můj účet', 'url' => null]]]))->name('dashboard');
+        Route::get('/rezervace', fn () => view('zone.reservations', ['seo' => ['title' => 'Moje rezervace'], 'breadcrumbs' => [['label' => 'Můj účet', 'url' => url('/muj-ucet')], ['label' => 'Moje rezervace', 'url' => null]]]))->name('reservations');
+        Route::get('/rezervace/{reservation}', fn (Reservation $reservation) => view('zone.reservation-detail', [
+            'seo' => ['title' => 'Detail rezervace'],
+            'reservation' => $reservation,
+            'breadcrumbs' => [['label' => 'Můj účet', 'url' => url('/muj-ucet')], ['label' => 'Moje rezervace', 'url' => url('/muj-ucet/rezervace')], ['label' => 'Detail rezervace', 'url' => null]],
+        ]))->name('reservations.show');
+        Route::get('/rezervace/{reservation}/presunout', fn (Reservation $reservation) => view('zone.reservation-reschedule', [
+            'seo' => ['title' => 'Přesunout termín'],
+            'reservation' => $reservation,
+            'breadcrumbs' => [['label' => 'Můj účet', 'url' => url('/muj-ucet')], ['label' => 'Moje rezervace', 'url' => url('/muj-ucet/rezervace')], ['label' => 'Přesunout termín', 'url' => null]],
+        ]))->name('reservations.reschedule');
+        Route::get('/kurzy', fn () => view('zone.courses', ['seo' => ['title' => 'Moje kurzy'], 'breadcrumbs' => [['label' => 'Můj účet', 'url' => url('/muj-ucet')], ['label' => 'Moje kurzy', 'url' => null]]]))->name('courses');
+        Route::get('/nahrady', fn () => view('zone.tokens', ['seo' => ['title' => 'Náhradní vstupy'], 'breadcrumbs' => [['label' => 'Můj účet', 'url' => url('/muj-ucet')], ['label' => 'Náhradní vstupy', 'url' => null]]]))->name('tokens');
+        Route::get('/kredity', fn () => view('zone.credits', ['seo' => ['title' => 'Kredity'], 'breadcrumbs' => [['label' => 'Můj účet', 'url' => url('/muj-ucet')], ['label' => 'Kredity', 'url' => null]]]))->name('credits');
+        Route::get('/platby', fn () => view('zone.payments', ['seo' => ['title' => 'Platby'], 'breadcrumbs' => [['label' => 'Můj účet', 'url' => url('/muj-ucet')], ['label' => 'Platby', 'url' => null]]]))->name('payments');
+        Route::get('/faktury', fn () => view('zone.invoices', ['seo' => ['title' => 'Faktury'], 'breadcrumbs' => [['label' => 'Můj účet', 'url' => url('/muj-ucet')], ['label' => 'Faktury', 'url' => null]]]))->name('invoices');
+        Route::get('/faktury/{invoice}/stahnout', CustomerInvoiceDownloadController::class)->name('invoices.download');
+        Route::get('/profil', fn () => view('zone.profile', ['seo' => ['title' => 'Můj profil'], 'breadcrumbs' => [['label' => 'Můj účet', 'url' => url('/muj-ucet')], ['label' => 'Můj profil', 'url' => null]]]))->name('profile');
+    });
 
 // Instagram OAuth handshake for the admin "Instagram účty" resource. The controller
 // guards against guests (admin logs in via the Filament panel, which has no plain
@@ -91,6 +166,19 @@ Route::get('/nahledy/pokladni-doklad/{cashReceipt}', ReceiptPreviewController::c
 Route::get('/nahledy/export-faktur', InvoiceExportDownloadController::class)
     ->name('invoices.export-download');
 
+// Public XML sitemap — every canonical public URL, built from model permalinks.
+Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
+
 Route::get('/{slug}', [PageController::class, 'show'])
-    ->where('slug', '^(?!admin|klientska-zona|livewire|passkeys|storage|dev|up|rezervace|prihlaseni|instagram|nahledy).*$')
+    ->where('slug', '^(?!admin|klientska-zona|muj-ucet|livewire|passkeys|storage|dev|up|rezervace|prihlaseni|registrace|overeni-emailu|odhlaseni|instagram|nahledy).*$')
     ->name('page.show');
+
+// Multi-segment old live-site URLs (e.g. /fyzio-kurzy/joga) match no route above
+// and never hit the single-segment catch-all; 301 them to the new scheme, else 404.
+Route::fallback(function (Request $request) {
+    $target = LegacyRedirects::resolve($request->path());
+
+    abort_if($target === null, 404);
+
+    return redirect()->to($target, 301);
+});

@@ -4,6 +4,10 @@ namespace App\Filament\Clusters\Kurzy\Resources\CourseEnrollments\Tables;
 
 use App\Enums\CourseEnrollmentStatus;
 use App\Enums\PaymentStatus;
+use App\Filament\Clusters\Finance\Resources\Invoices\Actions\GenerateInvoicesBulkAction;
+use App\Filament\Support\Actions\CancelSignupAction;
+use App\Filament\Support\Actions\CancelSignupBulkAction;
+use App\Filament\Support\Actions\MarkSignupsPaidBulkAction;
 use App\Filament\Support\Actions\RecordPaymentAction;
 use App\Filament\Support\Tables\TimestampColumns;
 use Filament\Actions\BulkActionGroup;
@@ -63,10 +67,14 @@ class CourseEnrollmentsTable
                 ViewAction::make(),
                 EditAction::make(),
                 RecordPaymentAction::make(),
+                CancelSignupAction::make(),
                 DeleteAction::make(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
+                    MarkSignupsPaidBulkAction::make(),
+                    GenerateInvoicesBulkAction::make(),
+                    CancelSignupBulkAction::make(),
                     DeleteBulkAction::make(),
                 ]),
             ]);

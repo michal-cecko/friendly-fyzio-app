@@ -1,5 +1,8 @@
 @props(['name' => ''])
 
+{{-- The most-used icons are inlined below to keep hot pages cheap; anything
+     else falls back to the full lucide set via blade-icons (see the @else
+     branch), so any valid lucide name renders. --}}
 @php
     $paths = [
         'arrow-right' => '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
@@ -23,4 +26,8 @@
     ];
 @endphp
 
-<svg {{ $attributes->merge(['class' => 'h-5 w-5']) }} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{!! $paths[$name] ?? '' !!}</svg>
+@if(isset($paths[$name]))
+    <svg {{ $attributes->merge(['class' => 'h-5 w-5']) }} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{!! $paths[$name] !!}</svg>
+@else
+    {!! \App\Support\Icon::render($name, $attributes->get('class', 'h-5 w-5'), ['aria-hidden' => 'true']) !!}
+@endif

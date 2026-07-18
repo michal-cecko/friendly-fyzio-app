@@ -1,0 +1,121 @@
+<?php
+
+namespace App\Filament\Clusters\Workshopy\Resources\Workshops;
+
+use App\Filament\Clusters\Workshopy\Resources\Workshops\Pages\CreateWorkshop;
+use App\Filament\Clusters\Workshopy\Resources\Workshops\Pages\EditWorkshop;
+use App\Filament\Clusters\Workshopy\Resources\Workshops\Pages\ListWorkshops;
+use App\Filament\Clusters\Workshopy\Resources\Workshops\Pages\ViewWorkshop;
+use App\Filament\Clusters\Workshopy\Resources\Workshops\Schemas\WorkshopForm;
+use App\Filament\Clusters\Workshopy\Resources\Workshops\Schemas\WorkshopInfolist;
+use App\Filament\Clusters\Workshopy\Resources\Workshops\Tables\WorkshopsTable;
+use App\Filament\Clusters\Workshopy\WorkshopyCluster;
+use App\Filament\Support\Concerns\ScopedToTherapist;
+use App\Filament\Support\RelationManagers\WaitlistEntriesRelationManager;
+use App\Filament\Support\RelationManagers\WorkshopSignupsRelationManager;
+use App\Models\Workshop;
+use BackedEnum;
+use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
+
+class WorkshopResource extends Resource
+{
+    use ScopedToTherapist;
+
+    protected static ?string $model = Workshop::class;
+
+    protected static ?string $cluster = WorkshopyCluster::class;
+
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedSparkles;
+
+    protected static ?int $navigationSort = 1;
+
+    protected static ?string $recordTitleAttribute = 'name';
+
+    public static function getModelLabel(): string
+    {
+        return 'workshop';
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return 'workshopy';
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return 'Workshopy';
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['name', 'slug'];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        /** @var Workshop $record */
+        return array_filter([
+            'Termín' => $record->workshop_date?->format('j. n. Y'),
+            'Lektor' => $record->instructor?->name,
+        ]);
+    }
+
+    public static function form(Schema $schema): Schema
+    {
+        return WorkshopForm::configure($schema);
+    }
+
+    public static function infolist(Schema $schema): Schema
+    {
+        return WorkshopInfolist::configure($schema);
+    }
+
+    public static function table(Table $table): Table
+    {
+        return WorkshopsTable::configure($table);
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->with(['instructor', 'room'])
+            ->when(static::therapistUserScopeId(), fn (Builder $query, string $id) => $query->where('instructor_id', $id));
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            WorkshopSignupsRelationManager::class,
+            WaitlistEntriesRelationManager::class,
+        ];
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index' => ListWorkshops::route('/'),
+            'create' => CreateWorkshop::route('/create'),
+            'view' => ViewWorkshop::route('/{record}'),
+            'edit' => EditWorkshop::route('/{record}/edit'),
+        ];
+    }
+
+    public static function getRecordRouteBindingEloquentQuery(): Builder
+    {
+        return parent::getRecordRouteBindingEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
+    }
+}

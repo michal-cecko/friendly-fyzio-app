@@ -20,15 +20,20 @@ use App\Filament\Support\Actions\SendReviewRequestAction;
 use App\Filament\Support\Tables\TimestampColumns;
 use App\Models\Reservation;
 use App\Support\Reservations\ReservationSummary;
+use BackedEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\ViewAction;
+use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\HtmlString;
 
 class ReservationsTable
@@ -67,6 +72,12 @@ class ReservationsTable
                     ->label('Potvrdil')
                     ->badge()
                     ->toggleable(),
+                IconColumn::make('doctor_note_requested_at')
+                    ->label('Lékař. potvrzení')
+                    ->tooltip('Klient přislíbil potvrzení od lékaře (storno poplatek pozastaven)')
+                    ->icon(fn ($state): string|BackedEnum|null => $state !== null ? Heroicon::OutlinedDocumentText : null)
+                    ->color('warning')
+                    ->toggleable(),
                 ...TimestampColumns::make(),
             ])
             ->filters([
@@ -79,6 +90,10 @@ class ReservationsTable
                 SelectFilter::make('confirmed_by')
                     ->label('Potvrdil')
                     ->options(ConfirmationSource::class),
+                Filter::make('doctor_note_pending')
+                    ->label('Čeká na potvrzení od lékaře')
+                    ->query(fn (Builder $query): Builder => $query->whereNotNull('doctor_note_requested_at'))
+                    ->toggle(),
                 TrashedFilter::make(),
             ])
             ->recordActions([

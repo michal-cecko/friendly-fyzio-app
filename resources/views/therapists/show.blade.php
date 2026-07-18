@@ -6,7 +6,7 @@
     $email = $therapist->user?->email ?: \App\Support\Settings::get('web.contact_email');
     $address = \App\Support\Settings::get('web.address');
     $photo = \App\Support\Media::url($therapist->photo, '800');
-    $bookingUrl = route('reservation.wizard', ['terapeut' => $therapist->id]);
+    $bookingUrl = route('reservation.wizard', ['terapeut' => $therapist->slug]);
     $education = $therapist->education ?? [];
     $certifications = $therapist->certifications ?? [];
 @endphp
@@ -166,9 +166,9 @@
                     'title' => 'V čem vám mohu pomoci',
                 ]])
 
-                <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                <div class="flex flex-wrap justify-center gap-6">
                     @foreach($therapist->specializations as $specialization)
-                        <div class="flex flex-col items-center gap-4 rounded-2xl bg-surface-alt p-6 text-center">
+                        <div class="flex w-full flex-col items-center gap-4 rounded-2xl bg-surface-alt p-6 text-center sm:w-[calc(50%-0.75rem)] lg:w-[calc(25%-1.125rem)]">
                             <div class="flex h-14 w-14 items-center justify-center rounded-full bg-primary-light text-primary">
                                 {!! \App\Support\Icon::render($specialization->icon ?: 'heart', 'h-6 w-6') !!}
                             </div>

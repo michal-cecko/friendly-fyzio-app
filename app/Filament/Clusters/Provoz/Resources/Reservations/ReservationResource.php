@@ -9,6 +9,7 @@ use App\Filament\Clusters\Provoz\Resources\Reservations\RelationManagers\NotesRe
 use App\Filament\Clusters\Provoz\Resources\Reservations\Schemas\ReservationForm;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Schemas\ReservationInfolist;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Tables\ReservationsTable;
+use App\Filament\Support\Concerns\ScopedToTherapist;
 use App\Filament\Support\RelationManagers\PaymentsRelationManager;
 use App\Models\Reservation;
 use BackedEnum;
@@ -23,6 +24,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ReservationResource extends Resource
 {
+    use ScopedToTherapist;
+
     protected static ?string $model = Reservation::class;
 
     protected static ?string $cluster = ProvozCluster::class;
@@ -93,7 +96,8 @@ class ReservationResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->with(['client', 'service', 'therapist.user', 'room']);
+            ->with(['client', 'service', 'therapist.user', 'room'])
+            ->when(static::therapistProfileScopeId(), fn (Builder $query, string $id) => $query->where('therapist_id', $id));
     }
 
     public static function getRelations(): array

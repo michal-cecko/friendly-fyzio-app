@@ -36,6 +36,17 @@ class UserResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'name';
 
+    /**
+     * Staff-account management is administrators only. The User model is shared
+     * with the customer-facing ClientResource (which therapists may reach), so
+     * this resource is gated by role rather than by the shared `…:User`
+     * permission to keep therapists out of staff accounts.
+     */
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->role === UserRole::Admin;
+    }
+
     public static function getModelLabel(): string
     {
         return 'uživatel';

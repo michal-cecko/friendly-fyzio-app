@@ -29,6 +29,7 @@ class OneTimeLessonFactory extends Factory
             'end_time' => sprintf('%02d:00', $start + 1),
             'capacity' => fake()->numberBetween(4, 15),
             'price' => fake()->numberBetween(200, 800),
+            'published_at' => fake()->boolean(80) ? now() : null,
         ];
     }
 }

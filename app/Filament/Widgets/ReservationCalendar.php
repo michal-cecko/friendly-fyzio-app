@@ -23,6 +23,7 @@ use App\Models\User;
 use App\Notifications\ReservationNotification;
 use App\Notifications\ReservationTemplateNotification;
 use App\Notifications\TherapistReservationTemplateNotification;
+use App\Support\Avatar;
 use App\Support\CalendarAvailability;
 use App\Support\Reservations\ReactivateReservation;
 use App\Support\Reservations\ReservationChangeSnapshot;
@@ -182,7 +183,10 @@ class ReservationCalendar extends FullCalendarWidget
      */
     public function therapists(): Collection
     {
-        return $this->therapistCache ??= TherapistProfile::query()->with('user')->get();
+        // A pure therapist only filters (and sees) their own calendar.
+        return $this->therapistCache ??= TherapistProfile::query()->with('user')
+            ->when(auth()->user()?->role === UserRole::Therapist, fn (Builder $query) => $query->where('user_id', auth()->id()))
+            ->get();
     }
 
     /**
@@ -221,6 +225,16 @@ class ReservationCalendar extends FullCalendarWidget
         // page mounts the widget without a room.
         if ($room !== null) {
             $this->room = $room;
+        }
+
+        // A pure therapist's calendar defaults to their own schedule (unless a URL
+        // filter says otherwise); admins keep the all-therapists view.
+        $user = auth()->user();
+        if ($user?->role === UserRole::Therapist && $this->therapistIds === []) {
+            $ownProfileId = $user->therapistProfile?->getKey();
+            if ($ownProfileId !== null) {
+                $this->therapistIds = [$ownProfileId];
+            }
         }
 
         // Livewire merges any URL query params over the property default above,
@@ -935,22 +949,7 @@ class ReservationCalendar extends FullCalendarWidget
 
     public function therapistInitials(?string $name): string
     {
-        if (blank($name)) {
-            return '?';
-        }
-
-        $words = array_values(array_filter(
-            preg_split('/\s+/', trim($name)) ?: [],
-            fn (string $word): bool => $word !== '' && ! str_ends_with($word, '.'),
-        ));
-
-        if ($words === []) {
-            return mb_strtoupper(mb_substr($name, 0, 2));
-        }
-
-        return mb_strtoupper(
-            collect($words)->take(2)->map(fn (string $word): string => mb_substr($word, 0, 1))->implode('')
-        );
+        return Avatar::initials($name);
     }
 
     public function toggleTherapist(string $id): void

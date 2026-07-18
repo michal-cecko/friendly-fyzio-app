@@ -18,11 +18,9 @@
 
     $brandName = filament()->getBrandName();
 
-    // The registration screen gets its own studio photo; every other auth page
-    // (login, password reset, email verification) shares the welcome image.
-    $authPhoto = ($livewire instanceof \App\Filament\Auth\Register)
-        ? asset('images/auth/auth-register.jpg')
-        : asset('images/auth/auth-login.jpg');
+    // Staff auth pages (login, password reset) share the welcome image; customer
+    // registration lives on the public site now.
+    $authPhoto = asset('images/auth/auth-login.jpg');
 @endphp
 
 <x-filament-panels::layout.base :livewire="$livewire">

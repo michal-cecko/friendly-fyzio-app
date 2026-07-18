@@ -10,6 +10,8 @@ use App\Filament\Clusters\Kurzy\Resources\CourseSeries\Pages\ViewCourseSeries;
 use App\Filament\Clusters\Kurzy\Resources\CourseSeries\Schemas\CourseSeriesForm;
 use App\Filament\Clusters\Kurzy\Resources\CourseSeries\Schemas\CourseSeriesInfolist;
 use App\Filament\Clusters\Kurzy\Resources\CourseSeries\Tables\CourseSeriesTable;
+use App\Filament\Support\RelationManagers\CourseSeriesEnrollmentsRelationManager;
+use App\Filament\Support\RelationManagers\WaitlistEntriesRelationManager;
 use App\Models\CourseSeries;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -90,7 +92,8 @@ class CourseSeriesResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            CourseSeriesEnrollmentsRelationManager::class,
+            WaitlistEntriesRelationManager::class,
         ];
     }
 

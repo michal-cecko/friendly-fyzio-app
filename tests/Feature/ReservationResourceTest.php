@@ -108,6 +108,32 @@ class ReservationResourceTest extends TestCase
             ->assertSuccessful();
     }
 
+    public function test_pending_doctor_note_is_surfaced_on_the_detail_and_filterable(): void
+    {
+        $deps = $this->dependencies();
+        $this->actingAs(User::factory()->admin()->create());
+
+        $awaiting = $this->makeReservation($deps, [
+            'doctor_note_requested_at' => now(),
+            'start_time' => '09:00:00',
+            'end_time' => '10:00:00',
+        ]);
+        $plain = $this->makeReservation($deps, [
+            'start_time' => '11:00:00',
+            'end_time' => '12:00:00',
+        ]);
+
+        $this->get("/admin/provoz/reservations/{$awaiting->getKey()}")
+            ->assertSuccessful()
+            ->assertSee('Storno – potvrzení od lékaře');
+
+        Livewire::test(ListReservations::class)
+            ->assertCanSeeTableRecords([$awaiting, $plain])
+            ->filterTable('doctor_note_pending', true)
+            ->assertCanSeeTableRecords([$awaiting])
+            ->assertCanNotSeeTableRecords([$plain]);
+    }
+
     public function test_admin_can_restore_a_trashed_reservation_from_the_table(): void
     {
         $deps = $this->dependencies();

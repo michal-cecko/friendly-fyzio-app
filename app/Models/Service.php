@@ -80,6 +80,21 @@ class Service extends Model implements HasPublicPage
             ->where('published_at', '<=', now());
     }
 
+    /**
+     * Services a customer can actually book through the reservation wizard:
+     * offered online (any non-hidden visibility), published, and performed by at
+     * least one therapist. A service nobody performs is a dead end, so it is
+     * never offered — the calendar behind it would always be empty.
+     */
+    public function scopeBookable(Builder $query): Builder
+    {
+        return $query
+            ->where('visibility', '!=', ServiceVisibility::Hidden)
+            ->whereNotNull('published_at')
+            ->where('published_at', '<=', now())
+            ->whereHas('therapists');
+    }
+
     public function category(): BelongsTo
     {
         return $this->belongsTo(ServiceCategory::class, 'category_id');

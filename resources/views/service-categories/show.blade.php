@@ -1,7 +1,7 @@
 @extends('layouts.public')
 
 @php
-    $bookingUrl = url('/klientska-zona');
+    $bookingUrl = route('reservation.wizard');
     $heroImage = \App\Support\Media::url($category->hero_image, '800');
 @endphp
 

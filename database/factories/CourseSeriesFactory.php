@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Enums\CourseSeriesStatus;
+use App\Enums\CourseSeriesVisibility;
 use App\Models\Course;
 use App\Models\CourseSeries;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -27,6 +28,7 @@ class CourseSeriesFactory extends Factory
             'capacity' => fake()->numberBetween(6, 20),
             'price' => fake()->numberBetween(1500, 6000),
             'status' => fake()->randomElement(CourseSeriesStatus::cases()),
+            'visibility' => CourseSeriesVisibility::Public,
         ];
     }
 }

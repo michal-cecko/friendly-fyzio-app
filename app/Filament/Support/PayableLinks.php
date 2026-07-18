@@ -3,9 +3,9 @@
 namespace App\Filament\Support;
 
 use App\Filament\Clusters\Kurzy\Resources\CourseEnrollments\CourseEnrollmentResource;
-use App\Filament\Clusters\LekceWorkshopy\Resources\OneTimeLessonBookings\OneTimeLessonBookingResource;
-use App\Filament\Clusters\LekceWorkshopy\Resources\WorkshopRegistrations\WorkshopRegistrationResource;
+use App\Filament\Clusters\Lekce\Resources\OneTimeLessonBookings\OneTimeLessonBookingResource;
 use App\Filament\Clusters\Provoz\Resources\Reservations\ReservationResource;
+use App\Filament\Clusters\Workshopy\Resources\WorkshopRegistrations\WorkshopRegistrationResource;
 use App\Models\CourseEnrollment;
 use App\Models\OneTimeLessonBooking;
 use App\Models\Reservation;

@@ -12,6 +12,8 @@ Schedule::command('reviews:send-requests')->daily();
 Schedule::command('reservations:send-confirmations')->hourly();
 Schedule::command('reservations:send-reminders')->hourly();
 Schedule::command('reservations:cancel-unconfirmed')->hourly();
+Schedule::command('enrollments:cancel-unpaid')->hourly();
+Schedule::command('credits:expire')->dailyAt('05:50');
 Schedule::command('payments:mark-overdue')->dailyAt('06:00');
 Schedule::command('invoices:mark-overdue')->dailyAt('06:10');
 Schedule::command('invoices:prune-exports')->dailyAt('06:20');

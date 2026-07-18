@@ -455,15 +455,15 @@ class ReservationManageTest extends TestCase
 
     // --- Deactivation enforcement --------------------------------------------
 
-    public function test_deactivated_user_cannot_access_the_client_panel(): void
+    public function test_deactivated_user_cannot_access_the_client_zone(): void
     {
-        $panel = Filament::getPanel('client');
-
         $active = User::factory()->customer()->create();
         $deactivated = User::factory()->customer()->create(['deactivated_at' => now()]);
 
-        $this->assertTrue($active->canAccessPanel($panel));
-        $this->assertFalse($deactivated->canAccessPanel($panel));
+        $this->actingAs($active)->get('/muj-ucet')->assertSuccessful();
+
+        $this->actingAs($deactivated)->get('/muj-ucet')->assertRedirect(route('public.login'));
+        $this->assertGuest();
     }
 
     public function test_deactivated_client_cannot_book_via_the_wizard(): void

@@ -3,9 +3,9 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Pages\Dashboard;
-use App\Http\Middleware\RedirectToClientLogin;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use DiscoveryDesign\FilamentGaze\FilamentGazePlugin;
+use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -40,6 +40,10 @@ class AdminPanelProvider extends PanelProvider
             ->brandLogo(asset('logo/ff-logo-bright.svg'))
             ->darkModeBrandLogo(asset('logo/ff-logo-dark.svg'))
             ->brandLogoHeight('1.6rem')
+            // Staff sign in here (customers live on the public /prihlaseni page
+            // and are rejected by User::canAccessPanel()).
+            ->login()
+            ->passwordReset()
             ->emailChangeVerification()
             ->profile()
             ->spa()
@@ -99,9 +103,7 @@ class AdminPanelProvider extends PanelProvider
                 DispatchServingFilamentEvent::class,
             ])
             ->authMiddleware([
-                // No login page of its own — bounce unauthenticated staff to the
-                // single shared login on the client panel.
-                RedirectToClientLogin::class,
+                Authenticate::class,
             ]);
     }
 }

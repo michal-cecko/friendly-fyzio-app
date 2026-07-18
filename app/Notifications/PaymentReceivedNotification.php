@@ -9,7 +9,6 @@ use App\Models\Payment;
 use App\Support\EmailTemplateRenderer;
 use App\Support\Invoices\PayableTitle;
 use App\Support\Pdf\InvoicePdfRenderer;
-use Filament\Facades\Filament;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -57,7 +56,7 @@ class PaymentReceivedNotification extends Notification
             'datum' => ($this->payment->paid_at ?? now())->format('d. m. Y'),
             'zpusob_platby' => $this->payment->method->getLabel(),
             'cislo_faktury' => $this->payment->invoice?->invoice_number ?? '—',
-            'odkaz' => Filament::getPanel('client')->getUrl(),
+            'odkaz' => url('/muj-ucet'),
         ];
 
         $mail = (new MailMessage)

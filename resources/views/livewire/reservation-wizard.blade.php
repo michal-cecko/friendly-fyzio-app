@@ -118,7 +118,7 @@
                                     <div class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                                         @if ($this->therapists->count() > 1)
                                             <label wire:key="th-any" class="cursor-pointer">
-                                                <input type="radio" wire:model="therapistId" value="any" class="peer sr-only">
+                                                <input type="radio" wire:model="therapistSlug" value="any" class="peer sr-only">
                                                 <div class="{{ $cardFlexCol }}">
                                                     <span class="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white">
                                                         <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18 21a8 8 0 0 0-16 0M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3" /><circle cx="10" cy="8" r="5" /></svg>
@@ -130,10 +130,17 @@
                                         @endif
                                         @foreach ($this->therapists as $therapist)
                                             @php($name = $therapist->user?->name ?? 'Terapeut')
+                                            @php($photo = \App\Support\Media::url($therapist->photo, 'thumb'))
                                             <label wire:key="th-{{ $therapist->id }}" class="cursor-pointer">
-                                                <input type="radio" wire:model="therapistId" value="{{ $therapist->id }}" class="peer sr-only">
+                                                <input type="radio" wire:model="therapistSlug" value="{{ $therapist->slug }}" class="peer sr-only">
                                                 <div class="{{ $cardFlexCol }}">
-                                                    <span class="flex h-14 w-14 items-center justify-center rounded-full bg-primary font-heading text-base font-semibold text-white">{{ Str::of($name)->explode(' ')->map(fn ($w) => Str::substr($w, 0, 1))->take(2)->implode('') }}</span>
+                                                    <span class="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-primary font-heading text-base font-semibold text-white">
+                                                        @if ($photo)
+                                                            <img src="{{ $photo }}" alt="{{ $name }}" class="h-full w-full object-cover">
+                                                        @else
+                                                            {{ \App\Support\Avatar::initials($name) }}
+                                                        @endif
+                                                    </span>
                                                     <span class="font-heading text-sm font-semibold text-neutral-900">{{ $name }}</span>
                                                     <span class="text-xs {{ $muted }}">{{ $therapist->is_collaborator ? 'Spolupracující terapeut' : 'Terapeut' }}</span>
                                                 </div>
@@ -178,7 +185,7 @@
                                             </div>
                                             <div class="grid gap-3 sm:grid-cols-2">
                                                 @foreach ($this->examTypes as $type)
-                                                    @php($selected = $this->examType === $type->value || (in_array($gate, ['login', 'lapsed'], true) && $type === \App\Enums\ExamType::Kontrolni))
+                                                    @php($selected = $this->isExamTypeSelected($type))
                                                     <button type="button" wire:key="exam-{{ $type->value }}" wire:click="selectExamType('{{ $type->value }}')" wire:loading.attr="disabled" class="flex items-center justify-between gap-3 rounded-xl border-2 p-4 text-left font-heading text-[15px] font-semibold text-neutral-900 transition {{ $selected ? 'border-primary bg-primary-light' : 'border-line bg-white hover:border-primary' }}">
                                                         <span>{{ $type->getLabel() }}</span>
                                                         @if ($type === \App\Enums\ExamType::Kontrolni)
@@ -361,17 +368,10 @@
                                             <label class="mb-1 block text-sm font-medium text-neutral-700">Stručný popis problému / týden těhotenství <span class="text-neutral-400">(nepovinné)</span></label>
                                             <textarea wire:model="note" rows="3" class="{{ $inputClass }}" placeholder="únik moči, diastáza, bolesti…"></textarea>
                                         </div>
-                                        <div class="grid gap-4 sm:grid-cols-2">
-                                            <div>
-                                                <label class="mb-1 block text-sm font-medium text-neutral-700">Telefon</label>
-                                                <input type="tel" wire:model="phone" class="{{ $inputClass }}" placeholder="+420">
-                                                @error('phone') <span class="mt-1 block text-xs text-red-600">{{ $message }}</span> @enderror
-                                            </div>
-                                            <div>
-                                                <label class="mb-1 block text-sm font-medium text-neutral-700">Telefon (pro kontrolu)</label>
-                                                <input type="tel" wire:model="phoneConfirm" class="{{ $inputClass }}" placeholder="+420">
-                                                @error('phoneConfirm') <span class="mt-1 block text-xs text-red-600">{{ $message }}</span> @enderror
-                                            </div>
+                                        <div>
+                                            <label class="mb-1 block text-sm font-medium text-neutral-700">Telefon</label>
+                                            <input type="tel" wire:model="phone" class="{{ $inputClass }}" placeholder="+420">
+                                            @error('phone') <span class="mt-1 block text-xs text-red-600">{{ $message }}</span> @enderror
                                         </div>
                                         <div>
                                             <label class="mb-1 block text-sm font-medium text-neutral-700">E-mail</label>

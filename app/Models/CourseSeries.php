@@ -2,16 +2,24 @@
 
 namespace App\Models;
 
+use App\Enums\CourseEnrollmentStatus;
 use App\Enums\CourseSeriesStatus;
+use App\Enums\CourseSeriesVisibility;
+use App\Enums\OfferState;
+use App\Models\Concerns\HasCapacity;
+use App\Observers\CourseSeriesObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
+#[ObservedBy(CourseSeriesObserver::class)]
 class CourseSeries extends Model
 {
-    use HasFactory, HasUuids;
+    use HasCapacity, HasFactory, HasUuids;
 
     protected $fillable = [
         'course_id',
@@ -20,8 +28,11 @@ class CourseSeries extends Model
         'start_date',
         'end_date',
         'capacity',
+        'auto_promote_waitlist',
         'price',
         'status',
+        'visibility',
+        'presale_token',
     ];
 
     protected function casts(): array
@@ -30,8 +41,10 @@ class CourseSeries extends Model
             'start_date' => 'date',
             'end_date' => 'date',
             'capacity' => 'integer',
+            'auto_promote_waitlist' => 'boolean',
             'price' => 'integer',
             'status' => CourseSeriesStatus::class,
+            'visibility' => CourseSeriesVisibility::class,
         ];
     }
 
@@ -50,6 +63,11 @@ class CourseSeries extends Model
         return $this->hasMany(CourseEnrollment::class, 'series_id');
     }
 
+    public function activeTakers(): HasMany
+    {
+        return $this->enrollments()->where('status', CourseEnrollmentStatus::Active);
+    }
+
     public function waitlistEntries()
     {
         return $this->morphMany(WaitlistEntry::class, 'waitlistable');
@@ -58,5 +76,103 @@ class CourseSeries extends Model
     public function invitations()
     {
         return $this->morphMany(Invitation::class, 'inviteable');
+    }
+
+    public function hasStarted(): bool
+    {
+        return $this->start_date->isBefore(today());
+    }
+
+    public function hasEnded(): bool
+    {
+        return $this->end_date->isBefore(today());
+    }
+
+    public function totalLessonsCount(): int
+    {
+        $eager = $this->getAttribute('lessons_count');
+
+        return $eager !== null ? (int) $eager : $this->lessons()->count();
+    }
+
+    public function remainingLessonsCount(): int
+    {
+        $eager = $this->getAttribute('remaining_lessons_count');
+
+        return $eager !== null
+            ? (int) $eager
+            : $this->lessons()->whereDate('lesson_date', '>=', today())->count();
+    }
+
+    /**
+     * The price a client signing up right now pays. Mid-series sign-ups are
+     * pro-rated by the share of lessons still ahead ("cena je poměrně snížena
+     * podle počtu zbývajících lekcí"); a series without planned lessons (or one
+     * that hasn't started) charges the full price.
+     */
+    public function currentPrice(): int
+    {
+        if (! $this->hasStarted()) {
+            return (int) $this->price;
+        }
+
+        $total = $this->totalLessonsCount();
+
+        if ($total === 0) {
+            return (int) $this->price;
+        }
+
+        return (int) round($this->price * $this->remainingLessonsCount() / $total);
+    }
+
+    /**
+     * Public registration state of this series. The manual Inactive status means
+     * "we're preparing this one" (registration closed, notify-me form shown);
+     * a Private series behaves the same on every public surface — only its
+     * hidden link (offerStateForPresale) opens it. Fullness combines the manual
+     * Full status with live spot accounting.
+     */
+    public function offerState(): OfferState
+    {
+        return match (true) {
+            $this->hasEnded() => OfferState::Inactive,
+            $this->visibility === CourseSeriesVisibility::Private => OfferState::Preparing,
+            $this->status === CourseSeriesStatus::Inactive => OfferState::Preparing,
+            $this->status === CourseSeriesStatus::Full, $this->isFull() => OfferState::Full,
+            default => OfferState::Open,
+        };
+    }
+
+    /**
+     * Hidden-link access: a series keeps taking registrations through its
+     * secret link even while still Inactive (docs: "predpredaj pre stálych
+     * klientov") or Private (invite-only run). Ended or full series stay
+     * closed even with the token.
+     */
+    public function offerStateForPresale(): OfferState
+    {
+        if ($this->hasEnded()) {
+            return OfferState::Inactive;
+        }
+
+        if ($this->status === CourseSeriesStatus::Full || $this->isFull()) {
+            return OfferState::Full;
+        }
+
+        return OfferState::Open;
+    }
+
+    public function ensurePresaleToken(): string
+    {
+        if (blank($this->presale_token)) {
+            $this->forceFill(['presale_token' => Str::random(40)])->save();
+        }
+
+        return (string) $this->presale_token;
+    }
+
+    public function presaleUrl(): string
+    {
+        return $this->course->permalink().'?predprodej='.$this->ensurePresaleToken();
     }
 }

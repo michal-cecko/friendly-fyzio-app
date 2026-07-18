@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\User;
-use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -14,13 +13,11 @@ class PanelAuthFeaturesTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-
-        Filament::setCurrentPanel('client');
     }
 
-    public function test_single_login_page_renders_branded_split_layout_with_passkey_option(): void
+    public function test_staff_login_page_renders_branded_split_layout_with_passkey_option(): void
     {
-        $this->get('/klientska-zona/login')
+        $this->get('/admin/login')
             ->assertSuccessful()
             ->assertSee('ff-logo-bright.svg', escape: false)
             ->assertSee('ff-auth-photo', escape: false)
@@ -28,9 +25,9 @@ class PanelAuthFeaturesTest extends TestCase
             ->assertSee('Přihlásit se přístupovým klíčem');
     }
 
-    public function test_registration_page_renders_with_czech_strings(): void
+    public function test_public_registration_page_renders_with_czech_strings(): void
     {
-        $this->get('/klientska-zona/register')
+        $this->get(route('public.register'))
             ->assertSuccessful()
             ->assertSee('Vytvořit účet')
             ->assertSee('Jméno')

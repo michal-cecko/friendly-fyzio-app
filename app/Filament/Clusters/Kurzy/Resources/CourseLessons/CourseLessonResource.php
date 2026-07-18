@@ -10,6 +10,7 @@ use App\Filament\Clusters\Kurzy\Resources\CourseLessons\Pages\ViewCourseLesson;
 use App\Filament\Clusters\Kurzy\Resources\CourseLessons\Schemas\CourseLessonForm;
 use App\Filament\Clusters\Kurzy\Resources\CourseLessons\Schemas\CourseLessonInfolist;
 use App\Filament\Clusters\Kurzy\Resources\CourseLessons\Tables\CourseLessonsTable;
+use App\Filament\Support\Concerns\ScopedToTherapist;
 use App\Models\CourseLesson;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -22,6 +23,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class CourseLessonResource extends Resource
 {
+    use ScopedToTherapist;
+
     protected static ?string $model = CourseLesson::class;
 
     protected static ?string $cluster = KurzyCluster::class;
@@ -91,7 +94,8 @@ class CourseLessonResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with(['series.course', 'instructor', 'room']);
+        return parent::getEloquentQuery()->with(['series.course', 'instructor', 'room'])
+            ->when(static::therapistUserScopeId(), fn (Builder $query, string $id) => $query->where('instructor_id', $id));
     }
 
     public static function getRelations(): array

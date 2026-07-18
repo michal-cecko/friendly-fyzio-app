@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Filament\Clusters\LekceWorkshopy\Resources\OneTimeLessons\Pages\CreateOneTimeLesson;
-use App\Filament\Clusters\LekceWorkshopy\Resources\OneTimeLessons\Pages\EditOneTimeLesson;
-use App\Filament\Clusters\LekceWorkshopy\Resources\OneTimeLessons\Pages\ListOneTimeLessons;
+use App\Filament\Clusters\Lekce\Resources\OneTimeLessons\Pages\CreateOneTimeLesson;
+use App\Filament\Clusters\Lekce\Resources\OneTimeLessons\Pages\EditOneTimeLesson;
+use App\Filament\Clusters\Lekce\Resources\OneTimeLessons\Pages\ListOneTimeLessons;
 use App\Models\Course;
 use App\Models\OneTimeLesson;
 use App\Models\Room;

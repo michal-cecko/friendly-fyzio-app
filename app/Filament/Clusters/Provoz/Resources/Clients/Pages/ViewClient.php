@@ -2,6 +2,7 @@
 
 namespace App\Filament\Clusters\Provoz\Resources\Clients\Pages;
 
+use App\Filament\Clusters\Provoz\Resources\Clients\Actions\AdjustCreditAction;
 use App\Filament\Clusters\Provoz\Resources\Clients\ClientResource;
 use App\Filament\Clusters\Provoz\Resources\Clients\Widgets\ClientStatsOverview;
 use App\Filament\Pages\Calendar;
@@ -27,6 +28,7 @@ class ViewClient extends ViewRecord
                 ->label('Vytvořit rezervaci')
                 ->icon(Heroicon::OutlinedCalendarDays)
                 ->url(Calendar::getUrl()),
+            AdjustCreditAction::make()->record($this->getRecord()),
             ResetPasswordAction::make(),
             EditAction::make(),
         ];

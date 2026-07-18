@@ -12,6 +12,7 @@ use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
+use RalphJSmit\Filament\MediaLibrary\Filament\Forms\Components\MediaPicker;
 
 class CourseForm
 {
@@ -48,6 +49,11 @@ class CourseForm
                 Textarea::make('description')
                     ->label('Popis')
                     ->rows(4)
+                    ->columnSpanFull(),
+                MediaPicker::make('featured_image')
+                    ->label('Fotka')
+                    ->acceptedFileTypes(['image/*'])
+                    ->helperText('Zobrazuje se na kartě v archivu kurzů a v hlavičce detailu.')
                     ->columnSpanFull(),
                 TextInput::make('max_substitutions')
                     ->label('Max. náhrad')

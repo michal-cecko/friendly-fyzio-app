@@ -359,9 +359,8 @@ class BricksTest extends TestCase
         Page::factory()->system('home')->create([
             'slug' => '/',
             'content' => [
-                $brick('cards', ['title' => 'Karty', 'cards' => [
+                $brick('hero', ['title' => 'Vítejte', 'buttons' => [
                     [
-                        'title' => 'Jóga',
                         'text' => 'Rezervovat',
                         'style' => 'primary',
                         'color' => '#ff0000',

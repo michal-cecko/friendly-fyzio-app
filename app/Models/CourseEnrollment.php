@@ -7,12 +7,15 @@ use App\Enums\CourseEnrollmentStatus;
 use App\Enums\PayableType;
 use App\Enums\PaymentStatus;
 use App\Models\Concerns\IsPayable;
+use App\Observers\CourseEnrollmentObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+#[ObservedBy(CourseEnrollmentObserver::class)]
 class CourseEnrollment extends Model implements Payable
 {
     use HasFactory, HasUuids, IsPayable;
@@ -23,6 +26,7 @@ class CourseEnrollment extends Model implements Payable
         'status',
         'payment_status',
         'paid_at',
+        'note',
     ];
 
     protected function casts(): array
@@ -72,5 +76,10 @@ class CourseEnrollment extends Model implements Payable
             ])),
             'klient' => (string) ($this->client?->name ?? ''),
         ];
+    }
+
+    public function payableTherapist(): ?User
+    {
+        return $this->series?->course?->instructor;
     }
 }

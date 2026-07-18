@@ -3,11 +3,10 @@
 namespace Tests\Feature;
 
 use App\Enums\UserRole;
-use App\Filament\Auth\Register;
+use App\Livewire\PublicRegister;
 use App\Models\ClientProfile;
 use App\Models\User;
-use Filament\Auth\Notifications\VerifyEmail;
-use Filament\Facades\Filament;
+use App\Notifications\Auth\VerifyEmailNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
@@ -17,13 +16,6 @@ use Tests\TestCase;
 class RegistrationTest extends TestCase
 {
     use RefreshDatabase;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        Filament::setCurrentPanel('client');
-    }
 
     private function fakeTurnstilePasses(): void
     {
@@ -37,18 +29,17 @@ class RegistrationTest extends TestCase
         $this->fakeTurnstilePasses();
         Notification::fake();
 
-        Livewire::test(Register::class)
-            ->fillForm([
-                'first_name' => 'Jan',
-                'last_name' => 'Novák',
-                'email' => 'jan@example.com',
-                'phone' => '+420 777 888 999',
-                'password' => 'password1234',
-                'passwordConfirmation' => 'password1234',
-                'turnstile_token' => 'dummy-token',
-            ])
+        Livewire::test(PublicRegister::class)
+            ->set('first_name', 'Jan')
+            ->set('last_name', 'Novák')
+            ->set('email', 'jan@example.com')
+            ->set('phone', '+420 777 888 999')
+            ->set('password', 'password1234')
+            ->set('password_confirmation', 'password1234')
+            ->set('turnstileToken', 'dummy-token')
             ->call('register')
-            ->assertHasNoFormErrors();
+            ->assertHasNoErrors()
+            ->assertRedirect(route('verification.notice'));
 
         $user = User::where('email', 'jan@example.com')->firstOrFail();
 
@@ -56,24 +47,22 @@ class RegistrationTest extends TestCase
         $this->assertSame(UserRole::Customer, $user->role);
         $this->assertNull($user->email_verified_at);
         $this->assertDatabaseHas(ClientProfile::class, ['user_id' => $user->id]);
+        $this->assertAuthenticatedAs($user);
 
-        Notification::assertSentTo($user, VerifyEmail::class);
+        Notification::assertSentTo($user, VerifyEmailNotification::class);
     }
 
     public function test_registration_requires_a_turnstile_token(): void
     {
-        Livewire::test(Register::class)
-            ->fillForm([
-                'first_name' => 'Eva',
-                'last_name' => 'Malá',
-                'email' => 'eva@example.com',
-                'phone' => '+420 777 111 222',
-                'password' => 'password1234',
-                'passwordConfirmation' => 'password1234',
-                'turnstile_token' => null,
-            ])
+        Livewire::test(PublicRegister::class)
+            ->set('first_name', 'Eva')
+            ->set('last_name', 'Malá')
+            ->set('email', 'eva@example.com')
+            ->set('phone', '+420 777 111 222')
+            ->set('password', 'password1234')
+            ->set('password_confirmation', 'password1234')
             ->call('register')
-            ->assertHasFormErrors(['turnstile_token']);
+            ->assertHasErrors(['turnstileToken']);
 
         $this->assertDatabaseMissing(User::class, ['email' => 'eva@example.com']);
     }
@@ -84,18 +73,16 @@ class RegistrationTest extends TestCase
             'challenges.cloudflare.com/*' => Http::response(['success' => false]),
         ]);
 
-        Livewire::test(Register::class)
-            ->fillForm([
-                'first_name' => 'Petr',
-                'last_name' => 'Veliký',
-                'email' => 'petr@example.com',
-                'phone' => '+420 777 333 444',
-                'password' => 'password1234',
-                'passwordConfirmation' => 'password1234',
-                'turnstile_token' => 'bad-token',
-            ])
+        Livewire::test(PublicRegister::class)
+            ->set('first_name', 'Petr')
+            ->set('last_name', 'Veliký')
+            ->set('email', 'petr@example.com')
+            ->set('phone', '+420 777 333 444')
+            ->set('password', 'password1234')
+            ->set('password_confirmation', 'password1234')
+            ->set('turnstileToken', 'bad-token')
             ->call('register')
-            ->assertHasFormErrors(['turnstile_token']);
+            ->assertHasErrors(['turnstileToken']);
 
         $this->assertDatabaseMissing(User::class, ['email' => 'petr@example.com']);
     }

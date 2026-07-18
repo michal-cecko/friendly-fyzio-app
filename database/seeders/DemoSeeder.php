@@ -400,6 +400,7 @@ class DemoSeeder extends Seeder
                 'lesson_date' => Carbon::now()->addDays(fake()->numberBetween(-7, 30))->toDateString(),
                 'start_time' => sprintf('%02d:00', $hour),
                 'end_time' => sprintf('%02d:00', $hour + 1),
+                'published_at' => now(),
             ]);
 
             foreach ($clients->random(fake()->numberBetween(2, 5)) as $client) {
@@ -446,6 +447,13 @@ class DemoSeeder extends Seeder
         });
 
         $this->seedFinance($clients, $services, $therapists, $rooms);
+
+        // Every public offer state from the designs (full/waitlist, mid-series,
+        // preparing + pre-sale, interest-only) — idempotent, keyed by slug.
+        $this->call(CourseOfferStatesSeeder::class);
+
+        // Featured photos for all demo courses/workshops (cards + detail heroes).
+        $this->call(OfferImagesSeeder::class);
     }
 
     /**

@@ -9,11 +9,16 @@ use App\Filament\Clusters\Provoz\Resources\Clients\Pages\EditClient;
 use App\Filament\Clusters\Provoz\Resources\Clients\Pages\ListClients;
 use App\Filament\Clusters\Provoz\Resources\Clients\Pages\ViewClient;
 use App\Filament\Clusters\Provoz\Resources\Clients\RelationManagers\CourseEnrollmentsRelationManager;
+use App\Filament\Clusters\Provoz\Resources\Clients\RelationManagers\CreditTransactionsRelationManager;
+use App\Filament\Clusters\Provoz\Resources\Clients\RelationManagers\InvoicesRelationManager;
 use App\Filament\Clusters\Provoz\Resources\Clients\RelationManagers\NotesRelationManager;
 use App\Filament\Clusters\Provoz\Resources\Clients\RelationManagers\ReservationsRelationManager;
+use App\Filament\Clusters\Provoz\Resources\Clients\RelationManagers\SubstituteTokensRelationManager;
 use App\Filament\Clusters\Provoz\Resources\Clients\Schemas\ClientForm;
 use App\Filament\Clusters\Provoz\Resources\Clients\Schemas\ClientInfolist;
 use App\Filament\Clusters\Provoz\Resources\Clients\Tables\ClientsTable;
+use App\Filament\Support\Concerns\ScopedToTherapist;
+use App\Filament\Support\RelationManagers\PaymentsRelationManager;
 use App\Models\User;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -26,6 +31,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ClientResource extends Resource
 {
+    use ScopedToTherapist;
+
     protected static ?string $model = User::class;
 
     protected static ?string $cluster = ProvozCluster::class;
@@ -78,7 +85,10 @@ class ClientResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->where('role', UserRole::Customer);
+            ->where('role', UserRole::Customer)
+            // "My Clients": a therapist only sees customers they have treated.
+            ->when(static::therapistProfileScopeId(), fn (Builder $query, string $id) => $query
+                ->whereHas('reservations', fn (Builder $reservations) => $reservations->where('therapist_id', $id)));
     }
 
     public static function form(Schema $schema): Schema
@@ -102,6 +112,10 @@ class ClientResource extends Resource
             NotesRelationManager::class,
             ReservationsRelationManager::class,
             CourseEnrollmentsRelationManager::class,
+            CreditTransactionsRelationManager::class,
+            PaymentsRelationManager::class,
+            InvoicesRelationManager::class,
+            SubstituteTokensRelationManager::class,
         ];
     }
 

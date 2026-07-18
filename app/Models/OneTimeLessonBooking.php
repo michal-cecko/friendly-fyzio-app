@@ -3,15 +3,19 @@
 namespace App\Models;
 
 use App\Contracts\Payable;
+use App\Enums\BookingStatus;
 use App\Enums\PayableType;
 use App\Enums\PaymentStatus;
 use App\Models\Concerns\IsPayable;
+use App\Observers\OneTimeLessonBookingObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 
+#[ObservedBy(OneTimeLessonBookingObserver::class)]
 class OneTimeLessonBooking extends Model implements Payable
 {
     use HasFactory, HasUuids, IsPayable;
@@ -22,11 +26,13 @@ class OneTimeLessonBooking extends Model implements Payable
         'status',
         'payment_status',
         'paid_at',
+        'note',
     ];
 
     protected function casts(): array
     {
         return [
+            'status' => BookingStatus::class,
             'payment_status' => PaymentStatus::class,
             'paid_at' => 'datetime',
         ];

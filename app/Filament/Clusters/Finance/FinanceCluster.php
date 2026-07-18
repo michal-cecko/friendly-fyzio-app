@@ -8,7 +8,7 @@ use Filament\Support\Icons\Heroicon;
 
 /**
  * Finance is cross-cutting: payments/invoices reference payables from Provoz,
- * Kurzy and LekceWorkshopy, so the money records get their own home — payments,
+ * the Kurzy cluster, so the money records get their own home — payments,
  * invoices, cash receipts and numbering series.
  */
 class FinanceCluster extends Cluster

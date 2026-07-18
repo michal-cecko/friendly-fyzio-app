@@ -22,7 +22,7 @@
                         @endif
                         <figcaption class="flex items-center gap-3">
                             <span class="flex flex-col">
-                                <span class="font-heading text-sm font-semibold text-neutral-900">{{ $review->author_name }}</span>
+                                <span class="font-heading text-sm font-semibold text-neutral-900">{{ \Illuminate\Support\Str::before(trim($review->author_name), ' ') }}</span>
                             </span>
                         </figcaption>
                     </figure>
