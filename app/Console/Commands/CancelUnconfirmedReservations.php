@@ -7,6 +7,7 @@ use App\Enums\ReservationStatus;
 use App\Models\Reservation;
 use App\Notifications\ReservationTemplateNotification;
 use App\Notifications\TherapistReservationAutoCancelledNotification;
+use App\Support\ActivityLog\LogActivity;
 use App\Support\Settings;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
@@ -60,6 +61,13 @@ class CancelUnconfirmedReservations extends Command
 
             $reservation->client?->notify(new ReservationTemplateNotification($reservation, EmailTemplateKey::ReservationAutoCancelled));
             $reservation->therapist?->user?->notify(new TherapistReservationAutoCancelledNotification($reservation));
+
+            LogActivity::record('reservation_auto_cancelled', $reservation, 'Automaticky zrušeno – nepotvrzená účast', [
+                'source' => 'Systém (automatické zrušení)',
+                'notified_client' => filled($reservation->client?->email),
+                'notified_therapist' => $reservation->therapist?->user !== null,
+            ]);
+
             $cancelled++;
         }
 

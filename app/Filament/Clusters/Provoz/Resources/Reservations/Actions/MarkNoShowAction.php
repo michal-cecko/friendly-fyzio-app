@@ -8,6 +8,7 @@ use App\Enums\PaymentStatus;
 use App\Enums\ReservationStatus;
 use App\Models\Reservation;
 use App\Notifications\ReservationTemplateNotification;
+use App\Support\ActivityLog\LogActivity;
 use App\Support\Payments\PaymentEmailTokens;
 use App\Support\Settings;
 use Filament\Actions\Action;
@@ -62,6 +63,11 @@ class MarkNoShowAction extends Action
                 $fee = $this->noShowFee($record);
 
                 if ($fee <= 0) {
+                    LogActivity::record('reservation_no_show', $record, 'Nedostavení na termín', [
+                        'fee' => '0 Kč',
+                        'notified_client' => false,
+                    ]);
+
                     Notification::make()
                         ->title('Rezervace byla označena jako nedostavení.')
                         ->success()
@@ -78,13 +84,20 @@ class MarkNoShowAction extends Action
                     'due_at' => today()->addDays(Settings::paymentDueDays()),
                 ]);
 
-                if ($data['notify_client'] ?? false) {
+                $notifyClient = ($data['notify_client'] ?? false) && filled($record->client?->email);
+
+                if ($notifyClient) {
                     $record->client?->notify(new ReservationTemplateNotification(
                         $record,
                         EmailTemplateKey::ReservationNoShow,
                         PaymentEmailTokens::for($payment),
                     ));
                 }
+
+                LogActivity::record('reservation_no_show', $record, 'Nedostavení na termín', [
+                    'fee' => $fee.' Kč',
+                    'notified_client' => $notifyClient,
+                ]);
 
                 Notification::make()
                     ->title('Nedostavení bylo zaznamenáno a poplatek vystaven.')

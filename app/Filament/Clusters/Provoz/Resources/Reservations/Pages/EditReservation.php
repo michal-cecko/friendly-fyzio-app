@@ -9,6 +9,7 @@ use App\Filament\Support\Actions\ActivityLogAction;
 use App\Models\Reservation;
 use App\Notifications\ReservationTemplateNotification;
 use App\Notifications\TherapistReservationTemplateNotification;
+use App\Support\ActivityLog\LogActivity;
 use App\Support\Reservations\ReservationChangeSnapshot;
 use Filament\Actions\ViewAction;
 use Filament\Resources\Pages\EditRecord;
@@ -74,22 +75,31 @@ class EditReservation extends EditRecord
 
     protected function afterSave(): void
     {
-        if (! $this->notifyClient) {
-            return;
-        }
-
         /** @var Reservation $record */
         $record = $this->getRecord();
 
-        $record->client?->notify(new ReservationTemplateNotification(
-            $record,
-            EmailTemplateKey::ReservationChanged,
-            $this->reservationChangeSnapshot,
-        ));
-        $record->therapist?->user?->notify(new TherapistReservationTemplateNotification(
-            $record,
-            EmailTemplateKey::TherapistReservationChanged,
-            $this->reservationChangeSnapshot,
-        ));
+        $notifiedClient = $this->notifyClient && filled($record->client?->email);
+        $notifiedTherapist = $this->notifyClient && $record->therapist?->user !== null;
+
+        if ($notifiedClient) {
+            $record->client?->notify(new ReservationTemplateNotification(
+                $record,
+                EmailTemplateKey::ReservationChanged,
+                $this->reservationChangeSnapshot,
+            ));
+        }
+
+        if ($notifiedTherapist) {
+            $record->therapist?->user?->notify(new TherapistReservationTemplateNotification(
+                $record,
+                EmailTemplateKey::TherapistReservationChanged,
+                $this->reservationChangeSnapshot,
+            ));
+        }
+
+        LogActivity::record('reservation_edited', $record, 'Rezervace upravena', [
+            'notified_client' => $notifiedClient,
+            'notified_therapist' => $notifiedTherapist,
+        ]);
     }
 }

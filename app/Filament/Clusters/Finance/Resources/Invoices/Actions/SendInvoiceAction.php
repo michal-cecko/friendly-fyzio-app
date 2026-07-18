@@ -5,6 +5,7 @@ namespace App\Filament\Clusters\Finance\Resources\Invoices\Actions;
 use App\Enums\InvoiceStatus;
 use App\Models\Invoice;
 use App\Notifications\InvoiceIssuedNotification;
+use App\Support\ActivityLog\LogActivity;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Support\Icons\Heroicon;
@@ -35,6 +36,10 @@ class SendInvoiceAction extends Action
             ->visible(fn (Invoice $record): bool => filled($record->client?->email))
             ->action(function (Invoice $record): void {
                 $record->client->notify(new InvoiceIssuedNotification($record));
+
+                LogActivity::record('invoice_issued', $record, 'Faktura odeslána e-mailem', [
+                    'notified_client' => true,
+                ]);
 
                 if ($record->status === InvoiceStatus::New) {
                     $record->update(['status' => InvoiceStatus::Sent]);

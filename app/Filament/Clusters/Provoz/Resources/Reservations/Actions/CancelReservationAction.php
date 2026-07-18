@@ -6,6 +6,7 @@ use App\Enums\EmailTemplateKey;
 use App\Enums\ReservationStatus;
 use App\Models\Reservation;
 use App\Notifications\ReservationTemplateNotification;
+use App\Support\ActivityLog\LogActivity;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
@@ -60,11 +61,19 @@ class CancelReservationAction extends Action
                     'cancellation_reason' => $data['cancellation_reason'],
                 ]);
 
-                if ($data['notify_client'] ?? false) {
+                $notifyClient = ($data['notify_client'] ?? false) && filled($record->client?->email);
+
+                if ($notifyClient) {
                     $record->client?->notify(new ReservationTemplateNotification($record, EmailTemplateKey::ReservationCancelled));
                 }
 
                 $erased = (bool) ($data['force_delete'] ?? false);
+
+                LogActivity::record('reservation_cancelled', $record, 'Rezervace zrušena', [
+                    'reason' => $data['cancellation_reason'],
+                    'notified_client' => $notifyClient,
+                    'erased' => $erased,
+                ]);
 
                 if ($erased) {
                     $record->delete();

@@ -15,6 +15,7 @@ use App\Models\User;
 use App\Notifications\ReservationStornoPaymentNotification;
 use App\Notifications\ReservationTemplateNotification;
 use App\Notifications\TherapistReservationTemplateNotification;
+use App\Support\ActivityLog\LogActivity;
 use Filament\Notifications\Notification;
 
 /**
@@ -47,6 +48,12 @@ class ClientReservationActions
 
         $reservation->client?->notify(new ReservationTemplateNotification($reservation, EmailTemplateKey::ReservationConfirmed));
         $reservation->therapist?->user?->notify(new TherapistReservationTemplateNotification($reservation, EmailTemplateKey::TherapistReservationConfirmed));
+
+        LogActivity::record('reservation_confirmed', $reservation, 'Rezervace potvrzena', [
+            'source' => 'Zákazník (online)',
+            'notified_client' => true,
+            'notified_therapist' => $reservation->therapist?->user !== null,
+        ], $reservation->client);
     }
 
     /**
@@ -69,6 +76,12 @@ class ClientReservationActions
 
         $reservation->client?->notify(new ReservationTemplateNotification($reservation, EmailTemplateKey::ReservationCancelled));
         $this->notifyTherapistOfClientCancellation($reservation, 'Zrušeno v řádné lhůtě – bez storno poplatku', '');
+
+        LogActivity::record('reservation_cancelled', $reservation, 'Rezervace zrušena', [
+            'source' => 'Zákazník (online) – v řádné lhůtě',
+            'notified_client' => true,
+            'notified_therapist' => $reservation->therapist?->user !== null,
+        ], $reservation->client);
     }
 
     /**
@@ -98,6 +111,13 @@ class ClientReservationActions
         $reservation->client?->notify(new ReservationStornoPaymentNotification($reservation, $payment));
         $this->notifyTherapistOfClientCancellation($reservation, 'Klient uhradí storno poplatek', $payment->amount.' Kč');
 
+        LogActivity::record('reservation_storno_charged', $reservation, 'Storno poplatek vyžádán', [
+            'source' => 'Zákazník (online)',
+            'fee' => $payment->amount.' Kč',
+            'notified_client' => true,
+            'notified_therapist' => $reservation->therapist?->user !== null,
+        ], $reservation->client);
+
         return $payment;
     }
 
@@ -121,6 +141,12 @@ class ClientReservationActions
         $this->notifyTherapistOfClientCancellation($reservation, 'Klient doloží potvrzení od lékaře (poplatek pozastaven)', 'pozastaveno');
 
         $this->notifyStaffOfDoctorNote($reservation);
+
+        LogActivity::record('reservation_cancelled', $reservation, 'Rezervace zrušena', [
+            'source' => 'Zákazník (online) – potvrzení od lékaře',
+            'notified_client' => true,
+            'notified_therapist' => $reservation->therapist?->user !== null,
+        ], $reservation->client);
     }
 
     /**
@@ -142,6 +168,13 @@ class ClientReservationActions
 
         $reservation->client?->notify(new ReservationTemplateNotification($reservation, EmailTemplateKey::ReservationCancelled));
         $this->notifyTherapistOfClientCancellation($reservation, 'Klient odmítl úhradu – účet deaktivován', $reservation->stornoFee().' Kč');
+
+        LogActivity::record('reservation_cancelled', $reservation, 'Rezervace zrušena', [
+            'source' => 'Zákazník (online) – bez úhrady, účet deaktivován',
+            'fee' => $reservation->stornoFee().' Kč',
+            'notified_client' => true,
+            'notified_therapist' => $reservation->therapist?->user !== null,
+        ], $reservation->client);
     }
 
     /**

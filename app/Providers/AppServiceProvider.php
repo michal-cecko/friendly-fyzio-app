@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Enums\NavigationLocation;
+use App\Listeners\LogSentEmail;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
 use App\Models\CourseSeries;
@@ -27,6 +28,8 @@ use Filament\Forms\Components\RichEditor\TextColor;
 use Filament\Support\Facades\FilamentIcon;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Notifications\Events\NotificationSent;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use RalphJSmit\Filament\MediaLibrary\Models\MediaLibraryItem;
@@ -48,6 +51,9 @@ class AppServiceProvider extends ServiceProvider
         // image columns, WYSIWYG content) must not be deleted — the vendor model
         // can't carry an #[ObservedBy] attribute, so the observer registers here.
         MediaLibraryItem::observe(MediaLibraryItemObserver::class);
+
+        // Record every outgoing e-mail (manual or automatic) in the activity log.
+        Event::listen(NotificationSent::class, LogSentEmail::class);
 
         Relation::morphMap([
             'service' => Service::class,

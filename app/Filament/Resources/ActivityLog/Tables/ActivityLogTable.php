@@ -12,6 +12,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 use Spatie\Activitylog\Models\Activity;
 
 class ActivityLogTable
@@ -49,12 +50,7 @@ class ActivityLogTable
                 SelectFilter::make('event')
                     ->label('Akce')
                     ->multiple()
-                    ->options([
-                        'created' => 'Vytvořeno',
-                        'updated' => 'Upraveno',
-                        'deleted' => 'Smazáno',
-                        'restored' => 'Obnoveno',
-                    ]),
+                    ->options(ActivityPresenter::eventOptions()),
                 SelectFilter::make('subject_type')
                     ->label('Typ záznamu')
                     ->multiple()
@@ -95,11 +91,11 @@ class ActivityLogTable
                         $indicators = [];
 
                         if ($data['created_from'] ?? null) {
-                            $indicators[] = 'Od '.\Illuminate\Support\Carbon::parse($data['created_from'])->format('d.m.Y');
+                            $indicators[] = 'Od '.Carbon::parse($data['created_from'])->format('d.m.Y');
                         }
 
                         if ($data['created_until'] ?? null) {
-                            $indicators[] = 'Do '.\Illuminate\Support\Carbon::parse($data['created_until'])->format('d.m.Y');
+                            $indicators[] = 'Do '.Carbon::parse($data['created_until'])->format('d.m.Y');
                         }
 
                         return $indicators;
