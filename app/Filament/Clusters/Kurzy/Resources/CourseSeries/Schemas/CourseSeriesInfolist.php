@@ -2,7 +2,7 @@
 
 namespace App\Filament\Clusters\Kurzy\Resources\CourseSeries\Schemas;
 
-use App\Filament\Support\Schemas\RecordTimestampsSection;
+use App\Filament\Support\Schemas\RecordTimestamps;
 use App\Models\CourseSeries;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\TextEntry;
@@ -47,6 +47,7 @@ class CourseSeriesInfolist
                         TextEntry::make('visibility')
                             ->label('Viditelnost')
                             ->badge(),
+                        RecordTimestamps::entries(),
                     ]),
                 Section::make('Obsazenost')
                     ->columns(3)
@@ -61,7 +62,6 @@ class CourseSeriesInfolist
                             ->label('Čekací listina')
                             ->state(fn (CourseSeries $record): int => $record->waitlistEntries()->whereNull('notified_at')->count()),
                     ]),
-                RecordTimestampsSection::make(),
             ]);
     }
 }

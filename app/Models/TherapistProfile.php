@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Contracts\HasPermalink;
+use App\Models\Concerns\Auditable;
 use App\Models\Concerns\Publishable;
 use Database\Factories\TherapistProfileFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -17,7 +18,12 @@ use Illuminate\Support\Str;
 class TherapistProfile extends Model implements HasPermalink
 {
     /** @use HasFactory<TherapistProfileFactory> */
-    use HasFactory, HasUuids, Publishable;
+    use Auditable, HasFactory, HasUuids, Publishable;
+
+    public function logTitle(): string
+    {
+        return $this->user?->name ?? ('Terapeut #'.substr((string) $this->getKey(), 0, 8));
+    }
 
     protected $fillable = [
         'user_id',

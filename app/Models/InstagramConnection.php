@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\InstagramConnectionStatus;
+use App\Models\Concerns\Auditable;
 use Database\Factories\InstagramConnectionFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -14,7 +15,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class InstagramConnection extends Model
 {
     /** @use HasFactory<InstagramConnectionFactory> */
-    use HasFactory, HasUuids, SoftDeletes;
+    use Auditable, HasFactory, HasUuids, SoftDeletes;
 
     protected $fillable = [
         'username',

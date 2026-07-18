@@ -21,7 +21,7 @@ class CourseEnrollmentForm
             ->components([
                 PresenceBanner::make(),
                 Select::make('series_id')
-                    ->label('Běh')
+                    ->label('Série')
                     ->relationship('series', 'name')
                     ->searchable()
                     ->preload()

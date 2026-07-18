@@ -115,8 +115,8 @@ class OfferSignupForm extends Component
         try {
             match (true) {
                 $offer instanceof CourseSeries => $action->forSeries($offer, $data, $this->presale),
-                $offer instanceof OneTimeLesson => $action->forLesson($offer, $data),
-                $offer instanceof Workshop => $action->forWorkshop($offer, $data),
+                $offer instanceof OneTimeLesson => $action->forLesson($offer, $data, $this->presale),
+                $offer instanceof Workshop => $action->forWorkshop($offer, $data, $this->presale),
             };
 
             $this->completed = 'signup';
@@ -220,7 +220,7 @@ class OfferSignupForm extends Component
     public function render(): View
     {
         $offer = $this->offer();
-        $state = $this->presale && $offer instanceof CourseSeries
+        $state = $this->presale
             ? $offer->offerStateForPresale()
             : $offer->offerState();
 
@@ -275,7 +275,7 @@ class OfferSignupForm extends Component
         return match (true) {
             $offer instanceof CourseSeries => array_filter([
                 ['Kurz', (string) ($offer->course?->name ?? $offer->name)],
-                ['Běh', $offer->name],
+                ['Série', $offer->name],
                 ['Období', EnrollmentEmailContext::seriesPeriod($offer)],
                 ['Nejbližší lekce', EnrollmentEmailContext::nextLessonLabel($offer)],
             ]),

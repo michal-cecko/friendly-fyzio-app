@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\InvoiceStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -15,7 +16,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Invoice extends Model
 {
-    use HasFactory, HasUuids;
+    use Auditable, HasFactory, HasUuids;
 
     protected $fillable = [
         'series_id',

@@ -3,6 +3,7 @@
 namespace App\Filament\Clusters\Lekce\Resources\OneTimeLessons\Pages;
 
 use App\Filament\Clusters\Lekce\Resources\OneTimeLessons\OneTimeLessonResource;
+use App\Filament\Support\Actions\ActivityLogAction;
 use App\Filament\Support\Concerns\RendersRelationManagersAsSections;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
@@ -17,6 +18,7 @@ class ViewOneTimeLesson extends ViewRecord
     {
         return [
             EditAction::make(),
+            ActivityLogAction::make(),
         ];
     }
 }

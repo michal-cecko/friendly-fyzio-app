@@ -2,7 +2,7 @@
 
 namespace App\Filament\Clusters\System\Resources\Users\Schemas;
 
-use App\Filament\Support\Schemas\RecordTimestampsSection;
+use App\Filament\Support\Schemas\RecordTimestamps;
 use App\Models\User;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\TextEntry;
@@ -27,7 +27,7 @@ class UserInfolist
                         TextEntry::make('phone')->label('Telefon')->placeholder('—'),
                         TextEntry::make('role')->label('Typ účtu')->badge(),
                         IconEntry::make('email_verified_at')->label('Ověřen email?')->boolean(),
-                        TextEntry::make('created_at')->label('Vytvořen')->dateTime('d.m.Y H:i'),
+                        RecordTimestamps::entries(),
                     ]),
                 Section::make('Terapeut')
                     ->columns(2)
@@ -50,7 +50,6 @@ class UserInfolist
                             ->placeholder('—')
                             ->columnSpanFull(),
                     ]),
-                RecordTimestampsSection::make(),
             ]);
     }
 }

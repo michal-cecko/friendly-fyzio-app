@@ -145,8 +145,8 @@ class SubstituteTokenTest extends TestCase
         $this->lesson($unrelatedSeries, today()->addWeeks(2)->toDateString());
 
         SubstituteRule::create([
-            'source_course_id' => $sourceSeries->course_id,
-            'target_course_id' => $allowedSeries->course_id,
+            'source_series_id' => $sourceSeries->id,
+            'target_series_id' => $allowedSeries->id,
         ]);
 
         $options = app(SubstituteOptions::class)->forToken($token);
@@ -168,8 +168,8 @@ class SubstituteTokenTest extends TestCase
         $free = $this->lesson($allowedSeries, today()->addWeeks(3)->toDateString());
 
         SubstituteRule::create([
-            'source_course_id' => $sourceSeries->course_id,
-            'target_course_id' => $allowedSeries->course_id,
+            'source_series_id' => $sourceSeries->id,
+            'target_series_id' => $allowedSeries->id,
         ]);
 
         // The client already attends one of the target lessons (e.g. a substitute
@@ -197,8 +197,8 @@ class SubstituteTokenTest extends TestCase
         $target = $this->lesson($targetSeries, today()->addWeeks(2)->toDateString());
 
         SubstituteRule::create([
-            'source_course_id' => $sourceSeries->course_id,
-            'target_course_id' => $targetSeries->course_id,
+            'source_series_id' => $sourceSeries->id,
+            'target_series_id' => $targetSeries->id,
         ]);
 
         $attendance = app(RedeemToken::class)($token, $target);
@@ -226,8 +226,8 @@ class SubstituteTokenTest extends TestCase
         $second = $this->lesson($targetSeries, today()->addWeeks(3)->toDateString());
 
         SubstituteRule::create([
-            'source_course_id' => $sourceSeries->course_id,
-            'target_course_id' => $targetSeries->course_id,
+            'source_series_id' => $sourceSeries->id,
+            'target_series_id' => $targetSeries->id,
         ]);
 
         app(RedeemToken::class)($token, $target);
@@ -249,8 +249,8 @@ class SubstituteTokenTest extends TestCase
         $target = $this->lesson($targetSeries, today()->addWeeks(2)->toDateString());
 
         SubstituteRule::create([
-            'source_course_id' => $sourceSeries->course_id,
-            'target_course_id' => $targetSeries->course_id,
+            'source_series_id' => $sourceSeries->id,
+            'target_series_id' => $targetSeries->id,
         ]);
 
         $this->expectException(SubstituteException::class);
@@ -272,8 +272,8 @@ class SubstituteTokenTest extends TestCase
         $target = $this->lesson($targetSeries, today()->addWeeks(2)->toDateString());
 
         SubstituteRule::create([
-            'source_course_id' => $sourceSeries->course_id,
-            'target_course_id' => $targetSeries->course_id,
+            'source_series_id' => $sourceSeries->id,
+            'target_series_id' => $targetSeries->id,
         ]);
 
         $this->assertCount(0, app(SubstituteOptions::class)->forToken($token));
@@ -297,8 +297,8 @@ class SubstituteTokenTest extends TestCase
         $target = $this->lesson($targetSeries, today()->addWeeks(2)->toDateString());
 
         SubstituteRule::create([
-            'source_course_id' => $sourceSeries->course_id,
-            'target_course_id' => $targetSeries->course_id,
+            'source_series_id' => $sourceSeries->id,
+            'target_series_id' => $targetSeries->id,
         ]);
 
         $this->assertCount(0, app(SubstituteOptions::class)->forToken($token));

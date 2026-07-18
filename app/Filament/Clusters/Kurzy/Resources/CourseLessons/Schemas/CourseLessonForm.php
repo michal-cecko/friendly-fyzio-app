@@ -3,10 +3,12 @@
 namespace App\Filament\Clusters\Kurzy\Resources\CourseLessons\Schemas;
 
 use App\Enums\UserRole;
+use App\Filament\Support\Schemas\NotifyParticipantsToggle;
 use App\Filament\Support\Schemas\PresenceBanner;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TimePicker;
+use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -19,12 +21,13 @@ class CourseLessonForm
             ->components([
                 PresenceBanner::make(),
                 Select::make('series_id')
-                    ->label('Běh')
+                    ->label('Série')
                     ->relationship('series', 'name')
                     ->searchable()
                     ->preload()
                     ->native(false)
-                    ->required(),
+                    ->required()
+                    ->hidden(fn ($livewire): bool => $livewire instanceof RelationManager),
                 Select::make('instructor_id')
                     ->label('Lektor')
                     ->relationship('instructor', 'name', fn (Builder $query): Builder => $query->whereIn('role', [UserRole::Admin, UserRole::Therapist]))
@@ -53,6 +56,7 @@ class CourseLessonForm
                     ->native(false)
                     ->seconds(false)
                     ->required(),
+                NotifyParticipantsToggle::make(),
             ]);
     }
 }

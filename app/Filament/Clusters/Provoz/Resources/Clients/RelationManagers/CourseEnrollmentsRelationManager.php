@@ -26,7 +26,7 @@ class CourseEnrollmentsRelationManager extends RelationManager
                 TextColumn::make('series.course.name')
                     ->label('Kurz'),
                 TextColumn::make('series.name')
-                    ->label('Běh'),
+                    ->label('Série'),
                 TextColumn::make('series.start_date')
                     ->label('Od')
                     ->date('d.m.Y'),

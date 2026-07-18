@@ -30,7 +30,7 @@ class CourseEnrollmentsTable
                     ->sortable()
                     ->placeholder('—'),
                 TextColumn::make('series.name')
-                    ->label('Běh')
+                    ->label('Série')
                     ->sortable()
                     ->placeholder('—'),
                 TextColumn::make('client.name')

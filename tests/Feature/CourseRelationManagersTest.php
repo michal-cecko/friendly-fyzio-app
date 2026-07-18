@@ -1,0 +1,141 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Filament\Clusters\Kurzy\Resources\Courses\Pages\ViewCourse;
+use App\Filament\Clusters\Kurzy\Resources\Courses\RelationManagers\SeriesRelationManager;
+use App\Filament\Clusters\Kurzy\Resources\CourseSeries\Pages\ViewCourseSeries;
+use App\Filament\Clusters\Kurzy\Resources\CourseSeries\RelationManagers\LessonsRelationManager;
+use App\Filament\Clusters\Kurzy\Resources\CourseSeries\RelationManagers\SubstituteRulesRelationManager;
+use App\Filament\Support\RelationManagers\WaitlistEntriesRelationManager;
+use App\Models\Course;
+use App\Models\CourseLesson;
+use App\Models\CourseSeries;
+use App\Models\Room;
+use App\Models\SubstituteRule;
+use App\Models\User;
+use Filament\Actions\Testing\TestAction;
+use Filament\Facades\Filament;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
+use Tests\TestCase;
+
+class CourseRelationManagersTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Filament::setCurrentPanel('admin');
+
+        $this->actingAs(User::factory()->admin()->create());
+    }
+
+    public function test_course_view_lists_its_series(): void
+    {
+        $course = Course::factory()->create();
+        $series = CourseSeries::factory()->count(2)->create(['course_id' => $course->id]);
+        $otherSeries = CourseSeries::factory()->create();
+
+        Livewire::test(SeriesRelationManager::class, [
+            'ownerRecord' => $course,
+            'pageClass' => ViewCourse::class,
+        ])
+            ->assertCanSeeTableRecords($series)
+            ->assertCanNotSeeTableRecords([$otherSeries]);
+    }
+
+    public function test_series_can_be_created_inline_for_the_owning_course(): void
+    {
+        $course = Course::factory()->create();
+
+        Livewire::test(SeriesRelationManager::class, [
+            'ownerRecord' => $course,
+            'pageClass' => ViewCourse::class,
+        ])
+            ->callAction(TestAction::make('create')->table(), [
+                'name' => 'Podzimní série 2026',
+                'start_date' => '2026-09-01',
+                'end_date' => '2026-11-30',
+                'capacity' => 10,
+                'price' => 2000,
+            ])
+            ->assertHasNoActionErrors();
+
+        $this->assertDatabaseHas(CourseSeries::class, [
+            'course_id' => $course->id,
+            'name' => 'Podzimní série 2026',
+        ]);
+    }
+
+    public function test_series_view_lists_its_lessons(): void
+    {
+        $series = CourseSeries::factory()->create();
+        $lessons = CourseLesson::factory()->count(3)->create(['series_id' => $series->id]);
+        $otherLesson = CourseLesson::factory()->create();
+
+        Livewire::test(LessonsRelationManager::class, [
+            'ownerRecord' => $series,
+            'pageClass' => ViewCourseSeries::class,
+        ])
+            ->assertCanSeeTableRecords($lessons)
+            ->assertCanNotSeeTableRecords([$otherLesson]);
+    }
+
+    public function test_lesson_can_be_created_inline_for_the_owning_series(): void
+    {
+        $series = CourseSeries::factory()->create();
+        $instructor = User::factory()->therapist()->create();
+        $room = Room::factory()->create();
+
+        Livewire::test(LessonsRelationManager::class, [
+            'ownerRecord' => $series,
+            'pageClass' => ViewCourseSeries::class,
+        ])
+            ->callAction(TestAction::make('create')->table(), [
+                'instructor_id' => $instructor->id,
+                'room_id' => $room->id,
+                'lesson_date' => '2026-09-07',
+                'start_time' => '09:00',
+                'end_time' => '10:00',
+            ])
+            ->assertHasNoActionErrors();
+
+        $this->assertDatabaseHas(CourseLesson::class, [
+            'series_id' => $series->id,
+            'instructor_id' => $instructor->id,
+            'lesson_date' => '2026-09-07 00:00:00',
+        ]);
+    }
+
+    public function test_substitute_rule_can_be_created_inline_for_the_owning_series(): void
+    {
+        $series = CourseSeries::factory()->create();
+        $target = CourseSeries::factory()->create();
+
+        Livewire::test(SubstituteRulesRelationManager::class, [
+            'ownerRecord' => $series,
+            'pageClass' => ViewCourseSeries::class,
+        ])
+            ->callAction(TestAction::make('create')->table(), [
+                'target_series_id' => $target->id,
+            ])
+            ->assertHasNoActionErrors();
+
+        $this->assertDatabaseHas(SubstituteRule::class, [
+            'source_series_id' => $series->id,
+            'target_series_id' => $target->id,
+        ]);
+    }
+
+    public function test_waitlist_tab_is_relabelled_on_a_course_but_not_on_a_series(): void
+    {
+        $course = Course::factory()->create();
+        $series = CourseSeries::factory()->create();
+
+        $this->assertSame('Chci vědět první', WaitlistEntriesRelationManager::getTitle($course, ViewCourse::class));
+        $this->assertSame('Čekací listina', WaitlistEntriesRelationManager::getTitle($series, ViewCourseSeries::class));
+    }
+}

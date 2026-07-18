@@ -7,6 +7,7 @@ use App\Enums\ConfirmationSource;
 use App\Enums\PayableType;
 use App\Enums\PaymentStatus;
 use App\Enums\ReservationStatus;
+use App\Models\Concerns\Auditable;
 use App\Models\Concerns\IsPayable;
 use App\Observers\ReservationObserver;
 use App\Support\Payments\ReservationPaymentStatus;
@@ -26,7 +27,18 @@ use Illuminate\Support\Facades\URL;
 #[ObservedBy(ReservationObserver::class)]
 class Reservation extends Model implements Payable
 {
-    use HasFactory, HasUuids, Prunable, SoftDeletes;
+    use Auditable, HasFactory, HasUuids, Prunable, SoftDeletes;
+
+    public function logTitle(): string
+    {
+        return trim(
+            ($this->client?->name ?? 'Rezervace')
+            .' · '.($this->service?->name ?? '')
+            .' · '.$this->reservation_date?->format('j. n. Y'),
+            ' ·',
+        );
+    }
+
     use IsPayable {
         invoiceItemTemplates as private defaultInvoiceItemTemplates;
     }

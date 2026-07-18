@@ -25,6 +25,7 @@
         "ralphjsmit/laravel-filament-media-library": "^4.0",
         "saade/filament-fullcalendar": "^4.0",
         "sentry/sentry-laravel": "^4.0",
+        "spatie/laravel-activitylog": "^5.0",
         "spatie/laravel-medialibrary": "^11.23",
         "spatie/laravel-tags": "^4.11",
         "spiral/roadrunner-cli": "^2.6.0",

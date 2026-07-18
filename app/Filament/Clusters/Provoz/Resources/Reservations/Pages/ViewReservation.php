@@ -11,7 +11,7 @@ use App\Filament\Clusters\Provoz\Resources\Reservations\Actions\RestoreReservati
 use App\Filament\Clusters\Provoz\Resources\Reservations\Actions\SendReservationEmailAction;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Actions\UnconfirmReservationAction;
 use App\Filament\Clusters\Provoz\Resources\Reservations\ReservationResource;
-use App\Filament\Clusters\Provoz\Resources\Reservations\Schemas\ReservationForm;
+use App\Filament\Support\Actions\ActivityLogAction;
 use App\Filament\Support\Actions\RecordPaymentAction;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
@@ -30,10 +30,12 @@ class ViewReservation extends ViewRecord
             RequestPaymentAction::make(),
             GenerateInvoiceFromPayableAction::make(),
             MarkNoShowAction::make(),
-            EditAction::make()
-                ->schema(ReservationForm::components()),
+            // A full edit page (not a modal): the notes RichEditor's mention menu
+            // throws inside Filament modals, so editing lives on its own page.
+            EditAction::make(),
             CancelReservationAction::make(),
             RestoreReservationAction::make(),
+            ActivityLogAction::make(),
         ];
     }
 }

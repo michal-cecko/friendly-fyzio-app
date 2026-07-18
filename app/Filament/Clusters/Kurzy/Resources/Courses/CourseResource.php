@@ -7,7 +7,7 @@ use App\Filament\Clusters\Kurzy\Resources\Courses\Pages\CreateCourse;
 use App\Filament\Clusters\Kurzy\Resources\Courses\Pages\EditCourse;
 use App\Filament\Clusters\Kurzy\Resources\Courses\Pages\ListCourses;
 use App\Filament\Clusters\Kurzy\Resources\Courses\Pages\ViewCourse;
-use App\Filament\Clusters\Kurzy\Resources\Courses\RelationManagers\SubstituteRulesRelationManager;
+use App\Filament\Clusters\Kurzy\Resources\Courses\RelationManagers\SeriesRelationManager;
 use App\Filament\Clusters\Kurzy\Resources\Courses\Schemas\CourseForm;
 use App\Filament\Clusters\Kurzy\Resources\Courses\Schemas\CourseInfolist;
 use App\Filament\Clusters\Kurzy\Resources\Courses\Tables\CoursesTable;
@@ -96,8 +96,8 @@ class CourseResource extends Resource
     public static function getRelations(): array
     {
         return [
+            SeriesRelationManager::class,
             WaitlistEntriesRelationManager::class,
-            SubstituteRulesRelationManager::class,
         ];
     }
 

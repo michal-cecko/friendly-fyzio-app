@@ -22,7 +22,7 @@ class CourseLessonsTable
                 TextColumn::make('series.course.name')
                     ->label('Kurz'),
                 TextColumn::make('series.name')
-                    ->label('Běh'),
+                    ->label('Série'),
                 TextColumn::make('lesson_date')
                     ->label('Datum')
                     ->date('d.m.Y')
@@ -41,7 +41,7 @@ class CourseLessonsTable
             ])
             ->filters([
                 SelectFilter::make('series')
-                    ->label('Běh')
+                    ->label('Série')
                     ->relationship('series', 'name')
                     ->preload(),
             ])

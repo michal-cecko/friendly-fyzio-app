@@ -6,6 +6,7 @@ use App\Enums\PaymentStatus;
 use App\Filament\Clusters\Finance\Resources\CashReceipts\Actions\GenerateCashReceiptAction;
 use App\Filament\Clusters\Finance\Resources\Invoices\Actions\GenerateInvoiceAction;
 use App\Filament\Clusters\Finance\Resources\Payments\PaymentResource;
+use App\Filament\Support\Actions\ActivityLogAction;
 use App\Models\Payment;
 use App\Support\Payments\PaymentNotifier;
 use Filament\Actions\Action;
@@ -48,6 +49,7 @@ class ViewPayment extends ViewRecord
                 }),
             GenerateInvoiceAction::make(),
             GenerateCashReceiptAction::make(),
+            ActivityLogAction::make(),
         ];
     }
 }

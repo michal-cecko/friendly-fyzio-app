@@ -31,6 +31,9 @@ class CourseController extends Controller
                 ->orderBy('start_date'),
         ]);
 
+        $user = auth()->user();
+        $isCustomer = $user !== null && ! $user->isStaff();
+
         $presaleSeries = null;
 
         if (filled($token = request()->query('predprodej'))) {
@@ -38,11 +41,19 @@ class CourseController extends Controller
         }
 
         $requestedSeries = null;
+        $requestedUnlocked = false;
 
         if ($presaleSeries === null && filled($seriesId = request()->query('termin'))) {
-            $requestedSeries = $course->series->first(fn (CourseSeries $candidate): bool => $candidate->getKey() === $seriesId
-                && $candidate->visibility === CourseSeriesVisibility::Public
+            $candidate = $course->series->first(fn (CourseSeries $candidate): bool => $candidate->getKey() === $seriesId
                 && ! $candidate->hasEnded());
+
+            if ($candidate?->visibility === CourseSeriesVisibility::Public) {
+                $requestedSeries = $candidate;
+            } elseif ($candidate?->isPrivate() && $isCustomer) {
+                // A logged-in customer may open (and enrol in) a private run directly.
+                $requestedSeries = $candidate;
+                $requestedUnlocked = true;
+            }
         }
 
         $isPreview = ! $course->isPublished();
@@ -50,13 +61,14 @@ class CourseController extends Controller
         abort_if($isPreview && $presaleSeries === null && ! $this->canPreview(), 404);
 
         $series = $presaleSeries ?? $requestedSeries ?? $course->currentSeries();
+        $unlocked = $presaleSeries !== null || $requestedUnlocked;
 
         return view('courses.show', [
             'course' => $course,
             'series' => $series,
-            'presale' => $presaleSeries !== null,
-            'state' => $presaleSeries !== null
-                ? $presaleSeries->offerStateForPresale()
+            'presale' => $unlocked,
+            'state' => $unlocked && $series !== null
+                ? $series->offerStateForPresale()
                 : ($series?->offerState() ?? OfferState::Inactive),
             'seriesLessons' => $series?->lessons()->with('room')->get() ?? collect(),
             'upcomingLessons' => $course->upcomingOneTimeLessons()->withCount('activeTakers')->with('room')->get(),

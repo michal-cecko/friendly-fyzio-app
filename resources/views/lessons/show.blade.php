@@ -165,7 +165,7 @@
                 <h2 class="font-heading text-3xl font-bold text-neutral-900">Rezervujte si místo</h2>
             </div>
 
-            <livewire:offer-signup-form offer-type="lesson" :offer-id="$lesson->getKey()" />
+            <livewire:offer-signup-form offer-type="lesson" :offer-id="$lesson->getKey()" :presale="$presale" />
         </div>
     </section>
 
@@ -183,7 +183,7 @@
     <section class="bg-primary-light">
         <div class="ff-container flex flex-col items-center gap-5 py-16 text-center">
             <h2 class="font-heading text-3xl font-bold text-neutral-900">Chcete pravidelný pohyb?</h2>
-            <p class="max-w-xl text-base leading-relaxed text-neutral-700">Prohlédněte si celé běhy kurzů — pravidelné lekce pod vedením našich fyzioterapeutek.</p>
+            <p class="max-w-xl text-base leading-relaxed text-neutral-700">Prohlédněte si celé série kurzů — pravidelné lekce pod vedením našich fyzioterapeutek.</p>
             <a href="{{ url('/kurzy') }}" class="inline-flex items-center justify-center gap-2.5 rounded-full bg-primary px-9 py-[18px] font-heading text-base font-semibold text-white transition hover:bg-primary-dark">
                 Prohlédnout kurzy
                 <x-lucide name="arrow-right" class="h-5 w-5" />

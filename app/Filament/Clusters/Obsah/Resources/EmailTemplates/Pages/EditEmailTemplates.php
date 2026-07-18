@@ -3,6 +3,7 @@
 namespace App\Filament\Clusters\Obsah\Resources\EmailTemplates\Pages;
 
 use App\Filament\Clusters\Obsah\Resources\EmailTemplates\EmailTemplateResource;
+use App\Filament\Support\Actions\ActivityLogAction;
 use App\Support\EmailTemplateRenderer;
 use Filament\Actions\Action;
 use Filament\Resources\Pages\EditRecord;
@@ -31,6 +32,7 @@ class EditEmailTemplates extends EditRecord
                         $this->getRecord()->templateKey()?->sampleContext() ?? [],
                     ),
                 ])),
+            ActivityLogAction::make(),
         ];
     }
 }

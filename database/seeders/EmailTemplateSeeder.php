@@ -311,7 +311,7 @@ class EmailTemplateSeeder extends Seeder
                 $this->brick('email-paragraph', ['text' => '<p>Děkujeme za přihlášku — místo v kurzu vám držíme {{ rezervace_hodin }} hodin. Přihlášení dokončíte uhrazením kurzovného QR platbou nebo převodem na uvedený účet.</p>']),
                 $this->detailsBrick('default', 'Detail přihlášky', [
                     ['Kurz:', '{{ kurz }}'],
-                    ['Běh:', '{{ beh }}'],
+                    ['Série:', '{{ beh }}'],
                     ['Období:', '{{ obdobi }}'],
                     ['Nejbližší lekce:', '{{ rozvrh }}'],
                 ]),
@@ -384,13 +384,29 @@ class EmailTemplateSeeder extends Seeder
             EmailTemplateKey::CourseRegistrationOpened => [
                 $this->brick('email-greeting', ['text' => '<p>Dobrý den, {{ jmeno }},</p>']),
                 $this->brick('email-callout', ['variant' => 'success', 'icon' => 'bell', 'text' => '<p>Otevřeli jsme přihlašování na kurz, o který jste projevili zájem.</p>']),
-                $this->brick('email-paragraph', ['text' => '<p>Kurz {{ kurz }} má vypsaný nový běh {{ beh }} ({{ obdobi }}). Počet míst je omezený, doporučujeme se přihlásit co nejdříve.</p>']),
+                $this->brick('email-paragraph', ['text' => '<p>Kurz {{ kurz }} má vypsanou novou sérii {{ beh }} ({{ obdobi }}). Počet míst je omezený, doporučujeme se přihlásit co nejdříve.</p>']),
                 $this->brick('email-buttons', [
                     'buttons' => [
                         ['text' => 'Přihlásit se na kurz', 'style' => 'primary', 'link_type' => 'custom', 'url' => '{{ odkaz }}'],
                     ],
                 ]),
                 $this->brick('email-note', ['text' => '<p>Tento e-mail jste obdrželi, protože jste u kurzu zanechali svůj e-mail s prosbou o upozornění.</p>']),
+                $this->replyCallout(),
+            ],
+            EmailTemplateKey::OfferInvitation => [
+                $this->brick('email-greeting', ['text' => '<p>Dobrý den, {{ jmeno }},</p>']),
+                $this->brick('email-callout', ['variant' => 'success', 'icon' => 'ticket', 'text' => '<p>Máte přednostní pozvánku.</p>']),
+                $this->brick('email-paragraph', ['text' => '<p>Rádi bychom vás jako našeho klienta přednostně pozvali. Přes odkaz níže se můžete přihlásit dříve, než termín zveřejníme — místa jsou omezená.</p>']),
+                $this->brick('email-note', ['text' => '<p>{{ zprava }}</p>']),
+                $this->detailsBrick('default', 'Detail termínu', [
+                    ['Název:', '{{ nazev }}'],
+                    ['Termín:', '{{ termin }}'],
+                ]),
+                $this->brick('email-buttons', [
+                    'buttons' => [
+                        ['text' => 'Rezervovat místo', 'style' => 'primary', 'link_type' => 'custom', 'url' => '{{ odkaz }}'],
+                    ],
+                ]),
                 $this->replyCallout(),
             ],
             EmailTemplateKey::EnrollmentCancelledByClient => [
@@ -444,6 +460,20 @@ class EmailTemplateSeeder extends Seeder
                 $this->brick('email-note', ['text' => '<p>Kdybyste na náhradní lekci nemohli dorazit, dejte nám prosím vědět.</p>']),
                 $this->replyCallout(),
             ],
+            EmailTemplateKey::LessonScheduleChanged => [
+                $this->brick('email-greeting', ['text' => '<p>Dobrý den, {{ jmeno }},</p>']),
+                $this->brick('email-callout', ['variant' => 'warning', 'icon' => 'clock', 'text' => '<p>Došlo ke změně termínu.</p>']),
+                $this->brick('email-paragraph', ['text' => '<p>Rádi bychom vás informovali o změně termínu v rámci {{ nazev }}. Zkontrolujte prosím nové údaje níže.</p>']),
+                $this->detailsBrick('muted', 'Původní termín', [
+                    ['Termín:', '{{ puvodni_termin }}'],
+                    ['Místo:', '{{ puvodni_misto }}'],
+                ]),
+                $this->detailsBrick('success', 'Nový termín', [
+                    ['Termín:', '{{ termin }}'],
+                    ['Místo:', '{{ misto }}'],
+                ]),
+                $this->replyCallout(),
+            ],
             EmailTemplateKey::TherapistEnrollmentCreated => [
                 $this->brick('email-greeting', ['text' => '<p>Dobrý den, {{ jmeno }},</p>']),
                 $this->brick('email-callout', ['variant' => 'info', 'icon' => 'user-plus', 'text' => '<p>Máte novou přihlášku od klienta.</p>']),
@@ -459,6 +489,20 @@ class EmailTemplateSeeder extends Seeder
                     'buttons' => [
                         ['text' => 'Zobrazit v administraci', 'style' => 'primary', 'link_type' => 'custom', 'url' => '{{ odkaz }}'],
                     ],
+                ]),
+                $this->automatedNote(),
+            ],
+            EmailTemplateKey::TherapistLessonScheduleChanged => [
+                $this->brick('email-greeting', ['text' => '<p>Dobrý den, {{ jmeno }},</p>']),
+                $this->brick('email-callout', ['variant' => 'info', 'icon' => 'clock', 'text' => '<p>Změnil se termín lekce, kterou vedete.</p>']),
+                $this->brick('email-paragraph', ['text' => '<p>Termín v rámci {{ nazev }} byl změněn. Přihlášení účastníci byli o změně informováni. Níže naleznete přehled.</p>']),
+                $this->detailsBrick('muted', 'Původní termín', [
+                    ['Termín:', '{{ puvodni_termin }}'],
+                    ['Místo:', '{{ puvodni_misto }}'],
+                ]),
+                $this->detailsBrick('success', 'Nový termín', [
+                    ['Termín:', '{{ termin }}'],
+                    ['Místo:', '{{ misto }}'],
                 ]),
                 $this->automatedNote(),
             ],

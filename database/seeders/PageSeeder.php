@@ -391,7 +391,7 @@ class PageSeeder extends Seeder
                             '<h2>Kurzy, lekce a workshopy</h2>',
                             '<p>Přihlášky na kurzy, jednorázové lekce a workshopy se hradí předem (QR platbou). Nezaplacená přihláška po uplynutí rezervační lhůty automaticky propadá a místo nabídneme dalším zájemcům.</p>',
                             '<ul>',
-                            "<li><strong>Pohybové kurzy</strong> – odhlásit se můžete nejpozději {$courseDays} dní před začátkem běhu.</li>",
+                            "<li><strong>Pohybové kurzy</strong> – odhlásit se můžete nejpozději {$courseDays} dní před začátkem série.</li>",
                             "<li><strong>Jednorázové lekce</strong> – odhlásit se můžete nejpozději {$lessonHours} hodin před lekcí.</li>",
                             "<li><strong>Workshopy</strong> – odhlásit se můžete nejpozději {$workshopDays} dní před konáním.</li>",
                             '</ul>',

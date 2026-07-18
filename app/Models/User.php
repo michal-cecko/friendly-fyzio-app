@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\UserRole;
+use App\Models\Concerns\Auditable;
 use App\Notifications\Auth\ResetPasswordNotification;
 use App\Notifications\Auth\VerifyEmailNotification;
 use Filament\Models\Contracts\FilamentUser;
@@ -25,7 +26,7 @@ use Spatie\Tags\HasTags;
 
 class User extends Authenticatable implements FilamentUser, HasPasskeys, MustVerifyEmail
 {
-    use HasFactory, HasRoles, HasTags, HasUuids, InteractsWithPasskeys, Notifiable, SoftDeletes;
+    use Auditable, HasFactory, HasRoles, HasTags, HasUuids, InteractsWithPasskeys, Notifiable, SoftDeletes;
 
     protected $fillable = [
         'name',

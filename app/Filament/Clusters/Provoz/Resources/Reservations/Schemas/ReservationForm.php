@@ -6,7 +6,7 @@ use App\Filament\Clusters\Provoz\Resources\Clients\ClientResource;
 use App\Filament\Clusters\Provoz\Resources\Services\ServiceResource;
 use App\Filament\Clusters\Provoz\Resources\TherapistProfiles\TherapistProfileResource;
 use App\Filament\Support\Schemas\PresenceBanner;
-use App\Filament\Support\Schemas\RecordTimestampsSection;
+use App\Filament\Support\Schemas\RecordTimestamps;
 use App\Filament\Support\Schemas\ResponsiveColumns;
 use App\Models\TherapistProfile;
 use App\Support\Mentions\StaffMentions;
@@ -30,17 +30,30 @@ class ReservationForm
         return $schema->components([
             PresenceBanner::make(),
             ...self::components(),
-            RecordTimestampsSection::make()->collapsed(false),
         ]);
+    }
+
+    /**
+     * The "Upozornit zákazníka?" toggle appended to the reservation edit page.
+     * A UI-only field (not a model attribute); read in the page's afterSave.
+     */
+    public static function notifyClientToggle(): Toggle
+    {
+        return Toggle::make('notify_client')
+            ->label('Upozornit zákazníka?')
+            ->helperText('Po uložení odešle zákazníkovi i terapeutovi e-mail o změně rezervace.')
+            ->default(true);
     }
 
     /**
      * @param  bool  $withControlTherapy  When false the "Kontrolní terapie" toggle is left
      *                                    out so a caller (the calendar) can place it in a
      *                                    shared row with its own "Upozornit zákazníka" toggle.
+     * @param  bool  $withHeaderLinks  When false the "open detail" header link actions are
+     *                                 omitted (redundant when editing from the detail page).
      * @return array<int, Component>
      */
-    public static function components(bool $withControlTherapy = true): array
+    public static function components(bool $withControlTherapy = true, bool $withHeaderLinks = true): array
     {
         return [
             // Termín + účastníci in ONE uncontained group (date/time row above the
@@ -49,7 +62,7 @@ class ReservationForm
             // (next to the ✕) for custom actions, so this is the closest spot.
             Section::make()
                 ->contained(false)
-                ->headerActions([
+                ->headerActions($withHeaderLinks ? [
                     self::openRecordAction(
                         'openClient',
                         'Klient',
@@ -68,7 +81,7 @@ class ReservationForm
                         'therapist_id',
                         fn (string $id): string => TherapistProfileResource::getUrl('edit', ['record' => $id]),
                     ),
-                ])
+                ] : [])
                 ->schema([
                     Grid::make(3)->schema([
                         DatePicker::make('reservation_date')
@@ -121,6 +134,7 @@ class ReservationForm
                             ->preload()
                             ->required(),
                     ]),
+                    RecordTimestamps::entries(),
                 ]),
             // Status is never hand-edited here: new reservations default to Pending, and
             // confirming / unconfirming / cancelling all go through their dedicated

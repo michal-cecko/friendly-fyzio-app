@@ -3,6 +3,7 @@
 namespace App\Filament\Clusters\Obsah\Resources\InstagramConnections\Pages;
 
 use App\Filament\Clusters\Obsah\Resources\InstagramConnections\InstagramConnectionResource;
+use App\Filament\Support\Actions\ActivityLogAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\RestoreAction;
@@ -20,6 +21,7 @@ class EditInstagramConnection extends EditRecord
             DeleteAction::make(),
             ForceDeleteAction::make(),
             RestoreAction::make(),
+            ActivityLogAction::make(),
         ];
     }
 }

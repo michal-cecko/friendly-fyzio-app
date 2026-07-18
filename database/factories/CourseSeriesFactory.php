@@ -22,7 +22,7 @@ class CourseSeriesFactory extends Factory
 
         return [
             'course_id' => Course::factory(),
-            'name' => 'Běh '.fake()->randomElement(['jaro', 'léto', 'podzim', 'zima']).' '.fake()->year(),
+            'name' => 'Série '.fake()->randomElement(['jaro', 'léto', 'podzim', 'zima']).' '.fake()->year(),
             'start_date' => $start->format('Y-m-d'),
             'end_date' => fake()->dateTimeBetween($start, '+4 months')->format('Y-m-d'),
             'capacity' => fake()->numberBetween(6, 20),

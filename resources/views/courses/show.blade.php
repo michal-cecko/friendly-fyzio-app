@@ -47,12 +47,12 @@
                         @if($series->totalLessonsCount() > 0)
                             <li class="flex items-center gap-3">
                                 <x-lucide name="book-open" class="h-4.5 w-4.5 shrink-0 text-primary" />
-                                {{ $series->totalLessonsCount() }} {{ $series->totalLessonsCount() === 1 ? 'lekce' : ($series->totalLessonsCount() <= 4 ? 'lekce' : 'lekcí') }} / běh
+                                {{ $series->totalLessonsCount() }} {{ $series->totalLessonsCount() === 1 ? 'lekce' : ($series->totalLessonsCount() <= 4 ? 'lekce' : 'lekcí') }} / série
                             </li>
                         @endif
                         <li class="flex items-center gap-3">
                             <x-lucide name="layers" class="h-4.5 w-4.5 shrink-0 text-primary" />
-                            Běh: {{ $series->name }}
+                            Série: {{ $series->name }}
                         </li>
                         <li class="flex items-center gap-3">
                             <x-lucide name="calendar" class="h-4.5 w-4.5 shrink-0 text-primary" />
@@ -74,12 +74,12 @@
                         </li>
                         <li class="flex items-center gap-3 font-semibold">
                             <x-lucide name="tag" class="h-4.5 w-4.5 shrink-0 text-primary" />
-                            {{ number_format($series->currentPrice(), 0, ',', ' ') }} Kč / běh
+                            {{ number_format($series->currentPrice(), 0, ',', ' ') }} Kč / série
                         </li>
                     @else
                         <li class="flex items-center gap-3 text-neutral-500">
                             <x-lucide name="calendar-clock" class="h-4.5 w-4.5 shrink-0 text-primary" />
-                            Nový běh připravujeme — nechte nám e-mail níže.
+                            Novou sérii připravujeme — nechte nám e-mail níže.
                         </li>
                     @endif
                     @if($course->instructor)
@@ -140,7 +140,7 @@
                 @if($upcomingLessons->isNotEmpty())
                     <div class="mt-4 flex flex-col gap-4">
                         <h3 class="font-heading text-xl font-semibold text-neutral-900">Jednorázové lekce</h3>
-                        <p class="text-sm text-neutral-600">Nechcete se vázat na celý běh? Vyzkoušejte jednorázovou lekci.</p>
+                        <p class="text-sm text-neutral-600">Nechcete se vázat na celou sérii? Vyzkoušejte jednorázovou lekci.</p>
                         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             @foreach($upcomingLessons as $upcomingLesson)
                                 <a href="{{ $upcomingLesson->permalink() }}" class="group flex items-center justify-between gap-4 rounded-xl border border-line p-5 transition hover:border-primary">
@@ -195,7 +195,7 @@
             <div class="ff-container flex flex-col gap-8">
                 <div class="flex flex-col gap-2">
                     <h2 class="font-heading text-2xl font-bold text-neutral-900">Termíny lekcí</h2>
-                    <p class="text-sm text-neutral-600">Rozvrh běhu {{ $series->name }}.</p>
+                    <p class="text-sm text-neutral-600">Rozvrh série {{ $series->name }}.</p>
                 </div>
                 <ol class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     @foreach($seriesLessons as $seriesLesson)

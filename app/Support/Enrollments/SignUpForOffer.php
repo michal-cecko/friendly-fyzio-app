@@ -83,13 +83,15 @@ class SignUpForOffer
         return $enrollment;
     }
 
-    public function forLesson(OneTimeLesson $lesson, EnrollmentData $data): OneTimeLessonBooking
+    public function forLesson(OneTimeLesson $lesson, EnrollmentData $data, bool $viaPresale = false): OneTimeLessonBooking
     {
         /** @var OneTimeLessonBooking $booking */
-        [$booking, $payment, $client, $isNewAccount] = $this->locked('lesson:'.$lesson->getKey(), function () use ($lesson, $data): array {
+        [$booking, $payment, $client, $isNewAccount] = $this->locked('lesson:'.$lesson->getKey(), function () use ($lesson, $data, $viaPresale): array {
             $lesson->refresh()->load('course');
 
-            if (! $lesson->offerState()->acceptsRegistrations()) {
+            $state = $viaPresale ? $lesson->offerStateForPresale() : $lesson->offerState();
+
+            if (! $state->acceptsRegistrations()) {
                 throw new OfferClosedException;
             }
 
@@ -125,13 +127,15 @@ class SignUpForOffer
         return $booking;
     }
 
-    public function forWorkshop(Workshop $workshop, EnrollmentData $data): WorkshopRegistration
+    public function forWorkshop(Workshop $workshop, EnrollmentData $data, bool $viaPresale = false): WorkshopRegistration
     {
         /** @var WorkshopRegistration $registration */
-        [$registration, $payment, $client, $isNewAccount] = $this->locked('workshop:'.$workshop->getKey(), function () use ($workshop, $data): array {
+        [$registration, $payment, $client, $isNewAccount] = $this->locked('workshop:'.$workshop->getKey(), function () use ($workshop, $data, $viaPresale): array {
             $workshop->refresh();
 
-            if (! $workshop->offerState()->acceptsRegistrations()) {
+            $state = $viaPresale ? $workshop->offerStateForPresale() : $workshop->offerState();
+
+            if (! $state->acceptsRegistrations()) {
                 throw new OfferClosedException;
             }
 

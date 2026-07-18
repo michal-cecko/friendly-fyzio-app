@@ -3,6 +3,7 @@
 namespace App\Filament\Clusters\Obsah\Resources\Banners\Pages;
 
 use App\Filament\Clusters\Obsah\Resources\Banners\BannerResource;
+use App\Filament\Support\Actions\ActivityLogAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\RestoreAction;
@@ -18,6 +19,7 @@ class EditBanner extends EditRecord
             DeleteAction::make(),
             ForceDeleteAction::make(),
             RestoreAction::make(),
+            ActivityLogAction::make(),
         ];
     }
 }

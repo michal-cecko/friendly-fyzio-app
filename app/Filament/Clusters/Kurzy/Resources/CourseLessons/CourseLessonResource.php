@@ -33,6 +33,8 @@ class CourseLessonResource extends Resource
 
     protected static ?int $navigationSort = 4;
 
+    protected static bool $shouldRegisterNavigation = false;
+
     protected static ?string $recordTitleAttribute = 'lesson_date';
 
     public static function getModelLabel(): string
@@ -61,7 +63,7 @@ class CourseLessonResource extends Resource
     public static function getGlobalSearchResultTitle(Model $record): string|Htmlable
     {
         /** @var CourseLesson $record */
-        return trim(($record->series?->name ?? 'Neznámý běh').' — '.($record->lesson_date?->format('j. n. Y') ?? 'neznámé datum'));
+        return trim(($record->series?->name ?? 'Neznámá série').' — '.($record->lesson_date?->format('j. n. Y') ?? 'neznámé datum'));
     }
 
     /**

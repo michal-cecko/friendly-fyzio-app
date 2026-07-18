@@ -6,6 +6,7 @@ use App\Enums\CourseEnrollmentStatus;
 use App\Enums\CourseSeriesStatus;
 use App\Enums\CourseSeriesVisibility;
 use App\Enums\OfferState;
+use App\Models\Concerns\Auditable;
 use App\Models\Concerns\HasCapacity;
 use App\Observers\CourseSeriesObserver;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
@@ -19,7 +20,7 @@ use Illuminate\Support\Str;
 #[ObservedBy(CourseSeriesObserver::class)]
 class CourseSeries extends Model
 {
-    use HasCapacity, HasFactory, HasUuids;
+    use Auditable, HasCapacity, HasFactory, HasUuids;
 
     protected $fillable = [
         'course_id',
@@ -73,9 +74,24 @@ class CourseSeries extends Model
         return $this->morphMany(WaitlistEntry::class, 'waitlistable');
     }
 
+    public function substituteRulesAsSource(): HasMany
+    {
+        return $this->hasMany(SubstituteRule::class, 'source_series_id');
+    }
+
+    public function substituteRulesAsTarget(): HasMany
+    {
+        return $this->hasMany(SubstituteRule::class, 'target_series_id');
+    }
+
     public function invitations()
     {
         return $this->morphMany(Invitation::class, 'inviteable');
+    }
+
+    public function isPrivate(): bool
+    {
+        return $this->visibility === CourseSeriesVisibility::Private;
     }
 
     public function hasStarted(): bool

@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Enums\CourseSeriesStatus;
 use App\Enums\CourseSeriesVisibility;
+use App\Enums\OfferVisibility;
 use App\Models\Course;
 use App\Models\CourseCategory;
 use App\Models\CourseSeries;
@@ -76,6 +77,17 @@ class CourseArchive extends Component
         $this->resetPage('strana');
     }
 
+    /**
+     * Whether the current viewer may see private/invite-only offers in the
+     * archive: a logged-in customer (not staff — staff preview is separate).
+     */
+    protected function includePrivate(): bool
+    {
+        $user = auth()->user();
+
+        return $user !== null && ! $user->isStaff();
+    }
+
     public function render(): View
     {
         $lessons = $this->type === 'lekce';
@@ -90,10 +102,11 @@ class CourseArchive extends Component
             'openCoursesCount' => Course::query()->published()
                 ->whereHas('series', fn (Builder $series) => $series
                     ->where('status', CourseSeriesStatus::Open)
-                    ->where('visibility', CourseSeriesVisibility::Public)
+                    ->when(! $this->includePrivate(), fn (Builder $query) => $query->where('visibility', CourseSeriesVisibility::Public))
                     ->whereDate('end_date', '>=', today()))
                 ->count(),
             'upcomingLessonsCount' => OneTimeLesson::query()->published()->upcoming()
+                ->when(! $this->includePrivate(), fn (Builder $series) => $series->where('visibility', OfferVisibility::Public))
                 ->whereHas('course', fn (Builder $course) => $course->published())
                 ->count(),
         ]);
@@ -123,7 +136,7 @@ class CourseArchive extends Component
             ->withCount('activeTakers')
             ->withCount('lessons')
             ->withCount(['lessons as remaining_lessons_count' => fn ($lessons) => $lessons->whereDate('lesson_date', '>=', today())])
-            ->where('visibility', CourseSeriesVisibility::Public)
+            ->when(! $this->includePrivate(), fn (Builder $query) => $query->where('visibility', CourseSeriesVisibility::Public))
             ->whereIn('status', [CourseSeriesStatus::Open, CourseSeriesStatus::Full])
             ->whereDate('end_date', '>=', today())
             ->whereHas('course', fn (Builder $course) => $course->published())
@@ -159,7 +172,7 @@ class CourseArchive extends Component
             ->when($this->category, fn (Builder $query, string $slug) => $query
                 ->whereHas('category', fn (Builder $category) => $category->where('slug', $slug)))
             ->whereDoesntHave('series', fn (Builder $series) => $series
-                ->where('visibility', CourseSeriesVisibility::Public)
+                ->when(! $this->includePrivate(), fn (Builder $query) => $query->where('visibility', CourseSeriesVisibility::Public))
                 ->whereIn('status', [CourseSeriesStatus::Open, CourseSeriesStatus::Full])
                 ->whereDate('end_date', '>=', today()))
             ->orderBy('name')
@@ -171,6 +184,7 @@ class CourseArchive extends Component
         return OneTimeLesson::query()
             ->published()
             ->upcoming()
+            ->when(! $this->includePrivate(), fn (Builder $query) => $query->where('visibility', OfferVisibility::Public))
             ->withCount('activeTakers')
             ->whereHas('course', fn (Builder $course) => $course->published())
             ->with(['course.category', 'room'])

@@ -3,6 +3,7 @@
 namespace App\Filament\Clusters\Provoz\Resources\Services\Pages;
 
 use App\Filament\Clusters\Provoz\Resources\Services\ServiceResource;
+use App\Filament\Support\Actions\ActivityLogAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\RestoreAction;
@@ -20,6 +21,7 @@ class EditService extends EditRecord
             DeleteAction::make(),
             ForceDeleteAction::make(),
             RestoreAction::make(),
+            ActivityLogAction::make(),
         ];
     }
 }

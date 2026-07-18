@@ -3,7 +3,7 @@
 namespace App\Filament\Clusters\Provoz\Resources\TherapistProfiles\Schemas;
 
 use App\Filament\Support\Schemas\PresenceBanner;
-use App\Filament\Support\Schemas\RecordTimestampsSection;
+use App\Filament\Support\Schemas\RecordTimestamps;
 use App\Mason\Support\Fields;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Repeater;
@@ -75,6 +75,7 @@ class TherapistProfileForm
                         ->label('Publikováno')
                         ->helperText('Bez data (nebo budoucí datum) = koncept, profil není veřejně přístupný a v týmu není proklikávací.')
                         ->columnSpanFull(),
+                    RecordTimestamps::entries(),
                 ]))),
             Section::make('O mně')
                 ->schema([
@@ -153,7 +154,6 @@ class TherapistProfileForm
                         ->addActionLabel('Přidat certifikaci')
                         ->itemLabel(fn (array $state): ?string => $state['name'] ?? null),
                 ]),
-            RecordTimestampsSection::make(),
         ];
     }
 }

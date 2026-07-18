@@ -11,7 +11,7 @@ use Illuminate\Support\Collection;
 
 /**
  * The lessons a substitute token may be redeemed against: upcoming lessons of
- * the courses configured as substitute targets for the token's source course
+ * the séries configured as substitute targets for the token's source série
  * (see SubstituteRule), that still have a free spot. Per the docs these
  * substitute places are never shown publicly — only inside the client zone.
  */
@@ -22,17 +22,17 @@ class SubstituteOptions
      */
     public function forToken(SubstituteToken $token): Collection
     {
-        $sourceCourseId = $token->sourceLesson?->series?->course_id;
+        $sourceSeriesId = $token->sourceLesson?->series_id;
 
-        if ($sourceCourseId === null) {
+        if ($sourceSeriesId === null) {
             return new Collection;
         }
 
-        $targetCourseIds = SubstituteRule::query()
-            ->where('source_course_id', $sourceCourseId)
-            ->pluck('target_course_id');
+        $targetSeriesIds = SubstituteRule::query()
+            ->where('source_series_id', $sourceSeriesId)
+            ->pluck('target_series_id');
 
-        if ($targetCourseIds->isEmpty()) {
+        if ($targetSeriesIds->isEmpty()) {
             return new Collection;
         }
 
@@ -45,7 +45,7 @@ class SubstituteOptions
             ->pluck('lesson_id');
 
         return CourseLesson::query()
-            ->whereHas('series', fn ($query) => $query->whereIn('course_id', $targetCourseIds))
+            ->whereIn('series_id', $targetSeriesIds)
             ->whereNotIn('id', $alreadyBookedLessonIds)
             ->whereDate('lesson_date', '>=', today())
             ->with(['series.course', 'room'])

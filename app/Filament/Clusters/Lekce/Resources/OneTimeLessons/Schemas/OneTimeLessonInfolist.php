@@ -2,7 +2,7 @@
 
 namespace App\Filament\Clusters\Lekce\Resources\OneTimeLessons\Schemas;
 
-use App\Filament\Support\Schemas\RecordTimestampsSection;
+use App\Filament\Support\Schemas\RecordTimestamps;
 use App\Models\OneTimeLesson;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\TextEntry;
@@ -47,6 +47,7 @@ class OneTimeLessonInfolist
                             ->label('Cena')
                             ->suffix(' Kč')
                             ->placeholder('—'),
+                        RecordTimestamps::entries(),
                     ]),
                 Section::make('Obsazenost')
                     ->columns(3)
@@ -61,7 +62,6 @@ class OneTimeLessonInfolist
                             ->label('Čekací listina')
                             ->state(fn (OneTimeLesson $record): int => $record->waitlistEntries()->whereNull('notified_at')->count()),
                     ]),
-                RecordTimestampsSection::make(),
             ]);
     }
 }

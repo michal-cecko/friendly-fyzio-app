@@ -2,7 +2,7 @@
 
 namespace App\Filament\Clusters\Kurzy\Resources\CourseLessons\Schemas;
 
-use App\Filament\Support\Schemas\RecordTimestampsSection;
+use App\Filament\Support\Schemas\RecordTimestamps;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -20,7 +20,7 @@ class CourseLessonInfolist
                             ->label('Kurz')
                             ->placeholder('—'),
                         TextEntry::make('series.name')
-                            ->label('Běh')
+                            ->label('Série')
                             ->placeholder('—'),
                         TextEntry::make('lesson_date')
                             ->label('Datum')
@@ -37,8 +37,8 @@ class CourseLessonInfolist
                         TextEntry::make('room.name')
                             ->label('Místnost')
                             ->placeholder('—'),
+                        RecordTimestamps::entries(),
                     ]),
-                RecordTimestampsSection::make(),
             ]);
     }
 }

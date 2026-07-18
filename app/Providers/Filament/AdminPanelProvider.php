@@ -22,6 +22,7 @@ use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use Leandrocfe\FilamentApexCharts\FilamentApexChartsPlugin;
 use MarcelWeidum\ExpirationNoticePlugin\ExpirationNoticePlugin;
 use MarcelWeidum\Passkeys\PasskeysPlugin;
 use RalphJSmit\Filament\MediaLibrary\FilamentMediaLibrary;
@@ -87,6 +88,7 @@ class AdminPanelProvider extends PanelProvider
                 FilamentMediaLibrary::make()
                     ->registerNavigation(false),
                 FilamentFullCalendarPlugin::make(),
+                FilamentApexChartsPlugin::make(),
                 PasskeysPlugin::make(),
                 ExpirationNoticePlugin::make(),
                 FilamentGazePlugin::make(),

@@ -6,6 +6,7 @@ use App\Contracts\HasPublicPage;
 use App\Enums\ExamType;
 use App\Enums\ServiceType;
 use App\Enums\ServiceVisibility;
+use App\Models\Concerns\Auditable;
 use App\Models\Concerns\InteractsWithCustomPage;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -20,7 +21,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Service extends Model implements HasPublicPage
 {
-    use HasFactory, HasUuids, InteractsWithCustomPage, SoftDeletes;
+    use Auditable, HasFactory, HasUuids, InteractsWithCustomPage, SoftDeletes;
 
     protected $fillable = [
         'category_id',

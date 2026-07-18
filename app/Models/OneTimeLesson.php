@@ -4,7 +4,10 @@ namespace App\Models;
 
 use App\Enums\BookingStatus;
 use App\Enums\OfferState;
+use App\Enums\OfferVisibility;
+use App\Models\Concerns\Auditable;
 use App\Models\Concerns\HasCapacity;
+use App\Models\Concerns\HasPresaleAccess;
 use App\Models\Concerns\Publishable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -16,12 +19,19 @@ use Illuminate\Support\Carbon;
 
 class OneTimeLesson extends Model
 {
-    use HasCapacity, HasFactory, HasUuids, Publishable;
+    use Auditable, HasCapacity, HasFactory, HasPresaleAccess, HasUuids, Publishable;
+
+    public function logTitle(): string
+    {
+        return trim(($this->course?->name ?? 'Lekce').' · '.$this->lesson_date?->format('j. n. Y'), ' ·');
+    }
 
     protected $fillable = [
         'course_id',
         'instructor_id',
         'room_id',
+        'visibility',
+        'presale_token',
         'invoice_title',
         'lesson_date',
         'start_time',
@@ -36,6 +46,7 @@ class OneTimeLesson extends Model
     {
         return [
             'lesson_date' => 'date',
+            'visibility' => OfferVisibility::class,
             'capacity' => 'integer',
             'auto_promote_waitlist' => 'boolean',
             'price' => 'integer',
@@ -102,6 +113,7 @@ class OneTimeLesson extends Model
     {
         return match (true) {
             ! $this->isPublished() => OfferState::Preparing,
+            $this->isPrivate() => OfferState::Preparing,
             $this->isPast() => OfferState::Inactive,
             $this->isFull() => OfferState::Full,
             default => OfferState::Open,

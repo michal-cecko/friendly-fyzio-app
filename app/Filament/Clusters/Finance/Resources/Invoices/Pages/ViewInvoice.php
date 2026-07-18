@@ -7,6 +7,7 @@ use App\Filament\Clusters\Finance\Resources\Invoices\Actions\DownloadInvoicePdfA
 use App\Filament\Clusters\Finance\Resources\Invoices\Actions\MarkInvoicePaidAction;
 use App\Filament\Clusters\Finance\Resources\Invoices\Actions\SendInvoiceAction;
 use App\Filament\Clusters\Finance\Resources\Invoices\InvoiceResource;
+use App\Filament\Support\Actions\ActivityLogAction;
 use App\Models\Invoice;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
@@ -31,6 +32,7 @@ class ViewInvoice extends ViewRecord
             MarkInvoicePaidAction::make(),
             GenerateCashReceiptAction::make(),
             EditAction::make(),
+            ActivityLogAction::make(),
         ];
     }
 }

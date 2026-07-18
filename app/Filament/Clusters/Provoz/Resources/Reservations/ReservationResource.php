@@ -3,6 +3,7 @@
 namespace App\Filament\Clusters\Provoz\Resources\Reservations;
 
 use App\Filament\Clusters\Provoz\ProvozCluster;
+use App\Filament\Clusters\Provoz\Resources\Reservations\Pages\EditReservation;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Pages\ListReservations;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Pages\ViewReservation;
 use App\Filament\Clusters\Provoz\Resources\Reservations\RelationManagers\NotesRelationManager;
@@ -113,6 +114,7 @@ class ReservationResource extends Resource
         return [
             'index' => ListReservations::route('/'),
             'view' => ViewReservation::route('/{record}'),
+            'edit' => EditReservation::route('/{record}/edit'),
         ];
     }
 

@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\CourseSeries;
 use App\Models\SubstituteRule;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -18,7 +19,8 @@ class SubstituteRuleFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'source_series_id' => CourseSeries::factory(),
+            'target_series_id' => CourseSeries::factory(),
         ];
     }
 }

@@ -4,7 +4,7 @@ namespace App\Filament\Clusters\Obsah\Resources\Navigations\Schemas;
 
 use App\Enums\NavigationLocation;
 use App\Filament\Support\Schemas\PresenceBanner;
-use App\Filament\Support\Schemas\RecordTimestampsSection;
+use App\Filament\Support\Schemas\RecordTimestamps;
 use App\Mason\Support\LinkPickerField;
 use App\Models\Navigation;
 use Filament\Forms\Components\Repeater;
@@ -56,10 +56,8 @@ class NavigationForm
                             ->collapsed()
                             ->reorderable()
                             ->columnSpanFull(),
+                        RecordTimestamps::entries(),
                     ]),
-
-                RecordTimestampsSection::make()
-                    ->columns(['default' => 1, 'lg' => 2]),
             ]);
     }
 

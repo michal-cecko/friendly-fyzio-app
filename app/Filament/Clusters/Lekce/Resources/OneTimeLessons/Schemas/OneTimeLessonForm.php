@@ -2,7 +2,9 @@
 
 namespace App\Filament\Clusters\Lekce\Resources\OneTimeLessons\Schemas;
 
+use App\Enums\OfferVisibility;
 use App\Enums\UserRole;
+use App\Filament\Support\Schemas\NotifyParticipantsToggle;
 use App\Filament\Support\Schemas\PresenceBanner;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\DateTimePicker;
@@ -10,6 +12,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\TimePicker;
 use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\ToggleButtons;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -80,6 +83,14 @@ class OneTimeLessonForm
                     ->label('Publikováno')
                     ->native(false)
                     ->helperText('Nepublikovaná lekce se na webu nezobrazuje a nelze ji rezervovat.'),
+                ToggleButtons::make('visibility')
+                    ->label('Viditelnost')
+                    ->options(OfferVisibility::class)
+                    ->default(OfferVisibility::Public)
+                    ->inline()
+                    ->required()
+                    ->helperText('Soukromá lekce se ve veřejném archivu nezobrazuje — vidí ji jen přihlášení zákazníci a lze na ni pozvat přes přihlašovací odkaz.'),
+                NotifyParticipantsToggle::make(),
             ]);
     }
 }

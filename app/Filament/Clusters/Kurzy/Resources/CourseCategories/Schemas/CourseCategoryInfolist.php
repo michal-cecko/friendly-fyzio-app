@@ -2,7 +2,7 @@
 
 namespace App\Filament\Clusters\Kurzy\Resources\CourseCategories\Schemas;
 
-use App\Filament\Support\Schemas\RecordTimestampsSection;
+use App\Filament\Support\Schemas\RecordTimestamps;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -30,8 +30,8 @@ class CourseCategoryInfolist
                             ->label('Publikováno')
                             ->dateTime('d.m.Y H:i')
                             ->placeholder('—'),
+                        RecordTimestamps::entries(),
                     ]),
-                RecordTimestampsSection::make(),
             ]);
     }
 }

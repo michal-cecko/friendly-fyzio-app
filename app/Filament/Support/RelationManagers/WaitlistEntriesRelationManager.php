@@ -2,6 +2,7 @@
 
 namespace App\Filament\Support\RelationManagers;
 
+use App\Models\Course;
 use App\Models\CourseSeries;
 use App\Models\OneTimeLesson;
 use App\Models\WaitlistEntry;
@@ -17,6 +18,7 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * Shared waitlist tab for every enrollable offer (course series, one-time
@@ -33,6 +35,16 @@ class WaitlistEntriesRelationManager extends RelationManager
     protected static ?string $title = 'Čekací listina';
 
     protected static string|BackedEnum|null $icon = Heroicon::OutlinedQueueList;
+
+    /**
+     * On a course the entries are "notify me when a new série opens" interest
+     * sign-ups, so the tab is titled accordingly; on the enrollable offers
+     * (série, one-time lesson, workshop) it is the real waitlist.
+     */
+    public static function getTitle(Model $ownerRecord, string $pageClass): string
+    {
+        return $ownerRecord instanceof Course ? 'Chci vědět první' : 'Čekací listina';
+    }
 
     public function table(Table $table): Table
     {

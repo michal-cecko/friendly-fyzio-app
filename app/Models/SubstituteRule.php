@@ -11,15 +11,15 @@ class SubstituteRule extends Model
 {
     use HasFactory, HasUuids;
 
-    protected $fillable = ['source_course_id', 'target_course_id'];
+    protected $fillable = ['source_series_id', 'target_series_id'];
 
-    public function sourceCourse(): BelongsTo
+    public function sourceSeries(): BelongsTo
     {
-        return $this->belongsTo(Course::class, 'source_course_id');
+        return $this->belongsTo(CourseSeries::class, 'source_series_id');
     }
 
-    public function targetCourse(): BelongsTo
+    public function targetSeries(): BelongsTo
     {
-        return $this->belongsTo(Course::class, 'target_course_id');
+        return $this->belongsTo(CourseSeries::class, 'target_series_id');
     }
 }

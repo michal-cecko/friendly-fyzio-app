@@ -3,6 +3,7 @@
 namespace App\Filament\Clusters\System\Resources\Users\Pages;
 
 use App\Filament\Clusters\System\Resources\Users\UserResource;
+use App\Filament\Support\Actions\ActivityLogAction;
 use App\Filament\Support\Actions\ResetPasswordAction;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
@@ -18,6 +19,7 @@ class ViewUser extends ViewRecord
             Impersonate::make()->record($this->getRecord()),
             ResetPasswordAction::make(),
             EditAction::make(),
+            ActivityLogAction::make(),
         ];
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -10,7 +11,12 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class LessonAttendance extends Model
 {
-    use HasFactory, HasUuids;
+    use Auditable, HasFactory, HasUuids;
+
+    public function logTitle(): string
+    {
+        return 'Účast na lekci'.($this->enrollment?->client ? ' · '.$this->enrollment->client->name : '');
+    }
 
     protected $fillable = [
         'enrollment_id',

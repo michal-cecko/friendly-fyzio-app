@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -18,7 +19,12 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  */
 class WaitlistEntry extends Model
 {
-    use HasFactory, HasUuids;
+    use Auditable, HasFactory, HasUuids;
+
+    public function logTitle(): string
+    {
+        return 'Pořadník · '.$this->displayName();
+    }
 
     protected $fillable = [
         'client_id',

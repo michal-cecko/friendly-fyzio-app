@@ -6,6 +6,7 @@ use App\Filament\Clusters\Provoz\Resources\Clients\Actions\AdjustCreditAction;
 use App\Filament\Clusters\Provoz\Resources\Clients\ClientResource;
 use App\Filament\Clusters\Provoz\Resources\Clients\Widgets\ClientStatsOverview;
 use App\Filament\Pages\Calendar;
+use App\Filament\Support\Actions\ActivityLogAction;
 use App\Filament\Support\Actions\ResetPasswordAction;
 use App\Filament\Support\Concerns\RendersRelationManagersAsSections;
 use Filament\Actions\Action;
@@ -31,6 +32,7 @@ class ViewClient extends ViewRecord
             AdjustCreditAction::make()->record($this->getRecord()),
             ResetPasswordAction::make(),
             EditAction::make(),
+            ActivityLogAction::make(),
         ];
     }
 
