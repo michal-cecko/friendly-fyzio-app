@@ -35,7 +35,6 @@ class PruneUnverifiedUsers extends Command
         'reservations',
         'invoices',
         'courseEnrollments',
-        'therapyRecords',
         'creditTransactions',
         'waitlistEntries',
         'clientNotes',

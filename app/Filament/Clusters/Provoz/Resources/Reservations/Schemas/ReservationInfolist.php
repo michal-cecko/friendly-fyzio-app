@@ -87,6 +87,32 @@ class ReservationInfolist
                             ->placeholder('—')
                             ->columnSpanFull(),
                     ]),
+
+                // Surfaced only when the client cancelled late and promised a
+                // doctor's note (the storno fee is waived pending its delivery) —
+                // staff need to see and follow up on it.
+                Section::make('Storno – potvrzení od lékaře')
+                    ->icon(Heroicon::OutlinedDocumentText)
+                    ->columnSpanFull()
+                    ->columns(2)
+                    ->visible(fn (Reservation $record): bool => $record->doctor_note_requested_at !== null)
+                    ->schema([
+                        TextEntry::make('doctor_note_requested_at')
+                            ->label('Klient přislíbil potvrzení')
+                            ->dateTime('d.m.Y H:i')
+                            ->badge()
+                            ->color('warning'),
+                        TextEntry::make('storno_fee')
+                            ->label('Pozastavený storno poplatek')
+                            ->state(fn (Reservation $record): string => number_format($record->stornoFee(), 0, ',', ' ').' Kč')
+                            ->badge()
+                            ->color('warning'),
+                        TextEntry::make('doctor_note_hint')
+                            ->hiddenLabel()
+                            ->state('Storno poplatek je pozastaven do doručení potvrzení od lékaře. Pokud potvrzení nedorazí, doúčtujte poplatek přes „Vyžádat platbu".')
+                            ->columnSpanFull()
+                            ->color('gray'),
+                    ]),
             ]);
     }
 }

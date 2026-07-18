@@ -10,6 +10,7 @@ use App\Filament\Clusters\Kurzy\Resources\LessonAttendances\Pages\ViewLessonAtte
 use App\Filament\Clusters\Kurzy\Resources\LessonAttendances\Schemas\LessonAttendanceForm;
 use App\Filament\Clusters\Kurzy\Resources\LessonAttendances\Schemas\LessonAttendanceInfolist;
 use App\Filament\Clusters\Kurzy\Resources\LessonAttendances\Tables\LessonAttendancesTable;
+use App\Filament\Support\Concerns\ScopedToTherapist;
 use App\Models\LessonAttendance;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -22,6 +23,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class LessonAttendanceResource extends Resource
 {
+    use ScopedToTherapist;
+
     protected static ?string $model = LessonAttendance::class;
 
     protected static ?string $cluster = KurzyCluster::class;
@@ -90,7 +93,9 @@ class LessonAttendanceResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with(['enrollment.client', 'lesson.series.course']);
+        return parent::getEloquentQuery()->with(['enrollment.client', 'lesson.series.course'])
+            ->when(static::therapistUserScopeId(), fn (Builder $query, string $id) => $query
+                ->whereHas('lesson.series.course', fn (Builder $course) => $course->where('instructor_id', $id)));
     }
 
     public static function getRelations(): array

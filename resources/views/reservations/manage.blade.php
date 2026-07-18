@@ -115,13 +115,26 @@
                                         Nepřijdu, dodám potvrzení od lékaře
                                     </button>
                                 </form>
-                                <form method="POST" action="{{ $submitUrl }}">
-                                    @csrf
-                                    <input type="hidden" name="action" value="deactivate">
-                                    <button type="submit" class="{{ $btnBase }} border border-red-200 bg-white text-red-600 hover:bg-red-50">
+                                <div x-data="{ confirmDeactivate: false }">
+                                    <button type="button" x-show="!confirmDeactivate" @click="confirmDeactivate = true" class="{{ $btnBase }} border border-red-200 bg-white text-red-600 hover:bg-red-50">
                                         Nepřijdu a storno neuhradím
                                     </button>
-                                </form>
+                                    <div x-show="confirmDeactivate" x-cloak class="rounded-xl border border-red-200 bg-red-50 p-4">
+                                        <p class="text-sm leading-relaxed text-red-700">
+                                            Opravdu? Váš účet bude <strong>deaktivován</strong> — nebudete se moci přihlásit ani online spravovat rezervace.
+                                        </p>
+                                        <form method="POST" action="{{ $submitUrl }}" class="mt-3 space-y-2">
+                                            @csrf
+                                            <input type="hidden" name="action" value="deactivate">
+                                            <button type="submit" class="{{ $btnBase }} bg-red-500 text-white hover:bg-red-600">
+                                                Ano, deaktivovat účet
+                                            </button>
+                                            <button type="button" @click="confirmDeactivate = false" class="{{ $btnBase }} border border-neutral-300 bg-white text-neutral-800 hover:bg-neutral-50">
+                                                Zpět
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     @else

@@ -3,7 +3,6 @@
 namespace App\Providers;
 
 use App\Enums\NavigationLocation;
-use App\Http\Responses\LoginResponse;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
 use App\Models\CourseSeries;
@@ -14,9 +13,7 @@ use App\Models\Reservation;
 use App\Models\Service;
 use App\Models\Workshop;
 use App\Models\WorkshopRegistration;
-use App\Notifications\Auth\ResetPasswordNotification;
 use App\Notifications\Auth\VerifyEmailChangeNotification;
-use App\Notifications\Auth\VerifyEmailNotification;
 use App\Observers\MediaLibraryItemObserver;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
@@ -24,9 +21,6 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\View\ActionsIconAlias;
-use Filament\Auth\Http\Responses\Contracts\LoginResponse as LoginResponseContract;
-use Filament\Auth\Notifications\ResetPassword as FilamentResetPassword;
-use Filament\Auth\Notifications\VerifyEmail as FilamentVerifyEmail;
 use Filament\Auth\Notifications\VerifyEmailChange as FilamentVerifyEmailChange;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\RichEditor\TextColor;
@@ -41,15 +35,10 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        // Route users to the correct panel after the single shared login.
-        $this->app->bind(LoginResponseContract::class, LoginResponse::class);
-
-        // Render the framework/Filament auth e-mails from the dashboard-editable CMS
-        // templates. Filament resolves each of these notifications through the container
-        // and sets the signed action URL on them afterwards, so binding our subclasses
-        // here preserves the exact URLs while swapping the body for the CMS template.
-        $this->app->bind(FilamentVerifyEmail::class, VerifyEmailNotification::class);
-        $this->app->bind(FilamentResetPassword::class, ResetPasswordNotification::class);
+        // Render the Filament e-mail-change verification from the dashboard-editable
+        // CMS template (the admin panel's profile still uses it). Registration,
+        // e-mail verification and password reset run through the public auth pages
+        // and dispatch App\Notifications\Auth\* directly.
         $this->app->bind(FilamentVerifyEmailChange::class, VerifyEmailChangeNotification::class);
     }
 

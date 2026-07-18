@@ -3,13 +3,12 @@
 namespace App\Mason\Bricks;
 
 use App\Mason\Support\LinkPickerField;
+use App\Support\Reservations\LastMinuteAvailability;
 use Awcodes\Mason\Brick;
 use Filament\Actions\Action;
-use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\TextInput;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Contracts\Support\Htmlable;
-use RalphJSmit\Filament\MediaLibrary\Filament\Forms\Components\MediaPicker;
 
 class LastMinuteBrick extends Brick
 {
@@ -30,11 +29,17 @@ class LastMinuteBrick extends Brick
 
     public static function toHtml(array $config, ?array $data = null): ?string
     {
-        return view('bricks.last-minute', ['config' => $config])->render();
+        return view('bricks.last-minute', [
+            'config' => $config,
+            'openings' => LastMinuteAvailability::cached(),
+        ])->render();
     }
 
     public static function configureBrickAction(Action $action): Action
     {
+        // Therapists, their free slots and their services are pulled live from the
+        // booking system (see LastMinuteAvailability) — only the framing text and
+        // the button are authored here.
         return $action
             ->slideOver()
             ->schema([
@@ -44,26 +49,10 @@ class LastMinuteBrick extends Brick
                 TextInput::make('title')
                     ->label('Nadpis')
                     ->default('Last-minute termíny'),
+                TextInput::make('empty_text')
+                    ->label('Text když nejsou volné termíny')
+                    ->default('Momentálně nejsou volné žádné last-minute termíny. Zkuste to prosím později.'),
                 LinkPickerField::make('', 'Tlačítko', withText: true, withStyle: true, withColor: true, withIcon: true),
-                Repeater::make('therapists')
-                    ->label('Terapeuti')
-                    ->schema([
-                        MediaPicker::make('avatar')
-                            ->label('Fotka')
-                            ->acceptedFileTypes(['image/*']),
-                        TextInput::make('name')
-                            ->label('Jméno')
-                            ->required(),
-                        TextInput::make('role')
-                            ->label('Specializace'),
-                        Repeater::make('slots')
-                            ->label('Volné termíny')
-                            ->simple(TextInput::make('label')->required())
-                            ->defaultItems(0),
-                    ])
-                    ->defaultItems(0)
-                    ->collapsed()
-                    ->itemLabel(fn (array $state): ?string => $state['name'] ?? 'Terapeut'),
             ]);
     }
 }

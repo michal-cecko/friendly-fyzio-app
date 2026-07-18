@@ -19,7 +19,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Prunable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\URL;
@@ -99,6 +98,13 @@ class Reservation extends Model implements Payable
         return $this->reservation_date
             ->copy()
             ->setTimeFromTimeString((string) $this->start_time);
+    }
+
+    public function endsAt(): Carbon
+    {
+        return $this->reservation_date
+            ->copy()
+            ->setTimeFromTimeString((string) $this->end_time);
     }
 
     /**
@@ -189,11 +195,6 @@ class Reservation extends Model implements Payable
     public function room(): BelongsTo
     {
         return $this->belongsTo(Room::class);
-    }
-
-    public function therapyRecord(): HasOne
-    {
-        return $this->hasOne(TherapyRecord::class);
     }
 
     /**

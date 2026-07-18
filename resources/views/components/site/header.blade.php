@@ -1,19 +1,28 @@
 @props(['adminEditUrl' => null])
 
 @php
-    use Illuminate\Support\Facades\Route;
-
     $items = $headerNav?->items ?? collect();
     $user = auth()->user();
-    $loginUrl = Route::has('filament.client.auth.login') ? route('filament.client.auth.login') : url('/klientska-zona/login');
-    $registerUrl = Route::has('filament.client.auth.register') ? route('filament.client.auth.register') : url('/klientska-zona/register');
+    $loginUrl = route('public.login');
+    $registerUrl = route('public.register');
+    $logoutUrl = route('logout');
     $bookingUrl = route('reservation.wizard');
 
-    // Staff land in the admin panel; customers in the client zone. The account
-    // link reflects that (label + destination), driven by the account type.
+    // Staff land in the admin panel; customers in the public client zone. The
+    // account link reflects that (label + destination), driven by the account type.
     $isStaff = $user?->isStaff() ?? false;
-    $accountUrl = $isStaff ? url('/admin') : url('/klientska-zona');
-    $accountLabel = $isStaff ? 'Administrace' : 'Klientská zóna';
+    $accountUrl = $isStaff ? url('/admin') : url('/muj-ucet');
+    $accountLabel = $isStaff ? 'Administrace' : 'Můj účet';
+
+    // The client-zone sections mirrored into the account dropdown.
+    $zoneLinks = $isStaff ? [] : [
+        ['url' => url('/muj-ucet/rezervace'), 'label' => 'Moje rezervace'],
+        ['url' => url('/muj-ucet/kurzy'), 'label' => 'Moje kurzy'],
+        ['url' => url('/muj-ucet/nahrady'), 'label' => 'Náhradní vstupy'],
+        ['url' => url('/muj-ucet/kredity'), 'label' => 'Kredity'],
+        ['url' => url('/muj-ucet/platby'), 'label' => 'Platby'],
+        ['url' => url('/muj-ucet/profil'), 'label' => 'Můj profil'],
+    ];
 
     // Icon snippets (lucide, 24x24). Stroke inherits currentColor so size/color
     // is controlled by the wrapping element's font-size and text color utilities.
@@ -61,13 +70,20 @@
                                     <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">{!! $icon['layout-dashboard'] !!}</svg>
                                     {{ $accountLabel }}
                                 </a>
+                                @foreach($zoneLinks as $zoneLink)
+                                    <a href="{{ $zoneLink['url'] }}" class="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm text-neutral-900 transition hover:bg-primary-light hover:text-primary">
+                                        <svg class="h-4 w-4 text-neutral-400" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">{!! $icon['chevron-right'] !!}</svg>
+                                        {{ $zoneLink['label'] }}
+                                    </a>
+                                @endforeach
                                 @if($adminEditUrl)
                                     <a href="{{ $adminEditUrl }}" class="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm text-neutral-900 transition hover:bg-primary-light hover:text-primary">
                                         <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">{!! $icon['pencil'] !!}</svg>
                                         Upravit tuto stránku
                                     </a>
                                 @endif
-                                <form method="POST" action="{{ url('/klientska-zona/logout') }}">
+                                <div class="my-1 h-px bg-line"></div>
+                                <form method="POST" action="{{ $logoutUrl }}">
                                     @csrf
                                     <button type="submit" class="flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-left text-sm text-neutral-900 transition hover:bg-primary-light hover:text-primary">
                                         <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">{!! $icon['log-out'] !!}</svg>
@@ -171,7 +187,7 @@
             </div>
 
             @if($user)
-                <form method="POST" action="{{ url('/klientska-zona/logout') }}" class="flex flex-col gap-3">
+                <form method="POST" action="{{ $logoutUrl }}" class="flex flex-col gap-3">
                     @csrf
                     <a href="{{ $accountUrl }}" class="inline-flex w-full items-center justify-center gap-2 rounded-full border border-line py-3 text-sm font-semibold text-neutral-900 transition hover:bg-surface-alt">
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">{!! $icon['layout-dashboard'] !!}</svg>
@@ -193,6 +209,10 @@
                     <a href="{{ $loginUrl }}" class="inline-flex w-full items-center justify-center gap-2 rounded-full border border-line py-3 text-sm font-semibold text-neutral-900 transition hover:bg-surface-alt">
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">{!! $icon['log-in'] !!}</svg>
                         Přihlásit se
+                    </a>
+                    <a href="{{ $registerUrl }}" class="inline-flex w-full items-center justify-center gap-2 rounded-full border border-line py-3 text-sm font-semibold text-neutral-900 transition hover:bg-surface-alt">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">{!! $icon['user-plus'] !!}</svg>
+                        Registrace
                     </a>
                 </div>
             @endif

@@ -123,6 +123,52 @@ class Settings
     }
 
     /**
+     * How long (hours) an unpaid course/lesson/workshop sign-up holds its spot
+     * before it is auto-cancelled and offered to the waitlist ("místo v kurzu
+     * je rezervováno 48 hodin"). Doubles as the payment due window.
+     */
+    public static function enrollmentHoldHours(): int
+    {
+        return (int) self::get('enrollments.hold_hours', 48);
+    }
+
+    /**
+     * How many days before the series start a client can still cancel their
+     * course enrollment themselves in the client zone.
+     */
+    public static function courseCancelBeforeDays(): int
+    {
+        return (int) self::get('enrollments.course_cancel_before_days', 7);
+    }
+
+    /**
+     * How many hours before a one-time lesson a client can still cancel their
+     * booking themselves in the client zone.
+     */
+    public static function lessonCancelBeforeHours(): int
+    {
+        return (int) self::get('enrollments.lesson_cancel_before_hours', 24);
+    }
+
+    /**
+     * How many days before a workshop a client can still cancel their
+     * registration themselves in the client zone.
+     */
+    public static function workshopCancelBeforeDays(): int
+    {
+        return (int) self::get('enrollments.workshop_cancel_before_days', 7);
+    }
+
+    /**
+     * How long (days) a substitute token stays redeemable after a timely
+     * lesson excuse.
+     */
+    public static function substituteTokenValidityDays(): int
+    {
+        return (int) self::get('substitutes.token_validity_days', 30);
+    }
+
+    /**
      * Storno fee as a percentage of the service price, charged when a customer
      * cancels inside the storno window and chooses to pay rather than provide a
      * doctor's note.

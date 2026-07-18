@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Enums\CreditTransactionType;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CreditTransaction extends Model
 {
@@ -17,12 +19,14 @@ class CreditTransaction extends Model
         'type',
         'description',
         'expires_at',
+        'related_transaction_id',
     ];
 
     protected function casts(): array
     {
         return [
             'amount' => 'integer',
+            'type' => CreditTransactionType::class,
             'expires_at' => 'datetime',
         ];
     }
@@ -30,5 +34,22 @@ class CreditTransaction extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(User::class, 'client_id');
+    }
+
+    /**
+     * For Expiration rows: the top-up this expiration consumed.
+     */
+    public function relatedTransaction(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'related_transaction_id');
+    }
+
+    /**
+     * For TopUp rows: the expiration row(s) that consumed this top-up — the
+     * existence marker the credits:expire command keys on.
+     */
+    public function expirations(): HasMany
+    {
+        return $this->hasMany(self::class, 'related_transaction_id');
     }
 }

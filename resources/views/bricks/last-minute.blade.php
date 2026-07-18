@@ -1,8 +1,9 @@
 @php
     $config ??= [];
-    $therapists = $config['therapists'] ?? [];
+    $openings ??= [];
     // Button falls back to legacy button_text/button_url for pages not yet migrated.
     $buttonText = $config['text'] ?? $config['button_text'] ?? null;
+    $emptyText = $config['empty_text'] ?? 'Momentálně nejsou volné žádné last-minute termíny. Zkuste to prosím později.';
 @endphp
 
 <section class="bg-white py-16 lg:py-20">
@@ -16,31 +17,59 @@
             @endif
         </div>
 
-        @if($therapists)
-            <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
-                @foreach($therapists as $therapist)
-                    @php($avatar = \App\Support\Media::url($therapist['avatar'] ?? null, 'thumb'))
-                    @php($slots = $therapist['slots'] ?? [])
-                    <div class="flex items-center gap-4 rounded-xl border border-line bg-white p-4">
-                        <span class="h-12 w-12 shrink-0 overflow-hidden rounded-full bg-primary-light">
-                            @if($avatar)
-                                <img src="{{ $avatar }}" alt="{{ $therapist['name'] ?? '' }}" class="h-full w-full object-cover">
-                            @endif
-                        </span>
-                        <div class="w-36 shrink-0">
-                            <div class="font-heading text-sm font-semibold text-neutral-900">{{ $therapist['name'] ?? '' }}</div>
-                            @if(! empty($therapist['role']))
-                                <div class="text-xs text-neutral-500">{{ $therapist['role'] }}</div>
-                            @endif
-                        </div>
-                        <div class="flex flex-1 flex-wrap gap-1.5">
-                            @foreach($slots as $slot)
-                                <span class="rounded-lg bg-surface-alt px-2.5 py-1.5 text-xs font-medium text-primary-dark">{{ is_array($slot) ? ($slot['label'] ?? '') : $slot }}</span>
+        @if(! empty($openings))
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                @foreach($openings as $opening)
+                    @php
+                        $photo = \App\Support\Media::url($opening['photo'] ?? null, 'thumb');
+                        $permalink = $opening['permalink'] ?? null;
+                    @endphp
+
+                    <div class="flex flex-col gap-4 rounded-2xl border border-line bg-white p-5">
+                        {{-- Identity — links to the therapist's public profile when published --}}
+                        <{{ $permalink ? 'a' : 'div' }} @if($permalink) href="{{ $permalink }}" @endif class="group flex items-center gap-4 {{ $permalink ? 'transition hover:opacity-90' : '' }}">
+                            <span class="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary-light font-heading text-base font-semibold text-primary-dark">
+                                @if($photo)
+                                    <img src="{{ $photo }}" alt="{{ $opening['name'] }}" class="h-full w-full object-cover">
+                                @else
+                                    {{ $opening['initials'] }}
+                                @endif
+                            </span>
+                            <div class="min-w-0">
+                                <div class="font-heading text-sm font-semibold text-neutral-900 {{ $permalink ? 'group-hover:text-primary' : '' }}">{{ $opening['name'] }}</div>
+                                @if(! empty($opening['title']))
+                                    <div class="text-xs text-neutral-500">{{ $opening['title'] }}</div>
+                                @endif
+                            </div>
+                        </{{ $permalink ? 'a' : 'div' }}>
+
+                        {{-- Bookable services offered by this therapist --}}
+                        @if(! empty($opening['services']))
+                            <div class="flex flex-wrap gap-1.5">
+                                @foreach($opening['services'] as $serviceName)
+                                    <span class="rounded-full bg-primary-light px-2.5 py-1 text-xs font-medium text-primary-dark">{{ $serviceName }}</span>
+                                @endforeach
+                            </div>
+                        @endif
+
+                        {{-- Real free slots today/tomorrow, each deep-linked into the wizard --}}
+                        <div class="flex flex-wrap gap-1.5">
+                            @foreach($opening['days'] as $day)
+                                @php($dayDate = \Illuminate\Support\Carbon::parse($day['date']))
+                                @php($dayLabel = $dayDate->isToday() ? 'Dnes' : ($dayDate->isTomorrow() ? 'Zítra' : $dayDate->translatedFormat('j. n.')))
+                                @foreach($day['times'] as $time)
+                                    <a href="{{ route('reservation.wizard', ['terapeut' => $opening['slug'], 'datum' => $day['date'], 'cas' => $time]) }}"
+                                       class="rounded-lg border border-line bg-surface-alt px-2.5 py-1.5 text-xs font-medium text-primary-dark transition hover:border-primary hover:text-primary">
+                                        {{ $dayLabel }} {{ $time }}
+                                    </a>
+                                @endforeach
                             @endforeach
                         </div>
                     </div>
                 @endforeach
             </div>
+        @else
+            <p class="mx-auto max-w-xl text-center text-sm text-neutral-500">{{ $emptyText }}</p>
         @endif
 
         @if($buttonText)

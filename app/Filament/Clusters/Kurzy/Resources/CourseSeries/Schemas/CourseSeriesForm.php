@@ -3,10 +3,12 @@
 namespace App\Filament\Clusters\Kurzy\Resources\CourseSeries\Schemas;
 
 use App\Enums\CourseSeriesStatus;
+use App\Enums\CourseSeriesVisibility;
 use App\Filament\Support\Schemas\PresenceBanner;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Schemas\Schema;
 
@@ -48,6 +50,11 @@ class CourseSeriesForm
                     ->integer()
                     ->minValue(1)
                     ->required(),
+                Toggle::make('auto_promote_waitlist')
+                    ->label('Automaticky přidávat z čekací listiny')
+                    ->helperText('Když se uvolní místo, systém sám osloví dalšího v pořadí. Vypněte, chcete-li přidávat z čekací listiny ručně.')
+                    ->default(true)
+                    ->columnSpanFull(),
                 TextInput::make('price')
                     ->label('Cena')
                     ->integer()
@@ -60,6 +67,13 @@ class CourseSeriesForm
                     ->default(CourseSeriesStatus::Open)
                     ->inline()
                     ->required(),
+                ToggleButtons::make('visibility')
+                    ->label('Viditelnost')
+                    ->options(CourseSeriesVisibility::class)
+                    ->default(CourseSeriesVisibility::Public)
+                    ->inline()
+                    ->required()
+                    ->helperText('Soukromý běh se na webu nikde nezobrazuje — přihlásit se lze jen přes přihlašovací odkaz.'),
             ]);
     }
 }

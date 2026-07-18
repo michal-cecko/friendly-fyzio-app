@@ -6,7 +6,6 @@ use App\Enums\ConfirmationSource;
 use App\Enums\EmailTemplateKey;
 use App\Enums\PaymentStatus;
 use App\Enums\ReservationStatus;
-use App\Enums\UserRole;
 use App\Filament\Clusters\Provoz\Resources\Reservations\ReservationResource;
 use App\Jobs\SubscribeToNewsletterJob;
 use App\Models\Reservation;
@@ -14,12 +13,12 @@ use App\Models\User;
 use App\Notifications\ClientAccountCreatedNotification;
 use App\Notifications\ReservationTemplateNotification;
 use App\Notifications\TherapistReservationTemplateNotification;
+use App\Support\Clients\ResolveCustomerAccount;
 use App\Support\RichText;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 /**
  * Turns a validated wizard submission into a persisted reservation.
@@ -122,39 +121,12 @@ class CreateReservationFromWizard
      */
     protected function resolveClient(ReservationBookingData $data): array
     {
-        if ($data->client !== null) {
-            if ($data->client->isDeactivated()) {
-                throw new DeactivatedClientException;
-            }
-
-            return [$data->client, false];
-        }
-
-        $existing = User::query()->where('email', $data->email)->first();
-
-        if ($existing !== null) {
-            if ($existing->isDeactivated()) {
-                throw new DeactivatedClientException;
-            }
-
-            if ($data->newsletter && $existing->newsletter_opted_in_at === null) {
-                $existing->update(['newsletter_opted_in_at' => now()]);
-            }
-
-            return [$existing, false];
-        }
-
-        $user = User::create([
-            'name' => $data->fullName(),
-            'email' => $data->email,
-            'phone' => $data->phone,
-            'role' => UserRole::Customer,
-            'password' => Str::random(40),
-            'newsletter_opted_in_at' => $data->newsletter ? now() : null,
-        ]);
-
-        $user->clientProfile()->firstOrCreate([]);
-
-        return [$user, true];
+        return ResolveCustomerAccount::resolve(
+            $data->client,
+            $data->fullName(),
+            (string) $data->email,
+            $data->phone,
+            $data->newsletter,
+        );
     }
 }

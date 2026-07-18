@@ -7,9 +7,12 @@ use App\Filament\Clusters\Kurzy\Resources\Courses\Pages\CreateCourse;
 use App\Filament\Clusters\Kurzy\Resources\Courses\Pages\EditCourse;
 use App\Filament\Clusters\Kurzy\Resources\Courses\Pages\ListCourses;
 use App\Filament\Clusters\Kurzy\Resources\Courses\Pages\ViewCourse;
+use App\Filament\Clusters\Kurzy\Resources\Courses\RelationManagers\SubstituteRulesRelationManager;
 use App\Filament\Clusters\Kurzy\Resources\Courses\Schemas\CourseForm;
 use App\Filament\Clusters\Kurzy\Resources\Courses\Schemas\CourseInfolist;
 use App\Filament\Clusters\Kurzy\Resources\Courses\Tables\CoursesTable;
+use App\Filament\Support\Concerns\ScopedToTherapist;
+use App\Filament\Support\RelationManagers\WaitlistEntriesRelationManager;
 use App\Models\Course;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -22,6 +25,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class CourseResource extends Resource
 {
+    use ScopedToTherapist;
+
     protected static ?string $model = Course::class;
 
     protected static ?string $cluster = KurzyCluster::class;
@@ -84,13 +89,15 @@ class CourseResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with(['category', 'instructor']);
+        return parent::getEloquentQuery()->with(['category', 'instructor'])
+            ->when(static::therapistUserScopeId(), fn (Builder $query, string $id) => $query->where('instructor_id', $id));
     }
 
     public static function getRelations(): array
     {
         return [
-            //
+            WaitlistEntriesRelationManager::class,
+            SubstituteRulesRelationManager::class,
         ];
     }
 

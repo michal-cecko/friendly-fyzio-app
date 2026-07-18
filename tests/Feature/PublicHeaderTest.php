@@ -33,8 +33,8 @@ class PublicHeaderTest extends TestCase
         $this->actingAs(User::factory()->customer()->create())
             ->get("/{$page->slug}")
             ->assertSuccessful()
-            ->assertSee('Klientská zóna')
-            ->assertSee(url('/klientska-zona'))
+            ->assertSee('Můj účet')
+            ->assertSee(url('/muj-ucet'))
             ->assertDontSee('Administrace');
     }
 

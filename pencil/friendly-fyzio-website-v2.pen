@@ -30426,7 +30426,7 @@
                               "type": "frame",
                               "id": "hxe6r",
                               "name": "iconFrame",
-                              "width": 207.9096625176053,
+                              "width": 391.9096625176053,
                               "height": 40,
                               "fill": "$--warning",
                               "cornerRadius": "$--radius-full",
@@ -32114,7 +32114,7 @@
                               "type": "frame",
                               "id": "h3cG4",
                               "name": "iconF",
-                              "width": 1127.865042105323,
+                              "width": 1311.865042105323,
                               "height": 40,
                               "fill": "$--warning",
                               "cornerRadius": "$--radius-full",
@@ -84190,7 +84190,7 @@
                       "descendants": {
                         "MSASQ": {
                           "content": "Aktivní kurzy",
-                          "x": 24.048142350469423,
+                          "x": 24.04814235046943,
                           "y": 12,
                           "rotation": -0.16225630497652313,
                           "flipX": false,
@@ -84209,7 +84209,7 @@
                       "descendants": {
                         "MSASQ": {
                           "content": "Čekací listina",
-                          "x": 24.048142350469423,
+                          "x": 24.04814235046943,
                           "y": 12,
                           "rotation": -0.16225630497652313,
                           "flipX": false,
@@ -86386,7 +86386,7 @@
                       "type": "frame",
                       "id": "0SwEr",
                       "name": "currentCard",
-                      "width": 16338.422937894671,
+                      "width": 32365.550323783304,
                       "height": 90,
                       "fill": "$--background-alt",
                       "cornerRadius": "$--radius-md",
@@ -86440,7 +86440,7 @@
                       "type": "frame",
                       "id": "6X3KM",
                       "name": "newTermCard",
-                      "width": 16680.2309491477,
+                      "width": 33042.65388704237,
                       "height": 90,
                       "fill": "$--primary-light",
                       "cornerRadius": "$--radius-md",
@@ -95051,6 +95051,80 @@
         },
         {
           "type": "frame",
+          "id": "jKm4N",
+          "name": "invSigSection",
+          "width": "fill_container",
+          "gap": 32,
+          "padding": [
+            16,
+            0,
+            8,
+            0
+          ],
+          "justifyContent": "center",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "group",
+              "id": "pzYjM",
+              "layout": "vertical",
+              "gap": 3,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "S57ERA",
+                  "name": "sigLineBoxR",
+                  "width": 162,
+                  "height": 53.746842548414236,
+                  "layout": "vertical",
+                  "gap": 4,
+                  "justifyContent": "end",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "id": "b3S9Y",
+                      "name": "sigLineR",
+                      "fill": "$--foreground",
+                      "width": "fill_container",
+                      "height": 1
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "g7TkY6",
+                  "name": "sigReceiverLabel",
+                  "fill": "$--foreground",
+                  "textGrowth": "fixed-width-height",
+                  "width": 131,
+                  "height": 8.445932400465093,
+                  "content": "Podpis a razítko dodavatele",
+                  "fontFamily": "Montserrat",
+                  "fontSize": 9,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "v8Owv",
+                  "name": "sigReceiverSub",
+                  "fill": "$--foreground-muted",
+                  "textGrowth": "fixed-width-height",
+                  "width": 76,
+                  "height": 8.445932400465093,
+                  "content": "Mgr. Lucie Fickerová",
+                  "fontFamily": "Open Sans",
+                  "fontSize": 8,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
           "id": "0DdsX",
           "name": "invFooter",
           "width": "fill_container",
@@ -101952,6 +102026,665 @@
                   "fill": "$--foreground-subtle"
                 }
               ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "o8gRs3",
+      "x": 16990,
+      "y": 0,
+      "name": "PPD/Cash Receipt Template",
+      "clip": true,
+      "width": 595,
+      "height": 410,
+      "fill": "$--white",
+      "layout": "vertical",
+      "gap": 12,
+      "padding": [
+        26,
+        32
+      ],
+      "children": [
+        {
+          "type": "frame",
+          "id": "DIxIl",
+          "name": "ppdHeader",
+          "width": "fill_container",
+          "justifyContent": "space_between",
+          "children": [
+            {
+              "type": "frame",
+              "id": "u0cdHY",
+              "name": "logoCol",
+              "layout": "vertical",
+              "gap": 2,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "xRlFp",
+                  "name": "logoRow",
+                  "gap": 2,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "MxGWs",
+                      "name": "friendly",
+                      "fill": "$--foreground",
+                      "content": "Friendly",
+                      "fontFamily": "Montserrat",
+                      "fontSize": 16,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "text",
+                      "id": "M0SNn",
+                      "name": "fyzio",
+                      "fill": "$--primary",
+                      "content": "Fyzio",
+                      "fontFamily": "Montserrat",
+                      "fontSize": 16,
+                      "fontWeight": "600",
+                      "fontStyle": "italic"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "y7ey4O",
+                  "name": "companyName",
+                  "fill": "$--foreground-muted",
+                  "content": "FriendlyFyzio s.r.o.",
+                  "fontFamily": "Open Sans",
+                  "fontSize": 8,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "M07l3s",
+              "name": "ppdInfoCol",
+              "layout": "vertical",
+              "gap": 3,
+              "alignItems": "end",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "FXX9S",
+                  "name": "docTitle",
+                  "fill": "$--primary",
+                  "content": "PŘÍJMOVÝ POKLADNIČNÍ DOKLAD",
+                  "fontFamily": "Montserrat",
+                  "fontSize": 12,
+                  "fontWeight": "700",
+                  "letterSpacing": 1.5
+                },
+                {
+                  "type": "text",
+                  "id": "VEdOw",
+                  "name": "docNumber",
+                  "fill": "$--foreground",
+                  "content": "PPD-2026-00287",
+                  "fontFamily": "Montserrat",
+                  "fontSize": 11,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "text",
+                  "id": "x9yqg",
+                  "name": "docDate",
+                  "fill": "$--foreground-muted",
+                  "content": "Vystaveno: 10. dubna 2026",
+                  "fontFamily": "Open Sans",
+                  "fontSize": 8,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "rectangle",
+          "id": "cvs0F",
+          "name": "divider1",
+          "fill": "$--primary",
+          "width": "fill_container",
+          "height": 2
+        },
+        {
+          "type": "frame",
+          "id": "FsXLk",
+          "name": "partiesRow",
+          "width": "fill_container",
+          "gap": 24,
+          "children": [
+            {
+              "type": "frame",
+              "id": "z4qmI",
+              "name": "issuer",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 2,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "pb9rI",
+                  "name": "issuerLabel",
+                  "fill": "$--primary",
+                  "content": "Vystavil (příjemce platby)",
+                  "fontFamily": "Montserrat",
+                  "fontSize": 8,
+                  "fontWeight": "700",
+                  "letterSpacing": 1
+                },
+                {
+                  "type": "text",
+                  "id": "Yoh23",
+                  "name": "issuerName",
+                  "fill": "$--foreground",
+                  "content": "FriendlyFyzio s.r.o.",
+                  "fontFamily": "Montserrat",
+                  "fontSize": 10,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "r73PQ",
+                  "name": "issuerICO",
+                  "fill": "$--foreground-muted",
+                  "content": "IČO: 06816967",
+                  "fontFamily": "Open Sans",
+                  "fontSize": 8,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "RtThn",
+              "name": "payer",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 2,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "OPbvf",
+                  "name": "payerLabel",
+                  "fill": "$--primary",
+                  "content": "Přijato od (plátce)",
+                  "fontFamily": "Montserrat",
+                  "fontSize": 8,
+                  "fontWeight": "700",
+                  "letterSpacing": 1
+                },
+                {
+                  "type": "text",
+                  "id": "kZkQE",
+                  "name": "payerName",
+                  "fill": "$--foreground",
+                  "content": "Jana Kováčová",
+                  "fontFamily": "Montserrat",
+                  "fontSize": 10,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "cO1kC",
+                  "name": "payerAddress",
+                  "fill": "$--foreground-muted",
+                  "content": "Lípová 12, 150 00 Praha 5",
+                  "fontFamily": "Open Sans",
+                  "fontSize": 8,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "rectangle",
+          "id": "NUMNy",
+          "name": "divider2",
+          "fill": "$--border",
+          "width": "fill_container",
+          "height": 1
+        },
+        {
+          "type": "frame",
+          "id": "u4cHmv",
+          "name": "amountDetailsRow",
+          "width": "fill_container",
+          "gap": 12,
+          "children": [
+            {
+              "type": "frame",
+              "id": "Z36ybb",
+              "name": "amountBox",
+              "width": 260,
+              "height": 101,
+              "fill": "$--neutral-100",
+              "cornerRadius": "$--radius-md",
+              "stroke": "$--primary",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "layout": "vertical",
+              "gap": 8,
+              "padding": [
+                14,
+                16
+              ],
+              "justifyContent": "space_between",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "YVTZB",
+                  "name": "amountRow",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "jlfmZ",
+                      "name": "amountLabel",
+                      "fill": "$--foreground",
+                      "content": "Přijatá částka",
+                      "fontFamily": "Montserrat",
+                      "fontSize": 10,
+                      "fontWeight": "700",
+                      "letterSpacing": 1
+                    },
+                    {
+                      "type": "text",
+                      "id": "ctKOe",
+                      "name": "amountValue",
+                      "fill": "$--primary-dark",
+                      "content": "1 300 Kč",
+                      "fontFamily": "Montserrat",
+                      "fontSize": 18,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "RXWoI",
+                  "name": "wordsRow",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 1,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "m2ZwCG",
+                      "name": "wordsLabel",
+                      "fill": "$--foreground-muted",
+                      "content": "Slovy:",
+                      "fontFamily": "Open Sans",
+                      "fontSize": 7,
+                      "fontWeight": "700",
+                      "letterSpacing": 0.5
+                    },
+                    {
+                      "type": "text",
+                      "id": "l9GF1r",
+                      "name": "wordsValue",
+                      "fill": "$--foreground",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "jedentisíctřista korun českých",
+                      "fontFamily": "Open Sans",
+                      "fontSize": 9,
+                      "fontWeight": "600",
+                      "fontStyle": "italic"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "YsSiO",
+              "name": "detailsBox",
+              "width": "fill_container",
+              "fill": "$--neutral-100",
+              "cornerRadius": "$--radius-md",
+              "stroke": "$--border",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "layout": "vertical",
+              "gap": 6,
+              "padding": [
+                12,
+                14
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "IFoel",
+                  "name": "detailsInternalTitle",
+                  "fill": "$--primary",
+                  "content": "Údaje o platbě",
+                  "fontFamily": "Montserrat",
+                  "fontSize": 8,
+                  "fontWeight": "700",
+                  "letterSpacing": 1
+                },
+                {
+                  "type": "frame",
+                  "id": "HefBn",
+                  "name": "dr1",
+                  "width": "fill_container",
+                  "gap": 6,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "K0QSW",
+                      "name": "label",
+                      "fill": "$--foreground",
+                      "textGrowth": "fixed-width",
+                      "width": 82,
+                      "content": "Účel platby:",
+                      "fontFamily": "Open Sans",
+                      "fontSize": 8,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "OV49j",
+                      "name": "value",
+                      "fill": "$--foreground",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Úhrada faktury č. FF-2026-00415",
+                      "fontFamily": "Open Sans",
+                      "fontSize": 8,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "A9D8cI",
+                  "name": "dr3",
+                  "width": "fill_container",
+                  "gap": 6,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "QstWS",
+                      "name": "label",
+                      "fill": "$--foreground",
+                      "textGrowth": "fixed-width",
+                      "width": 82,
+                      "content": "Způsob úhrady:",
+                      "fontFamily": "Open Sans",
+                      "fontSize": 8,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "j2bVG1",
+                      "name": "value",
+                      "fill": "$--foreground",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Hotově",
+                      "fontFamily": "Open Sans",
+                      "fontSize": 8,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "TbB4W",
+                  "name": "dr4",
+                  "width": "fill_container",
+                  "gap": 6,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "eGx5K",
+                      "name": "label",
+                      "fill": "$--foreground",
+                      "textGrowth": "fixed-width",
+                      "width": 82,
+                      "content": "Datum úhrady:",
+                      "fontFamily": "Open Sans",
+                      "fontSize": 8,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "cE4sx",
+                      "name": "value",
+                      "fill": "$--foreground",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "10. dubna 2026",
+                      "fontFamily": "Open Sans",
+                      "fontSize": 8,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "qC9VO",
+                  "name": "dr5",
+                  "width": "fill_container",
+                  "gap": 6,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "SYMD1",
+                      "name": "label",
+                      "fill": "$--foreground",
+                      "textGrowth": "fixed-width",
+                      "width": 82,
+                      "content": "Přijal:",
+                      "fontFamily": "Open Sans",
+                      "fontSize": 8,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "EF5Zt",
+                      "name": "value",
+                      "fill": "$--foreground",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Mgr. Petra Nováková",
+                      "fontFamily": "Open Sans",
+                      "fontSize": 8,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "wWA9L",
+          "name": "sigSection",
+          "width": "fill_container",
+          "gap": 32,
+          "padding": [
+            10,
+            0,
+            4,
+            0
+          ],
+          "justifyContent": "space_around",
+          "children": [
+            {
+              "type": "frame",
+              "id": "p0TOg1",
+              "name": "sigPayer",
+              "width": 165,
+              "layout": "vertical",
+              "gap": 3,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "uZiri",
+                  "name": "sigStampBoxP",
+                  "width": "fill_container",
+                  "height": 30,
+                  "layout": "vertical",
+                  "gap": 4,
+                  "justifyContent": "end",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "id": "CCTuy",
+                      "name": "sigLineP",
+                      "fill": "$--foreground",
+                      "width": "fill_container",
+                      "height": 1
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "VWcIM",
+                  "name": "sigPayerLabel",
+                  "fill": "$--foreground",
+                  "content": "Podpis plátce",
+                  "fontFamily": "Montserrat",
+                  "fontSize": 9,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "kuAeP",
+                  "name": "sigPayerSub",
+                  "fill": "$--foreground-muted",
+                  "content": "Jana Kováčová",
+                  "fontFamily": "Open Sans",
+                  "fontSize": 8,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "group",
+              "id": "i698d8",
+              "layout": "vertical",
+              "gap": 3,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "qEx0K",
+                  "name": "sigLineBoxR",
+                  "width": 162,
+                  "height": 30,
+                  "layout": "vertical",
+                  "gap": 4,
+                  "justifyContent": "end",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "id": "xmGpy",
+                      "name": "sigLineR",
+                      "fill": "$--foreground",
+                      "width": "fill_container",
+                      "height": 1
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "YIGJr",
+                  "name": "sigReceiverLabel",
+                  "fill": "$--foreground",
+                  "content": "Podpis a razítko dodavatele",
+                  "fontFamily": "Montserrat",
+                  "fontSize": 9,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "N4SLwH",
+                  "name": "sigReceiverSub",
+                  "fill": "$--foreground-muted",
+                  "content": "Mgr. Lucie Fickerová",
+                  "fontFamily": "Open Sans",
+                  "fontSize": 8,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "rectangle",
+          "id": "GDHue",
+          "name": "divider4",
+          "fill": "$--border",
+          "width": "fill_container",
+          "height": 1
+        },
+        {
+          "type": "frame",
+          "id": "eDS4m",
+          "name": "ppdFooter",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 1,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "M5pAAQ",
+              "name": "thanks",
+              "fill": "$--primary",
+              "content": "Děkujeme za využití služeb FriendlyFyzio!",
+              "textAlign": "center",
+              "fontFamily": "Montserrat",
+              "fontSize": 9,
+              "fontWeight": "600"
+            },
+            {
+              "type": "text",
+              "id": "Lukqa",
+              "name": "footerInfo",
+              "fill": "$--foreground-muted",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "FriendlyFyzio s.r.o. · IČO: 06816967 · DIČ: CZ06816967 · Zapsáno v OR vedeném KS v Ostravě, oddíl C, vložka 12345",
+              "lineHeight": 1.2,
+              "textAlign": "center",
+              "fontFamily": "Open Sans",
+              "fontSize": 6,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "wBNGZ",
+              "name": "page",
+              "fill": "$--foreground-subtle",
+              "content": "Strana 1/1",
+              "textAlign": "center",
+              "fontFamily": "Open Sans",
+              "fontSize": 8,
+              "fontWeight": "normal"
             }
           ]
         }

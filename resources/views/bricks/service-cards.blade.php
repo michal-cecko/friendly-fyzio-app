@@ -19,7 +19,7 @@
             <div class="grid grid-cols-1 gap-6 {{ $grid }}">
                 @foreach($categories as $category)
                     @php($img = \App\Support\Media::url($category->hero_image, '400'))
-                    <article class="group flex flex-col overflow-hidden rounded-2xl border border-line bg-white">
+                    <a href="{{ $category->permalink }}" class="group flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-white transition hover:border-primary hover:shadow-lg hover:shadow-primary/5">
                         <div class="aspect-[16/10] w-full overflow-hidden bg-primary-light">
                             @if($img)
                                 <img src="{{ $img }}" alt="{{ $category->name }}" class="h-full w-full object-cover transition duration-500 group-hover:scale-105">
@@ -30,18 +30,13 @@
                             @if(! empty($category->description))
                                 <p class="text-sm leading-relaxed text-neutral-600">{!! \App\Support\RichText::inline($category->description) !!}</p>
                             @endif
-                            <div class="mt-auto pt-1">
-                                @include('bricks.partials.button', ['btn' => [
-                                    'text' => $linkText,
-                                    'style' => $config['link_style'] ?? 'text',
-                                    'color' => $config['link_color'] ?? null,
-                                    'icon' => $config['link_icon'] ?? 'arrow-right',
-                                    'link_type' => 'custom',
-                                    'url' => $category->permalink,
-                                ]])
-                            </div>
+                            <span class="mt-auto inline-flex items-center gap-1.5 pt-1 font-heading text-sm font-semibold text-primary transition group-hover:gap-2.5"
+                                  @if(! empty($config['link_color'])) style="color: {{ $config['link_color'] }}" @endif>
+                                {{ $linkText }}
+                                {!! \App\Support\Icon::render($config['link_icon'] ?? 'arrow-right', 'h-4 w-4') !!}
+                            </span>
                         </div>
-                    </article>
+                    </a>
                 @endforeach
             </div>
         @endif

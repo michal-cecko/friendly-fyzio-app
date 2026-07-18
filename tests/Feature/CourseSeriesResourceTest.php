@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\CourseSeriesStatus;
+use App\Enums\CourseSeriesVisibility;
 use App\Filament\Clusters\Kurzy\Resources\CourseSeries\Pages\CreateCourseSeries;
 use App\Filament\Clusters\Kurzy\Resources\CourseSeries\Pages\EditCourseSeries;
 use App\Filament\Clusters\Kurzy\Resources\CourseSeries\Pages\ListCourseSeries;
@@ -48,6 +49,7 @@ class CourseSeriesResourceTest extends TestCase
                 'capacity' => 12,
                 'price' => 2400,
                 'status' => CourseSeriesStatus::Open->value,
+                'visibility' => CourseSeriesVisibility::Private->value,
             ])
             ->call('create')
             ->assertHasNoFormErrors();
@@ -56,6 +58,7 @@ class CourseSeriesResourceTest extends TestCase
             'course_id' => $course->id,
             'name' => 'Jarní běh 2026',
             'status' => CourseSeriesStatus::Open->value,
+            'visibility' => CourseSeriesVisibility::Private->value,
         ]);
     }
 

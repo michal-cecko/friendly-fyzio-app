@@ -34,6 +34,14 @@ class ServiceController extends Controller
                     ->bricks(BrickRegistry::flat())
                     ->toUnsafeHtml();
 
+                // On a service page, bare "Objednat se" links (/rezervace) deep-link
+                // the wizard with this service preselected.
+                $renderedContent = str_replace(
+                    'href="/rezervace"',
+                    'href="'.route('reservation.wizard', ['sluzba' => $service->slug], false).'"',
+                    $renderedContent,
+                );
+
                 return view('pages.show', [
                     'page' => $custom,
                     'renderedContent' => $renderedContent,

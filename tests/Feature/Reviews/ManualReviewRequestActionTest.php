@@ -3,7 +3,7 @@
 namespace Tests\Feature\Reviews;
 
 use App\Enums\ReservationStatus;
-use App\Filament\Clusters\LekceWorkshopy\Resources\OneTimeLessonBookings\Pages\ListOneTimeLessonBookings;
+use App\Filament\Clusters\Lekce\Resources\OneTimeLessonBookings\Pages\ListOneTimeLessonBookings;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Pages\ListReservations;
 use App\Models\OneTimeLesson;
 use App\Models\OneTimeLessonBooking;

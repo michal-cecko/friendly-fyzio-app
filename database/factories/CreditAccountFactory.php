@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\CreditAccount;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -18,7 +19,8 @@ class CreditAccountFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'client_id' => User::factory()->customer(),
+            'balance' => 0,
         ];
     }
 }

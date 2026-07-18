@@ -39,11 +39,21 @@ class RolePermissionSeeder extends Seeder
             'ViewAny:Room', 'View:Room',
             'ViewAny:Building', 'View:Building',
             'ViewAny:ClientNote', 'View:ClientNote', 'Create:ClientNote', 'Update:ClientNote', 'Delete:ClientNote',
-            // Read-only access to the courses / workshops / one-time lessons schedule.
+            // Their own clients (ClientResource shares the User model; UserResource
+            // in the System cluster is gated to admins via canAccess()). Rows are
+            // scoped to clients they've treated — see ScopedToTherapist.
+            'ViewAny:User', 'View:User', 'Update:User',
+            // Their own reservations + recording payments after a visit.
+            'ViewAny:Reservation', 'View:Reservation', 'Update:Reservation',
+            'ViewAny:Payment', 'View:Payment', 'Create:Payment',
+            // Courses / workshops / one-time lessons they instruct, plus enrollment
+            // rosters and attendance marking (all row-scoped to their offerings).
             'ViewAny:Course', 'View:Course',
             'ViewAny:CourseCategory', 'View:CourseCategory',
             'ViewAny:CourseSeries', 'View:CourseSeries',
             'ViewAny:CourseLesson', 'View:CourseLesson',
+            'ViewAny:CourseEnrollment', 'View:CourseEnrollment',
+            'ViewAny:LessonAttendance', 'View:LessonAttendance', 'Create:LessonAttendance', 'Update:LessonAttendance',
             'ViewAny:Workshop', 'View:Workshop',
             'ViewAny:OneTimeLesson', 'View:OneTimeLesson',
         ])->get());

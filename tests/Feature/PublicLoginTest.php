@@ -47,7 +47,7 @@ class PublicLoginTest extends TestCase
         $this->assertGuest();
     }
 
-    public function test_external_return_urls_are_rejected(): void
+    public function test_external_return_urls_are_rejected_and_default_to_the_client_zone(): void
     {
         $user = User::factory()->customer()->create(['email' => 'a@b.com', 'password' => Hash::make('tajneheslo')]);
 
@@ -56,8 +56,36 @@ class PublicLoginTest extends TestCase
             ->set('email', 'a@b.com')
             ->set('password', 'tajneheslo')
             ->call('authenticate')
-            ->assertRedirect('/');
+            ->assertRedirect('/muj-ucet');
 
         $this->assertAuthenticatedAs($user);
+    }
+
+    public function test_staff_are_redirected_to_the_admin_panel(): void
+    {
+        User::factory()->admin()->create(['email' => 'sef@b.com', 'password' => Hash::make('tajneheslo')]);
+
+        Livewire::test(PublicLogin::class)
+            ->set('email', 'sef@b.com')
+            ->set('password', 'tajneheslo')
+            ->call('authenticate')
+            ->assertRedirect('/admin');
+    }
+
+    public function test_deactivated_customers_cannot_sign_in(): void
+    {
+        User::factory()->customer()->create([
+            'email' => 'a@b.com',
+            'password' => Hash::make('tajneheslo'),
+            'deactivated_at' => now(),
+        ]);
+
+        Livewire::test(PublicLogin::class)
+            ->set('email', 'a@b.com')
+            ->set('password', 'tajneheslo')
+            ->call('authenticate')
+            ->assertHasErrors('email');
+
+        $this->assertGuest();
     }
 }

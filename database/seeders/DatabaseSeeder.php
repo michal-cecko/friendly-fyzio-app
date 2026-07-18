@@ -37,5 +37,9 @@ class DatabaseSeeder extends Seeder
         // DemoSeeder creates the services; ServicePagesSeeder attaches custom pages to them.
         $this->call(DemoSeeder::class);
         $this->call(ServicePagesSeeder::class);
+
+        // A demo customer carrying every client-zone state (needs DemoSeeder's
+        // services, courses and workshops to exist first).
+        $this->call(ClientZoneDemoSeeder::class);
     }
 }

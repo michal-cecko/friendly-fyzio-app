@@ -4,7 +4,7 @@ namespace App\Models;
 
 use App\Enums\UserRole;
 use App\Notifications\Auth\ResetPasswordNotification;
-use Filament\Facades\Filament;
+use App\Notifications\Auth\VerifyEmailNotification;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -81,18 +81,23 @@ class User extends Authenticatable implements FilamentUser, HasPasskeys, MustVer
     }
 
     /**
-     * Send the password-reset link using the dashboard-editable CMS template. Filament's
-     * public "forgotten password" page builds its own (container-bound) notification, but
-     * the admin-triggered reset (Password::sendResetLink via ResetPasswordAction) goes
-     * through the broker, which calls this method — so we rebuild the Filament panel URL
-     * here and dispatch the same CMS notification.
+     * Send the password-reset link using the dashboard-editable CMS template.
+     * Every reset path (public "zapomenuté heslo" page, admin reset action)
+     * goes through the broker, which calls this method; the notification
+     * builds the public password.reset URL itself.
      */
     public function sendPasswordResetNotification($token): void
     {
-        $notification = new ResetPasswordNotification($token);
-        $notification->url = Filament::getPanel('client')->getResetPasswordUrl($token, $this);
+        $this->notify(new ResetPasswordNotification($token));
+    }
 
-        $this->notify($notification);
+    /**
+     * Send the e-mail-verification link using the dashboard-editable CMS
+     * template (Laravel's trait hardcodes its own notification class).
+     */
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new VerifyEmailNotification);
     }
 
     /**
@@ -136,20 +141,13 @@ class User extends Authenticatable implements FilamentUser, HasPasskeys, MustVer
     }
 
     /**
-     * Panel access by account type:
-     * - admin panel: staff only (administrators and therapists).
-     * - client panel: any authenticated, non-deactivated user; staff who land here are
-     *   redirected to the admin panel (see App\Http\Middleware\RedirectStaffToAdmin),
-     *   but allowing them keeps the single shared login working.
+     * Filament is staff-only: administrators and therapists. Customers have no
+     * panel access at all — their home is the public client zone (/muj-ucet).
      * The account type also drives the matching Shield role (see booted()).
      */
     public function canAccessPanel(Panel $panel): bool
     {
-        return match ($panel->getId()) {
-            'admin' => $this->isStaff(),
-            'client' => ! $this->isDeactivated() && in_array($this->role, [UserRole::Admin, UserRole::Therapist, UserRole::Customer], true),
-            default => false,
-        };
+        return $panel->getId() === 'admin' && $this->isStaff();
     }
 
     /**
@@ -176,6 +174,21 @@ class User extends Authenticatable implements FilamentUser, HasPasskeys, MustVer
         return $this->hasMany(Reservation::class, 'client_id');
     }
 
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class, 'client_id');
+    }
+
+    public function workshopRegistrations(): HasMany
+    {
+        return $this->hasMany(WorkshopRegistration::class, 'client_id');
+    }
+
+    public function oneTimeLessonBookings(): HasMany
+    {
+        return $this->hasMany(OneTimeLessonBooking::class, 'client_id');
+    }
+
     /**
      * Ad-hoc therapy notes written about this client (see ClientNote).
      */
@@ -198,11 +211,6 @@ class User extends Authenticatable implements FilamentUser, HasPasskeys, MustVer
     public function instructedLessons(): HasMany
     {
         return $this->hasMany(CourseLesson::class, 'instructor_id');
-    }
-
-    public function therapyRecords(): HasMany
-    {
-        return $this->hasMany(TherapyRecord::class, 'client_id');
     }
 
     public function courseEnrollments(): HasMany

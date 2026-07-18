@@ -102,7 +102,6 @@ class ReservationWizardTest extends TestCase
             ->set('lastName', 'Nováková')
             ->set('email', 'jana@example.com')
             ->set('phone', '+420604793255')
-            ->set('phoneConfirm', '+420604793255')
             ->set('agreeCancellation', true)
             ->call('submit')
             ->assertHasNoErrors()
@@ -142,7 +141,7 @@ class ReservationWizardTest extends TestCase
         $instance = $component->instance();
 
         $this->assertSame($this->category->slug, $instance->categorySlug);
-        $this->assertSame($this->therapist->id, $instance->therapistId);
+        $this->assertSame($this->therapist->slug, $instance->therapistSlug);
         $this->assertSame('therapist', $instance->currentStep());
     }
 
@@ -155,7 +154,7 @@ class ReservationWizardTest extends TestCase
             ->test(ReservationWizard::class);
         $instance = $component->instance();
 
-        $this->assertNull($instance->therapistId);
+        $this->assertNull($instance->therapistSlug);
         $this->assertSame('therapist', $instance->currentStep());
     }
 
@@ -174,16 +173,78 @@ class ReservationWizardTest extends TestCase
         );
     }
 
+    public function test_service_without_a_therapist_is_not_offered(): void
+    {
+        // A service nobody performs is a dead end (its calendar is always empty), so
+        // it must not appear in the service step.
+        $orphan = Service::factory()->create([
+            'category_id' => $this->category->id,
+            'visibility' => ServiceVisibility::Public,
+            'published_at' => now(),
+        ]);
+
+        $ids = Livewire::withQueryParams(['kategorie' => $this->category->slug])
+            ->test(ReservationWizard::class)
+            ->instance()->services->pluck('id');
+
+        $this->assertTrue($ids->contains($this->service->id));
+        $this->assertFalse($ids->contains($orphan->id));
+    }
+
+    public function test_category_without_a_bookable_service_is_hidden(): void
+    {
+        // A published category whose services are all unorderable leads nowhere.
+        $emptyCategory = ServiceCategory::factory()->create(['type' => ServiceType::Massage, 'published_at' => now()]);
+        Service::factory()->create([
+            'category_id' => $emptyCategory->id,
+            'visibility' => ServiceVisibility::Public,
+            'published_at' => now(),
+        ]);
+
+        $ids = Livewire::test(ReservationWizard::class)->instance()->categories->pluck('id');
+
+        $this->assertTrue($ids->contains($this->category->id));
+        $this->assertFalse($ids->contains($emptyCategory->id));
+    }
+
+    public function test_therapist_without_a_bookable_service_is_not_offered(): void
+    {
+        // The mirror of the service rule: a therapist who performs nothing bookable
+        // is a dead end in the picker.
+        $orphan = TherapistProfile::factory()->create(['published_at' => now()]);
+
+        $ids = Livewire::test(ReservationWizard::class)->instance()->therapists->pluck('id');
+
+        $this->assertTrue($ids->contains($this->therapist->id));
+        $this->assertFalse($ids->contains($orphan->id));
+    }
+
+    public function test_gated_kontrolni_selection_does_not_leave_vstupni_active(): void
+    {
+        // A guest picks Vstupní (committed), then Kontrolní — which opens the login
+        // gate WITHOUT committing the exam type. Only Kontrolní may render selected;
+        // the previously-committed Vstupní must not stay active too.
+        $wizard = Livewire::test(ReservationWizard::class)
+            ->call('selectExamType', ExamType::Vstupni->value)
+            ->assertSet('examType', ExamType::Vstupni->value)
+            ->call('selectExamType', ExamType::Kontrolni->value)
+            ->assertSet('gate', 'login');
+
+        $instance = $wizard->instance();
+        $this->assertTrue($instance->isExamTypeSelected(ExamType::Kontrolni));
+        $this->assertFalse($instance->isExamTypeSelected(ExamType::Vstupni));
+    }
+
     public function test_therapist_deep_link_prefills_and_starts_therapist_first(): void
     {
         TherapistProfile::factory()->create(['published_at' => now()]);
 
-        $component = Livewire::withQueryParams(['terapeut' => $this->therapist->id])
+        $component = Livewire::withQueryParams(['terapeut' => $this->therapist->slug])
             ->test(ReservationWizard::class);
         $instance = $component->instance();
 
         $this->assertSame('therapist', $instance->stepOrder()[0]);
-        $this->assertSame($this->therapist->id, $instance->therapistId);
+        $this->assertSame($this->therapist->slug, $instance->therapistSlug);
         $this->assertSame('category', $instance->currentStep());
     }
 
@@ -207,7 +268,7 @@ class ReservationWizardTest extends TestCase
         $hidden->therapists()->attach($this->therapist);
 
         $services = Livewire::test(ReservationWizard::class)
-            ->set('therapistId', $this->therapist->id)
+            ->set('therapistSlug', $this->therapist->slug)
             ->set('categorySlug', $this->category->slug)
             ->instance()
             ->services();
@@ -216,10 +277,10 @@ class ReservationWizardTest extends TestCase
         $this->assertFalse($services->contains('id', $hidden->id));
     }
 
-    public function test_submit_requires_consent_and_matching_phones(): void
+    public function test_submit_requires_consent(): void
     {
         Livewire::test(ReservationWizard::class)
-            ->set('therapistId', $this->therapist->id)
+            ->set('therapistSlug', $this->therapist->slug)
             ->set('categorySlug', $this->category->slug)
             ->set('serviceSlug', $this->service->slug)
             ->set('date', $this->date->toDateString())
@@ -228,10 +289,9 @@ class ReservationWizardTest extends TestCase
             ->set('lastName', 'Nováková')
             ->set('email', 'jana@example.com')
             ->set('phone', '+420604793255')
-            ->set('phoneConfirm', '+420000000000')
             ->set('agreeCancellation', false)
             ->call('submit')
-            ->assertHasErrors(['phoneConfirm', 'agreeCancellation']);
+            ->assertHasErrors(['agreeCancellation']);
 
         $this->assertSame(0, Reservation::count());
     }
@@ -362,7 +422,7 @@ class ReservationWizardTest extends TestCase
         $existing = User::factory()->customer()->create(['email' => 'dup@example.com', 'password' => Hash::make('tajneheslo')]);
 
         Livewire::test(ReservationWizard::class)
-            ->set('therapistId', $this->therapist->id)
+            ->set('therapistSlug', $this->therapist->slug)
             ->set('categorySlug', $this->category->slug)
             ->set('serviceSlug', $this->service->slug)
             ->set('date', $this->date->toDateString())
@@ -371,7 +431,6 @@ class ReservationWizardTest extends TestCase
             ->set('lastName', 'Nováková')
             ->set('email', 'dup@example.com')
             ->set('phone', '+420604793255')
-            ->set('phoneConfirm', '+420604793255')
             ->set('agreeCancellation', true)
             ->call('submit')
             ->assertSet('gate', 'email_exists')
@@ -397,7 +456,7 @@ class ReservationWizardTest extends TestCase
         ]);
 
         $months = Livewire::test(ReservationWizard::class)
-            ->set('therapistId', $this->therapist->id)
+            ->set('therapistSlug', $this->therapist->slug)
             ->set('categorySlug', $this->category->slug)
             ->set('serviceSlug', $this->service->slug)
             ->instance()
@@ -415,7 +474,7 @@ class ReservationWizardTest extends TestCase
         Carbon::setTestNow($this->date->copy()->startOfDay());
 
         $months = Livewire::test(ReservationWizard::class)
-            ->set('therapistId', $this->therapist->id)
+            ->set('therapistSlug', $this->therapist->slug)
             ->set('categorySlug', $this->category->slug)
             ->set('serviceSlug', $this->service->slug)
             ->instance()

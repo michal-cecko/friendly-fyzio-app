@@ -293,11 +293,27 @@ class ReservationSlotsTest extends TestCase
         $this->assertSame($room2->id, $byTherapist[$therapist2->id]->first()->roomId);
     }
 
-    public function test_unpublished_therapist_offers_no_public_slots(): void
+    public function test_unpublished_therapist_still_offers_slots(): void
     {
+        // Publishing controls only the public team page and profile detail, not
+        // bookability — the wizard offers unpublished therapists in its picker, so
+        // the engine must produce their availability too (regression: a service
+        // whose sole therapist is unpublished used to show an empty calendar).
         $this->therapist->update(['published_at' => null]);
 
-        $this->assertSame([], $this->slots()->availableTimes($this->service, $this->date));
+        $this->assertSame(
+            [480, ...$this->every15(555, 900)],
+            $this->startMinutes($this->slots()->availableTimes($this->service, $this->date)),
+        );
+
+        $this->assertContains(
+            $this->date->toDateString(),
+            $this->slots()->availableDays($this->service, $this->date->copy(), $this->date->copy()->addDays(6)),
+        );
+
+        $this->assertNotNull(
+            $this->slots()->resolveSlot($this->service, $this->date, '08:00', $this->therapist->id),
+        );
     }
 
     public function test_past_dates_offer_no_slots(): void

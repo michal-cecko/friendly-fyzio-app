@@ -6,15 +6,15 @@ use App\Enums\EmailTemplateKey;
 use App\Models\EmailTemplate;
 use App\Models\User;
 use App\Support\CmsMail;
-use Filament\Auth\Notifications\ResetPassword;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Str;
 
 /**
- * Renders the dashboard-editable "password_reset" template instead of Filament's default.
- * Bound in place of {@see ResetPassword} in the container (and dispatched by
- * {@see User::sendPasswordResetNotification()} for the admin reset action),
- * keeping Filament's panel-specific signed reset URL ($this->url).
+ * Renders the dashboard-editable "password_reset" template around Laravel's
+ * native reset URL (route password.reset). Dispatched by the password broker
+ * via {@see User::sendPasswordResetNotification()} — both from the public
+ * "zapomenuté heslo" page and the admin reset action.
  */
 class ResetPasswordNotification extends ResetPassword
 {
@@ -30,7 +30,7 @@ class ResetPasswordNotification extends ResetPassword
 
         return CmsMail::render($template, [
             'jmeno' => Str::of($name)->before(' ')->toString() ?: $name,
-            'odkaz' => $this->url,
+            'odkaz' => $this->resetUrl($notifiable),
         ]);
     }
 }

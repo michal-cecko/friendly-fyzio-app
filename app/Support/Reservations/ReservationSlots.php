@@ -185,9 +185,11 @@ class ReservationSlots
      */
     protected function baseTherapistIds(Service $service, ?string $therapistId): array
     {
+        // Deliberately not filtered by published_at: publishing only controls the
+        // public team page and profile detail, not who can be booked — matching
+        // the wizard's therapist picker. Bookability = performs the service and
+        // has work blocks in the window.
         return $service->therapists()
-            ->whereNotNull('published_at')
-            ->where('published_at', '<=', now())
             ->when($therapistId, fn ($query) => $query->whereKey($therapistId))
             ->pluck('therapist_profiles.id')
             ->all();

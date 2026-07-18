@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Filament\Clusters\LekceWorkshopy\Resources\Workshops\Pages\CreateWorkshop;
-use App\Filament\Clusters\LekceWorkshopy\Resources\Workshops\Pages\EditWorkshop;
-use App\Filament\Clusters\LekceWorkshopy\Resources\Workshops\Pages\ListWorkshops;
+use App\Filament\Clusters\Workshopy\Resources\Workshops\Pages\CreateWorkshop;
+use App\Filament\Clusters\Workshopy\Resources\Workshops\Pages\EditWorkshop;
+use App\Filament\Clusters\Workshopy\Resources\Workshops\Pages\ListWorkshops;
 use App\Models\Room;
 use App\Models\User;
 use App\Models\Workshop;

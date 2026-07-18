@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Page;
+use App\Support\Settings;
 use Database\Seeders\Concerns\ImportsMedia;
 use Illuminate\Database\Seeder;
 
@@ -16,34 +17,110 @@ class PageSeeder extends Seeder
         $this->aboutPage();
         $this->contactPage();
         $this->pricingPage();
+        $this->coursesPage();
+        $this->workshopsPage();
+        $this->stornoTermsPage();
+        $this->voucherPage();
 
-        foreach ([
-            'sluzby' => 'Služby',
-            'kurzy' => 'Kurzy',
-        ] as $slug => $title) {
-            Page::updateOrCreate(
-                ['system_key' => $slug],
-                [
-                    'slug' => $slug,
-                    'title' => $title,
-                    'is_system' => true,
-                    'published_at' => now(),
-                    'content' => [
-                        $this->brick('hero', [
-                            'eyebrow' => 'FriendlyFyzio',
-                            'title' => $title,
-                            'features' => [],
-                            'buttons' => [
-                                ['text' => 'Objednat se', 'url' => '/kontakt', 'icon' => 'calendar', 'style' => 'primary'],
-                            ],
-                        ]),
-                        $this->brick('rich-text', [
-                            'content' => '<p>Obsah stránky připravujeme. Mezitím nás můžete kontaktovat nebo si prohlédnout naši nabídku.</p>',
-                        ]),
-                    ],
+        // The old "/sluzby" placeholder landing page was retired — the service
+        // category pages live at /sluzby/{category} and don't need an index.
+        Page::where('system_key', 'sluzby')->forceDelete();
+    }
+
+    /**
+     * The "Pohybové kurzy" archive page: hero + the data-driven course/lesson
+     * archive brick (type switcher, category pills, availability, search,
+     * pagination — all in the URL) + newsletter signup.
+     */
+    private function coursesPage(): void
+    {
+        Page::updateOrCreate(
+            ['system_key' => 'kurzy'],
+            [
+                'slug' => 'kurzy',
+                'title' => 'Pohybové kurzy',
+                'is_system' => true,
+                'published_at' => now(),
+                'meta_title' => 'Pohybové kurzy a lekce – FriendlyFyzio',
+                'meta_description' => 'Vyberte si z pravidelných semestrálních kurzů nebo jednorázových lekcí vedených našimi fyzioterapeutkami. Hormonální jóga, SM systém, kurzy pro těhotné a další.',
+                'content' => [
+                    $this->brick('hero', [
+                        'eyebrow' => 'KURZY & LEKCE',
+                        'title' => 'Pohybové kurzy, workshopy a lekce',
+                        'features' => '<p>Vyberte si z pravidelných semestrálních kurzů, víkendových workshopů nebo jednorázových lekcí. Každý program je vedený našimi zkušenými fyzioterapeutkami a přizpůsobený všem úrovním.</p>',
+                        'image' => $this->media(
+                            'https://images.unsplash.com/photo-1542202800305-1d573ea6a890?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
+                            'kurzy-hero',
+                        ),
+                        'buttons' => [
+                            ['text' => 'Prohlédnout nabídku', 'link_type' => 'custom', 'url' => '#kurzy-archiv', 'icon' => 'calendar', 'style' => 'primary'],
+                        ],
+                    ]),
+                    $this->brick('course-archive', [
+                        'eyebrow' => 'Aktuální nabídka',
+                        'title' => 'Naše kurzy a lekce',
+                        'subtitle' => 'Filtrujte podle kategorie a najděte kurz, který vám vyhovuje.',
+                        'show_type_switch' => true,
+                        'show_filters' => true,
+                        'show_search' => true,
+                    ]),
+                    $this->brick('newsletter', [
+                        'title' => 'Přihlaste se k odběru novinek',
+                        'subtitle' => 'Chcete se dozvědět o kurzech, workshopech a novinkách jako první?',
+                        'placeholder' => 'Váš e-mail',
+                        'button_text' => 'Odebírat',
+                        'consent' => 'Odesláním souhlasím se zpracováním osobních údajů.',
+                    ]),
                 ],
-            );
-        }
+            ],
+        );
+    }
+
+    /**
+     * The "Workshopy" archive page: hero + the data-driven workshop archive
+     * brick (search in the URL, muted past workshops) + newsletter signup.
+     */
+    private function workshopsPage(): void
+    {
+        Page::updateOrCreate(
+            ['system_key' => 'workshopy'],
+            [
+                'slug' => 'workshopy',
+                'title' => 'Workshopy',
+                'is_system' => true,
+                'published_at' => now(),
+                'meta_title' => 'Workshopy a vzdělávací akce – FriendlyFyzio',
+                'meta_description' => 'Jednorázové vzdělávací akce otevřené široké veřejnosti. Workshopy vedou naše fyzioterapeutky i externí lektoři.',
+                'content' => [
+                    $this->brick('hero', [
+                        'eyebrow' => 'WORKSHOPY & VZDĚLÁVÁNÍ',
+                        'title' => 'Workshopy a vzdělávací akce',
+                        'features' => '<p>Jednorázové vzdělávací akce otevřené široké veřejnosti. Workshopy vedou naše fyzioterapeutky i externí lektoři z příbuzných oborů — psychologie, výživy, mindfulness či somatiky. Žádné odborné vzdělání není potřeba.</p>',
+                        'image' => $this->media(
+                            'https://images.unsplash.com/photo-1591291621164-2c6367723315?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
+                            'workshopy-hero',
+                        ),
+                        'buttons' => [
+                            ['text' => 'Prohlédnout workshopy', 'link_type' => 'custom', 'url' => '#workshopy-archiv', 'icon' => 'calendar', 'style' => 'primary'],
+                        ],
+                    ]),
+                    $this->brick('workshop-archive', [
+                        'eyebrow' => 'Otevřené veřejnosti',
+                        'title' => 'Aktuální workshopy',
+                        'subtitle' => 'Vzdělávací akce pro všechny — pod vedením interních fyzioterapeutek i pozvaných externích lektorů.',
+                        'show_search' => true,
+                        'show_past' => true,
+                    ]),
+                    $this->brick('newsletter', [
+                        'title' => 'Přihlaste se k odběru novinek',
+                        'subtitle' => 'Chcete se dozvědět o kurzech, workshopech a novinkách jako první?',
+                        'placeholder' => 'Váš e-mail',
+                        'button_text' => 'Odebírat',
+                        'consent' => 'Odesláním souhlasím se zpracováním osobních údajů.',
+                    ]),
+                ],
+            ],
+        );
     }
 
     private function homepage(): void
@@ -69,22 +146,17 @@ class PageSeeder extends Seeder
                         'features' => '<ul><li>Těhotenská fyzioterapie</li><li>Fyzioterapie pánevního dna</li><li>Fyzioterapie čelistního kloubu</li><li>Fyzioterapie jizev</li></ul>',
                         'image' => $img('photo-1645005512964-5057008b4425', 'M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3NzUyMjMyMTR8', 'home-hero'),
                         'buttons' => [
-                            ['text' => 'Objednat vstupní vyšetření', 'url' => '/kontakt', 'icon' => 'calendar', 'style' => 'primary'],
-                            ['text' => 'Chci na masáž', 'url' => '/sluzby', 'icon' => 'sparkles', 'style' => 'primary'],
-                            ['text' => 'Koupit dárkový poukaz', 'url' => '/sluzby', 'icon' => 'gift', 'style' => 'outline'],
+                            ['text' => 'Objednat vstupní vyšetření', 'url' => '/rezervace', 'icon' => 'calendar', 'style' => 'primary'],
+                            ['text' => 'Chci na masáž', 'url' => '/sluzby/relaxace', 'icon' => 'sparkles', 'style' => 'primary'],
+                            // TODO: point at /darkove-poukazy once the voucher page ships (backlog B2).
+                            ['text' => 'Koupit dárkový poukaz', 'url' => '/kontakt', 'icon' => 'gift', 'style' => 'outline'],
                         ],
                     ]),
                     $this->brick('last-minute', [
                         'eyebrow' => 'Volné dnes a zítra',
                         'title' => 'Last-minute termíny',
                         'button_text' => 'Zobrazit celý kalendář',
-                        'button_url' => '/kontakt',
-                        'therapists' => [
-                            ['name' => 'Mgr. Jana Ficková', 'role' => 'Fyzioterapeutka', 'slots' => ['Dnes 14:00', 'Dnes 15:30', 'Zítra 9:00']],
-                            ['name' => 'Bc. Petra Nová', 'role' => 'Fyzioterapeutka', 'slots' => ['Dnes 16:00', 'Zítra 10:30']],
-                            ['name' => 'Mgr. Lucie Malá', 'role' => 'Terapeutka', 'slots' => ['Zítra 8:00', 'Zítra 11:00', 'Zítra 13:30']],
-                            ['name' => 'Bc. Eva Horká', 'role' => 'Masérka', 'slots' => ['Dnes 17:00', 'Zítra 12:00']],
-                        ],
+                        'button_url' => '/rezervace',
                     ]),
                     $this->brick('cta-banner', [
                         'eyebrow' => 'Aktuálně přihlašujeme',
@@ -95,31 +167,15 @@ class PageSeeder extends Seeder
                             ['text' => 'Prohlížet workshopy', 'style' => 'white', 'link_type' => 'custom', 'url' => '/kurzy'],
                         ],
                     ]),
-                    $this->brick('category-cards', [
+                    $this->brick('enrolling-now', [
                         'eyebrow' => 'Aktuální nabídka',
                         'title' => 'Právě přihlašujeme',
                         'subtitle' => 'Vyberte si kategorii a prozkoumejte aktuálně otevřené kurzy.',
-                        'button_text' => 'Zobrazit všechny kurzy',
-                        'button_url' => '/kurzy',
-                        'categories' => [
-                            ['icon' => 'activity', 'title' => 'Pohybové kurzy', 'subtitle' => '4 otevřené kurzy', 'url' => '/kurzy', 'items' => [
-                                ['label' => 'Hormonální jóga', 'meta' => 'Začíná 12. 1. 2026', 'url' => '/kurzy'],
-                                ['label' => 'Somatická jóga', 'meta' => 'Začíná 19. 1. 2026', 'url' => '/kurzy'],
-                                ['label' => 'Cvičení pro těhotné', 'meta' => 'Začíná 26. 1. 2026', 'url' => '/kurzy'],
-                                ['label' => 'Jin jóga', 'meta' => 'Začíná 2. 2. 2026', 'url' => '/kurzy'],
-                            ]],
-                            ['icon' => 'users', 'title' => 'Workshopy', 'subtitle' => '3 workshopy', 'url' => '/kurzy', 'items' => [
-                                ['label' => 'Workshop zdravých zad', 'meta' => '17. 1. 2026 · 9:00', 'url' => '/kurzy'],
-                                ['label' => 'Workshop pánevního dna', 'meta' => '24. 1. 2026 · 9:00', 'url' => '/kurzy'],
-                                ['label' => 'Workshop dechových technik', 'meta' => '31. 1. 2026 · 9:00', 'url' => '/kurzy'],
-                            ]],
-                            ['icon' => 'clock', 'title' => 'Jednorázové lekce', 'subtitle' => '4 lekce', 'url' => '/kurzy', 'items' => [
-                                ['label' => 'Konzultace dechových technik', 'meta' => 'Volné termíny', 'url' => '/kurzy'],
-                                ['label' => 'Mobilita kyčlí', 'meta' => 'Volné termíny', 'url' => '/kurzy'],
-                                ['label' => 'Posílení středu těla', 'meta' => 'Volné termíny', 'url' => '/kurzy'],
-                                ['label' => 'Relaxační lekce s rolery', 'meta' => 'Volné termíny', 'url' => '/kurzy'],
-                            ]],
-                        ],
+                        'text' => 'Zobrazit všechny kurzy',
+                        'style' => 'outline',
+                        'icon' => 'arrow-right',
+                        'link_type' => 'custom',
+                        'url' => '/kurzy',
                     ]),
                     $this->brick('service-cards', [
                         'eyebrow' => 'Naše služby',
@@ -296,6 +352,88 @@ class PageSeeder extends Seeder
      * @param  array<string, mixed>  $config
      * @return array<string, mixed>
      */
+    /**
+     * The "Storno podmínky" page — linked from the mandatory terms checkbox in
+     * both booking flows. The therapy/massage policy is the clinic's binding
+     * wording; the course/lesson/workshop cancellation windows are summarised
+     * from the current settings so the page stays in sync with admin config.
+     */
+    private function stornoTermsPage(): void
+    {
+        $feePercent = Settings::stornoFeePercent();
+        $noShowPercent = Settings::noShowFeePercent();
+        $courseDays = Settings::courseCancelBeforeDays();
+        $lessonHours = Settings::lessonCancelBeforeHours();
+        $workshopDays = Settings::workshopCancelBeforeDays();
+
+        Page::updateOrCreate(
+            ['system_key' => 'storno-podminky'],
+            [
+                'slug' => 'storno-podminky',
+                'title' => 'Storno podmínky',
+                'is_system' => true,
+                'published_at' => now(),
+                'meta_title' => 'Storno podmínky – FriendlyFyzio',
+                'meta_description' => 'Podmínky pro zrušení termínů fyzioterapie, masáží, kurzů, lekcí a workshopů ve FriendlyFyzio.',
+                'content' => [
+                    $this->brick('page-intro', [
+                        'title' => 'Storno podmínky',
+                        'subtitle' => 'Domluvené termíny jsou pro nás i pro vás závazné. Níže najdete pravidla pro jejich zrušení.',
+                    ]),
+                    $this->brick('callout', [
+                        'icon' => 'triangle-alert',
+                        'title' => 'Fyzioterapie a masáže',
+                        'body' => '<p>Vážení klienti, domluvené termíny jsou závazné. Omluva po 17. hodině předchozího dne nebo v den terapie je přijímána pouze ze zdravotních důvodů potvrzených lékařem.</p>',
+                        'note' => "<p>V opačném případě je klient povinen uhradit {$noShowPercent} % z ceny terapie. Děkujeme za pochopení.</p>",
+                    ]),
+                    $this->brick('rich-text', [
+                        'content' => implode('', [
+                            '<h2>Kurzy, lekce a workshopy</h2>',
+                            '<p>Přihlášky na kurzy, jednorázové lekce a workshopy se hradí předem (QR platbou). Nezaplacená přihláška po uplynutí rezervační lhůty automaticky propadá a místo nabídneme dalším zájemcům.</p>',
+                            '<ul>',
+                            "<li><strong>Pohybové kurzy</strong> – odhlásit se můžete nejpozději {$courseDays} dní před začátkem běhu.</li>",
+                            "<li><strong>Jednorázové lekce</strong> – odhlásit se můžete nejpozději {$lessonHours} hodin před lekcí.</li>",
+                            "<li><strong>Workshopy</strong> – odhlásit se můžete nejpozději {$workshopDays} dní před konáním.</li>",
+                            '</ul>',
+                            "<p>Při pozdějším zrušení termínu fyzioterapie nebo masáže, u kterého již platí storno lhůta, účtujeme storno poplatek ve výši {$feePercent} % z ceny. Po uplynutí storno lhůty už zrušení online není možné – kontaktujte nás prosím telefonicky.</p>",
+                            '<h2>Náhradní vstupy u kurzů</h2>',
+                            '<p>Pokud se z konkrétní lekce kurzu omluvíte včas, vystavíme vám náhradní vstup, který uplatníte na volné místo v souběžné skupině. Detaily najdete ve své <a href="/muj-ucet/nahrady">klientské zóně</a>.</p>',
+                        ]),
+                    ]),
+                ],
+            ],
+        );
+    }
+
+    /**
+     * The "Dárkové poukazy" page — restores the old live `/darkove-poukazy` URL.
+     * Placeholder for now: the SimpleShop voucher e-shop iframe drops in here
+     * (backlog B2).
+     */
+    private function voucherPage(): void
+    {
+        Page::updateOrCreate(
+            ['system_key' => 'darkove-poukazy'],
+            [
+                'slug' => 'darkove-poukazy',
+                'title' => 'Dárkové poukazy',
+                'is_system' => true,
+                'published_at' => now(),
+                'meta_title' => 'Dárkové poukazy – FriendlyFyzio',
+                'meta_description' => 'Darujte fyzioterapii, masáž nebo relaxaci. Dárkové poukazy FriendlyFyzio na míru.',
+                'content' => [
+                    $this->brick('page-intro', [
+                        'title' => 'Dárkové poukazy',
+                        'subtitle' => 'Darujte zdraví a relaxaci svým blízkým.',
+                    ]),
+                    $this->brick('rich-text', [
+                        'content' => '<p>TODO pridaj sem iframe na eshop darčekových poukazov</p>',
+                    ]),
+                ],
+            ],
+        );
+    }
+
     private function brick(string $id, array $config): array
     {
         return ['type' => 'masonBrick', 'attrs' => ['id' => $id, 'config' => $config]];

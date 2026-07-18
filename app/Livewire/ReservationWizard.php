@@ -5,7 +5,6 @@ namespace App\Livewire;
 use App\Enums\ExamType;
 use App\Enums\ReservationStatus;
 use App\Enums\ServiceType;
-use App\Enums\ServiceVisibility;
 use App\Models\Service;
 use App\Models\ServiceCategory;
 use App\Models\TherapistProfile;
@@ -15,6 +14,7 @@ use App\Support\Reservations\DeactivatedClientException;
 use App\Support\Reservations\ReservationBookingData;
 use App\Support\Reservations\ReservationSlots;
 use App\Support\Reservations\Slot;
+use App\Support\Reservations\SlotCalendar;
 use App\Support\Reservations\SlotTakenException;
 use App\Support\Settings;
 use Illuminate\Contracts\View\View;
@@ -46,9 +46,9 @@ class ReservationWizard extends Component
     #[Url(as: 'typ')]
     public ?string $examType = null;
 
-    /** null/'' = none chosen, 'any' = browse all therapists, otherwise a therapist UUID. */
+    /** null/'' = none chosen, 'any' = browse all therapists, otherwise a therapist slug. */
     #[Url(as: 'terapeut')]
-    public ?string $therapistId = null;
+    public ?string $therapistSlug = null;
 
     #[Url(as: 'datum')]
     public ?string $date = null;
@@ -69,8 +69,6 @@ class ReservationWizard extends Component
     public string $email = '';
 
     public string $phone = '';
-
-    public string $phoneConfirm = '';
 
     public string $note = '';
 
@@ -165,21 +163,21 @@ class ReservationWizard extends Component
      */
     protected function preselectSingleTherapist(): void
     {
-        if ($this->currentStep() !== 'therapist' || $this->isAnyTherapist() || filled($this->therapistId)) {
+        if ($this->currentStep() !== 'therapist' || $this->isAnyTherapist() || filled($this->therapistSlug)) {
             return;
         }
 
         $therapists = $this->therapists();
 
         if ($therapists->count() === 1) {
-            $this->therapistId = (string) $therapists->first()->getKey();
+            $this->therapistSlug = $therapists->first()->slug;
         }
     }
 
     protected function stepComplete(string $step): bool
     {
         return match ($step) {
-            'therapist' => filled($this->therapistId),
+            'therapist' => filled($this->therapistSlug),
             'category' => $this->category !== null,
             'service' => $this->service !== null,
             'date' => filled($this->date),
@@ -209,23 +207,24 @@ class ReservationWizard extends Component
     #[Computed]
     public function therapist(): ?TherapistProfile
     {
-        return $this->resolvedTherapistId() !== null
-            ? TherapistProfile::query()->with('user')->find($this->resolvedTherapistId())
-            : null;
+        return blank($this->therapistSlug) || $this->isAnyTherapist()
+            ? null
+            : TherapistProfile::query()->with('user')->where('slug', $this->therapistSlug)->first();
     }
 
     public function isAnyTherapist(): bool
     {
-        return $this->therapistId === 'any';
+        return $this->therapistSlug === 'any';
     }
 
     /**
      * The concrete therapist to compute availability with: null when none is chosen
-     * or "any" is selected (browse all), otherwise the selected UUID.
+     * or "any" is selected (browse all), otherwise the selected therapist's UUID
+     * (resolved from the URL slug via the memoized therapist() computed).
      */
     public function resolvedTherapistId(): ?string
     {
-        return blank($this->therapistId) || $this->therapistId === 'any' ? null : $this->therapistId;
+        return $this->therapist()?->getKey();
     }
 
     // --- Option lists ---------------------------------------------------------
@@ -236,10 +235,13 @@ class ReservationWizard extends Component
     #[Computed]
     public function therapists()
     {
-        // Deliberately not filtered by published_at: publishing only controls the
-        // public team page and profile detail, not who can be booked.
+        // Deliberately not filtered by the therapist's own published_at: publishing
+        // only controls the public team page and profile detail, not who can be
+        // booked. A therapist is offered only if they perform at least one bookable
+        // service (otherwise picking them is a dead end).
         return TherapistProfile::query()
             ->with('user')
+            ->whereHas('services', fn ($q) => $q->bookable())
             ->when($this->service, fn ($query) => $query->whereHas('services', fn ($q) => $q->whereKey($this->service->id)))
             ->get()
             ->sortBy(fn (TherapistProfile $therapist): string => $therapist->user?->name ?? '')
@@ -255,10 +257,8 @@ class ReservationWizard extends Component
         return ServiceCategory::query()
             ->whereNotNull('published_at')
             ->where('published_at', '<=', now())
-            ->when($this->therapist, fn ($query) => $query->whereHas(
-                'services',
-                fn ($q) => $q->whereHas('therapists', fn ($t) => $t->whereKey($this->resolvedTherapistId()))
-            ))
+            ->whereHas('services', fn ($q) => $q->bookable()
+                ->when($this->therapist, fn ($sq) => $sq->whereHas('therapists', fn ($t) => $t->whereKey($this->resolvedTherapistId()))))
             ->orderBy('name')
             ->get();
     }
@@ -274,9 +274,7 @@ class ReservationWizard extends Component
         }
 
         return $this->category->services()
-            ->where('visibility', '!=', ServiceVisibility::Hidden)
-            ->whereNotNull('published_at')
-            ->where('published_at', '<=', now())
+            ->bookable()
             ->when($this->isPhysioCategory(), fn ($query) => $query->where('exam_type', $this->examType))
             ->when($this->therapist, fn ($query) => $query->whereHas('therapists', fn ($t) => $t->whereKey($this->resolvedTherapistId())))
             ->orderBy('duration_minutes')
@@ -286,6 +284,22 @@ class ReservationWizard extends Component
     public function isPhysioCategory(): bool
     {
         return $this->category?->type === ServiceType::Physiotherapy;
+    }
+
+    /**
+     * Whether an exam-type card renders as selected. A "kontrolní" click that opens
+     * the login/lapsed gate deliberately does NOT commit $examType (that happens
+     * once the gate clears), so during the gate the selection must follow the click
+     * — Kontrolní only — not the still-committed previous "vstupní" choice, which
+     * would otherwise leave both cards active.
+     */
+    public function isExamTypeSelected(ExamType $type): bool
+    {
+        if (in_array($this->gate, ['login', 'lapsed'], true)) {
+            return $type === ExamType::Kontrolni;
+        }
+
+        return $this->examType === $type->value;
     }
 
     /**
@@ -301,9 +315,7 @@ class ReservationWizard extends Component
         }
 
         $present = $this->category->services()
-            ->where('visibility', '!=', ServiceVisibility::Hidden)
-            ->whereNotNull('published_at')
-            ->where('published_at', '<=', now())
+            ->bookable()
             ->whereNotNull('exam_type')
             ->when($this->therapist, fn ($query) => $query->whereHas('therapists', fn ($t) => $t->whereKey($this->resolvedTherapistId())))
             ->pluck('exam_type');
@@ -321,9 +333,8 @@ class ReservationWizard extends Component
     protected function kontrolniRecencyMonths(): int
     {
         return (int) ($this->category?->services()
+            ->bookable()
             ->where('exam_type', ExamType::Kontrolni->value)
-            ->whereNotNull('published_at')
-            ->where('published_at', '<=', now())
             ->max('existing_client_months') ?: Settings::existingClientMonths());
     }
 
@@ -339,7 +350,7 @@ class ReservationWizard extends Component
     #[Computed]
     public function calendarDays(): array
     {
-        if (! $this->service || blank($this->therapistId)) {
+        if (! $this->service || blank($this->therapistSlug)) {
             return ['available' => [], 'full' => []];
         }
 
@@ -366,7 +377,7 @@ class ReservationWizard extends Component
     #[Computed]
     public function availableTimes(): array
     {
-        if (! $this->service || blank($this->date) || blank($this->therapistId)) {
+        if (! $this->service || blank($this->date) || blank($this->therapistSlug)) {
             return [];
         }
 
@@ -389,43 +400,8 @@ class ReservationWizard extends Component
     public function calendarMonths(): array
     {
         [$first, $last] = $this->calendarRange();
-        $availability = $this->calendarDays;
-        $available = array_flip($availability['available']);
-        $full = array_flip($availability['full']);
-        $today = Carbon::today();
-        $months = [];
 
-        for ($month = $first->copy(); $month->lte($last); $month->addMonth()) {
-            $cursor = $month->copy()->startOfMonth()->startOfWeek(Carbon::MONDAY);
-            $end = $month->copy()->endOfMonth()->endOfWeek(Carbon::SUNDAY);
-
-            $weeks = [];
-            while ($cursor->lte($end)) {
-                $week = [];
-                for ($day = 0; $day < 7; $day++) {
-                    if ($cursor->month === $month->month) {
-                        $ds = $cursor->toDateString();
-                        $week[] = [
-                            'date' => $ds,
-                            'day' => $cursor->day,
-                            'available' => isset($available[$ds]),
-                            'today' => $cursor->isSameDay($today),
-                            // 'full' = works that day but fully booked ("pořadník");
-                            // 'waitlist' (per-user, already queued) awaits its backend.
-                            'queue' => isset($full[$ds]) ? 'full' : null,
-                        ];
-                    } else {
-                        $week[] = null;
-                    }
-                    $cursor->addDay();
-                }
-                $weeks[] = $week;
-            }
-
-            $months[] = ['label' => $month->copy()->locale('cs')->isoFormat('MMMM YYYY'), 'weeks' => $weeks];
-        }
-
-        return $months;
+        return SlotCalendar::months($first, $last, $this->calendarDays);
     }
 
     /**
@@ -478,22 +454,22 @@ class ReservationWizard extends Component
 
     // --- Selection ------------------------------------------------------------
 
-    public function selectTherapist(string $therapistId): void
+    public function selectTherapist(string $slug): void
     {
-        $this->therapistId = $therapistId;
+        $this->therapistSlug = $slug;
         $this->resetDownstream('therapist');
     }
 
     public function selectAnyTherapist(): void
     {
-        $this->therapistId = 'any';
+        $this->therapistSlug = 'any';
         $this->resetDownstream('therapist');
     }
 
     // Lifecycle hooks: deferred `wire:model` selections commit on the next action,
     // so downstream state is reset / resolved here (the select* methods above do the
     // same for the programmatic test API, which doesn't trigger these hooks).
-    public function updatedTherapistId(): void
+    public function updatedTherapistSlug(): void
     {
         $this->resetDownstream('therapist');
     }
@@ -684,17 +660,14 @@ class ReservationWizard extends Component
             'lastName' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255'],
             'phone' => ['required', 'string', 'max:50'],
-            'phoneConfirm' => ['required', 'same:phone'],
             'agreeCancellation' => ['accepted'],
         ], [
-            'phoneConfirm.same' => 'Telefonní čísla se neshodují.',
             'agreeCancellation.accepted' => 'Pro dokončení je nutné souhlasit se storno podmínkami.',
         ], [
             'firstName' => 'jméno',
             'lastName' => 'příjmení',
             'email' => 'e-mail',
             'phone' => 'telefon',
-            'phoneConfirm' => 'telefon pro kontrolu',
         ]);
 
         // A guest using an email that already has an account is asked to log in

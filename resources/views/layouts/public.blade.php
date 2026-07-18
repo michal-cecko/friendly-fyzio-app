@@ -46,6 +46,34 @@
 
     <x-site.footer />
 
+    <script>
+        // In-page anchor links scroll smoothly. When an anchor has no matching
+        // element (e.g. seeded "Více informací" buttons pointing at #o-terapii),
+        // fall back to the section right after the one holding the link.
+        document.addEventListener('click', function (event) {
+            const link = event.target.closest('a[href^="#"]');
+            if (! link) {
+                return;
+            }
+
+            const id = link.getAttribute('href').slice(1);
+            if (! id) {
+                return;
+            }
+
+            let target = document.getElementById(id);
+            if (! target) {
+                const section = link.closest('section');
+                target = section ? section.nextElementSibling : null;
+            }
+
+            if (target) {
+                event.preventDefault();
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        });
+    </script>
+
     @livewireScripts
 </body>
 </html>

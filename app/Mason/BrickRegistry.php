@@ -6,9 +6,12 @@ use App\Mason\Bricks\CalloutBrick;
 use App\Mason\Bricks\CardsBrick;
 use App\Mason\Bricks\CategoryCardsBrick;
 use App\Mason\Bricks\ContactBrick;
+use App\Mason\Bricks\CourseArchiveBrick;
 use App\Mason\Bricks\CtaBannerBrick;
+use App\Mason\Bricks\EnrollingNowBrick;
 use App\Mason\Bricks\FeatureCardsBrick;
 use App\Mason\Bricks\HeroBrick;
+use App\Mason\Bricks\HtmlBlockBrick;
 use App\Mason\Bricks\InstagramBrick;
 use App\Mason\Bricks\LastMinuteBrick;
 use App\Mason\Bricks\NewsletterBrick;
@@ -26,6 +29,7 @@ use App\Mason\Bricks\StepsBrick;
 use App\Mason\Bricks\TeamBrick;
 use App\Mason\Bricks\TestimonialsBrick;
 use App\Mason\Bricks\TextListBrick;
+use App\Mason\Bricks\WorkshopArchiveBrick;
 use Awcodes\Mason\Brick;
 use Awcodes\Mason\BrickGroup;
 
@@ -51,6 +55,7 @@ class BrickRegistry
                 RichTextBrick::class,
                 PhotoTextBrick::class,
                 TextListBrick::class,
+                HtmlBlockBrick::class,
             ]),
             BrickGroup::make('Karty')->bricks([
                 CardsBrick::class,
@@ -71,6 +76,11 @@ class BrickRegistry
                 PriceListBrick::class,
                 LastMinuteBrick::class,
                 ContactBrick::class,
+            ]),
+            BrickGroup::make('Kurzy a workshopy')->bricks([
+                EnrollingNowBrick::class,
+                CourseArchiveBrick::class,
+                WorkshopArchiveBrick::class,
             ]),
             BrickGroup::make('Sociální sítě')->bricks([
                 InstagramBrick::class,

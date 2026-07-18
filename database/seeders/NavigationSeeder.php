@@ -21,7 +21,7 @@ class NavigationSeeder extends Seeder
         $this->addItems($header, [
             ['label' => 'Domů', 'url' => '/'],
             ['label' => 'O nás', 'url' => '/o-nas'],
-            ['label' => 'Služby', 'url' => '/sluzby', 'children' => [
+            ['label' => 'Služby', 'children' => [
                 ['label' => 'Fyzioterapie', 'ref' => 'fyzioterapie'],
                 ['label' => 'Přístrojová terapie', 'ref' => 'pristrojova-terapie'],
                 ['label' => 'Laserová terapie', 'url' => '/sluzby/pristrojova-terapie/laserova-terapie'],
@@ -29,6 +29,7 @@ class NavigationSeeder extends Seeder
                 ['label' => 'Masáže a relaxace', 'ref' => 'relaxace'],
             ]],
             ['label' => 'Kurzy', 'url' => '/kurzy'],
+            ['label' => 'Workshopy', 'url' => '/workshopy'],
             ['label' => 'Kontakt', 'url' => '/kontakt'],
         ]);
 
@@ -40,12 +41,13 @@ class NavigationSeeder extends Seeder
                 ['label' => 'Masáže a relaxace', 'ref' => 'relaxace'],
                 ['label' => 'Laserová terapie', 'url' => '/sluzby/pristrojova-terapie/laserova-terapie'],
                 ['label' => 'Kryoterapie', 'url' => '/sluzby/pristrojova-terapie/kryoterapie'],
-                ['label' => 'Workshopy', 'url' => '/kurzy'],
+                ['label' => 'Workshopy', 'url' => '/workshopy'],
             ]],
             ['label' => 'Info', 'children' => [
-                ['label' => 'Ceník', 'url' => '/sluzby'],
+                ['label' => 'Ceník', 'url' => '/cenik'],
                 ['label' => 'O nás', 'url' => '/o-nas'],
-                ['label' => 'Dárkové poukazy', 'url' => '/sluzby'],
+                // TODO: point at /darkove-poukazy once the voucher page ships (backlog B2).
+                ['label' => 'Dárkové poukazy', 'url' => '/kontakt'],
             ]],
         ]);
     }
