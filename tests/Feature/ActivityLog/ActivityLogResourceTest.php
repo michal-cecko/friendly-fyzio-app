@@ -2,8 +2,8 @@
 
 namespace Tests\Feature\ActivityLog;
 
-use App\Filament\Clusters\System\Resources\ActivityLog\ActivityLogResource;
-use App\Filament\Clusters\System\Resources\ActivityLog\Pages\ListActivityLog;
+use App\Filament\Resources\ActivityLog\ActivityLogResource;
+use App\Filament\Resources\ActivityLog\Pages\ListActivityLog;
 use App\Models\Reservation;
 use App\Models\Service;
 use App\Models\TherapistProfile;

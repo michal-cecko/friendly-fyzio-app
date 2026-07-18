@@ -1,5 +1,5 @@
 @php
-    use App\Filament\Clusters\System\Resources\ActivityLog\ActivityLogResource;
+    use App\Filament\Resources\ActivityLog\ActivityLogResource;
     use App\Support\ActivityLog\ActivityPresenter;
 @endphp
 

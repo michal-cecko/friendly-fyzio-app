@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Clusters\System\Resources\ActivityLog\Schemas;
+namespace App\Filament\Resources\ActivityLog\Schemas;
 
 use App\Support\ActivityLog\ActivityPresenter;
 use Filament\Infolists\Components\TextEntry;
@@ -40,7 +40,12 @@ class ActivityLogInfolist
                         TextEntry::make('subject_title')
                             ->label('Záznam')
                             ->state(fn (Activity $record): string => ActivityPresenter::subjectTitle($record))
-                            ->weight('bold'),
+                            ->weight('bold')
+                            ->url(fn (Activity $record): ?string => ActivityPresenter::subjectUrl($record))
+                            ->color(fn (Activity $record): ?string => ActivityPresenter::subjectUrl($record) !== null ? 'primary' : null)
+                            ->icon(fn (Activity $record): ?Heroicon => ActivityPresenter::subjectUrl($record) !== null ? Heroicon::OutlinedArrowTopRightOnSquare : null)
+                            ->iconPosition('after')
+                            ->openUrlInNewTab(),
                     ]),
                     TextEntry::make('subject_id')
                         ->label('ID záznamu (UUID)')
