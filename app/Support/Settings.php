@@ -95,7 +95,7 @@ class Settings
      */
     public static function leadTimeHours(): int
     {
-        return (int) self::get('reservation.lead_time_hours', 0);
+        return (int) self::get('reservation.lead_time_hours', 2);
     }
 
     /**

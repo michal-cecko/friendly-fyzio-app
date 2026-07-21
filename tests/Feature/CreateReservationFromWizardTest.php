@@ -15,7 +15,7 @@ use App\Models\Reservation;
 use App\Models\Room;
 use App\Models\Service;
 use App\Models\ServiceCategory;
-use App\Models\TherapistProfile;
+use App\Models\StaffProfile;
 use App\Models\TherapistWorkBlock;
 use App\Models\User;
 use App\Notifications\ClientAccountCreatedNotification;
@@ -40,7 +40,7 @@ class CreateReservationFromWizardTest extends TestCase
 
     private Service $service;
 
-    private TherapistProfile $therapist;
+    private StaffProfile $therapist;
 
     protected function setUp(): void
     {
@@ -58,7 +58,7 @@ class CreateReservationFromWizardTest extends TestCase
             'published_at' => now(),
         ]);
 
-        $this->therapist = TherapistProfile::factory()->create(['published_at' => now()]);
+        $this->therapist = StaffProfile::factory()->create(['published_at' => now()]);
         $this->service->therapists()->attach($this->therapist);
 
         TherapistWorkBlock::factory()->create([

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Clusters\Provoz\Resources\Clients\Schemas;
 
+use App\Enums\Gender;
 use App\Filament\Support\Schemas\PresenceBanner;
 use App\Filament\Support\Schemas\RecordTimestamps;
 use App\Filament\Support\Schemas\ResponsiveColumns;
@@ -10,6 +11,7 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\ToggleButtons;
 use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -52,6 +54,13 @@ class ClientForm
                                     ->native(false)
                                     ->displayFormat('d.m.Y')
                                     ->maxDate(now()),
+                                ToggleButtons::make('gender')
+                                    ->label('Pohlaví')
+                                    ->options(Gender::class)
+                                    ->inline(),
+                                TextInput::make('birth_number')
+                                    ->label('Rodné číslo')
+                                    ->maxLength(255),
                                 TextInput::make('address_city')
                                     ->label('Město')
                                     ->maxLength(255),

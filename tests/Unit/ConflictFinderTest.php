@@ -5,7 +5,7 @@ namespace Tests\Unit;
 use App\Enums\ReservationStatus;
 use App\Models\Reservation;
 use App\Models\Room;
-use App\Models\TherapistProfile;
+use App\Models\StaffProfile;
 use App\Support\Reservations\ConflictFinder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -56,7 +56,7 @@ class ConflictFinderTest extends TestCase
 
     public function test_same_therapist_overlap_is_a_therapist_conflict(): void
     {
-        $therapist = TherapistProfile::factory()->create();
+        $therapist = StaffProfile::factory()->create();
         // Different rooms so only the therapist dimension can conflict.
         $this->reservation(['therapist_id' => $therapist->id, 'room_id' => Room::factory()->create()->id, 'start_time' => '09:00', 'end_time' => '10:00']);
         $this->reservation(['therapist_id' => $therapist->id, 'room_id' => Room::factory()->create()->id, 'start_time' => '09:30', 'end_time' => '10:30']);
@@ -112,7 +112,7 @@ class ConflictFinderTest extends TestCase
 
     public function test_for_reservation_returns_the_therapist_clash(): void
     {
-        $therapist = TherapistProfile::factory()->create();
+        $therapist = StaffProfile::factory()->create();
         $a = $this->reservation(['therapist_id' => $therapist->id, 'room_id' => Room::factory()->create()->id, 'start_time' => '09:00', 'end_time' => '10:00']);
         $b = $this->reservation(['therapist_id' => $therapist->id, 'room_id' => Room::factory()->create()->id, 'start_time' => '09:30', 'end_time' => '10:30']);
 

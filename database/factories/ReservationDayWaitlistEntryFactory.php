@@ -4,7 +4,7 @@ namespace Database\Factories;
 
 use App\Models\ReservationDayWaitlistEntry;
 use App\Models\Service;
-use App\Models\TherapistProfile;
+use App\Models\StaffProfile;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -19,7 +19,7 @@ class ReservationDayWaitlistEntryFactory extends Factory
     {
         return [
             'client_id' => null,
-            'therapist_id' => TherapistProfile::factory(),
+            'therapist_id' => StaffProfile::factory(),
             'service_id' => Service::factory(),
             'reservation_date' => today()->addWeek()->toDateString(),
             'name' => fake()->name(),

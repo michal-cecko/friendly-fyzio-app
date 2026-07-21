@@ -14,12 +14,12 @@ use App\Models\User;
 trait ScopedToTherapist
 {
     /**
-     * The current user's therapist_profiles id when they are a pure therapist,
+     * The current user's staff_profiles id when they are a pure therapist,
      * else null. Used to scope reservations (`therapist_id`).
      */
-    protected static function therapistProfileScopeId(): ?string
+    protected static function staffProfileScopeId(): ?string
     {
-        return static::pureTherapist()?->therapistProfile?->getKey();
+        return static::pureTherapist()?->staffProfile?->getKey();
     }
 
     /**

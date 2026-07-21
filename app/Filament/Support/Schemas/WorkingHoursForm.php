@@ -3,7 +3,7 @@
 namespace App\Filament\Support\Schemas;
 
 use App\Models\Room;
-use App\Models\TherapistProfile;
+use App\Models\StaffProfile;
 use App\Models\TherapistWorkBlock;
 use Closure;
 use Filament\Forms\Components\DatePicker;
@@ -88,10 +88,10 @@ class WorkingHoursForm
     {
         return Select::make('therapist_id')
             ->label('Terapeut')
-            ->options(fn (): array => TherapistProfile::query()
+            ->options(fn (): array => StaffProfile::query()
                 ->with('user')
                 ->get()
-                ->mapWithKeys(fn (TherapistProfile $therapist): array => [
+                ->mapWithKeys(fn (StaffProfile $therapist): array => [
                     $therapist->getKey() => $therapist->user?->name ?? '—',
                 ])
                 ->all())
@@ -108,9 +108,7 @@ class WorkingHoursForm
                 ->orderBy('name')
                 ->get()
                 ->mapWithKeys(fn (Room $room): array => [
-                    $room->getKey() => $room->building
-                        ? "{$room->name} · {$room->building->name}"
-                        : $room->name,
+                    $room->getKey() => $room->picker_label,
                 ])
                 ->all())
             ->searchable()

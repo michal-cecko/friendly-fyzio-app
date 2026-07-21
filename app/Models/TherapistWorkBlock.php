@@ -75,7 +75,7 @@ class TherapistWorkBlock extends Model
 
     public function therapist(): BelongsTo
     {
-        return $this->belongsTo(TherapistProfile::class, 'therapist_id');
+        return $this->belongsTo(StaffProfile::class, 'therapist_id');
     }
 
     public function room(): BelongsTo

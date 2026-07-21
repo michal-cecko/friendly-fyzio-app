@@ -26,7 +26,7 @@ class OneOffEventController extends Controller
     public function show(string $categorySlug, string $eventSlug): View|RedirectResponse
     {
         $event = OneOffEvent::query()
-            ->with(['category', 'course', 'room.building', 'instructor.therapistProfile'])
+            ->with(['category', 'course', 'room.building', 'instructor.staffProfile'])
             ->where('slug', $eventSlug)
             ->first();
 

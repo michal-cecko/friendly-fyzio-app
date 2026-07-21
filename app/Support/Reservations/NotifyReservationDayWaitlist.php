@@ -4,7 +4,7 @@ namespace App\Support\Reservations;
 
 use App\Enums\EmailTemplateKey;
 use App\Models\ReservationDayWaitlistEntry;
-use App\Models\TherapistProfile;
+use App\Models\StaffProfile;
 use App\Notifications\ReservationDayWaitlistNotification;
 use App\Support\Settings;
 use Illuminate\Support\Carbon;
@@ -39,7 +39,7 @@ class NotifyReservationDayWaitlist
             return;
         }
 
-        $freedTherapist = TherapistProfile::query()->with('user')->find($freedTherapistId);
+        $freedTherapist = StaffProfile::query()->with('user')->find($freedTherapistId);
 
         if ($freedTherapist === null) {
             return;
@@ -60,7 +60,7 @@ class NotifyReservationDayWaitlist
         }
     }
 
-    protected function notify(ReservationDayWaitlistEntry $entry, TherapistProfile $freedTherapist, Carbon $day): void
+    protected function notify(ReservationDayWaitlistEntry $entry, StaffProfile $freedTherapist, Carbon $day): void
     {
         $name = $entry->displayName();
 
@@ -68,7 +68,7 @@ class NotifyReservationDayWaitlist
             EmailTemplateKey::ReservationDayWaitlistSpotAvailable,
             [
                 'jmeno' => (string) str($name)->before(' '),
-                'terapeut' => (string) ($freedTherapist->user?->name ?? 'Terapeut'),
+                'terapeut' => (string) ($freedTherapist->user?->full_name ?? 'Terapeut'),
                 'datum' => $day->locale('cs')->isoFormat('D. MMMM YYYY'),
                 'odkaz' => $this->bookingLink($entry, $freedTherapist, $day),
             ],
@@ -85,7 +85,7 @@ class NotifyReservationDayWaitlist
      * A wizard deep-link prefilled to the concrete freed therapist + day, carrying
      * the browsed service too when the entry recorded one.
      */
-    protected function bookingLink(ReservationDayWaitlistEntry $entry, TherapistProfile $freedTherapist, Carbon $day): string
+    protected function bookingLink(ReservationDayWaitlistEntry $entry, StaffProfile $freedTherapist, Carbon $day): string
     {
         $params = [
             'terapeut' => $freedTherapist->slug,

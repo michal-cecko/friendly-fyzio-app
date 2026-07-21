@@ -17,15 +17,15 @@
     <tr>
         <td style="background-color:{{ $bg }};border-radius:8px;padding:24px;@if($border)border:{{ $border }};@endif">
             @if(filled($title))
-                <div style="font-family:'Montserrat',Arial,sans-serif;font-size:16px;font-weight:700;color:{{ $titleColor }};padding-bottom:12px;">{{ $title }}</div>
+                <div class="e-title" style="font-family:'Montserrat',Arial,sans-serif;font-size:16px;font-weight:700;color:{{ $titleColor }};padding-bottom:12px;">{{ $title }}</div>
                 <div style="border-top:1px solid #E5E5E5;font-size:0;line-height:0;height:1px;margin-bottom:16px;">&nbsp;</div>
             @endif
 
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
                 @foreach($rows as $row)
                     <tr>
-                        <td width="130" valign="top" style="font-family:'Open Sans',Arial,sans-serif;font-size:14px;font-weight:600;color:#1A1A1A;padding:6px 12px 6px 0;">{{ $row['label'] ?? '' }}</td>
-                        <td valign="top" style="font-family:'Open Sans',Arial,sans-serif;font-size:14px;color:#666666;padding:6px 0;">{{ $row['value'] ?? '' }}</td>
+                        <td width="130" valign="top" class="e-text" style="font-family:'Open Sans',Arial,sans-serif;font-size:14px;font-weight:600;color:#1A1A1A;padding:6px 12px 6px 0;">{{ $row['label'] ?? '' }}</td>
+                        <td valign="top" class="e-text" style="font-family:'Open Sans',Arial,sans-serif;font-size:14px;color:#666666;padding:6px 0;">{{ $row['value'] ?? '' }}</td>
                     </tr>
                 @endforeach
             </table>

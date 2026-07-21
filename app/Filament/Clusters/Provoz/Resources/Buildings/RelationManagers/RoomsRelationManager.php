@@ -27,6 +27,10 @@ class RoomsRelationManager extends RelationManager
                     ->label('Název')
                     ->required()
                     ->maxLength(255),
+                TextInput::make('short_name')
+                    ->label('Zkratka')
+                    ->helperText('Krátké označení pro kalendář, např. AV')
+                    ->maxLength(16),
             ]);
     }
 
@@ -38,6 +42,11 @@ class RoomsRelationManager extends RelationManager
                 TextColumn::make('name')
                     ->label('Název')
                     ->searchable()
+                    ->sortable(),
+                TextColumn::make('short_name')
+                    ->label('Zkratka')
+                    ->badge()
+                    ->placeholder('—')
                     ->sortable(),
                 TextColumn::make('blockings_count')
                     ->label('Blokace')

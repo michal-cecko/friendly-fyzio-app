@@ -4,18 +4,31 @@ namespace Tests\Feature;
 
 use App\Enums\EmailTemplateKey;
 use App\Enums\ReservationStatus;
+use App\Enums\UserRole;
+use App\Filament\Clusters\Kurzy\Resources\CourseLessons\CourseLessonResource;
+use App\Filament\Clusters\Kurzy\Resources\OneOffEvents\OneOffEventResource;
+use App\Filament\Clusters\Provoz\Resources\Reservations\Pages\EditReservation;
 use App\Filament\Clusters\Provoz\Resources\Reservations\ReservationResource;
 use App\Filament\Widgets\ReservationCalendar;
 use App\Models\Building;
+use App\Models\CourseLesson;
+use App\Models\CourseSeries;
+use App\Models\OneOffEvent;
 use App\Models\Reservation;
+use App\Models\ReservationDayWaitlistEntry;
 use App\Models\Room;
 use App\Models\Service;
-use App\Models\TherapistProfile;
+use App\Models\Setting;
+use App\Models\StaffProfile;
 use App\Models\User;
 use App\Notifications\ReservationTemplateNotification;
+use App\Support\Settings;
+use Database\Seeders\SettingsSeeder;
+use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -35,7 +48,7 @@ class CalendarTest extends TestCase
     {
         $building = Building::create(['name' => 'Budova', 'address' => 'Adresa']);
         $room = Room::create(['building_id' => $building->getKey(), 'name' => 'Sál']);
-        $therapist = TherapistProfile::create(['user_id' => User::factory()->therapist()->create()->getKey()]);
+        $therapist = StaffProfile::create(['user_id' => User::factory()->therapist()->create()->getKey()]);
         $service = Service::factory()->create();
         $client = User::factory()->customer()->create();
 
@@ -297,10 +310,17 @@ class CalendarTest extends TestCase
     {
         $this->actingAs(User::factory()->admin()->create());
 
-        // Cancelled (non-trashed) events are selectable in the normal view, so the
-        // restore bulk action stays visible there — it merely skips active rows.
+        $cancelled = $this->makeReservation([
+            'reservation_date' => Carbon::now()->startOfWeek(Carbon::MONDAY)->toDateString(),
+            'status' => ReservationStatus::Cancelled,
+        ]);
+
+        // The restore bulk action appears once the selection contains a restorable
+        // (trashed or cancelled) reservation — even outside the trashed view.
         Livewire::test(ReservationCalendar::class)
             ->set('selectionMode', true)
+            ->assertActionHidden('restoreSelected')
+            ->call('onEventClick', ['id' => (string) $cancelled->getKey()])
             ->assertActionVisible('restoreSelected');
     }
 
@@ -418,5 +438,427 @@ class CalendarTest extends TestCase
         $withIds = array_column($this->fetchWeek($with), 'id');
         $this->assertContains($active->getKey(), $withIds);
         $this->assertContains($deleted->getKey(), $withIds);
+    }
+
+    // ---- Course lesson & one-off event overlays -------------------------------
+
+    protected function makeLesson(array $overrides = []): CourseLesson
+    {
+        return CourseLesson::factory()->create(array_merge([
+            'lesson_date' => Carbon::now()->startOfWeek(Carbon::MONDAY)->toDateString(),
+        ], $overrides));
+    }
+
+    protected function makeOneOffEvent(array $overrides = []): OneOffEvent
+    {
+        return OneOffEvent::factory()->published()->create(array_merge([
+            'event_date' => Carbon::now()->startOfWeek(Carbon::MONDAY)->toDateString(),
+        ], $overrides));
+    }
+
+    public function test_fetch_events_includes_course_lessons_and_one_off_events(): void
+    {
+        $reservation = $this->makeReservation(['reservation_date' => Carbon::now()->startOfWeek(Carbon::MONDAY)->toDateString()]);
+        $lesson = $this->makeLesson();
+        $event = $this->makeOneOffEvent();
+
+        $events = collect($this->fetchWeek(new ReservationCalendar));
+        $ids = $events->pluck('id')->all();
+
+        $this->assertContains($reservation->getKey(), $ids);
+        $this->assertContains('course:'.$lesson->getKey(), $ids);
+        $this->assertContains('oneoff:'.$event->getKey(), $ids);
+
+        $lessonEvent = $events->firstWhere('id', 'course:'.$lesson->getKey());
+        $this->assertSame('course', $lessonEvent['extendedProps']['kind']);
+        $this->assertFalse($lessonEvent['editable']);
+        $this->assertSame(CourseLessonResource::getUrl('view', ['record' => $lesson]), $lessonEvent['url']);
+
+        $oneOffEvent = $events->firstWhere('id', 'oneoff:'.$event->getKey());
+        $this->assertSame('oneOffEvent', $oneOffEvent['extendedProps']['kind']);
+        $this->assertFalse($oneOffEvent['editable']);
+        $this->assertSame(OneOffEventResource::getUrl('view', ['record' => $event]), $oneOffEvent['url']);
+    }
+
+    public function test_course_and_event_overlays_only_in_reservations_mode(): void
+    {
+        $lesson = $this->makeLesson();
+        $event = $this->makeOneOffEvent();
+
+        $calendar = new ReservationCalendar;
+        $calendar->mode = 'template';
+        $ids = array_column($this->fetchWeek($calendar), 'id');
+
+        $this->assertNotContains('course:'.$lesson->getKey(), $ids);
+        $this->assertNotContains('oneoff:'.$event->getKey(), $ids);
+    }
+
+    public function test_courses_toggle_hides_only_lessons(): void
+    {
+        $reservation = $this->makeReservation(['reservation_date' => Carbon::now()->startOfWeek(Carbon::MONDAY)->toDateString()]);
+        $lesson = $this->makeLesson();
+        $event = $this->makeOneOffEvent();
+
+        $calendar = new ReservationCalendar;
+        $calendar->showCourses = false;
+        $ids = array_column($this->fetchWeek($calendar), 'id');
+
+        $this->assertContains($reservation->getKey(), $ids);
+        $this->assertNotContains('course:'.$lesson->getKey(), $ids);
+        $this->assertContains('oneoff:'.$event->getKey(), $ids);
+    }
+
+    public function test_one_off_events_toggle_hides_only_events(): void
+    {
+        $reservation = $this->makeReservation(['reservation_date' => Carbon::now()->startOfWeek(Carbon::MONDAY)->toDateString()]);
+        $lesson = $this->makeLesson();
+        $event = $this->makeOneOffEvent();
+
+        $calendar = new ReservationCalendar;
+        $calendar->showOneOffEvents = false;
+        $ids = array_column($this->fetchWeek($calendar), 'id');
+
+        $this->assertContains($reservation->getKey(), $ids);
+        $this->assertContains('course:'.$lesson->getKey(), $ids);
+        $this->assertNotContains('oneoff:'.$event->getKey(), $ids);
+    }
+
+    public function test_reservations_toggle_hides_only_reservations(): void
+    {
+        $reservation = $this->makeReservation(['reservation_date' => Carbon::now()->startOfWeek(Carbon::MONDAY)->toDateString()]);
+        $lesson = $this->makeLesson();
+        $event = $this->makeOneOffEvent();
+
+        $calendar = new ReservationCalendar;
+        $calendar->showReservations = false;
+        $ids = array_column($this->fetchWeek($calendar), 'id');
+
+        $this->assertNotContains($reservation->getKey(), $ids);
+        $this->assertContains('course:'.$lesson->getKey(), $ids);
+        $this->assertContains('oneoff:'.$event->getKey(), $ids);
+        $this->assertSame(0, $calendar->weekCount);
+    }
+
+    public function test_room_filter_applies_to_lessons_and_events(): void
+    {
+        $roomA = Room::factory()->create();
+        $roomB = Room::factory()->create();
+        $lessonA = $this->makeLesson(['room_id' => $roomA->getKey()]);
+        $lessonB = $this->makeLesson(['room_id' => $roomB->getKey()]);
+        $eventA = $this->makeOneOffEvent(['room_id' => $roomA->getKey()]);
+        $eventB = $this->makeOneOffEvent(['room_id' => $roomB->getKey()]);
+
+        $calendar = new ReservationCalendar;
+        $calendar->filterData = ['roomIds' => [(string) $roomA->getKey()]];
+        $ids = array_column($this->fetchWeek($calendar), 'id');
+
+        $this->assertContains('course:'.$lessonA->getKey(), $ids);
+        $this->assertContains('oneoff:'.$eventA->getKey(), $ids);
+        $this->assertNotContains('course:'.$lessonB->getKey(), $ids);
+        $this->assertNotContains('oneoff:'.$eventB->getKey(), $ids);
+    }
+
+    public function test_therapist_chip_filters_lessons_and_events_by_instructor_user(): void
+    {
+        $instructor = User::factory()->therapist()->create();
+        $profile = StaffProfile::create(['user_id' => $instructor->getKey()]);
+        $matchingLesson = $this->makeLesson(['instructor_id' => $instructor->getKey()]);
+        $otherLesson = $this->makeLesson();
+        $matchingEvent = $this->makeOneOffEvent(['instructor_id' => $instructor->getKey()]);
+        $otherEvent = $this->makeOneOffEvent();
+
+        $calendar = new ReservationCalendar;
+        $calendar->therapistIds = [(string) $profile->getKey()];
+        $ids = array_column($this->fetchWeek($calendar), 'id');
+
+        $this->assertContains('course:'.$matchingLesson->getKey(), $ids);
+        $this->assertContains('oneoff:'.$matchingEvent->getKey(), $ids);
+        $this->assertNotContains('course:'.$otherLesson->getKey(), $ids);
+        $this->assertNotContains('oneoff:'.$otherEvent->getKey(), $ids);
+    }
+
+    public function test_reservation_specific_filters_hide_lessons_and_events(): void
+    {
+        $reservation = $this->makeReservation(['reservation_date' => Carbon::now()->startOfWeek(Carbon::MONDAY)->toDateString()]);
+        $lesson = $this->makeLesson();
+        $event = $this->makeOneOffEvent();
+
+        $calendar = new ReservationCalendar;
+        $calendar->filterData = ['clientIds' => [(string) $reservation->client_id]];
+        $ids = array_column($this->fetchWeek($calendar), 'id');
+
+        $this->assertContains($reservation->getKey(), $ids);
+        $this->assertNotContains('course:'.$lesson->getKey(), $ids);
+        $this->assertNotContains('oneoff:'.$event->getKey(), $ids);
+
+        $calendar = new ReservationCalendar;
+        $calendar->filterData = ['statusIds' => [ReservationStatus::Confirmed->value]];
+        $ids = array_column($this->fetchWeek($calendar), 'id');
+
+        $this->assertNotContains('course:'.$lesson->getKey(), $ids);
+        $this->assertNotContains('oneoff:'.$event->getKey(), $ids);
+
+        $calendar = new ReservationCalendar;
+        $calendar->filterData = ['trashed' => 'only'];
+        $ids = array_column($this->fetchWeek($calendar), 'id');
+
+        $this->assertNotContains('course:'.$lesson->getKey(), $ids);
+        $this->assertNotContains('oneoff:'.$event->getKey(), $ids);
+    }
+
+    public function test_search_matches_course_and_event_names(): void
+    {
+        $series = CourseSeries::factory()->create(['name' => 'Pilates pro pokročilé']);
+        $matchingLesson = $this->makeLesson(['series_id' => $series->getKey()]);
+        // CourseFactory can randomly generate a "Pilates …" course name, so pin
+        // the control lesson's series to a course that never matches the search.
+        $otherSeries = CourseSeries::factory()->create(['name' => 'Série podzim']);
+        $otherSeries->course->update(['name' => 'Zdravá záda']);
+        $otherLesson = $this->makeLesson(['series_id' => $otherSeries->getKey()]);
+        $matchingEvent = $this->makeOneOffEvent(['name' => 'Pilates workshop']);
+        $otherEvent = $this->makeOneOffEvent(['name' => 'Dýchací techniky']);
+
+        $calendar = new ReservationCalendar;
+        $calendar->search = 'pilates';
+        $ids = array_column($this->fetchWeek($calendar), 'id');
+
+        $this->assertContains('course:'.$matchingLesson->getKey(), $ids);
+        $this->assertContains('oneoff:'.$matchingEvent->getKey(), $ids);
+        $this->assertNotContains('course:'.$otherLesson->getKey(), $ids);
+        $this->assertNotContains('oneoff:'.$otherEvent->getKey(), $ids);
+    }
+
+    public function test_trashed_one_off_events_are_excluded_and_unpublished_shown(): void
+    {
+        $unpublished = OneOffEvent::factory()->unpublished()->create([
+            'event_date' => Carbon::now()->startOfWeek(Carbon::MONDAY)->toDateString(),
+        ]);
+        $trashed = $this->makeOneOffEvent();
+        $trashed->delete();
+
+        $events = collect($this->fetchWeek(new ReservationCalendar));
+        $ids = $events->pluck('id')->all();
+
+        $this->assertContains('oneoff:'.$unpublished->getKey(), $ids);
+        $this->assertNotContains('oneoff:'.$trashed->getKey(), $ids);
+        $this->assertTrue($events->firstWhere('id', 'oneoff:'.$unpublished->getKey())['extendedProps']['isUnpublished']);
+    }
+
+    public function test_clicking_course_or_event_redirects_to_its_view_page(): void
+    {
+        $lesson = $this->makeLesson();
+        $event = $this->makeOneOffEvent();
+        $this->actingAs(User::factory()->admin()->create());
+
+        Livewire::test(ReservationCalendar::class)
+            ->call('onEventClick', ['id' => 'course:'.$lesson->getKey()])
+            ->assertRedirect(CourseLessonResource::getUrl('view', ['record' => $lesson]));
+
+        Livewire::test(ReservationCalendar::class)
+            ->call('onEventClick', ['id' => 'oneoff:'.$event->getKey()])
+            ->assertRedirect(OneOffEventResource::getUrl('view', ['record' => $event]));
+    }
+
+    public function test_selection_mode_ignores_course_and_event_clicks(): void
+    {
+        $lesson = $this->makeLesson();
+        $event = $this->makeOneOffEvent();
+        $this->actingAs(User::factory()->admin()->create());
+
+        Livewire::test(ReservationCalendar::class)
+            ->set('selectionMode', true)
+            ->call('onEventClick', ['id' => 'course:'.$lesson->getKey()])
+            ->call('onEventClick', ['id' => 'oneoff:'.$event->getKey()])
+            ->assertSet('selectedIds', [])
+            ->assertNoRedirect();
+
+        $calendar = new ReservationCalendar;
+        $calendar->selectionMode = true;
+        $events = collect($this->fetchWeek($calendar));
+
+        $this->assertArrayNotHasKey('url', $events->firstWhere('id', 'course:'.$lesson->getKey()));
+        $this->assertArrayNotHasKey('url', $events->firstWhere('id', 'oneoff:'.$event->getKey()));
+    }
+
+    // ---- Day-waitlist header strip --------------------------------------------
+
+    public function test_waitlist_summary_lists_pending_entries_for_visible_week(): void
+    {
+        $monday = Carbon::now()->startOfWeek(Carbon::MONDAY);
+        $first = ReservationDayWaitlistEntry::factory()->create(['reservation_date' => $monday->toDateString()]);
+        ReservationDayWaitlistEntry::factory()->create(['reservation_date' => $monday->toDateString()]);
+        ReservationDayWaitlistEntry::factory()->create(['reservation_date' => $monday->copy()->addDays(2)->toDateString()]);
+        ReservationDayWaitlistEntry::factory()->notified()->create(['reservation_date' => $monday->toDateString()]);
+        ReservationDayWaitlistEntry::factory()->create(['reservation_date' => $monday->copy()->addDays(7)->toDateString()]);
+
+        $summary = (new ReservationCalendar)->waitlistWeekSummary();
+
+        $this->assertCount(2, $summary);
+        $this->assertSame($monday->toDateString(), $summary[0]['date']);
+        $this->assertSame(2, $summary[0]['count']);
+        $this->assertSame($monday->copy()->addDays(2)->toDateString(), $summary[1]['date']);
+        $this->assertSame(1, $summary[1]['count']);
+        $this->assertStringContainsString($first->displayName(), $summary[0]['names']);
+        $this->assertNotSame('', $summary[0]['label']);
+    }
+
+    public function test_waitlist_summary_counts_any_therapist_with_chips_active(): void
+    {
+        $monday = Carbon::now()->startOfWeek(Carbon::MONDAY);
+        $profile = StaffProfile::create(['user_id' => User::factory()->therapist()->create()->getKey()]);
+        $forChip = ReservationDayWaitlistEntry::factory()->create([
+            'therapist_id' => $profile->getKey(),
+            'reservation_date' => $monday->toDateString(),
+        ]);
+        $forOther = ReservationDayWaitlistEntry::factory()->create(['reservation_date' => $monday->toDateString()]);
+        $anyTherapist = ReservationDayWaitlistEntry::factory()->anyTherapist()->create(['reservation_date' => $monday->toDateString()]);
+
+        $calendar = new ReservationCalendar;
+        $calendar->therapistIds = [(string) $profile->getKey()];
+        $summary = $calendar->waitlistWeekSummary();
+
+        $this->assertCount(1, $summary);
+        $this->assertSame(2, $summary[0]['count']);
+        $this->assertStringContainsString($forChip->displayName(), $summary[0]['names']);
+        $this->assertStringContainsString($anyTherapist->displayName(), $summary[0]['names']);
+        $this->assertStringNotContainsString($forOther->displayName(), $summary[0]['names']);
+    }
+
+    public function test_waitlist_summary_hidden_by_toggle_template_mode_and_feature_flag(): void
+    {
+        ReservationDayWaitlistEntry::factory()->create([
+            'reservation_date' => Carbon::now()->startOfWeek(Carbon::MONDAY)->toDateString(),
+        ]);
+
+        $calendar = new ReservationCalendar;
+        $calendar->showWaitlist = false;
+        $this->assertSame([], $calendar->waitlistWeekSummary());
+
+        $calendar = new ReservationCalendar;
+        $calendar->mode = 'template';
+        $this->assertSame([], $calendar->waitlistWeekSummary());
+
+        $this->seed(SettingsSeeder::class);
+        Setting::query()->where('key', 'reservation.day_waitlist_enabled')->firstOrFail()->update(['value' => '0']);
+        Cache::forget(Settings::CACHE_KEY);
+
+        $this->assertSame([], (new ReservationCalendar)->waitlistWeekSummary());
+    }
+
+    public function test_creating_a_client_inline_from_the_calendar_create_modal(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+
+        Livewire::test(ReservationCalendar::class)
+            ->callAction([
+                TestAction::make('create'),
+                TestAction::make('createOption')->schemaComponent('client_id'),
+            ], [
+                'first_name' => 'Anna',
+                'last_name' => 'Nováková',
+                'no_email' => false,
+                'email' => 'anna@example.com',
+                'phone' => null,
+            ])
+            ->assertHasNoActionErrors();
+
+        $client = User::query()->where('email', 'anna@example.com')->firstOrFail();
+        $this->assertSame('Anna Nováková', $client->name);
+        $this->assertSame(UserRole::Customer, $client->role);
+        $this->assertNotNull($client->clientProfile);
+    }
+
+    public function test_inline_client_without_email_gets_placeholder_address(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+
+        Livewire::test(ReservationCalendar::class)
+            ->callAction([
+                TestAction::make('create'),
+                TestAction::make('createOption')->schemaComponent('client_id'),
+            ], [
+                'first_name' => 'Anna',
+                'last_name' => 'Nováková',
+                'no_email' => true,
+                'phone' => '+420 777 123 456',
+            ])
+            ->assertHasNoActionErrors();
+
+        $client = User::query()->where('name', 'Anna Nováková')->firstOrFail();
+        $this->assertMatchesRegularExpression('/^anna\.novakova\d{4}@friendlyfyzio\.cz$/', $client->email);
+        $this->assertSame('+420 777 123 456', $client->phone);
+        $this->assertSame(UserRole::Customer, $client->role);
+    }
+
+    public function test_inline_client_requires_phone_when_no_email(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+
+        Livewire::test(ReservationCalendar::class)
+            ->callAction([
+                TestAction::make('create'),
+                TestAction::make('createOption')->schemaComponent('client_id'),
+            ], [
+                'first_name' => 'Anna',
+                'last_name' => 'Nováková',
+                'no_email' => true,
+                'phone' => null,
+            ])
+            ->assertHasActionErrors(['phone' => 'required']);
+    }
+
+    public function test_inline_client_rejects_taken_email(): void
+    {
+        User::factory()->customer()->create(['email' => 'taken@example.com']);
+        $this->actingAs(User::factory()->admin()->create());
+
+        Livewire::test(ReservationCalendar::class)
+            ->callAction([
+                TestAction::make('create'),
+                TestAction::make('createOption')->schemaComponent('client_id'),
+            ], [
+                'first_name' => 'Anna',
+                'last_name' => 'Nováková',
+                'no_email' => false,
+                'email' => 'taken@example.com',
+                'phone' => null,
+            ])
+            ->assertHasActionErrors(['email' => 'unique']);
+    }
+
+    public function test_inline_client_requires_email_or_checkbox(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+
+        Livewire::test(ReservationCalendar::class)
+            ->callAction([
+                TestAction::make('create'),
+                TestAction::make('createOption')->schemaComponent('client_id'),
+            ], [
+                'first_name' => 'Anna',
+                'last_name' => 'Nováková',
+                'no_email' => false,
+                'email' => null,
+                'phone' => null,
+            ])
+            ->assertHasActionErrors(['email' => 'required', 'phone' => 'required']);
+    }
+
+    public function test_create_modal_submit_button_says_vytvorit_a_zavrit(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+
+        Livewire::test(ReservationCalendar::class)
+            ->mountAction('create')
+            ->assertMountedActionModalSee('Vytvořit a zavřít');
+    }
+
+    public function test_client_create_option_is_absent_on_the_reservation_edit_page(): void
+    {
+        $reservation = $this->makeReservation();
+        $this->actingAs(User::factory()->admin()->create());
+
+        Livewire::test(EditReservation::class, ['record' => $reservation->getRouteKey()])
+            ->assertActionDoesNotExist(TestAction::make('createOption')->schemaComponent('client_id'));
     }
 }

@@ -28,11 +28,19 @@ class Problems extends Page
         return auth()->user()?->role === UserRole::Admin;
     }
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccess() && self::upcomingProblemsCount() > 0;
+    }
+
     public static function getNavigationBadge(): ?string
     {
-        $count = count(ConflictFinder::upcoming(self::HORIZON_DAYS));
+        return (string) self::upcomingProblemsCount();
+    }
 
-        return $count > 0 ? (string) $count : null;
+    private static function upcomingProblemsCount(): int
+    {
+        return once(fn (): int => count(ConflictFinder::upcoming(self::HORIZON_DAYS)));
     }
 
     public static function getNavigationBadgeColor(): ?string

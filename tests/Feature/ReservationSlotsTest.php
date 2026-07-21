@@ -10,7 +10,7 @@ use App\Models\Room;
 use App\Models\RoomBlocking;
 use App\Models\Service;
 use App\Models\ServiceCategory;
-use App\Models\TherapistProfile;
+use App\Models\StaffProfile;
 use App\Models\TherapistWorkBlock;
 use App\Support\Reservations\ReservationSlots;
 use App\Support\Reservations\Slot;
@@ -28,7 +28,7 @@ class ReservationSlotsTest extends TestCase
 
     private Service $service;
 
-    private TherapistProfile $therapist;
+    private StaffProfile $therapist;
 
     protected function setUp(): void
     {
@@ -52,7 +52,7 @@ class ReservationSlotsTest extends TestCase
         Service::factory()->create(['category_id' => $category->id, 'duration_minutes' => 30, 'break_minutes' => 15, 'visibility' => ServiceVisibility::Clients, 'published_at' => now()]);
         Service::factory()->create(['category_id' => $category->id, 'duration_minutes' => 90, 'break_minutes' => 15, 'visibility' => ServiceVisibility::Public, 'published_at' => now()]);
 
-        $this->therapist = TherapistProfile::factory()->create(['published_at' => now()]);
+        $this->therapist = StaffProfile::factory()->create(['published_at' => now()]);
         $this->service->therapists()->attach($this->therapist);
 
         $this->schedule($this->therapist, $this->room, '08:00', '16:00');
@@ -65,7 +65,7 @@ class ReservationSlotsTest extends TestCase
         parent::tearDown();
     }
 
-    private function schedule(TherapistProfile $therapist, Room $room, string $start, string $end, ?Carbon $date = null): void
+    private function schedule(StaffProfile $therapist, Room $room, string $start, string $end, ?Carbon $date = null): void
     {
         TherapistWorkBlock::factory()->create([
             'therapist_id' => $therapist->id,
@@ -135,7 +135,7 @@ class ReservationSlotsTest extends TestCase
         // A different therapist (who doesn't offer our service) has a booking in the
         // SAME room 09:15–10:15 — the room is occupied, so our therapist's slots must
         // reshape exactly as if the room were busy then.
-        $other = TherapistProfile::factory()->create(['published_at' => now()]);
+        $other = StaffProfile::factory()->create(['published_at' => now()]);
         Reservation::factory()->create([
             'therapist_id' => $other->id,
             'room_id' => $this->room->id,
@@ -279,7 +279,7 @@ class ReservationSlotsTest extends TestCase
     public function test_browse_all_unions_therapists_and_carries_room(): void
     {
         $room2 = Room::factory()->create();
-        $therapist2 = TherapistProfile::factory()->create(['published_at' => now()]);
+        $therapist2 = StaffProfile::factory()->create(['published_at' => now()]);
         $this->service->therapists()->attach($therapist2);
         $this->schedule($therapist2, $room2, '08:00', '16:00');
 

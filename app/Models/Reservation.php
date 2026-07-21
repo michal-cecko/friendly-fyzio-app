@@ -88,6 +88,7 @@ class Reservation extends Model implements Emailable, Payable
         'doctor_note_requested_at',
         'doctor_note_resolved_at',
         'settled_at',
+        'imported_at',
         'is_control_therapy',
         'notes',
         'cancellation_reason',
@@ -106,6 +107,7 @@ class Reservation extends Model implements Emailable, Payable
             'doctor_note_requested_at' => 'datetime',
             'doctor_note_resolved_at' => 'datetime',
             'settled_at' => 'datetime',
+            'imported_at' => 'datetime',
             'is_control_therapy' => 'boolean',
         ];
     }
@@ -232,7 +234,7 @@ class Reservation extends Model implements Emailable, Payable
 
     public function therapist(): BelongsTo
     {
-        return $this->belongsTo(TherapistProfile::class, 'therapist_id');
+        return $this->belongsTo(StaffProfile::class, 'therapist_id');
     }
 
     public function room(): BelongsTo

@@ -9,6 +9,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\ToggleButtons;
+use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Components\Utilities\Get;
@@ -33,6 +34,18 @@ class UserForm
                                     ->label('Jméno')
                                     ->required()
                                     ->maxLength(255),
+                                Grid::make(2)
+                                    ->columnSpan(1)
+                                    ->schema([
+                                        TextInput::make('title_before')
+                                            ->label('Titul před jménem')
+                                            ->placeholder('Bc.')
+                                            ->maxLength(255),
+                                        TextInput::make('title_after')
+                                            ->label('Titul za jménem')
+                                            ->placeholder('DiS.')
+                                            ->maxLength(255),
+                                    ]),
                                 TextInput::make('email')
                                     ->label('E-mail')
                                     ->email()
@@ -61,8 +74,8 @@ class UserForm
                                 Toggle::make('acts_as_therapist')
                                     ->label('Působí i jako terapeut')
                                     ->visible(fn (Get $get): bool => in_array($get('role'), [UserRole::Admin, UserRole::Admin->value], true))
-                                    ->disabled(fn (?User $record): bool => $record?->therapistProfile !== null)
-                                    ->helperText(fn (?User $record): string => $record?->therapistProfile !== null
+                                    ->disabled(fn (?User $record): bool => $record?->staffProfile !== null)
+                                    ->helperText(fn (?User $record): string => $record?->staffProfile !== null
                                         ? 'Administrátor má terapeutický profil. Pro vypnutí nejprve smažte jeho profil v sekci Terapeuti.'
                                         : 'Založí administrátorovi nepublikovaný profil terapeuta — objeví se v kalendáři, pracovní době a rezervacích.'),
                                 Select::make('permissions')

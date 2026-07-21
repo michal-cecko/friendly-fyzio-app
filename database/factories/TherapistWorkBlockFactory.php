@@ -3,7 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Room;
-use App\Models\TherapistProfile;
+use App\Models\StaffProfile;
 use App\Models\TherapistWorkBlock;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -20,7 +20,7 @@ class TherapistWorkBlockFactory extends Factory
         $start = fake()->numberBetween(7, 14);
 
         return [
-            'therapist_id' => TherapistProfile::factory(),
+            'therapist_id' => StaffProfile::factory(),
             'room_id' => Room::factory(),
             'series_id' => null,
             'work_date' => fake()->dateTimeBetween('now', '+2 weeks')->format('Y-m-d'),

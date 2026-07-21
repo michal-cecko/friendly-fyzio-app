@@ -3,6 +3,7 @@
 namespace App\Filament\Clusters\Provoz\Resources\Clients\RelationManagers;
 
 use App\Enums\ReservationStatus;
+use App\Models\Reservation;
 use BackedEnum;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Support\Icons\Heroicon;
@@ -30,7 +31,14 @@ class ReservationsRelationManager extends RelationManager
                     ->date('d.m.Y')
                     ->sortable(),
                 TextColumn::make('start_time')
-                    ->label('Od'),
+                    ->label('Od')
+                    // Imported visits carry a placeholder time, so the badge
+                    // warns not to read anything into it.
+                    ->badge(fn (Reservation $record): bool => $record->imported_at !== null)
+                    ->color('gray')
+                    ->tooltip(fn (Reservation $record): ?string => $record->imported_at
+                        ? 'Přenesená historie – přesný čas návštěvy není znám.'
+                        : null),
                 TextColumn::make('service.name')
                     ->label('Služba'),
                 TextColumn::make('therapist.user.name')

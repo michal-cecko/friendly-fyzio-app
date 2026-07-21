@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Filament\Clusters\Provoz\Resources\TherapistProfiles\TherapistProfileResource;
-use App\Models\TherapistProfile;
+use App\Filament\Clusters\Provoz\Resources\StaffProfiles\StaffProfileResource;
+use App\Models\StaffProfile;
 use App\Support\Media;
 use Illuminate\Contracts\View\View;
 
 class TherapistController extends Controller
 {
-    public function show(TherapistProfile $therapist): View
+    public function show(StaffProfile $therapist): View
     {
         $preview = ! $therapist->isPublished();
 
@@ -24,7 +24,7 @@ class TherapistController extends Controller
         return view('therapists.show', [
             'therapist' => $therapist,
             'isPreview' => $preview,
-            'adminEditUrl' => $this->adminEditUrl($therapist, TherapistProfileResource::class),
+            'adminEditUrl' => $this->adminEditUrl($therapist, StaffProfileResource::class),
             'seo' => [
                 'title' => $therapist->user?->name,
                 'description' => $therapist->title,

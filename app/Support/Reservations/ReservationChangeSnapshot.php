@@ -30,7 +30,7 @@ class ReservationChangeSnapshot
 
         return [
             'puvodni_sluzba' => (string) ($original->service?->name ?? ''),
-            'puvodni_terapeut' => (string) ($original->therapist?->user?->name ?? ''),
+            'puvodni_terapeut' => (string) ($original->therapist?->user?->full_name ?? ''),
             'puvodni_termin' => ReservationEmailContext::formatWhen($original),
         ];
     }

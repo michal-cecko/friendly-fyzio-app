@@ -26,12 +26,15 @@ class SendEmailActionTest extends TestCase
 {
     use RefreshDatabase;
 
+    private User $sender;
+
     protected function setUp(): void
     {
         parent::setUp();
 
         Filament::setCurrentPanel('admin');
-        $this->actingAs(User::factory()->admin()->create());
+        $this->sender = User::factory()->admin()->create();
+        $this->actingAs($this->sender);
     }
 
     public function test_custom_mode_sends_free_form_email_to_typed_recipient_with_cc_and_bcc(): void
@@ -61,6 +64,8 @@ class SendEmailActionTest extends TestCase
                     && $notification->emailSubject === 'Ahoj'
                     && $notification->cc === ['cc@example.com']
                     && $notification->bcc === ['bcc@example.com']
+                    && $notification->replyToAddress === $this->sender->email
+                    && $notification->replyToName === $this->sender->name
                     && $notification->record?->is($reservation);
             },
         );

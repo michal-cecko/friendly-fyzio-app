@@ -28,7 +28,7 @@ class TherapistReservationEmailContext
         return [
             'jmeno' => Str::of($therapistName)->before(' ')->toString() ?: $therapistName,
             'sluzba' => (string) ($reservation->service?->name ?? ''),
-            'klient' => (string) ($reservation->client?->name ?? ''),
+            'klient' => (string) ($reservation->client?->full_name ?? ''),
             'telefon_klienta' => (string) ($reservation->client?->phone ?? ''),
             'email_klienta' => (string) ($reservation->client?->email ?? ''),
             'termin' => ReservationEmailContext::formatWhen($reservation),

@@ -7,7 +7,7 @@
     $status = $reservation->status;
     $when = $reservation->startsAt()->translatedFormat('j. F Y, H:i');
     $service = $reservation->service?->name;
-    $therapist = $reservation->therapist?->user?->name;
+    $therapist = $reservation->therapist?->user?->full_name;
 
     $fee = $reservation->stornoFee();
     // Storno choice applies once confirmed or inside the window (and a fee applies).

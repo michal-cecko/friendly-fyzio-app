@@ -18,7 +18,7 @@
             <div class="grid grid-cols-1 gap-6 {{ $grid }}">
                 @foreach($therapists as $therapist)
                     @php
-                        $profile = $therapist->therapistProfile;
+                        $profile = $therapist->staffProfile;
                         $img = \App\Support\Media::url($profile?->photo, '400');
                         $clickable = $profile && $profile->isPublished() && filled($profile->slug);
                         $specs = $profile ? $profile->specializations->pluck('name')->join(' • ') : null;
@@ -32,11 +32,11 @@
                     @endif
                         <div class="aspect-square w-full overflow-hidden bg-primary-light">
                             @if($img)
-                                <img src="{{ $img }}" alt="{{ $therapist->name }}" class="h-full w-full object-cover transition duration-500 {{ $clickable ? 'group-hover:scale-105' : '' }}">
+                                <img src="{{ $img }}" alt="{{ $therapist->full_name }}" class="h-full w-full object-cover transition duration-500 {{ $clickable ? 'group-hover:scale-105' : '' }}">
                             @endif
                         </div>
                         <div class="flex flex-1 flex-col items-center gap-2 p-6">
-                            <h3 class="font-heading text-base font-semibold text-neutral-900">{{ $therapist->name }}</h3>
+                            <h3 class="font-heading text-base font-semibold text-neutral-900">{{ $therapist->full_name }}</h3>
                             @if($profile?->title)
                                 <p class="text-sm text-neutral-600">{{ $profile->title }}</p>
                             @endif

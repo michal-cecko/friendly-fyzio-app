@@ -72,7 +72,7 @@ class ActivityLogResource extends Resource
             return $query;
         }
 
-        $profileId = $user?->therapistProfile?->getKey();
+        $profileId = $user?->staffProfile?->getKey();
 
         return $query->where(function (Builder $scope) use ($user, $profileId): void {
             $scope->where('causer_id', $user?->getKey());

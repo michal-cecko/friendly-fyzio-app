@@ -5,7 +5,7 @@ namespace Tests\Feature\Reservations;
 use App\Enums\EmailTemplateKey;
 use App\Models\ReservationDayWaitlistEntry;
 use App\Models\Service;
-use App\Models\TherapistProfile;
+use App\Models\StaffProfile;
 use App\Models\User;
 use App\Notifications\ReservationDayWaitlistNotification;
 use App\Support\Reservations\JoinReservationDayWaitlist;
@@ -31,7 +31,7 @@ class DayWaitlistJoinTest extends TestCase
 
     public function test_a_guest_can_join_and_gets_a_confirmation_email(): void
     {
-        $therapist = TherapistProfile::factory()->create();
+        $therapist = StaffProfile::factory()->create();
         $date = today()->addWeek()->toDateString();
 
         $entry = $this->join()->handle($therapist->id, $date, 'Jana Nováková', 'jana@example.cz', '+420604793255');
@@ -48,7 +48,7 @@ class DayWaitlistJoinTest extends TestCase
 
     public function test_joining_is_idempotent_per_therapist_day(): void
     {
-        $therapist = TherapistProfile::factory()->create();
+        $therapist = StaffProfile::factory()->create();
         $date = today()->addWeek()->toDateString();
 
         $first = $this->join()->handle($therapist->id, $date, 'Jana', 'jana@example.cz', null);
@@ -62,12 +62,22 @@ class DayWaitlistJoinTest extends TestCase
     public function test_an_existing_account_is_linked_by_email(): void
     {
         $client = User::factory()->customer()->create(['email' => 'jana@example.cz']);
-        $therapist = TherapistProfile::factory()->create();
+        $therapist = StaffProfile::factory()->create();
 
         $entry = $this->join()->handle($therapist->id, today()->addWeek()->toDateString(), 'Jana', 'jana@example.cz', null);
 
         $this->assertSame($client->id, $entry->client_id);
         Notification::assertSentTo($client, ReservationDayWaitlistNotification::class);
+    }
+
+    public function test_account_linking_by_email_is_case_insensitive(): void
+    {
+        $client = User::factory()->customer()->create(['email' => 'jana@example.cz']);
+        $therapist = StaffProfile::factory()->create();
+
+        $entry = $this->join()->handle($therapist->id, today()->addWeek()->toDateString(), 'Jana', 'Jana@Example.CZ', null);
+
+        $this->assertSame($client->id, $entry->client_id);
     }
 
     public function test_any_therapist_scope_is_stored_as_null(): void

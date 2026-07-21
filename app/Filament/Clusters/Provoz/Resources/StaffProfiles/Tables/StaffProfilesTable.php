@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Filament\Clusters\Provoz\Resources\TherapistProfiles\Tables;
+namespace App\Filament\Clusters\Provoz\Resources\StaffProfiles\Tables;
 
 use App\Filament\Support\Tables\TimestampColumns;
-use App\Models\TherapistProfile;
+use App\Models\StaffProfile;
 use App\Support\Media;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -13,7 +13,7 @@ use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
-class TherapistProfilesTable
+class StaffProfilesTable
 {
     public static function configure(Table $table): Table
     {
@@ -22,9 +22,10 @@ class TherapistProfilesTable
                 ImageColumn::make('photo')
                     ->label('Foto')
                     ->circular()
-                    ->getStateUsing(fn (TherapistProfile $record): ?string => Media::url($record->photo, 'thumb')),
+                    ->getStateUsing(fn (StaffProfile $record): ?string => Media::url($record->photo, 'thumb')),
                 TextColumn::make('user.name')
                     ->label('Jméno')
+                    ->state(fn (StaffProfile $record): ?string => $record->user?->full_name)
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('title')
@@ -33,7 +34,7 @@ class TherapistProfilesTable
                 IconColumn::make('published')
                     ->label('Publikováno')
                     ->boolean()
-                    ->getStateUsing(fn (TherapistProfile $record): bool => $record->isPublished()),
+                    ->getStateUsing(fn (StaffProfile $record): bool => $record->isPublished()),
                 TextColumn::make('display_order')
                     ->label('Pořadí')
                     ->sortable()

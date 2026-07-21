@@ -8,7 +8,8 @@ use App\Filament\Clusters\System\Resources\Users\Pages\EditUser;
 use App\Filament\Clusters\System\Resources\Users\Pages\ListUsers;
 use App\Filament\Clusters\System\Resources\Users\Pages\ViewUser;
 use App\Filament\Clusters\System\Resources\Users\RelationManagers\InstructedLessonsRelationManager;
-use App\Filament\Clusters\System\Resources\Users\RelationManagers\TherapistProfileRelationManager;
+use App\Filament\Clusters\System\Resources\Users\RelationManagers\StaffClientNotesRelationManager;
+use App\Filament\Clusters\System\Resources\Users\RelationManagers\StaffProfileRelationManager;
 use App\Filament\Clusters\System\Resources\Users\RelationManagers\TherapistReservationsRelationManager;
 use App\Filament\Clusters\System\Resources\Users\Schemas\UserForm;
 use App\Filament\Clusters\System\Resources\Users\Schemas\UserInfolist;
@@ -106,9 +107,10 @@ class UserResource extends Resource
     public static function getRelations(): array
     {
         return [
-            TherapistProfileRelationManager::class,
+            StaffProfileRelationManager::class,
             TherapistReservationsRelationManager::class,
             InstructedLessonsRelationManager::class,
+            StaffClientNotesRelationManager::class,
         ];
     }
 

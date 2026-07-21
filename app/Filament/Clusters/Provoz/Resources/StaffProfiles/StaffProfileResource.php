@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Filament\Clusters\Provoz\Resources\TherapistProfiles;
+namespace App\Filament\Clusters\Provoz\Resources\StaffProfiles;
 
 use App\Filament\Clusters\Provoz\ProvozCluster;
-use App\Filament\Clusters\Provoz\Resources\TherapistProfiles\Pages\CreateTherapistProfile;
-use App\Filament\Clusters\Provoz\Resources\TherapistProfiles\Pages\EditTherapistProfile;
-use App\Filament\Clusters\Provoz\Resources\TherapistProfiles\Pages\ListTherapistProfiles;
-use App\Filament\Clusters\Provoz\Resources\TherapistProfiles\Schemas\TherapistProfileForm;
-use App\Filament\Clusters\Provoz\Resources\TherapistProfiles\Tables\TherapistProfilesTable;
-use App\Models\TherapistProfile;
+use App\Filament\Clusters\Provoz\Resources\StaffProfiles\Pages\CreateStaffProfile;
+use App\Filament\Clusters\Provoz\Resources\StaffProfiles\Pages\EditStaffProfile;
+use App\Filament\Clusters\Provoz\Resources\StaffProfiles\Pages\ListStaffProfiles;
+use App\Filament\Clusters\Provoz\Resources\StaffProfiles\Schemas\StaffProfileForm;
+use App\Filament\Clusters\Provoz\Resources\StaffProfiles\Tables\StaffProfilesTable;
+use App\Models\StaffProfile;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -18,9 +18,9 @@ use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
-class TherapistProfileResource extends Resource
+class StaffProfileResource extends Resource
 {
-    protected static ?string $model = TherapistProfile::class;
+    protected static ?string $model = StaffProfile::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUserGroup;
 
@@ -32,17 +32,17 @@ class TherapistProfileResource extends Resource
 
     public static function getModelLabel(): string
     {
-        return 'terapeut';
+        return 'člen týmu';
     }
 
     public static function getPluralModelLabel(): string
     {
-        return 'terapeuti';
+        return 'členové týmu';
     }
 
     public static function getNavigationLabel(): string
     {
-        return 'Terapeuti';
+        return 'Tým';
     }
 
     /**
@@ -55,7 +55,7 @@ class TherapistProfileResource extends Resource
 
     public static function getGlobalSearchResultTitle(Model $record): string|Htmlable
     {
-        /** @var TherapistProfile $record */
+        /** @var StaffProfile $record */
         return $record->user?->name ?? $record->slug;
     }
 
@@ -64,7 +64,7 @@ class TherapistProfileResource extends Resource
      */
     public static function getGlobalSearchResultDetails(Model $record): array
     {
-        /** @var TherapistProfile $record */
+        /** @var StaffProfile $record */
         return array_filter([
             'Titul' => $record->title,
             'Stav' => $record->published_at ? 'Publikováno' : 'Koncept',
@@ -78,12 +78,12 @@ class TherapistProfileResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        return TherapistProfileForm::configure($schema);
+        return StaffProfileForm::configure($schema);
     }
 
     public static function table(Table $table): Table
     {
-        return TherapistProfilesTable::configure($table);
+        return StaffProfilesTable::configure($table);
     }
 
     public static function getRelations(): array
@@ -96,9 +96,9 @@ class TherapistProfileResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => ListTherapistProfiles::route('/'),
-            'create' => CreateTherapistProfile::route('/create'),
-            'edit' => EditTherapistProfile::route('/{record}/edit'),
+            'index' => ListStaffProfiles::route('/'),
+            'create' => CreateStaffProfile::route('/create'),
+            'edit' => EditStaffProfile::route('/{record}/edit'),
         ];
     }
 }

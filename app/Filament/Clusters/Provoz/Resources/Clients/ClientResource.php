@@ -87,7 +87,7 @@ class ClientResource extends Resource
         return parent::getEloquentQuery()
             ->where('role', UserRole::Customer)
             // "My Clients": a therapist only sees customers they have treated.
-            ->when(static::therapistProfileScopeId(), fn (Builder $query, string $id) => $query
+            ->when(static::staffProfileScopeId(), fn (Builder $query, string $id) => $query
                 ->whereHas('reservations', fn (Builder $reservations) => $reservations->where('therapist_id', $id)));
     }
 

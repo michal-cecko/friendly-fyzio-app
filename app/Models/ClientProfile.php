@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\Gender;
 use App\Models\Concerns\Auditable;
 use Database\Factories\ClientProfileFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -22,6 +23,8 @@ class ClientProfile extends Model
     protected $fillable = [
         'user_id',
         'date_of_birth',
+        'gender',
+        'birth_number',
         'address_city',
         'occupation',
         'weight',
@@ -37,6 +40,8 @@ class ClientProfile extends Model
     {
         return [
             'date_of_birth' => 'date',
+            'gender' => Gender::class,
+            'birth_number' => 'encrypted',
             'weight' => 'decimal:2',
             'height' => 'decimal:2',
         ];

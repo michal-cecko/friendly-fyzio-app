@@ -1,5 +1,6 @@
 <?php
 
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Str;
 
 return [
@@ -123,8 +124,17 @@ return [
     | storage. By default, no PHP classes will be unserialized from your
     | cache to prevent gadget chain attacks if your APP_KEY is leaked.
     |
+    | Date classes are allowlisted because filament-gaze caches raw Carbon
+    | instances in its viewer payloads; they carry no gadget potential.
+    |
     */
 
-    'serializable_classes' => false,
+    'serializable_classes' => [
+        DateTime::class,
+        DateTimeImmutable::class,
+        Carbon\Carbon::class,
+        CarbonImmutable::class,
+        Illuminate\Support\Carbon::class,
+    ],
 
 ];

@@ -54,7 +54,7 @@ class AdminStatsOverview extends StatsOverviewWidget
                 ->descriptionIcon('heroicon-m-clock')
                 ->color($awaitingConfirmation > 0 ? 'warning' : 'success')
                 ->url(ReservationResource::getUrl('index', [
-                    'tableFilters' => ['status' => ['value' => ReservationStatus::Pending->value]],
+                    'filters' => ['status' => ['value' => ReservationStatus::Pending->value]],
                 ])),
             Stat::make('Noví klienti', $newClients)
                 ->description('Tento týden')

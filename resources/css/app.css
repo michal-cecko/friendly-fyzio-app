@@ -32,6 +32,12 @@
     [role='button']:not([aria-disabled='true']) {
         cursor: pointer;
     }
+
+    /* No forms plugin is installed, so checked checkboxes would fall back to the
+       browser-default blue — tint them with the brand primary instead. */
+    input[type='checkbox'] {
+        accent-color: var(--color-primary);
+    }
 }
 
 @layer components {

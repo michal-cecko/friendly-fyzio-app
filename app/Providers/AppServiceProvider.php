@@ -96,10 +96,13 @@ class AppServiceProvider extends ServiceProvider
         // including the calendar's FullCalendarEditAction which extends EditAction).
         // Scoping to these parents avoids icon-ing delete/restore confirmation
         // buttons, whose submit action shares the "submit" name.
+        // The closure parameter MUST be named $action — Filament injects the built
+        // submit button by that name; any other name falls back to type-based
+        // injection, which hands over the parent Create/Edit action instead.
         foreach ([CreateAction::class, EditAction::class] as $formActionClass) {
             $formActionClass::configureUsing(
-                fn (CreateAction|EditAction $action) => $action->modalSubmitAction(
-                    fn (Action $submit) => $submit->icon('lucide-save'),
+                fn (CreateAction|EditAction $formAction) => $formAction->modalSubmitAction(
+                    fn (Action $action) => $action->icon('lucide-save'),
                 ),
             );
         }

@@ -23,7 +23,7 @@ class CourseController extends Controller
     {
         $course->load([
             'category',
-            'instructor.therapistProfile',
+            'instructor.staffProfile',
             'series' => fn ($query) => $query
                 ->withCount('activeTakers')
                 ->withCount('lessons')

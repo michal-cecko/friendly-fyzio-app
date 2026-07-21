@@ -29,7 +29,7 @@ class JoinReservationDayWaitlist
         ?string $phone = null,
         ?Service $browsedService = null,
     ): ReservationDayWaitlistEntry {
-        $client = User::query()->where('email', $email)->first();
+        $client = User::query()->whereRaw('lower(email) = ?', [mb_strtolower($email)])->first();
 
         $existing = ReservationDayWaitlistEntry::query()
             ->whereNull('notified_at')
@@ -38,7 +38,7 @@ class JoinReservationDayWaitlist
                 ? $query->whereNull('therapist_id')
                 : $query->where('therapist_id', $therapistId))
             ->where(fn ($query) => $query
-                ->where('email', $email)
+                ->whereRaw('lower(email) = ?', [mb_strtolower($email)])
                 ->when($client !== null, fn ($query) => $query->orWhere('client_id', $client->id)))
             ->first();
 

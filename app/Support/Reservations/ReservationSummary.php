@@ -19,7 +19,7 @@ class ReservationSummary
         $rows = [
             'Zákazník' => $reservation->client?->name,
             'Termín' => $reservation->startsAt()->format('j. n. Y, H:i'),
-            'Terapeut' => $reservation->therapist?->user?->name,
+            'Terapeut' => $reservation->therapist?->user?->full_name,
         ];
 
         $html = collect($rows)

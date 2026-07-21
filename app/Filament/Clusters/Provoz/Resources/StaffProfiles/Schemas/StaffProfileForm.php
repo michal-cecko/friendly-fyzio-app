@@ -1,10 +1,11 @@
 <?php
 
-namespace App\Filament\Clusters\Provoz\Resources\TherapistProfiles\Schemas;
+namespace App\Filament\Clusters\Provoz\Resources\StaffProfiles\Schemas;
 
 use App\Filament\Support\Schemas\PresenceBanner;
 use App\Filament\Support\Schemas\RecordTimestamps;
 use App\Mason\Support\Fields;
+use App\Models\StaffProfile;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
@@ -12,13 +13,14 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Component;
+use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Guava\IconPicker\Forms\Components\IconPicker;
 use Illuminate\Database\Eloquent\Builder;
 use RalphJSmit\Filament\MediaLibrary\Filament\Forms\Components\MediaPicker;
 
-class TherapistProfileForm
+class StaffProfileForm
 {
     public static function configure(Schema $schema): Schema
     {
@@ -46,6 +48,21 @@ class TherapistProfileForm
                             ->required()
                             ->columnSpanFull()
                         : null,
+                    Group::make()
+                        ->relationship('user')
+                        ->visible(fn (?StaffProfile $record): bool => $record?->user !== null)
+                        ->columnSpanFull()
+                        ->columns(2)
+                        ->schema([
+                            TextInput::make('title_before')
+                                ->label('Titul před jménem')
+                                ->placeholder('Bc.')
+                                ->maxLength(255),
+                            TextInput::make('title_after')
+                                ->label('Titul za jménem')
+                                ->placeholder('DiS.')
+                                ->maxLength(255),
+                        ]),
                     TextInput::make('title')
                         ->label('Pozice')
                         ->maxLength(255)

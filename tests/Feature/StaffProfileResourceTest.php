@@ -2,17 +2,17 @@
 
 namespace Tests\Feature;
 
-use App\Filament\Clusters\Provoz\Resources\TherapistProfiles\Pages\CreateTherapistProfile;
+use App\Filament\Clusters\Provoz\Resources\StaffProfiles\Pages\CreateStaffProfile;
 use App\Filament\Clusters\System\Resources\Users\Pages\ViewUser;
-use App\Filament\Clusters\System\Resources\Users\RelationManagers\TherapistProfileRelationManager;
-use App\Models\TherapistProfile;
+use App\Filament\Clusters\System\Resources\Users\RelationManagers\StaffProfileRelationManager;
+use App\Models\StaffProfile;
 use App\Models\User;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
 
-class TherapistProfileResourceTest extends TestCase
+class StaffProfileResourceTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -29,7 +29,7 @@ class TherapistProfileResourceTest extends TestCase
 
         $therapistUser = User::factory()->therapist()->create(['name' => 'Mgr. Lucie Fičkerová']);
 
-        Livewire::test(CreateTherapistProfile::class)
+        Livewire::test(CreateStaffProfile::class)
             ->fillForm([
                 'user_id' => $therapistUser->getKey(),
                 'title' => 'Fyzioterapeutka, zakladatelka',
@@ -38,7 +38,7 @@ class TherapistProfileResourceTest extends TestCase
             ->call('create')
             ->assertHasNoFormErrors();
 
-        $profile = TherapistProfile::where('user_id', $therapistUser->getKey())->first();
+        $profile = StaffProfile::where('user_id', $therapistUser->getKey())->first();
 
         $this->assertNotNull($profile);
         $this->assertSame('Fyzioterapeutka, zakladatelka', $profile->title);
@@ -51,7 +51,7 @@ class TherapistProfileResourceTest extends TestCase
         $therapist = User::factory()->therapist()->create();
         $admin = User::factory()->admin()->create();
 
-        $this->assertTrue(TherapistProfileRelationManager::canViewForRecord($therapist, ViewUser::class));
-        $this->assertFalse(TherapistProfileRelationManager::canViewForRecord($admin, ViewUser::class));
+        $this->assertTrue(StaffProfileRelationManager::canViewForRecord($therapist, ViewUser::class));
+        $this->assertFalse(StaffProfileRelationManager::canViewForRecord($admin, ViewUser::class));
     }
 }

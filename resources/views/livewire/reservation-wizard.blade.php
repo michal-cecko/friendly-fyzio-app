@@ -129,7 +129,7 @@
                                             </label>
                                         @endif
                                         @foreach ($this->therapists as $therapist)
-                                            @php($name = $therapist->user?->name ?? 'Terapeut')
+                                            @php($name = $therapist->user?->full_name ?? 'Terapeut')
                                             @php($photo = \App\Support\Media::url($therapist->photo, 'thumb'))
                                             <label wire:key="th-{{ $therapist->id }}" class="cursor-pointer">
                                                 <input type="radio" wire:model="therapistSlug" value="{{ $therapist->slug }}" class="peer sr-only">
@@ -375,8 +375,11 @@
                                         </div>
                                         <div>
                                             <label class="mb-1 block text-sm font-medium text-neutral-700">E-mail</label>
-                                            <input type="email" wire:model="email" class="{{ $inputClass }}" placeholder="@">
+                                            <input type="email" wire:model.blur="email" class="{{ $inputClass }}" placeholder="@">
                                             @error('email') <span class="mt-1 block text-xs text-red-600">{{ $message }}</span> @enderror
+                                            @if ($emailKnown && auth()->guest())
+                                                <p class="mt-1.5 text-sm {{ $muted }}">Tento e-mail už známe — rezervaci automaticky přiřadíme k vašemu účtu. <button type="button" wire:click="showLogin" class="text-primary-dark underline">Chcete se přihlásit?</button></p>
+                                            @endif
                                         </div>
                                         <label class="flex items-start gap-3 text-sm text-neutral-600">
                                             <input type="checkbox" wire:model="agreeCancellation" class="mt-0.5 h-4 w-4 rounded border-line text-primary focus:ring-primary/30">

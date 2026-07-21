@@ -21,6 +21,12 @@ class RoomsTable
                     ->label('Název')
                     ->searchable()
                     ->sortable(),
+                TextColumn::make('short_name')
+                    ->label('Zkratka')
+                    ->badge()
+                    ->placeholder('—')
+                    ->searchable()
+                    ->sortable(),
                 TextColumn::make('building.name')
                     ->label('Budova')
                     ->sortable(),

@@ -30,12 +30,12 @@ class JoinWaitlist
         string $email,
         ?string $phone = null,
     ): WaitlistEntry {
-        $client = User::query()->where('email', $email)->first();
+        $client = User::query()->whereRaw('lower(email) = ?', [mb_strtolower($email)])->first();
 
         $existing = $waitlistable->waitlistEntries()
             ->whereNull('notified_at')
             ->where(fn ($query) => $query
-                ->where('email', $email)
+                ->whereRaw('lower(email) = ?', [mb_strtolower($email)])
                 ->when($client !== null, fn ($query) => $query->orWhere('client_id', $client->id)))
             ->first();
 

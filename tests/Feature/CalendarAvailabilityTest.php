@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Room;
-use App\Models\TherapistProfile;
+use App\Models\StaffProfile;
 use App\Models\TherapistWorkBlock;
 use App\Support\CalendarAvailability;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -18,8 +18,8 @@ class CalendarAvailabilityTest extends TestCase
     {
         $date = Carbon::parse('2026-01-05');
 
-        $t1 = TherapistProfile::factory()->create();
-        $t2 = TherapistProfile::factory()->create();
+        $t1 = StaffProfile::factory()->create();
+        $t2 = StaffProfile::factory()->create();
 
         // T1: counts on this date (240 min).
         TherapistWorkBlock::factory()->for($t1, 'therapist')->create([
@@ -55,7 +55,7 @@ class CalendarAvailabilityTest extends TestCase
     {
         $date = Carbon::parse('2026-01-05');
 
-        $therapist = TherapistProfile::factory()->create();
+        $therapist = StaffProfile::factory()->create();
         $roomA = Room::factory()->create();
         $roomB = Room::factory()->create();
 

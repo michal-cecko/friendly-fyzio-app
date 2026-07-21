@@ -29,3 +29,5 @@ rr
 
 # Composer auth credentials (provide via Dokploy COMPOSER_AUTH build arg)
 auth.json
+
+/export/ergobody

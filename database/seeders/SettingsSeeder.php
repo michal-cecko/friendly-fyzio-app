@@ -68,7 +68,7 @@ class SettingsSeeder extends Seeder
 
         $this->upsert([
             'key' => 'reservation.lead_time_hours',
-            'value' => '0',
+            'value' => '2',
             'type' => SettingValueType::Integer,
             'label' => 'Minimální předstih (hodiny)',
             'group' => 'Rezervace',

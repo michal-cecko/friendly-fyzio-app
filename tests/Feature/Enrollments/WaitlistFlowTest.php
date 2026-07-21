@@ -89,6 +89,16 @@ class WaitlistFlowTest extends TestCase
         $this->assertTrue($entry->client->is($client));
     }
 
+    public function test_account_linking_by_email_is_case_insensitive(): void
+    {
+        $series = $this->fullSeries();
+        $client = User::factory()->customer()->create(['email' => 'znama@example.cz']);
+
+        $entry = JoinWaitlist::handle($series, 'Známá Klientka', 'Znama@Example.CZ');
+
+        $this->assertTrue($entry->client->is($client));
+    }
+
     public function test_cancellation_promotes_first_in_queue_with_unpaid_signup_and_payment(): void
     {
         $series = $this->fullSeries();

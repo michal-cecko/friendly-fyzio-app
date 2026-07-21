@@ -22,6 +22,7 @@ class RoomInfolist
                     ->columns(ResponsiveColumns::DENSE)
                     ->schema([
                         TextEntry::make('name')->label('Název'),
+                        TextEntry::make('short_name')->label('Zkratka')->badge()->placeholder('—'),
                         TextEntry::make('building.name')->label('Budova')->placeholder('—'),
                         TextEntry::make('reservations_count')
                             ->label('Rezervace')

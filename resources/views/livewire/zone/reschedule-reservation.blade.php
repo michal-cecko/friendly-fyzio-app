@@ -8,7 +8,7 @@
         <h1 class="font-heading text-2xl font-bold text-neutral-900">Přesunout termín</h1>
         <p class="mt-1 text-sm text-neutral-500">
             {{ $reservation->service?->name }}
-            @if($reservation->therapist?->user?->name) · {{ $reservation->therapist->user->name }} @endif
+            @if($reservation->therapist?->user?->full_name) · {{ $reservation->therapist->user->full_name }} @endif
         </p>
     </div>
 

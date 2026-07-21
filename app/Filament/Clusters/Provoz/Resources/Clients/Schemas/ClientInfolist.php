@@ -31,6 +31,8 @@ class ClientInfolist
                             ->label('Datum narození')
                             ->date('d.m.Y')
                             ->placeholder('—'),
+                        TextEntry::make('clientProfile.gender')->label('Pohlaví')->badge()->placeholder('—'),
+                        TextEntry::make('clientProfile.birth_number')->label('Rodné číslo')->placeholder('—'),
                         TextEntry::make('clientProfile.address_city')->label('Město')->placeholder('—'),
                         TextEntry::make('clientProfile.occupation')->label('Povolání')->placeholder('—'),
                         TextEntry::make('clientProfile.weight')->label('Váha (kg)')->placeholder('—'),

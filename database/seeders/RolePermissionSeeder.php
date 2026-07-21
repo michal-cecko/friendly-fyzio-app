@@ -13,9 +13,16 @@ class RolePermissionSeeder extends Seeder
     {
         // Regenerate all Shield permissions so `migrate:fresh --seed` stays reproducible
         // (permissions are database rows that a fresh migration wipes).
+        //
+        // --option is passed explicitly: without it shield:generate asks what to
+        // generate. On the CLI the prompt silently takes its default, but under
+        // test the mocked console throws, and an unattended deploy should never
+        // depend on a prompt's default in the first place.
         Artisan::call('shield:generate', [
             '--all' => true,
             '--panel' => 'admin',
+            '--option' => 'policies_and_permissions',
+            '--no-interaction' => true,
         ]);
 
         // Custom permission backing the impersonate action (see User::canImpersonate()).
