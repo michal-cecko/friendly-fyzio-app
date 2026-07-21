@@ -11,7 +11,7 @@ use App\Models\ReservationDayWaitlistEntry;
 use App\Models\Room;
 use App\Models\Service;
 use App\Models\ServiceCategory;
-use App\Models\TherapistProfile;
+use App\Models\StaffProfile;
 use App\Models\TherapistWorkBlock;
 use App\Models\User;
 use App\Notifications\ReservationDayWaitlistNotification;
@@ -31,7 +31,7 @@ class DayWaitlistNotifyTest extends TestCase
 
     private Service $service;
 
-    private TherapistProfile $therapist;
+    private StaffProfile $therapist;
 
     protected function setUp(): void
     {
@@ -50,7 +50,7 @@ class DayWaitlistNotifyTest extends TestCase
             'visibility' => ServiceVisibility::Public,
             'published_at' => now(),
         ]);
-        $this->therapist = TherapistProfile::factory()->create(['published_at' => now()]);
+        $this->therapist = StaffProfile::factory()->create(['published_at' => now()]);
         $this->service->therapists()->attach($this->therapist);
     }
 
@@ -61,7 +61,7 @@ class DayWaitlistNotifyTest extends TestCase
         parent::tearDown();
     }
 
-    private function schedule(TherapistProfile $therapist, string $date, string $start = '08:00', string $end = '09:00'): void
+    private function schedule(StaffProfile $therapist, string $date, string $start = '08:00', string $end = '09:00'): void
     {
         TherapistWorkBlock::factory()->create([
             'therapist_id' => $therapist->id,
@@ -72,7 +72,7 @@ class DayWaitlistNotifyTest extends TestCase
         ]);
     }
 
-    private function book(TherapistProfile $therapist, string $date, string $start = '08:00', string $end = '09:00'): Reservation
+    private function book(StaffProfile $therapist, string $date, string $start = '08:00', string $end = '09:00'): Reservation
     {
         return Reservation::factory()->confirmed()->create([
             'service_id' => $this->service->id,
@@ -125,7 +125,7 @@ class DayWaitlistNotifyTest extends TestCase
         $this->schedule($this->therapist, $this->date);
         $reservation = $this->book($this->therapist, $this->date);
 
-        $otherTherapist = TherapistProfile::factory()->create();
+        $otherTherapist = StaffProfile::factory()->create();
         $outsider = $this->waiter($otherTherapist->id, $this->date);
 
         $reservation->update(['status' => ReservationStatus::Cancelled]);

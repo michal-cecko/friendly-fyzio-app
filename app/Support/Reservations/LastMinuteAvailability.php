@@ -2,7 +2,7 @@
 
 namespace App\Support\Reservations;
 
-use App\Models\TherapistProfile;
+use App\Models\StaffProfile;
 use App\Support\Avatar;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -48,11 +48,11 @@ class LastMinuteAvailability
         $today = Carbon::today();
         $days = [$today, $today->copy()->addDay()];
 
-        return TherapistProfile::query()
+        return StaffProfile::query()
             ->with(['user', 'services' => fn ($query) => $query->bookable()->orderBy('name')])
             ->whereHas('services', fn ($query) => $query->bookable())
             ->get()
-            ->map(fn (TherapistProfile $therapist): ?array => $this->forTherapist($therapist, $days))
+            ->map(fn (StaffProfile $therapist): ?array => $this->forTherapist($therapist, $days))
             ->filter()
             ->sortBy('sortKey')
             ->map(fn (array $opening): array => collect($opening)->except('sortKey')->all())
@@ -64,7 +64,7 @@ class LastMinuteAvailability
      * @param  array<int, Carbon>  $days
      * @return Opening|null null when the therapist has no free slot in the window
      */
-    private function forTherapist(TherapistProfile $therapist, array $days): ?array
+    private function forTherapist(StaffProfile $therapist, array $days): ?array
     {
         $byDay = [];
 
@@ -91,7 +91,7 @@ class LastMinuteAvailability
             return null;
         }
 
-        $name = $therapist->user?->name ?? '';
+        $name = $therapist->user?->full_name ?? '';
         $clickable = $therapist->isPublished() && filled($therapist->slug);
 
         return [

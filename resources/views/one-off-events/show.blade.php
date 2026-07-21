@@ -157,7 +157,7 @@
                 @endif
 
                 @if($event->instructor)
-                    @php($profile = $event->instructor->therapistProfile)
+                    @php($profile = $event->instructor->staffProfile)
                     <div class="flex flex-col items-center gap-4 rounded-2xl bg-surface-alt p-8 text-center">
                         @php($avatar = $profile?->photo ? Media::url($profile->photo, '200') : null)
                         <span class="h-20 w-20 overflow-hidden rounded-full bg-primary-light">

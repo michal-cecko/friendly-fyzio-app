@@ -7,7 +7,7 @@ use App\Models\EmailTemplate;
 use App\Models\InstagramPost;
 use App\Models\Page;
 use App\Models\ServiceCategory;
-use App\Models\TherapistProfile;
+use App\Models\StaffProfile;
 
 /**
  * Finds every place a media library item is referenced so it cannot be deleted
@@ -57,7 +57,7 @@ class MediaUsageScanner
             }
         }
 
-        foreach (TherapistProfile::query()->with('user')->get() as $profile) {
+        foreach (StaffProfile::query()->with('user')->get() as $profile) {
             if (self::matchesId($profile->photo, $itemId)) {
                 $usages[] = 'Profil terapeuta „'.($profile->user?->name ?? $profile->slug).'“';
             }

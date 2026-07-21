@@ -12,7 +12,7 @@ use App\Models\Building;
 use App\Models\Reservation;
 use App\Models\Room;
 use App\Models\Service;
-use App\Models\TherapistProfile;
+use App\Models\StaffProfile;
 use App\Models\User;
 use App\Notifications\ReservationNotification;
 use App\Notifications\ReservationTemplateNotification;
@@ -38,13 +38,13 @@ class ReservationResourceTest extends TestCase
     }
 
     /**
-     * @return array{client: User, service: Service, therapist: TherapistProfile, room: Room}
+     * @return array{client: User, service: Service, therapist: StaffProfile, room: Room}
      */
     protected function dependencies(): array
     {
         $building = Building::create(['name' => 'Budova', 'address' => 'Adresa']);
         $room = Room::create(['building_id' => $building->getKey(), 'name' => 'Sál']);
-        $therapist = TherapistProfile::create(['user_id' => User::factory()->therapist()->create()->getKey()]);
+        $therapist = StaffProfile::create(['user_id' => User::factory()->therapist()->create()->getKey()]);
 
         return [
             'client' => User::factory()->customer()->create(),
@@ -55,7 +55,7 @@ class ReservationResourceTest extends TestCase
     }
 
     /**
-     * @param  array{client: User, service: Service, therapist: TherapistProfile, room: Room}  $deps
+     * @param  array{client: User, service: Service, therapist: StaffProfile, room: Room}  $deps
      * @param  array<string, mixed>  $overrides
      */
     protected function makeReservation(array $deps, array $overrides = []): Reservation
@@ -75,7 +75,7 @@ class ReservationResourceTest extends TestCase
     }
 
     /**
-     * @param  array{client: User, service: Service, therapist: TherapistProfile, room: Room}  $deps
+     * @param  array{client: User, service: Service, therapist: StaffProfile, room: Room}  $deps
      * @return array<string, mixed>
      */
     protected function formData(array $deps, array $overrides = []): array

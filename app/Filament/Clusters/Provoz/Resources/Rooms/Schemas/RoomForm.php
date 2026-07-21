@@ -35,6 +35,10 @@ class RoomForm
                             ->label('Název')
                             ->required()
                             ->maxLength(255),
+                        TextInput::make('short_name')
+                            ->label('Zkratka')
+                            ->helperText('Krátké označení pro kalendář, např. AV')
+                            ->maxLength(16),
                         RecordTimestamps::entries(),
                     ]),
             ]);

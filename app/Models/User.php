@@ -13,6 +13,7 @@ use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -33,6 +34,8 @@ class User extends Authenticatable implements Emailable, FilamentUser, HasPasske
 
     protected $fillable = [
         'name',
+        'title_before',
+        'title_after',
         'email',
         'phone',
         'password',
@@ -59,6 +62,19 @@ class User extends Authenticatable implements Emailable, FilamentUser, HasPasske
         ];
     }
 
+    /**
+     * Display name including academic titles: "Bc. Petra Novotná, DiS.".
+     * `name` itself stays clean so first-name extraction (greetings) works.
+     */
+    protected function fullName(): Attribute
+    {
+        return Attribute::get(function (): string {
+            $name = trim(($this->title_before ? $this->title_before.' ' : '').(string) $this->name);
+
+            return $this->title_after ? "{$name}, {$this->title_after}" : $name;
+        });
+    }
+
     public function emailRecipientAddress(): ?string
     {
         return $this->email;
@@ -66,7 +82,7 @@ class User extends Authenticatable implements Emailable, FilamentUser, HasPasske
 
     public function emailRecipientName(): ?string
     {
-        return $this->name;
+        return $this->full_name;
     }
 
     /**
@@ -113,8 +129,8 @@ class User extends Authenticatable implements Emailable, FilamentUser, HasPasske
         // profile automatically (unpublished): the calendar, working hours, and
         // booking flows all key off the profile's existence.
         static::saved(function (self $user): void {
-            if ($user->role === UserRole::Admin && $user->acts_as_therapist && $user->therapistProfile()->doesntExist()) {
-                $user->therapistProfile()->create([]);
+            if ($user->role === UserRole::Admin && $user->acts_as_therapist && $user->staffProfile()->doesntExist()) {
+                $user->staffProfile()->create([]);
             }
         });
     }
@@ -172,7 +188,8 @@ class User extends Authenticatable implements Emailable, FilamentUser, HasPasske
 
     /**
      * Whether the account has been fully deactivated (e.g. a late-cancel refusal to
-     * pay the storno fee). Deactivated customers can neither sign in nor book online.
+     * pay the storno fee, or a staff member who has left). Deactivated customers can
+     * neither sign in nor book online, and deactivated staff lose panel access.
      */
     public function isDeactivated(): bool
     {
@@ -186,7 +203,7 @@ class User extends Authenticatable implements Emailable, FilamentUser, HasPasske
      */
     public function canAccessPanel(Panel $panel): bool
     {
-        return $panel->getId() === 'admin' && $this->isStaff();
+        return $panel->getId() === 'admin' && $this->isStaff() && ! $this->isDeactivated();
     }
 
     /**
@@ -203,9 +220,9 @@ class User extends Authenticatable implements Emailable, FilamentUser, HasPasske
         return $this->hasOne(ClientProfile::class);
     }
 
-    public function therapistProfile(): HasOne
+    public function staffProfile(): HasOne
     {
-        return $this->hasOne(TherapistProfile::class);
+        return $this->hasOne(StaffProfile::class);
     }
 
     public function reservations(): HasMany
@@ -236,7 +253,7 @@ class User extends Authenticatable implements Emailable, FilamentUser, HasPasske
      */
     public function therapistReservations(): HasManyThrough
     {
-        return $this->hasManyThrough(Reservation::class, TherapistProfile::class, 'user_id', 'therapist_id');
+        return $this->hasManyThrough(Reservation::class, StaffProfile::class, 'user_id', 'therapist_id');
     }
 
     /**

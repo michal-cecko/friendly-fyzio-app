@@ -45,15 +45,35 @@ class ReservationTemplateNotification extends Notification
 
         if ($template === null) {
             // The template row should always be seeded; fall back to a plain line rather than fail.
-            return (new MailMessage)
-                ->subject($this->key->defaultSubject())
-                ->line($this->key->label());
+            return $this->withTherapistReplyTo(
+                (new MailMessage)
+                    ->subject($this->key->defaultSubject())
+                    ->line($this->key->label())
+            );
         }
 
         $html = EmailTemplateRenderer::render($template, ReservationEmailContext::for($this->reservation, $this->extraTokens));
 
-        return (new MailMessage)
-            ->subject($template->subject)
-            ->view('emails.rendered', ['html' => $html]);
+        return $this->withTherapistReplyTo(
+            (new MailMessage)
+                ->subject($template->subject)
+                ->view('emails.rendered', ['html' => $html])
+        );
+    }
+
+    /**
+     * Route client replies to the reservation's assigned therapist. When the reservation
+     * has no therapist (or the therapist has no e-mail), no Reply-To is set and replies
+     * fall back to the default From address.
+     */
+    private function withTherapistReplyTo(MailMessage $mail): MailMessage
+    {
+        $therapist = $this->reservation->therapist?->user;
+
+        if ($therapist?->email !== null) {
+            $mail->replyTo($therapist->email, $therapist->name);
+        }
+
+        return $mail;
     }
 }

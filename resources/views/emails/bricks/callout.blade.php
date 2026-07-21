@@ -19,7 +19,7 @@
                             {!! \App\Support\Icon::render($config['icon'], '', ['style' => "width:16px;height:16px;display:block;color:{$iconColor};"]) !!}
                         </td>
                     @endif
-                    <td valign="top" style="font-family:'Open Sans',Arial,sans-serif;font-size:13px;font-weight:600;line-height:1.5;color:{{ $textColor }};">
+                    <td valign="top" class="e-small" style="font-family:'Open Sans',Arial,sans-serif;font-size:13px;font-weight:600;line-height:1.5;color:{{ $textColor }};">
                         {!! \App\Support\RichText::inline($config['text'] ?? '') !!}
                     </td>
                 </tr>

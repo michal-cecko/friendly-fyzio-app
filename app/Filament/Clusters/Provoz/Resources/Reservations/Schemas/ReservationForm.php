@@ -4,16 +4,21 @@ namespace App\Filament\Clusters\Provoz\Resources\Reservations\Schemas;
 
 use App\Filament\Clusters\Provoz\Resources\Clients\ClientResource;
 use App\Filament\Clusters\Provoz\Resources\Services\ServiceResource;
-use App\Filament\Clusters\Provoz\Resources\TherapistProfiles\TherapistProfileResource;
+use App\Filament\Clusters\Provoz\Resources\StaffProfiles\StaffProfileResource;
 use App\Filament\Support\Schemas\PresenceBanner;
 use App\Filament\Support\Schemas\RecordTimestamps;
 use App\Filament\Support\Schemas\ResponsiveColumns;
-use App\Models\TherapistProfile;
+use App\Models\StaffProfile;
+use App\Models\User;
+use App\Support\Clients\PlaceholderEmail;
+use App\Support\Clients\ResolveCustomerAccount;
 use App\Support\Mentions\StaffMentions;
 use Filament\Actions\Action;
+use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\TimePicker;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Component;
@@ -21,6 +26,7 @@ use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
+use Filament\Support\Enums\Width;
 use Filament\Support\Icons\Heroicon;
 
 class ReservationForm
@@ -79,7 +85,7 @@ class ReservationForm
                         'openTherapist',
                         'Terapeut',
                         'therapist_id',
-                        fn (string $id): string => TherapistProfileResource::getUrl('edit', ['record' => $id]),
+                        fn (string $id): string => StaffProfileResource::getUrl('edit', ['record' => $id]),
                     ),
                 ] : [])
                 ->schema([
@@ -111,7 +117,14 @@ class ReservationForm
                             ->disabled(fn (string $operation): bool => $operation === 'edit')
                             ->helperText(fn (string $operation): ?string => $operation === 'edit'
                                 ? 'Klienta nelze u existující rezervace změnit — vážou se na něj platby, doklady a e-mailová komunikace. Potřebujete-li rezervaci převést, zrušte ji a založte novou.'
-                                : null),
+                                : null)
+                            ->createOptionForm(self::newClientForm())
+                            ->createOptionUsing(fn (array $data): string => self::createClient($data))
+                            ->createOptionModalHeading('Nový klient')
+                            ->createOptionAction(fn (Action $action): Action => $action
+                                ->label('Nový klient')
+                                ->modalSubmitActionLabel('Vytvořit klienta')
+                                ->modalWidth(Width::Large)),
                         Select::make('service_id')
                             ->label('Služba')
                             ->relationship('service', 'name')
@@ -122,7 +135,7 @@ class ReservationForm
                         Select::make('therapist_id')
                             ->label('Terapeut')
                             ->relationship('therapist')
-                            ->getOptionLabelFromRecordUsing(fn (TherapistProfile $record): ?string => $record->user?->name)
+                            ->getOptionLabelFromRecordUsing(fn (StaffProfile $record): ?string => $record->user?->name)
                             ->searchable()
                             ->preload()
                             ->required()
@@ -182,5 +195,68 @@ class ReservationForm
             ->link()
             ->visible(fn (Get $get): bool => filled($get($field)))
             ->url(fn (Get $get): ?string => filled($get($field)) ? $url($get($field)) : null, shouldOpenInNewTab: true);
+    }
+
+    /**
+     * The inline "Nový klient" form opened from the client select's "+" button.
+     * E-mail is required unless "Klient nemá email" is checked (a placeholder
+     * address is generated instead); phone becomes required without an e-mail.
+     *
+     * @return array<int, Component>
+     */
+    private static function newClientForm(): array
+    {
+        return [
+            Grid::make(2)->schema([
+                TextInput::make('first_name')
+                    ->label('Jméno')
+                    ->required()
+                    ->maxLength(255),
+                TextInput::make('last_name')
+                    ->label('Příjmení')
+                    ->required()
+                    ->maxLength(255),
+            ]),
+            Checkbox::make('no_email')
+                ->label('Klient nemá email')
+                ->helperText('Vygeneruje se zástupná adresa @'.PlaceholderEmail::DOMAIN.'.')
+                ->live(),
+            TextInput::make('email')
+                ->label('E-mail')
+                ->email()
+                ->maxLength(255)
+                ->live(onBlur: true)
+                ->hidden(fn (Get $get): bool => (bool) $get('no_email'))
+                ->dehydrated(fn (Get $get): bool => ! $get('no_email'))
+                ->required(fn (Get $get): bool => ! $get('no_email'))
+                ->unique(User::class, 'email'),
+            TextInput::make('phone')
+                ->label('Telefon')
+                ->tel()
+                ->maxLength(255)
+                ->required(fn (Get $get): bool => (bool) $get('no_email') || blank($get('email'))),
+        ];
+    }
+
+    /**
+     * @param  array{first_name: string, last_name: string, no_email?: bool, email?: string, phone?: ?string}  $data
+     */
+    private static function createClient(array $data): string
+    {
+        $email = ($data['no_email'] ?? false)
+            ? app(PlaceholderEmail::class)->generate($data['first_name'], $data['last_name'])
+            : $data['email'];
+
+        // Canonical customer creation (role, random password, client profile). The
+        // unique rule in the form makes the "existing e-mail" branch unreachable
+        // except under a race, where returning the existing account is correct.
+        [$user] = ResolveCustomerAccount::resolve(
+            authenticated: null,
+            name: trim($data['first_name'].' '.$data['last_name']),
+            email: $email,
+            phone: $data['phone'] ?? null,
+        );
+
+        return (string) $user->getKey();
     }
 }

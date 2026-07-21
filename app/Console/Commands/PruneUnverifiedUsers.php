@@ -27,7 +27,9 @@ class PruneUnverifiedUsers extends Command
     /**
      * Relationships whose presence marks a real customer we must never delete.
      * (clientProfile is intentionally excluded — it is auto-created for every
-     * customer and so is not a signal of real activity.)
+     * customer and so is not a signal of real activity. Tags count as activity:
+     * only staff or an import assign them, so a tagged account is curated —
+     * ergobody:import relies on this to protect imported clients.)
      *
      * @var list<string>
      */
@@ -39,6 +41,7 @@ class PruneUnverifiedUsers extends Command
         'waitlistEntries',
         'clientNotes',
         'substituteTokens',
+        'tags',
     ];
 
     public function handle(): int

@@ -19,7 +19,9 @@ class UserInfolist
                 Section::make('Účet')
                     ->columns(2)
                     ->schema([
-                        TextEntry::make('name')->label('Jméno'),
+                        TextEntry::make('name')
+                            ->label('Jméno')
+                            ->state(fn (User $record): string => $record->full_name),
                         TextEntry::make('email')
                             ->label('E-mail')
                             ->copyable()
@@ -33,18 +35,18 @@ class UserInfolist
                     ->columns(2)
                     ->visible(fn (User $record): bool => $record->isTherapist())
                     ->schema([
-                        IconEntry::make('therapistProfile.is_collaborator')
+                        IconEntry::make('staffProfile.is_collaborator')
                             ->label('Spolupracovník')
                             ->boolean(),
-                        TextEntry::make('therapistProfile.published_at')
+                        TextEntry::make('staffProfile.published_at')
                             ->label('Publikován')
                             ->dateTime('d.m.Y H:i')
                             ->placeholder('—'),
-                        TextEntry::make('therapistProfile.specializations.name')
+                        TextEntry::make('staffProfile.specializations.name')
                             ->label('Specializace')
                             ->badge()
                             ->placeholder('—'),
-                        TextEntry::make('therapistProfile.bio')
+                        TextEntry::make('staffProfile.bio')
                             ->label('Bio')
                             ->prose()
                             ->placeholder('—')

@@ -6,7 +6,7 @@ use App\Enums\EmailTemplateKey;
 use App\Enums\ReservationStatus;
 use App\Models\Reservation;
 use App\Models\Service;
-use App\Models\TherapistProfile;
+use App\Models\StaffProfile;
 use App\Models\User;
 use App\Notifications\ReservationNotification;
 use App\Notifications\TherapistReservationTemplateNotification;
@@ -36,7 +36,7 @@ class TherapistReservationTemplatesTest extends TestCase
 
     private function reservationWithTherapist(array $attributes = []): Reservation
     {
-        $therapist = TherapistProfile::factory()->create();
+        $therapist = StaffProfile::factory()->create();
         $therapist->user->update(['name' => 'Petra Nováková']);
 
         $client = User::factory()->customer()->create([

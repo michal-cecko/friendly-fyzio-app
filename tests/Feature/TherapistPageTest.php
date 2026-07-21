@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\TherapistProfile;
+use App\Models\StaffProfile;
 use App\Models\TherapistSpecialization;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -15,11 +15,11 @@ class TherapistPageTest extends TestCase
     /**
      * @param  array<string, mixed>  $profile
      */
-    private function makeTherapist(array $profile = []): TherapistProfile
+    private function makeTherapist(array $profile = []): StaffProfile
     {
         $user = User::factory()->therapist()->create(['name' => 'Mgr. Lucie Fičkerová']);
 
-        return TherapistProfile::factory()->for($user)->create(array_merge([
+        return StaffProfile::factory()->for($user)->create(array_merge([
             'slug' => 'lucie-fickerova',
             'title' => 'Fyzioterapeutka, zakladatelka',
             'bio' => '<p>Medailonek terapeutky.</p>',
@@ -74,7 +74,7 @@ class TherapistPageTest extends TestCase
     public function test_slug_is_generated_from_name_when_blank(): void
     {
         $user = User::factory()->therapist()->create(['name' => 'Bc. Petra Nováková']);
-        $therapist = TherapistProfile::factory()->for($user)->create(['slug' => null]);
+        $therapist = StaffProfile::factory()->for($user)->create(['slug' => null]);
 
         $this->assertNotNull($therapist->slug);
         $this->assertStringContainsString('petra-novakova', $therapist->slug);

@@ -4,6 +4,7 @@ namespace App\Filament\Clusters\System\Resources\Users\Tables;
 
 use App\Enums\UserRole;
 use App\Filament\Support\Tables\TimestampColumns;
+use App\Models\User;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -27,6 +28,7 @@ class UsersTable
             ->columns([
                 TextColumn::make('name')
                     ->label('Jméno')
+                    ->state(fn (User $record): string => $record->full_name)
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('email')

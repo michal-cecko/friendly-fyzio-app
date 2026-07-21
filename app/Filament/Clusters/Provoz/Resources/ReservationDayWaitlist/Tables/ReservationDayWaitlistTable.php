@@ -8,13 +8,16 @@ use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
+use Filament\Forms\Components\DatePicker;
 use Filament\Notifications\Notification;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 
 class ReservationDayWaitlistTable
 {
@@ -60,6 +63,15 @@ class ReservationDayWaitlistTable
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                Filter::make('reservation_date')
+                    ->schema([
+                        DatePicker::make('value')->label('Datum'),
+                    ])
+                    ->query(fn (Builder $query, array $data): Builder => $query
+                        ->when($data['value'] ?? null, fn (Builder $q, string $date): Builder => $q->whereDate('reservation_date', $date)))
+                    ->indicateUsing(fn (array $data): array => ($data['value'] ?? null)
+                        ? ['Datum: '.Carbon::parse($data['value'])->format('d.m.Y')]
+                        : []),
                 TernaryFilter::make('notified_at')
                     ->label('Upozorněn')
                     ->nullable()

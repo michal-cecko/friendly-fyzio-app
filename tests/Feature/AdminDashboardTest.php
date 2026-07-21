@@ -13,6 +13,7 @@ use App\Models\Room;
 use App\Models\User;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Once;
 use Livewire\Livewire;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
@@ -138,13 +139,16 @@ class AdminDashboardTest extends TestCase
 
     public function test_problems_page_nav_badge_reflects_conflict_count(): void
     {
-        $this->assertNull(Problems::getNavigationBadge());
+        $this->actingAs(User::factory()->admin()->create());
+        $this->assertFalse(Problems::shouldRegisterNavigation());
 
         $room = Room::factory()->create();
         Reservation::factory()->create(['reservation_date' => today()->addDay(), 'room_id' => $room->id, 'status' => ReservationStatus::Confirmed, 'start_time' => '09:00', 'end_time' => '10:00']);
         Reservation::factory()->create(['reservation_date' => today()->addDay(), 'room_id' => $room->id, 'status' => ReservationStatus::Confirmed, 'start_time' => '09:30', 'end_time' => '10:30']);
+        Once::flush();
 
         // Same room, two (different, factory-random) therapists → one room conflict.
+        $this->assertTrue(Problems::shouldRegisterNavigation());
         $this->assertSame('1', Problems::getNavigationBadge());
     }
 

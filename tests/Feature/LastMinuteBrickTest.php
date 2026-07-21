@@ -7,7 +7,7 @@ use App\Mason\Bricks\LastMinuteBrick;
 use App\Models\Room;
 use App\Models\Service;
 use App\Models\ServiceCategory;
-use App\Models\TherapistProfile;
+use App\Models\StaffProfile;
 use App\Models\TherapistWorkBlock;
 use App\Models\User;
 use App\Support\Avatar;
@@ -48,7 +48,7 @@ class LastMinuteBrickTest extends TestCase
         parent::tearDown();
     }
 
-    private function scheduleTomorrow(TherapistProfile $therapist): void
+    private function scheduleTomorrow(StaffProfile $therapist): void
     {
         TherapistWorkBlock::factory()->create([
             'therapist_id' => $therapist->id,
@@ -66,7 +66,7 @@ class LastMinuteBrickTest extends TestCase
 
     public function test_lists_therapists_with_real_near_term_openings(): void
     {
-        $therapist = TherapistProfile::factory()->published()->create();
+        $therapist = StaffProfile::factory()->published()->create();
         $this->service->therapists()->attach($therapist);
         $this->scheduleTomorrow($therapist);
 
@@ -86,7 +86,7 @@ class LastMinuteBrickTest extends TestCase
     {
         // Bookable regardless of publish state (last-minute mirrors the wizard), but
         // an unpublished profile has no public page to link to.
-        $therapist = TherapistProfile::factory()->unpublished()->create();
+        $therapist = StaffProfile::factory()->unpublished()->create();
         $this->service->therapists()->attach($therapist);
         $this->scheduleTomorrow($therapist);
 
@@ -98,7 +98,7 @@ class LastMinuteBrickTest extends TestCase
 
     public function test_therapist_without_near_term_availability_is_excluded(): void
     {
-        $therapist = TherapistProfile::factory()->published()->create();
+        $therapist = StaffProfile::factory()->published()->create();
         $this->service->therapists()->attach($therapist);
         // No work block at all -> nothing to offer.
 
@@ -114,7 +114,7 @@ class LastMinuteBrickTest extends TestCase
     public function test_renders_initials_fallback_and_links_slots_to_the_wizard(): void
     {
         $user = User::factory()->therapist()->create(['name' => 'Xandra Ypsilonová']);
-        $therapist = TherapistProfile::factory()->published()->create(['user_id' => $user->id, 'photo' => null]);
+        $therapist = StaffProfile::factory()->published()->create(['user_id' => $user->id, 'photo' => null]);
         $this->service->therapists()->attach($therapist);
         $this->scheduleTomorrow($therapist);
 

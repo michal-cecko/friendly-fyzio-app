@@ -46,6 +46,26 @@ class ZoneProfileTest extends TestCase
         $this->assertNotNull($customer->email_verified_at);
     }
 
+    public function test_academic_titles_save_and_render_in_full_name(): void
+    {
+        $customer = $this->customer();
+
+        Livewire::actingAs($customer)
+            ->test(Profile::class)
+            ->set('name', 'Petra Novotná')
+            ->set('title_before', 'Bc.')
+            ->set('title_after', 'DiS.')
+            ->call('saveDetails')
+            ->assertHasNoErrors();
+
+        $customer->refresh();
+
+        $this->assertSame('Petra Novotná', $customer->name);
+        $this->assertSame('Bc.', $customer->title_before);
+        $this->assertSame('DiS.', $customer->title_after);
+        $this->assertSame('Bc. Petra Novotná, DiS.', $customer->full_name);
+    }
+
     public function test_changing_the_email_requires_re_verification(): void
     {
         Notification::fake();

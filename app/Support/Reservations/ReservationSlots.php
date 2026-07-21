@@ -254,7 +254,7 @@ class ReservationSlots
         // has work blocks in the window.
         return $service->therapists()
             ->when($therapistId, fn ($query) => $query->whereKey($therapistId))
-            ->pluck('therapist_profiles.id')
+            ->pluck('staff_profiles.id')
             ->all();
     }
 

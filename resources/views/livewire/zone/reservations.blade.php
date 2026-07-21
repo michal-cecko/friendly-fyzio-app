@@ -42,7 +42,7 @@
                         <p class="truncate font-heading text-sm font-semibold text-neutral-900">{{ $reservation->service?->name ?? 'Rezervace' }}</p>
                         <p class="mt-0.5 text-xs text-neutral-600">
                             {{ $reservation->startsAt()->translatedFormat('j. n. Y · H:i') }}
-                            @if($reservation->therapist?->user?->name) · {{ $reservation->therapist->user->name }} @endif
+                            @if($reservation->therapist?->user?->full_name) · {{ $reservation->therapist->user->full_name }} @endif
                         </p>
                     </div>
 

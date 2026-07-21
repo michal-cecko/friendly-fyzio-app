@@ -2,7 +2,7 @@
 
 namespace App\Support;
 
-use App\Models\TherapistProfile;
+use App\Models\StaffProfile;
 use App\Models\TherapistWorkBlock;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
@@ -51,7 +51,7 @@ class CalendarAvailability
             return array_values($therapistIds);
         }
 
-        return TherapistProfile::query()->pluck('id')->all();
+        return StaffProfile::query()->pluck('id')->all();
     }
 
     protected function minutesBetween(?string $start, ?string $end): int

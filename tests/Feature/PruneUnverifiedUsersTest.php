@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Console\Commands\ErgobodyImport;
 use App\Models\Reservation;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -49,5 +50,21 @@ class PruneUnverifiedUsersTest extends TestCase
         $this->assertDatabaseHas('users', ['id' => $recent->getKey()]);
         $this->assertDatabaseHas('users', ['id' => $verified->getKey()]);
         $this->assertDatabaseHas('users', ['id' => $therapist->getKey()]);
+    }
+
+    public function test_keeps_unverified_customer_that_has_a_tag(): void
+    {
+        $imported = User::factory()->customer()->unverified()->create([
+            'created_at' => now()->subYears(2),
+        ]);
+
+        $imported->attachTag(ErgobodyImport::IMPORT_TAG);
+
+        $this->artisan('users:prune-unverified')->assertSuccessful();
+
+        $this->assertDatabaseHas('users', [
+            'id' => $imported->getKey(),
+            'deleted_at' => null,
+        ]);
     }
 }

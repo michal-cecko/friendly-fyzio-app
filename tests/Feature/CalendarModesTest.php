@@ -11,7 +11,7 @@ use App\Models\Reservation;
 use App\Models\Room;
 use App\Models\RoomBlocking;
 use App\Models\Service;
-use App\Models\TherapistProfile;
+use App\Models\StaffProfile;
 use App\Models\TherapistWorkBlock;
 use App\Models\TherapistWorkBlockSeries;
 use App\Models\User;
@@ -44,12 +44,12 @@ class CalendarModesTest extends TestCase
         return Room::create(['building_id' => $building->getKey(), 'name' => $name]);
     }
 
-    protected function makeTherapist(): TherapistProfile
+    protected function makeTherapist(): StaffProfile
     {
-        return TherapistProfile::create(['user_id' => User::factory()->therapist()->create()->getKey()]);
+        return StaffProfile::create(['user_id' => User::factory()->therapist()->create()->getKey()]);
     }
 
-    protected function makeWorkBlock(TherapistProfile $therapist, Room $room, array $attributes = []): TherapistWorkBlock
+    protected function makeWorkBlock(StaffProfile $therapist, Room $room, array $attributes = []): TherapistWorkBlock
     {
         return TherapistWorkBlock::factory()->for($therapist, 'therapist')->create([
             'room_id' => $room->getKey(),

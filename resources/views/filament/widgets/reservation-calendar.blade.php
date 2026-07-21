@@ -1,5 +1,6 @@
 @php
     use App\Filament\Clusters\Provoz\Resources\Reservations\ReservationResource;
+    use App\Support\Settings;
 
     $plugin = \Saade\FilamentFullCalendar\FilamentFullCalendarPlugin::get();
     $hasSelection = filled($therapistIds);
@@ -8,10 +9,13 @@
 
 <x-filament-widgets::widget>
     <div
-        class="ff-cal"
+        @class(['ff-cal', 'ff-cal-selecting' => $selectionMode])
         x-data="{
             title: '',
             cal: null,
+            wrapObserver: null,
+            wlBadges: {},
+            wlObserver: null,
             bind() {
                 const el = this.$root.querySelector('.filament-fullcalendar');
                 const data = (el && window.Alpine) ? window.Alpine.$data(el) : null;
@@ -24,7 +28,60 @@
                 };
                 this.cal.on('datesSet', sync);
                 sync();
+                this.watchWrapWidth();
+                this.cal.on('datesSet', () => this.renderWaitlistBadges());
+                this.watchWaitlistData();
                 return true;
+            },
+            watchWaitlistData() {
+                const el = this.$refs.wlData;
+                if (! el || this.wlObserver) return;
+                const read = () => {
+                    try { this.wlBadges = JSON.parse(el.dataset.badges || '{}') || {}; }
+                    catch (e) { this.wlBadges = {}; }
+                    this.renderWaitlistBadges();
+                };
+                this.wlObserver = new MutationObserver(read);
+                this.wlObserver.observe(el, { attributes: true, attributeFilter: ['data-badges'] });
+                read();
+            },
+            renderWaitlistBadges() {
+                if (! this.cal) return;
+                this.$root.querySelectorAll('.ff-wl-badge').forEach((el) => {
+                    window.Alpine?.destroyTree(el);
+                    el._tippy?.destroy();
+                    el.remove();
+                });
+                this.$root.querySelectorAll('.fc-col-header-cell[data-date]').forEach((cell) => {
+                    const info = this.wlBadges[cell.getAttribute('data-date')];
+                    if (! info) return;
+                    const a = document.createElement('a');
+                    a.className = 'ff-wl-badge';
+                    a.href = info.url;
+                    a.setAttribute('x-tooltip', '{ content: ' + JSON.stringify(info.tooltip) + ', theme: $store.theme }');
+                    a.innerHTML = '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><path d=\'M6 2h12M6 22h12M8 2v4l4 4 4-4V2M8 22v-4l4-4 4 4v4\'></path></svg>';
+                    const b = document.createElement('b');
+                    b.textContent = info.count;
+                    a.appendChild(b);
+                    (cell.querySelector('.fc-scrollgrid-sync-inner') || cell).appendChild(a);
+                    window.Alpine?.initTree(a);
+                });
+            },
+            watchWrapWidth() {
+                const wrap = this.$root.querySelector('.ff-cal-wrap');
+                if (!wrap || this.wrapObserver) return;
+                let lastWidth = -1;
+                this.wrapObserver = new ResizeObserver(() => {
+                    const width = wrap.clientWidth;
+                    if (width === lastWidth) return;
+                    lastWidth = width;
+                    requestAnimationFrame(() => this.cal && this.cal.updateSize());
+                });
+                this.wrapObserver.observe(wrap);
+            },
+            destroy() {
+                this.wrapObserver?.disconnect();
+                this.wlObserver?.disconnect();
             },
             init() {
                 let tries = 0;
@@ -150,6 +207,28 @@
                         <span class="ff-leg"><span class="ff-leg-sw" style="background:#EEF2FF;border-color:#6366F1"></span>Blokace</span>
                     @else
                         <span class="ff-leg"><span class="ff-leg-sw" style="background:#EEF2FF;border-color:#6366F1"></span>Blokace</span>
+                        <label class="ff-leg ff-leg-toggle" title="Zobrazit či skrýt terapie v kalendáři">
+                            <input type="checkbox" wire:model.live="showReservations">
+                            <span class="ff-leg-sw" style="background:#FFF1F4;border-color:#ED86A3"></span>
+                            <span>Terapie</span>
+                        </label>
+                        <label class="ff-leg ff-leg-toggle" title="Zobrazit či skrýt lekce kurzů v kalendáři">
+                            <input type="checkbox" wire:model.live="showCourses">
+                            <span class="ff-leg-sw" style="background:#ECFEFF;border-color:#0891B2"></span>
+                            <span>Kurzy</span>
+                        </label>
+                        <label class="ff-leg ff-leg-toggle" title="Zobrazit či skrýt jednorázové akce v kalendáři">
+                            <input type="checkbox" wire:model.live="showOneOffEvents">
+                            <span class="ff-leg-sw" style="background:#FDF4FF;border-color:#C026D3"></span>
+                            <span>Akce</span>
+                        </label>
+                        @if (! $this->room && Settings::dayWaitlistEnabled())
+                            <label class="ff-leg ff-leg-toggle" title="Zobrazit či skrýt pořadník na dny">
+                                <input type="checkbox" wire:model.live="showWaitlist">
+                                <span class="ff-leg-sw" style="background:#FFFBEB;border-color:#D97706"></span>
+                                <span>Pořadník</span>
+                            </label>
+                        @endif
                         <span class="ff-count">{{ $this->weekCountLabel() }}</span>
                     @endif
                 </span>
@@ -181,6 +260,7 @@
                 <div class="ff-filter-row ff-filament-filters" x-show="$wire.showFilters" x-cloak>
                     {{ $this->filtersForm }}
                 </div>
+
             @endunless
         </div>
 
@@ -252,7 +332,8 @@
                 </aside>
             @endif
 
-            <div class="ff-cal-wrap" x-effect="if (cal) $nextTick(() => cal.updateSize())">
+            <div class="ff-cal-wrap">
+                <div x-ref="wlData" data-badges="{{ json_encode($this->waitlistHeaderBadges()) }}" hidden></div>
                 <div
                     wire:ignore
                     x-load
@@ -280,7 +361,7 @@
     <x-filament-actions::modals />
 
     <style>
-        .ff-cal { --ff-border: #E5E5E5; --ff-text: #171717; --ff-muted: #737373; --ff-faint: #A3A3A3; --ff-brand: #ED86A3; }
+        .ff-cal { --ff-border: #E5E5E5; --ff-text: #171717; --ff-muted: #737373; --ff-faint: #A3A3A3; --ff-brand: #ED86A3; --ff-panel: #fff; --ff-hover: #FAFAFA; }
 
         .ff-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
         .ff-toolbar-left { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
@@ -288,31 +369,31 @@
         .ff-sep { width: 1px; height: 24px; background: var(--ff-border); }
 
         /* Mode toggle (Rezervace / Šablona týdne) */
-        .ff-mode { display: inline-flex; align-items: center; gap: 2px; background: #fff; border: 1px solid var(--ff-border); border-radius: 10px; padding: 3px; }
+        .ff-mode { display: inline-flex; align-items: center; gap: 2px; background: var(--ff-panel); border: 1px solid var(--ff-border); border-radius: 10px; padding: 3px; }
         .ff-mode button { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: var(--ff-muted); background: transparent; border: none; border-radius: 7px; padding: 6px 12px; cursor: pointer; }
         .ff-mode button svg { width: 14px; height: 14px; }
         .ff-mode button:hover { color: var(--ff-text); }
         .ff-mode .ff-mode-active { background: var(--ff-brand); color: #fff; font-weight: 600; }
 
         /* Template selects */
-        .ff-tsel { display: inline-flex; align-items: center; gap: 8px; background: #fff; border: 1px solid var(--ff-border); border-radius: 8px; padding: 5px 10px; font-size: 12px; color: var(--ff-muted); }
+        .ff-tsel { display: inline-flex; align-items: center; gap: 8px; background: var(--ff-panel); border: 1px solid var(--ff-border); border-radius: 8px; padding: 5px 10px; font-size: 12px; color: var(--ff-muted); }
         .ff-tsel select { border: none; background: transparent; outline: none; font-size: 13px; font-weight: 600; color: var(--ff-text); cursor: pointer; }
 
-        .ff-btn-today { font-size: 14px; font-weight: 500; color: var(--ff-text); background: #fff; border: 1px solid var(--ff-border); border-radius: 10px; padding: 8px 18px; cursor: pointer; }
-        .ff-btn-today:hover { background: #FAFAFA; }
+        .ff-btn-today { font-size: 14px; font-weight: 500; color: var(--ff-text); background: var(--ff-panel); border: 1px solid var(--ff-border); border-radius: 10px; padding: 8px 18px; cursor: pointer; }
+        .ff-btn-today:hover { background: var(--ff-hover); }
         .ff-nav { display: flex; align-items: center; gap: 4px; }
-        .ff-nav-btn { width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; color: var(--ff-muted); background: #fff; border: 1px solid var(--ff-border); border-radius: 10px; cursor: pointer; }
-        .ff-nav-btn:hover { background: #FAFAFA; color: var(--ff-text); }
+        .ff-nav-btn { width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; color: var(--ff-muted); background: var(--ff-panel); border: 1px solid var(--ff-border); border-radius: 10px; cursor: pointer; }
+        .ff-nav-btn:hover { background: var(--ff-hover); color: var(--ff-text); }
         .ff-nav-btn svg { width: 18px; height: 18px; }
         .ff-title { font-size: 22px; font-weight: 700; color: var(--ff-text); margin: 0; line-height: 1.2; }
 
         .ff-header-actions { display: inline-flex; }
-        .ff-seznam { display: inline-flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 500; color: var(--ff-text); background: #fff; border: 1px solid var(--ff-border); border-radius: 10px; padding: 8px 14px; cursor: pointer; text-decoration: none; }
-        .ff-seznam:hover { background: #FAFAFA; }
+        .ff-seznam { display: inline-flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 500; color: var(--ff-text); background: var(--ff-panel); border: 1px solid var(--ff-border); border-radius: 10px; padding: 8px 14px; cursor: pointer; text-decoration: none; }
+        .ff-seznam:hover { background: var(--ff-hover); }
         .ff-seznam svg { width: 16px; height: 16px; color: var(--ff-muted); }
 
-        .ff-select-toggle { display: inline-flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 500; color: var(--ff-text); background: #fff; border: 1px solid var(--ff-border); border-radius: 10px; padding: 8px 14px; cursor: pointer; }
-        .ff-select-toggle:hover { background: #FAFAFA; }
+        .ff-select-toggle { display: inline-flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 500; color: var(--ff-text); background: var(--ff-panel); border: 1px solid var(--ff-border); border-radius: 10px; padding: 8px 14px; cursor: pointer; }
+        .ff-select-toggle:hover { background: var(--ff-hover); }
         .ff-select-toggle svg { width: 16px; height: 16px; }
         .ff-select-toggle-active { background: var(--ff-brand); border-color: var(--ff-brand); color: #fff; }
 
@@ -323,11 +404,11 @@
         .ff-selectbar-clear:hover:not(:disabled) { color: var(--ff-text); }
         .ff-selectbar-clear:disabled { opacity: .5; cursor: default; }
 
-        .ff-filterbar { display: flex; flex-direction: column; gap: 12px; background: #fff; border: 1px solid var(--ff-border); border-radius: 12px; padding: 12px 14px; margin-bottom: 16px; }
+        .ff-filterbar { display: flex; flex-direction: column; gap: 12px; background: var(--ff-panel); border: 1px solid var(--ff-border); border-radius: 12px; padding: 12px 14px; margin-bottom: 16px; }
         .ff-filter-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
         .ff-filter-controls { gap: 10px; border-top: 1px solid var(--ff-border); padding-top: 12px; align-items: center; }
         .ff-filter-label { font-size: 14px; color: var(--ff-muted); }
-        .ff-chip { display: inline-flex; align-items: center; gap: 8px; border: 1.5px solid transparent; border-radius: 999px; padding: 4px 12px 4px 4px; background: #fff; cursor: pointer; font-size: 14px; font-weight: 500; color: var(--ff-text); transition: opacity .15s; }
+        .ff-chip { display: inline-flex; align-items: center; gap: 8px; border: 1.5px solid transparent; border-radius: 999px; padding: 4px 12px 4px 4px; background: var(--ff-panel); cursor: pointer; font-size: 14px; font-weight: 500; color: var(--ff-text); transition: opacity .15s; }
         .ff-chip-avatar { width: 26px; height: 26px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; color: #fff; font-size: 11px; font-weight: 700; flex-shrink: 0; }
         .ff-chip-x { width: 15px; height: 15px; color: var(--ff-faint); }
         .ff-chip.is-muted { border-color: transparent; color: var(--ff-faint); }
@@ -340,22 +421,22 @@
         .ff-leg-sw { width: 14px; height: 14px; border-radius: 3px; border: 1px solid; }
         .ff-count { font-size: 14px; color: var(--ff-faint); white-space: nowrap; }
 
-        .ff-search { display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid var(--ff-border); border-radius: 10px; padding: 7px 12px; flex: 1 1 240px; min-width: 180px; }
+        .ff-search { display: flex; align-items: center; gap: 8px; background: var(--ff-panel); border: 1px solid var(--ff-border); border-radius: 10px; padding: 7px 12px; flex: 1 1 240px; min-width: 180px; }
         .ff-search svg { width: 16px; height: 16px; color: var(--ff-faint); flex-shrink: 0; }
         .ff-search input { border: none; background: transparent; outline: none; font-size: 14px; color: var(--ff-text); width: 100%; }
         .ff-search input::placeholder { color: var(--ff-faint); }
 
         .ff-filament-filters { width: 100%; }
-        .ff-filters-toggle { display: inline-flex; align-items: center; gap: 7px; flex-shrink: 0; font-size: 14px; font-weight: 500; color: var(--ff-text); background: #fff; border: 1px solid var(--ff-border); border-radius: 10px; padding: 8px 12px; cursor: pointer; }
-        .ff-filters-toggle:hover { background: #FAFAFA; }
+        .ff-filters-toggle { display: inline-flex; align-items: center; gap: 7px; flex-shrink: 0; font-size: 14px; font-weight: 500; color: var(--ff-text); background: var(--ff-panel); border: 1px solid var(--ff-border); border-radius: 10px; padding: 8px 12px; cursor: pointer; }
+        .ff-filters-toggle:hover { background: var(--ff-hover); }
         .ff-filters-toggle svg { width: 16px; height: 16px; color: var(--ff-muted); }
         .ff-filters-toggle-open { border-color: var(--ff-brand); color: var(--ff-brand); }
         .ff-filters-toggle-open svg { color: var(--ff-brand); }
         .ff-filters-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--ff-brand); color: #fff; font-size: 11px; font-weight: 700; }
         .ff-filters-chevron { transition: transform .15s ease; }
         .ff-filters-chevron.ff-rotate { transform: rotate(180deg); }
-        .ff-reset { width: 38px; height: 38px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; color: var(--ff-muted); background: #fff; border: 1px solid var(--ff-border); border-radius: 10px; cursor: pointer; }
-        .ff-reset:hover { background: #FAFAFA; color: var(--ff-text); }
+        .ff-reset { width: 38px; height: 38px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; color: var(--ff-muted); background: var(--ff-panel); border: 1px solid var(--ff-border); border-radius: 10px; cursor: pointer; }
+        .ff-reset:hover { background: var(--ff-hover); color: var(--ff-text); }
         .ff-reset svg { width: 17px; height: 17px; }
         [x-cloak] { display: none !important; }
 
@@ -364,53 +445,58 @@
         .ff-cal-wrap { flex: 1 1 auto; min-width: 0; }
         .ff-side { flex: 0 0 288px; width: 288px; display: flex; flex-direction: column; gap: 10px; }
         .ff-side-top { display: flex; justify-content: flex-end; }
-        .ff-side-collapse, .ff-side-expand { width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; color: var(--ff-muted); background: #fff; border: 1px solid var(--ff-border); border-radius: 10px; cursor: pointer; }
-        .ff-side-collapse:hover, .ff-side-expand:hover { background: #FAFAFA; color: var(--ff-text); }
+        .ff-side-collapse, .ff-side-expand { width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; color: var(--ff-muted); background: var(--ff-panel); border: 1px solid var(--ff-border); border-radius: 10px; cursor: pointer; }
+        .ff-side-collapse:hover, .ff-side-expand:hover { background: var(--ff-hover); color: var(--ff-text); }
         .ff-side-collapse svg, .ff-side-expand svg { width: 16px; height: 16px; }
         .ff-side-expand { flex: 0 0 32px; align-self: flex-start; }
 
-        .ff-mini { background: #fff; border: 1px solid var(--ff-border); border-radius: 12px; padding: 12px; }
+        .ff-mini { background: var(--ff-panel); border: 1px solid var(--ff-border); border-radius: 12px; padding: 12px; }
         .ff-mini-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
         .ff-mini-month { font-size: 14px; font-weight: 600; color: var(--ff-text); }
         .ff-mini-nav { display: flex; gap: 2px; }
         .ff-mini-nav button { width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; color: var(--ff-muted); background: transparent; border: none; border-radius: 6px; cursor: pointer; }
-        .ff-mini-nav button:hover { background: #F5F5F5; color: var(--ff-text); }
+        .ff-mini-nav button:hover { background: var(--ff-hover); color: var(--ff-text); }
         .ff-mini-nav svg { width: 15px; height: 15px; }
         .ff-mini-dow { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin-bottom: 4px; }
         .ff-mini-dow span { text-align: center; font-size: 10px; font-weight: 600; color: var(--ff-faint); padding: 2px 0; }
         .ff-mini-grid { display: flex; flex-direction: column; gap: 2px; }
         .ff-mini-week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
         .ff-mini-day { aspect-ratio: 1; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; color: var(--ff-text); background: transparent; border: none; border-radius: 7px; cursor: pointer; }
-        .ff-mini-day:hover { background: #F5F5F5; }
+        .ff-mini-day:hover { background: var(--ff-hover); }
         .ff-mini-day.is-out { color: var(--ff-faint); opacity: .55; }
         .ff-mini-day.is-today { color: var(--ff-brand); font-weight: 700; }
         .ff-mini-day.is-selected { background: var(--ff-brand); color: #fff; font-weight: 700; }
 
-        .ff-day { background: #fff; border: 1px solid var(--ff-border); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+        .ff-day { background: var(--ff-panel); border: 1px solid var(--ff-border); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
         .ff-day-head { display: flex; align-items: center; justify-content: space-between; }
         .ff-day-title { font-size: 13px; font-weight: 600; color: var(--ff-text); }
         .ff-day-sub { font-size: 11px; font-weight: 500; color: var(--ff-faint); }
         .ff-day-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-        .ff-stat { display: flex; flex-direction: column; gap: 1px; background: #FAFAFA; border-radius: 8px; padding: 6px 8px; }
+        .ff-stat { display: flex; flex-direction: column; gap: 1px; background: var(--ff-hover); border-radius: 8px; padding: 6px 8px; }
         .ff-stat-label { font-size: 10px; font-weight: 500; color: var(--ff-muted); }
         .ff-stat-value { font-size: 18px; font-weight: 700; color: var(--ff-text); }
         .ff-stat-value.ff-stat-sm { font-size: 14px; }
         .ff-stat-value.ff-stat-util { color: #16A34A; }
-        .ff-day-track { height: 6px; border-radius: 999px; background: #E5E5E5; overflow: hidden; }
+        .ff-day-track { height: 6px; border-radius: 999px; background: var(--ff-border); overflow: hidden; }
         .ff-day-fill { height: 6px; border-radius: 999px; background: var(--ff-brand); }
         .ff-day-caption { font-size: 10px; font-weight: 500; color: var(--ff-faint); }
 
         /* FullCalendar surface */
-        .ff-cal .ff-grid { background: #fff; border: 1px solid var(--ff-border); border-radius: 12px; overflow: hidden; }
+        .ff-cal .ff-grid { background: var(--ff-panel); border: 1px solid var(--ff-border); border-radius: 12px; overflow: hidden; }
         .ff-cal .fc { font-family: inherit; }
         .ff-cal .fc-scrollgrid { border: none; }
         .ff-cal .fc-theme-standard td, .ff-cal .fc-theme-standard th { border-color: var(--ff-border); }
         .ff-cal .fc-scrollgrid-section > td { border: none; }
 
-        .ff-cal .fc-col-header-cell { background: #fff; padding: 14px 0; }
+        .ff-cal .fc-col-header-cell { background: var(--ff-panel); padding: 10px 0; }
         .ff-cal .fc-col-header-cell-cushion { text-transform: capitalize; color: var(--ff-muted); font-size: 14px; font-weight: 600; text-decoration: none; }
         .ff-cal .fc-day-today { background: #FFF1F4 !important; }
         .ff-cal .fc-col-header-cell.fc-day-today .fc-col-header-cell-cushion { color: #D4678A; font-weight: 700; }
+        .ff-cal .fc-col-header-cell .fc-scrollgrid-sync-inner { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+        .ff-wl-badge { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border: 1px solid #FCD34D; border-radius: 999px; background: #FFFBEB; color: #92400E; font-size: 11px; line-height: 1.5; text-decoration: none; cursor: pointer; transition: background .15s; }
+        .ff-wl-badge svg { width: 11px; height: 11px; }
+        .ff-wl-badge b { font-weight: 700; }
+        .ff-wl-badge:hover { background: #FEF3C7; }
 
         .ff-cal .fc-timegrid-slot { height: 1.4rem; }
         .ff-cal .fc-timegrid-slot-minor { border-top-color: #F5F5F5; }
@@ -426,7 +512,13 @@
         .ff-cal .fc-event.ff-cancelled .ff-event-title { text-decoration: line-through; }
         .ff-cal .fc-event.ff-trashed { opacity: .5; border-style: dashed; }
         .ff-cal .fc-event.ff-blocking { border-style: dashed; }
+        .ff-cal .fc-event.ff-course .ff-event-title { color: #155E75; }
+        .ff-cal .fc-event.ff-oneoff .ff-event-title { color: #86198F; }
+        .ff-leg-toggle { cursor: pointer; gap: 5px; }
+        .ff-leg-toggle input { width: 13px; height: 13px; accent-color: var(--ff-brand); cursor: pointer; }
         .ff-cal .fc-event.ff-selected { outline: 2px solid var(--ff-brand); outline-offset: 1px; box-shadow: 0 0 0 4px rgba(237, 134, 163, .18); }
+        /* Courses and one-off events cannot be bulk-selected, so they read as inert while selecting. */
+        .ff-cal-selecting .fc-event.ff-course, .ff-cal-selecting .fc-event.ff-oneoff { cursor: not-allowed; }
 
         .ff-event { display: flex; flex-direction: column; gap: 2px; height: 100%; padding: 7px 9px; overflow: hidden; }
         .ff-event-block .ff-event-time { color: #6366F1; }
@@ -434,12 +526,37 @@
         .ff-event-head { display: flex; align-items: center; justify-content: space-between; gap: 5px; }
         .ff-event-time { font-size: 11px; font-weight: 700; white-space: nowrap; flex-shrink: 0; }
         .ff-event-tag { font-size: 10px; font-weight: 600; padding: 1px 7px; border-radius: 999px; white-space: nowrap; flex-shrink: 0; }
-        .ff-event-title { font-size: 14px; font-weight: 600; color: var(--ff-text); line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ff-event-title { font-size: 14px; font-weight: 600; color: var(--ff-text); line-height: 1.25; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; text-overflow: ellipsis; overflow-wrap: anywhere; }
         .ff-event-sub { font-size: 12px; color: var(--ff-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .ff-event-foot { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: auto; padding-top: 4px; }
         .ff-event-avatar { width: 20px; height: 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; color: #fff; font-size: 9px; font-weight: 700; }
         .ff-event-room { font-size: 11px; color: var(--ff-muted); white-space: nowrap; }
         .ff-event-recur { font-size: 11px; font-weight: 700; color: var(--ff-muted); flex-shrink: 0; }
+
+        /* Dark mode (Filament toggles the `dark` class on <html>) */
+        .dark .ff-cal {
+            --ff-border: #3F3F46;
+            --ff-text: #F5F5F5;
+            --ff-muted: #A3A3A3;
+            --ff-faint: #737373;
+            --ff-panel: #18181B;
+            --ff-hover: #27272A;
+            color-scheme: dark;
+        }
+        .dark .ff-cal .fc { --fc-border-color: #3F3F46; --fc-page-bg-color: transparent; --fc-neutral-bg-color: transparent; }
+        .dark .ff-selectbar { background: rgba(237, 134, 163, .12); border-color: rgba(237, 134, 163, .35); }
+        .dark .ff-cal .fc-day-today { background: rgba(237, 134, 163, .08) !important; }
+        .dark .ff-cal .fc-timegrid-slot-minor { border-top-color: #27272A; }
+        .dark .ff-stat-value.ff-stat-util { color: #4ADE80; }
+        .dark .ff-wl-badge { background: rgba(217, 119, 6, .16); border-color: rgba(217, 119, 6, .45); color: #FBBF24; }
+        .dark .ff-wl-badge:hover { background: rgba(217, 119, 6, .28); }
+        /* Event cards keep their light tint backgrounds (inline per-therapist colors),
+           so their inner text stays pinned to dark neutrals instead of --ff-text. */
+        .dark .ff-cal .fc-timegrid-event .fc-event-main { color: #171717; }
+        .dark .ff-cal .fc-event .ff-event-title { color: #171717; }
+        .dark .ff-cal .fc-event .ff-event-sub,
+        .dark .ff-cal .fc-event .ff-event-room,
+        .dark .ff-cal .fc-event .ff-event-recur { color: #525252; }
 
         @media (max-width: 1024px) {
             .ff-body { flex-direction: column; }

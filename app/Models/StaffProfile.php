@@ -5,7 +5,7 @@ namespace App\Models;
 use App\Contracts\HasPermalink;
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\Publishable;
-use Database\Factories\TherapistProfileFactory;
+use Database\Factories\StaffProfileFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,9 +15,25 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
-class TherapistProfile extends Model implements HasPermalink
+/**
+ * How a member of staff is presented publicly: their position (`title`), bio,
+ * photo, education and certifications. Everyone shown on /o-nas has one —
+ * therapists, the conditioning trainer, the yoga instructor and the assistant
+ * alike — so holding a profile says nothing about whether the person treats
+ * clients.
+ *
+ * Being bookable is decided elsewhere: {@see User::isTherapist()} plus at least
+ * one bookable service ({@see Service::scopeBookable()}). That is why the
+ * assistant can appear on the team page while never surfacing in the booking
+ * wizard, and why staff who have left keep a profile purely so their historical
+ * reservations stay attributed.
+ *
+ * The `therapist_id` foreign keys that point here are named correctly: whoever
+ * sits on a reservation, work block or service link is acting as its therapist.
+ */
+class StaffProfile extends Model implements HasPermalink
 {
-    /** @use HasFactory<TherapistProfileFactory> */
+    /** @use HasFactory<StaffProfileFactory> */
     use Auditable, HasFactory, HasUuids, Publishable;
 
     public function logTitle(): string
@@ -50,7 +66,7 @@ class TherapistProfile extends Model implements HasPermalink
 
     protected static function booted(): void
     {
-        static::saving(function (TherapistProfile $profile): void {
+        static::saving(function (StaffProfile $profile): void {
             if (blank($profile->slug)) {
                 $profile->slug = $profile->generateSlug();
             }

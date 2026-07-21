@@ -2,8 +2,8 @@
 
 namespace App\Filament\Clusters\System\Resources\Users\RelationManagers;
 
-use App\Filament\Clusters\Provoz\Resources\TherapistProfiles\Schemas\TherapistProfileForm;
-use App\Models\TherapistProfile;
+use App\Filament\Clusters\Provoz\Resources\StaffProfiles\Schemas\StaffProfileForm;
+use App\Models\StaffProfile;
 use App\Models\User;
 use Filament\Actions\CreateAction;
 use Filament\Actions\EditAction;
@@ -14,9 +14,9 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 
-class TherapistProfileRelationManager extends RelationManager
+class StaffProfileRelationManager extends RelationManager
 {
-    protected static string $relationship = 'therapistProfile';
+    protected static string $relationship = 'staffProfile';
 
     protected static ?string $title = 'Veřejný profil';
 
@@ -27,7 +27,7 @@ class TherapistProfileRelationManager extends RelationManager
 
     public function form(Schema $schema): Schema
     {
-        return $schema->components(TherapistProfileForm::components(withUser: false));
+        return $schema->components(StaffProfileForm::components(withUser: false));
     }
 
     public function table(Table $table): Table
@@ -41,7 +41,7 @@ class TherapistProfileRelationManager extends RelationManager
                 IconColumn::make('published')
                     ->label('Publikováno')
                     ->boolean()
-                    ->getStateUsing(fn (TherapistProfile $record): bool => $record->isPublished()),
+                    ->getStateUsing(fn (StaffProfile $record): bool => $record->isPublished()),
                 TextColumn::make('updated_at')
                     ->label('Upraveno')
                     ->since(),
@@ -49,7 +49,7 @@ class TherapistProfileRelationManager extends RelationManager
             ->headerActions([
                 CreateAction::make()
                     ->label('Vytvořit profil')
-                    ->visible(fn (): bool => $this->getOwnerRecord()->therapistProfile()->doesntExist()),
+                    ->visible(fn (): bool => $this->getOwnerRecord()->staffProfile()->doesntExist()),
             ])
             ->recordActions([
                 EditAction::make(),

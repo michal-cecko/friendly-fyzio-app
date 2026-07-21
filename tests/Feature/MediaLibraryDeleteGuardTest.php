@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Page;
-use App\Models\TherapistProfile;
+use App\Models\StaffProfile;
 use App\Support\MediaLibrary\MediaUsageScanner;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use RalphJSmit\Filament\MediaLibrary\Models\MediaLibraryItem;
@@ -59,7 +59,7 @@ class MediaLibraryDeleteGuardTest extends TestCase
     {
         $item = $this->makeItem();
 
-        TherapistProfile::factory()->create(['photo' => (string) $item->getKey()]);
+        StaffProfile::factory()->create(['photo' => (string) $item->getKey()]);
 
         $this->assertFalse($item->delete());
         $this->assertDatabaseHas('filament_media_library', ['id' => $item->getKey()]);

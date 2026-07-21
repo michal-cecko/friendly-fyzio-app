@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\DayOfWeek;
 use App\Enums\WeekType;
-use App\Models\TherapistProfile;
+use App\Models\StaffProfile;
 use App\Models\TherapistWorkBlock;
 use App\Models\TherapistWorkBlockSeries;
 use App\Support\WorkBlocks\WorkBlockGenerator;
@@ -119,7 +119,7 @@ class WorkBlockGeneratorTest extends TestCase
 
     public function test_materialize_skips_dates_with_overlapping_blocks(): void
     {
-        $therapist = TherapistProfile::factory()->create();
+        $therapist = StaffProfile::factory()->create();
 
         // Existing one-off block overlapping the series interval on 2026-01-12.
         TherapistWorkBlock::factory()->for($therapist, 'therapist')->create([

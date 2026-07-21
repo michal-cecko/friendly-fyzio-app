@@ -18,6 +18,10 @@ class Profile extends Component
 {
     public string $name = '';
 
+    public string $title_before = '';
+
+    public string $title_after = '';
+
     public string $email = '';
 
     public string $phone = '';
@@ -42,6 +46,8 @@ class Profile extends Component
         $profile = $user->clientProfile;
 
         $this->name = (string) $user->name;
+        $this->title_before = (string) ($user->title_before ?? '');
+        $this->title_after = (string) ($user->title_after ?? '');
         $this->email = (string) $user->email;
         $this->phone = (string) ($user->phone ?? '');
 
@@ -57,14 +63,18 @@ class Profile extends Component
 
         $this->validate([
             'name' => ['required', 'string', 'max:255'],
+            'title_before' => ['nullable', 'string', 'max:255'],
+            'title_after' => ['nullable', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->getKey())],
             'phone' => ['required', 'string', 'max:255'],
-        ], [], ['name' => 'jméno', 'email' => 'e-mail', 'phone' => 'telefon']);
+        ], [], ['name' => 'jméno', 'title_before' => 'titul před jménem', 'title_after' => 'titul za jménem', 'email' => 'e-mail', 'phone' => 'telefon']);
 
         $emailChanged = $user->email !== $this->email;
 
         $user->fill([
             'name' => $this->name,
+            'title_before' => $this->title_before ?: null,
+            'title_after' => $this->title_after ?: null,
             'email' => $this->email,
             'phone' => $this->phone,
         ]);

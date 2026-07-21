@@ -87,9 +87,7 @@ class BlockingForm
                 ->orderBy('name')
                 ->get()
                 ->mapWithKeys(fn (Room $room): array => [
-                    $room->getKey() => $room->building
-                        ? "{$room->name} · {$room->building->name}"
-                        : $room->name,
+                    $room->getKey() => $room->picker_label,
                 ])
                 ->all())
             ->searchable()

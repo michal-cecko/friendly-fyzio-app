@@ -8,7 +8,7 @@ use App\Mason\BrickRegistry;
 use App\Models\Page;
 use App\Models\Service;
 use App\Models\ServiceCategory;
-use App\Models\TherapistProfile;
+use App\Models\StaffProfile;
 use App\Models\TherapistSpecialization;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -38,7 +38,7 @@ class BricksTest extends TestCase
         ];
 
         $therapist = User::factory()->therapist()->create(['name' => 'Klára Specialistová']);
-        TherapistProfile::factory()->for($therapist)->published()->create(['title' => 'Fyzioterapeutka']);
+        StaffProfile::factory()->for($therapist)->published()->create(['title' => 'Fyzioterapeutka']);
 
         Page::factory()->system('home')->create([
             'slug' => '/',
@@ -86,7 +86,7 @@ class BricksTest extends TestCase
         ];
 
         $publishedUser = User::factory()->therapist()->create(['name' => 'Mgr. Lucie Fičkerová']);
-        $published = TherapistProfile::factory()->for($publishedUser)->published()->create([
+        $published = StaffProfile::factory()->for($publishedUser)->published()->create([
             'slug' => 'lucie-fickerova',
             'title' => 'Fyzioterapeutka, zakladatelka',
         ]);
@@ -97,7 +97,7 @@ class BricksTest extends TestCase
         ]);
 
         $draftUser = User::factory()->therapist()->create(['name' => 'Jana Beránková']);
-        $draft = TherapistProfile::factory()->for($draftUser)->unpublished()->create(['title' => 'Masérka']);
+        $draft = StaffProfile::factory()->for($draftUser)->unpublished()->create(['title' => 'Masérka']);
 
         Page::factory()->system('home')->create([
             'slug' => '/',

@@ -8,7 +8,7 @@ use App\Enums\ReservationStatus;
 use App\Models\Reservation;
 use App\Models\Room;
 use App\Models\Service;
-use App\Models\TherapistProfile;
+use App\Models\StaffProfile;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -27,7 +27,7 @@ class ReservationFactory extends Factory
         return [
             'client_id' => User::factory()->customer(),
             'service_id' => Service::factory(),
-            'therapist_id' => TherapistProfile::factory(),
+            'therapist_id' => StaffProfile::factory(),
             'room_id' => Room::factory(),
             'reservation_date' => fake()->dateTimeBetween('-3 days', '+10 days')->format('Y-m-d'),
             'start_time' => sprintf('%02d:00', $start),

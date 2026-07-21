@@ -157,7 +157,7 @@
 
         <div class="flex flex-col gap-1">
             <span class="text-xs font-medium uppercase tracking-wide text-neutral-400">Terapeut</span>
-            <span class="font-heading text-sm font-semibold text-neutral-900">{{ $reservation->therapist?->user?->name ?? '—' }}</span>
+            <span class="font-heading text-sm font-semibold text-neutral-900">{{ $reservation->therapist?->user?->full_name ?? '—' }}</span>
             @if($reservation->room?->name)
                 <span class="inline-flex items-center gap-1.5 text-sm text-neutral-600">
                     <x-lucide name="map-pin" class="h-3.5 w-3.5 shrink-0 text-primary" />

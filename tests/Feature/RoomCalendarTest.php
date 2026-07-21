@@ -8,11 +8,14 @@ use App\Enums\WeekType;
 use App\Filament\Clusters\Provoz\Resources\Rooms\RoomResource;
 use App\Filament\Widgets\ReservationCalendar;
 use App\Models\Building;
+use App\Models\CourseLesson;
+use App\Models\OneOffEvent;
 use App\Models\Reservation;
+use App\Models\ReservationDayWaitlistEntry;
 use App\Models\Room;
 use App\Models\RoomBlocking;
 use App\Models\Service;
-use App\Models\TherapistProfile;
+use App\Models\StaffProfile;
 use App\Models\TherapistWorkBlock;
 use App\Models\User;
 use Filament\Facades\Filament;
@@ -42,9 +45,9 @@ class RoomCalendarTest extends TestCase
         return Room::create(['building_id' => $building->getKey(), 'name' => $name]);
     }
 
-    protected function makeTherapist(): TherapistProfile
+    protected function makeTherapist(): StaffProfile
     {
-        return TherapistProfile::create(['user_id' => User::factory()->therapist()->create()->getKey()]);
+        return StaffProfile::create(['user_id' => User::factory()->therapist()->create()->getKey()]);
     }
 
     /**
@@ -59,7 +62,7 @@ class RoomCalendarTest extends TestCase
         ]);
     }
 
-    protected function reservationIn(Room $room, TherapistProfile $therapist, string $start = '09:00', string $end = '10:00'): Reservation
+    protected function reservationIn(Room $room, StaffProfile $therapist, string $start = '09:00', string $end = '10:00'): Reservation
     {
         return Reservation::factory()->create([
             'therapist_id' => $therapist->getKey(),
@@ -235,6 +238,38 @@ class RoomCalendarTest extends TestCase
             'work_date' => $this->monday->toDateString(),
             'start_time' => '08:00:00',
         ]);
+    }
+
+    public function test_room_scoped_calendar_shows_only_this_rooms_lessons_and_events(): void
+    {
+        $room = $this->makeRoom();
+        $otherRoom = $this->makeRoom('Sál 2');
+
+        $lessonHere = CourseLesson::factory()->create(['room_id' => $room->getKey(), 'lesson_date' => $this->monday->toDateString()]);
+        $lessonElsewhere = CourseLesson::factory()->create(['room_id' => $otherRoom->getKey(), 'lesson_date' => $this->monday->toDateString()]);
+        $eventHere = OneOffEvent::factory()->published()->create(['room_id' => $room->getKey(), 'event_date' => $this->monday->toDateString()]);
+        $eventElsewhere = OneOffEvent::factory()->published()->create(['room_id' => $otherRoom->getKey(), 'event_date' => $this->monday->toDateString()]);
+
+        $calendar = new ReservationCalendar;
+        $calendar->room = $room;
+        $ids = array_column($this->fetchWeek($calendar), 'id');
+
+        $this->assertContains('course:'.$lessonHere->getKey(), $ids);
+        $this->assertContains('oneoff:'.$eventHere->getKey(), $ids);
+        $this->assertNotContains('course:'.$lessonElsewhere->getKey(), $ids);
+        $this->assertNotContains('oneoff:'.$eventElsewhere->getKey(), $ids);
+    }
+
+    public function test_room_scoped_calendar_hides_waitlist_summary(): void
+    {
+        ReservationDayWaitlistEntry::factory()->create([
+            'reservation_date' => Carbon::now()->startOfWeek(Carbon::MONDAY)->toDateString(),
+        ]);
+
+        $calendar = new ReservationCalendar;
+        $calendar->room = $this->makeRoom();
+
+        $this->assertSame([], $calendar->waitlistWeekSummary());
     }
 
     public function test_view_page_shows_room_details_without_relation_tables(): void

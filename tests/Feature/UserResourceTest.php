@@ -44,6 +44,22 @@ class UserResourceTest extends TestCase
         );
     }
 
+    public function test_deactivated_staff_lose_panel_access(): void
+    {
+        $panel = Filament::getPanel('admin');
+
+        $therapist = User::factory()->therapist()->create();
+        $this->assertTrue($therapist->canAccessPanel($panel));
+
+        // Former staff are kept as deactivated accounts so their historical
+        // notes stay attributed; they must not be able to get back in.
+        $therapist->update(['deactivated_at' => now()]);
+        $this->assertFalse($therapist->fresh()->canAccessPanel($panel));
+
+        $admin = User::factory()->admin()->create(['deactivated_at' => now()]);
+        $this->assertFalse($admin->canAccessPanel($panel));
+    }
+
     public function test_therapist_without_permission_cannot_view_users_list(): void
     {
         $therapist = User::factory()->therapist()->create();
@@ -101,6 +117,29 @@ class UserResourceTest extends TestCase
         $this->assertTrue($created->hasRole('therapist'));          // synced from Role
         $this->assertTrue($created->hasPermissionTo('View:User'));  // direct permission
         $this->assertNotNull($created->password);                   // random password generated on create
+    }
+
+    public function test_user_can_be_created_with_academic_titles(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+
+        Livewire::test(CreateUser::class)
+            ->fillForm([
+                'name' => 'Petra Novotná',
+                'title_before' => 'Bc.',
+                'title_after' => 'DiS.',
+                'email' => 'petra.tituly@example.test',
+                'role' => UserRole::Therapist->value,
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $created = User::where('email', 'petra.tituly@example.test')->first();
+
+        $this->assertNotNull($created);
+        $this->assertSame('Bc.', $created->title_before);
+        $this->assertSame('DiS.', $created->title_after);
+        $this->assertSame('Bc. Petra Novotná, DiS.', $created->full_name);
     }
 
     public function test_create_user_validates_required_fields(): void

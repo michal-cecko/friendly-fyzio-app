@@ -70,7 +70,7 @@ class ActivityPresenter
         'User' => 'Uživatel',
         'Service' => 'Služba',
         'ServiceCategory' => 'Kategorie služeb',
-        'TherapistProfile' => 'Terapeut',
+        'StaffProfile' => 'Terapeut',
         'Room' => 'Ordinace',
         'Building' => 'Budova',
         'Payment' => 'Platba',

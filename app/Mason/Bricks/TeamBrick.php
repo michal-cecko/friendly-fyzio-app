@@ -37,10 +37,10 @@ class TeamBrick extends Brick
     public static function toHtml(array $config, ?array $data = null): ?string
     {
         $therapists = User::query()
-            ->whereHas('therapistProfile', fn ($query) => $query->published())
-            ->with(['therapistProfile.specializations' => fn ($query) => $query->orderBy('display_order')])
+            ->whereHas('staffProfile', fn ($query) => $query->published())
+            ->with(['staffProfile.specializations' => fn ($query) => $query->orderBy('display_order')])
             ->get()
-            ->sortBy(fn (User $user): string => sprintf('%04d-%s', $user->therapistProfile?->display_order ?? 999, $user->name))
+            ->sortBy(fn (User $user): string => sprintf('%04d-%s', $user->staffProfile?->display_order ?? 999, $user->name))
             ->values();
 
         return view('bricks.team', [

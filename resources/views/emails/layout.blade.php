@@ -23,30 +23,52 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <title>{{ $subject ?? '' }}</title>
+    {{-- Phones render the 600px card scaled down, so everything reads small. The card is fluid
+         (width:100%;max-width:600px) and these rules bump the type ~30% on narrow viewports.
+         !important is required to beat the inline styles the bricks carry. Clients that strip
+         <style> simply keep the desktop sizes. --}}
+    <style type="text/css">
+        @media only screen and (max-width: 620px) {
+            .e-head { padding: 24px 20px 20px !important; }
+            .e-content { padding: 28px 20px !important; }
+            .e-foot { padding: 20px !important; }
+
+            .e-logo { font-size: 28px !important; }
+            .e-greeting { font-size: 23px !important; }
+            .e-title { font-size: 20px !important; }
+            .e-text, .e-total, .e-content p, .e-content li { font-size: 18px !important; }
+            .e-small, .e-title-sm, .e-td { font-size: 17px !important; }
+            .e-note { font-size: 16px !important; }
+            .e-th { font-size: 15px !important; }
+            .e-tiny, .e-footer-text { font-size: 14px !important; }
+
+            .e-btn { font-size: 19px !important; padding: 16px 32px !important; }
+        }
+    </style>
 </head>
 <body style="margin:0;padding:0;background-color:#F5F5F5;-webkit-text-size-adjust:100%;">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F5F5F5;border-collapse:collapse;">
         <tr>
             <td align="center" style="padding:24px 12px;">
-                <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background-color:#FFFFFF;border-radius:12px;border:1px solid #E5E5E5;border-collapse:separate;">
+                <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background-color:#FFFFFF;border-radius:12px;border:1px solid #E5E5E5;border-collapse:separate;">
                     <tr>
-                        <td style="background-color:#FFF8FA;padding:32px 40px 24px;text-align:center;border-top-left-radius:12px;border-top-right-radius:12px;">
-                            <span style="font-family:'Montserrat',Arial,sans-serif;font-size:22px;font-weight:500;color:#1A1A1A;">Friendly</span><span style="font-family:'Montserrat',Arial,sans-serif;font-size:22px;font-weight:600;font-style:italic;color:#ED86A3;">Fyzio</span>
+                        <td class="e-head" style="background-color:#FFF8FA;padding:32px 40px 24px;text-align:center;border-top-left-radius:12px;border-top-right-radius:12px;">
+                            <span class="e-logo" style="font-family:'Montserrat',Arial,sans-serif;font-size:22px;font-weight:500;color:#1A1A1A;">Friendly</span><span class="e-logo" style="font-family:'Montserrat',Arial,sans-serif;font-size:22px;font-weight:600;font-style:italic;color:#ED86A3;">Fyzio</span>
                         </td>
                     </tr>
                     <tr>
                         <td style="height:3px;background-color:#ED86A3;font-size:0;line-height:0;">&nbsp;</td>
                     </tr>
                     <tr>
-                        <td style="padding:40px 48px;">
+                        <td class="e-content" style="padding:40px 48px;">
                             {!! $body !!}
                         </td>
                     </tr>
                     <tr>
-                        <td style="background-color:#F5F5F5;padding:24px 48px;text-align:center;border-bottom-left-radius:12px;border-bottom-right-radius:12px;">
-                            <div style="font-family:'Open Sans',Arial,sans-serif;font-size:11px;color:#888888;padding-bottom:6px;">{{ $footerAddress }}</div>
+                        <td class="e-foot" style="background-color:#F5F5F5;padding:24px 48px;text-align:center;border-bottom-left-radius:12px;border-bottom-right-radius:12px;">
+                            <div class="e-footer-text" style="font-family:'Open Sans',Arial,sans-serif;font-size:11px;color:#888888;padding-bottom:6px;">{{ $footerAddress }}</div>
                             @if(filled($footerContact))
-                                <div style="font-family:'Open Sans',Arial,sans-serif;font-size:11px;color:#888888;padding-bottom:10px;">{{ $footerContact }}</div>
+                                <div class="e-footer-text" style="font-family:'Open Sans',Arial,sans-serif;font-size:11px;color:#888888;padding-bottom:10px;">{{ $footerContact }}</div>
                             @endif
                             @if($socialLinks)
                                 <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="border-collapse:collapse;margin:0 auto;">

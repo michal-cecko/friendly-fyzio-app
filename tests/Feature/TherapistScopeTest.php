@@ -8,7 +8,7 @@ use App\Filament\Clusters\Provoz\Resources\Reservations\ReservationResource;
 use App\Filament\Clusters\System\Resources\Users\UserResource;
 use App\Models\Course;
 use App\Models\Reservation;
-use App\Models\TherapistProfile;
+use App\Models\StaffProfile;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -18,12 +18,12 @@ class TherapistScopeTest extends TestCase
     use RefreshDatabase;
 
     /**
-     * @return array{0: User, 1: TherapistProfile}
+     * @return array{0: User, 1: StaffProfile}
      */
     private function therapistWithProfile(): array
     {
         $user = User::factory()->therapist()->create();
-        $profile = TherapistProfile::factory()->create(['user_id' => $user->id]);
+        $profile = StaffProfile::factory()->create(['user_id' => $user->id]);
 
         return [$user, $profile];
     }

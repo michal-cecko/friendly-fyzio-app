@@ -30,6 +30,8 @@ class CustomEmailNotification extends Notification
         public string $bodyHtml,
         public array $cc = [],
         public array $bcc = [],
+        public ?string $replyToAddress = null,
+        public ?string $replyToName = null,
     ) {}
 
     /**
@@ -52,6 +54,12 @@ class CustomEmailNotification extends Notification
 
         if ($this->bcc !== []) {
             $mail->bcc($this->bcc);
+        }
+
+        // Route replies to the staff member who composed the e-mail; falls back to the
+        // default From address when the sender has no e-mail.
+        if ($this->replyToAddress !== null) {
+            $mail->replyTo($this->replyToAddress, $this->replyToName);
         }
 
         return $mail;

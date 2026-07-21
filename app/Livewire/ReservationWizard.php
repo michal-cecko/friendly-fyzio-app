@@ -8,7 +8,7 @@ use App\Enums\ServiceType;
 use App\Models\ReservationDayWaitlistEntry;
 use App\Models\Service;
 use App\Models\ServiceCategory;
-use App\Models\TherapistProfile;
+use App\Models\StaffProfile;
 use App\Models\User;
 use App\Support\Reservations\CreateReservationFromWizard;
 use App\Support\Reservations\DeactivatedClientException;
@@ -92,6 +92,9 @@ class ReservationWizard extends Component
 
     /** Auth interstitial: null | 'login' | 'lapsed' | 'email_exists'. */
     public ?string $gate = null;
+
+    /** The contact-step email belongs to an existing account (guest only) — shows the inline login hint. */
+    public bool $emailKnown = false;
 
     public string $loginEmail = '';
 
@@ -224,11 +227,11 @@ class ReservationWizard extends Component
     }
 
     #[Computed]
-    public function therapist(): ?TherapistProfile
+    public function therapist(): ?StaffProfile
     {
         return blank($this->therapistSlug) || $this->isAnyTherapist()
             ? null
-            : TherapistProfile::query()->with('user')->where('slug', $this->therapistSlug)->first();
+            : StaffProfile::query()->with('user')->where('slug', $this->therapistSlug)->first();
     }
 
     public function isAnyTherapist(): bool
@@ -249,7 +252,7 @@ class ReservationWizard extends Component
     // --- Option lists ---------------------------------------------------------
 
     /**
-     * @return Collection<int, TherapistProfile>
+     * @return Collection<int, StaffProfile>
      */
     #[Computed]
     public function therapists()
@@ -258,12 +261,15 @@ class ReservationWizard extends Component
         // only controls the public team page and profile detail, not who can be
         // booked. A therapist is offered only if they perform at least one bookable
         // service (otherwise picking them is a dead end).
-        return TherapistProfile::query()
+        return StaffProfile::query()
             ->with('user')
+            // Staff who have left keep a profile so their historical visits stay
+            // attributed, but must never be offered a new booking.
+            ->whereHas('user', fn ($q) => $q->whereNull('deactivated_at'))
             ->whereHas('services', fn ($q) => $q->bookable())
             ->when($this->service, fn ($query) => $query->whereHas('services', fn ($q) => $q->whereKey($this->service->id)))
             ->get()
-            ->sortBy(fn (TherapistProfile $therapist): string => $therapist->user?->name ?? '')
+            ->sortBy(fn (StaffProfile $therapist): string => $therapist->user?->name ?? '')
             ->values();
     }
 
@@ -550,9 +556,9 @@ class ReservationWizard extends Component
     {
         $therapist = $this->isAnyTherapist()
             ? ($this->bookingTherapistId
-                ? TherapistProfile::query()->with('user')->find($this->bookingTherapistId)?->user?->name
+                ? StaffProfile::query()->with('user')->find($this->bookingTherapistId)?->user?->full_name
                 : 'Nezáleží')
-            : $this->therapist?->user?->name;
+            : $this->therapist?->user?->full_name;
 
         return [
             'category' => $this->category?->name,
@@ -789,15 +795,6 @@ class ReservationWizard extends Component
             'phone' => 'telefon',
         ]);
 
-        // A guest using an email that already has an account is asked to log in
-        // rather than silently creating a duplicate.
-        if (auth()->guest() && User::query()->where('email', $this->email)->exists()) {
-            $this->gate = 'email_exists';
-            $this->loginEmail = $this->email;
-
-            return;
-        }
-
         $therapistId = $this->bookingTherapistId ?? $this->resolvedTherapistId();
 
         if (! $this->service || blank($therapistId) || blank($this->date) || blank($this->startTime)) {
@@ -877,12 +874,13 @@ class ReservationWizard extends Component
         $this->loginPassword = '';
         $wasGate = $this->gate;
         $this->gate = null;
+        $this->emailKnown = false;
         $user = auth()->user();
         $this->prefillContactFromUser($user);
 
+        // Logging in from the optional "email exists" hint just links the session
+        // to the account; the visitor finishes the form and submits themselves.
         if ($wasGate === 'email_exists') {
-            $this->submit();
-
             return;
         }
 
@@ -900,11 +898,28 @@ class ReservationWizard extends Component
         $this->setExamType(ExamType::Kontrolni->value);
     }
 
-    public function useDifferentEmail(): void
+    /**
+     * The contact-step email is checked on blur; a match only shows the inline
+     * login hint — booking as a guest is always allowed and the reservation is
+     * attached to the existing account by e-mail.
+     */
+    public function updatedEmail(): void
+    {
+        $this->emailKnown = auth()->guest()
+            && filled($this->email)
+            && User::query()->where('email', $this->email)->exists();
+    }
+
+    /** Open the optional login panel from the inline hint, with the e-mail prefilled. */
+    public function showLogin(): void
+    {
+        $this->loginEmail = $this->email;
+        $this->gate = 'email_exists';
+    }
+
+    public function continueWithoutLogin(): void
     {
         $this->gate = null;
-        $this->email = '';
-        $this->loginEmail = '';
         $this->loginPassword = '';
     }
 

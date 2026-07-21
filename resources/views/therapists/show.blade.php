@@ -1,7 +1,7 @@
 @extends('layouts.public')
 
 @php
-    $name = $therapist->user?->name ?? 'Terapeut';
+    $name = $therapist->user?->full_name ?? 'Terapeut';
     $phone = $therapist->user?->phone ?: \App\Support\Settings::get('web.contact_phone');
     $email = $therapist->user?->email ?: \App\Support\Settings::get('web.contact_email');
     $address = \App\Support\Settings::get('web.address');

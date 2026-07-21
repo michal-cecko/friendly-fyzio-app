@@ -23,6 +23,16 @@
                 @error('name') <span class="mt-1 block text-xs text-red-600">{{ $message }}</span> @enderror
             </div>
             <div>
+                <label class="{{ $labelClass }}">Titul před jménem <span class="text-neutral-400">(nepovinné)</span></label>
+                <input type="text" wire:model="title_before" class="{{ $inputClass }}" placeholder="Bc.">
+                @error('title_before') <span class="mt-1 block text-xs text-red-600">{{ $message }}</span> @enderror
+            </div>
+            <div>
+                <label class="{{ $labelClass }}">Titul za jménem <span class="text-neutral-400">(nepovinné)</span></label>
+                <input type="text" wire:model="title_after" class="{{ $inputClass }}" placeholder="DiS.">
+                @error('title_after') <span class="mt-1 block text-xs text-red-600">{{ $message }}</span> @enderror
+            </div>
+            <div>
                 <label class="{{ $labelClass }}">E-mail</label>
                 <input type="email" wire:model="email" class="{{ $inputClass }}" autocomplete="email">
                 @error('email') <span class="mt-1 block text-xs text-red-600">{{ $message }}</span> @enderror

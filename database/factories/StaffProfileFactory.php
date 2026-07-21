@@ -2,14 +2,14 @@
 
 namespace Database\Factories;
 
-use App\Models\TherapistProfile;
+use App\Models\StaffProfile;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<TherapistProfile>
+ * @extends Factory<StaffProfile>
  */
-class TherapistProfileFactory extends Factory
+class StaffProfileFactory extends Factory
 {
     /**
      * @return array<string, mixed>

@@ -1,1 +1,1 @@
-function e({key:i}){return{key:i,init:function(){console.log("File component initialized with key:",this.key)}}}export{e as default};
+function e({key:e}){return{key:e,init:function(){console.log(`File component initialized with key:`,this.key)}}}export{e as default};

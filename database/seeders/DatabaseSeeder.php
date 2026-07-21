@@ -5,6 +5,11 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
+/**
+ * The development database: the shared foundation plus demo data and test
+ * logins. For a live installation use {@see ProductionSeeder}, which seeds the
+ * same foundation with the real team and client history instead.
+ */
 class DatabaseSeeder extends Seeder
 {
     /**
@@ -12,18 +17,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $this->call(RolePermissionSeeder::class);
-        $this->call(SettingsSeeder::class);
-        $this->call(InvoiceSeriesSeeder::class);
-        $this->call(EmailTemplateSeeder::class);
-        // Event categories seed before pages: the /workshopy page attaches to
-        // the Workshopy category as its custom page.
-        $this->call(EventCategorySeeder::class);
-        $this->call(PageSeeder::class);
-        $this->call(BannerSeeder::class);
-        $this->call(ServiceCategorySeeder::class);
-        // Navigation references categories (category:{id} link refs), so it runs after them.
-        $this->call(NavigationSeeder::class);
+        $this->call(FoundationSeeder::class);
 
         // The User "saved" event syncs the matching Shield role from the account type
         // (Administrátor -> super_admin, Terapeut -> therapist), so no manual assignRole needed.

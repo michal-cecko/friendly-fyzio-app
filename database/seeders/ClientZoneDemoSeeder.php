@@ -21,9 +21,9 @@ use App\Models\Payment;
 use App\Models\Reservation;
 use App\Models\Room;
 use App\Models\Service;
+use App\Models\StaffProfile;
 use App\Models\SubstituteRule;
 use App\Models\SubstituteToken;
-use App\Models\TherapistProfile;
 use App\Models\User;
 use App\Support\Credits\CreditLedger;
 use Illuminate\Database\Seeder;
@@ -99,7 +99,7 @@ class ClientZoneDemoSeeder extends Seeder
     protected function reservations(User $client): void
     {
         $service = Service::query()->where('price', '>', 0)->first() ?? Service::factory()->create(['price' => 900]);
-        $therapist = TherapistProfile::query()->first() ?? TherapistProfile::factory()->create();
+        $therapist = StaffProfile::query()->first() ?? StaffProfile::factory()->create();
         $room = Room::query()->first() ?? Room::factory()->create();
 
         $base = [

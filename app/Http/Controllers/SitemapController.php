@@ -8,7 +8,7 @@ use App\Models\OneOffEvent;
 use App\Models\Page;
 use App\Models\Service;
 use App\Models\ServiceCategory;
-use App\Models\TherapistProfile;
+use App\Models\StaffProfile;
 use Illuminate\Http\Response;
 use Illuminate\Support\Collection;
 
@@ -45,8 +45,8 @@ class SitemapController extends Controller
         OneOffEvent::published()->with('category')->get()
             ->each(fn (OneOffEvent $event) => $urls->push($event->permalink()));
 
-        TherapistProfile::published()->get()
-            ->each(fn (TherapistProfile $therapist) => $urls->push($therapist->permalink));
+        StaffProfile::published()->get()
+            ->each(fn (StaffProfile $therapist) => $urls->push($therapist->permalink));
 
         return response()
             ->view('sitemap', ['urls' => $this->normalize($urls)])

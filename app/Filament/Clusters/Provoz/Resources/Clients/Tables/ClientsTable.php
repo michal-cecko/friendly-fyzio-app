@@ -44,6 +44,11 @@ class ClientsTable
                     ->label('Telefon')
                     ->searchable()
                     ->toggleable(),
+                TextColumn::make('clientProfile.gender')
+                    ->label('Pohlaví')
+                    ->badge()
+                    ->placeholder('—')
+                    ->toggleable(),
                 TextColumn::make('last_reservation_at')
                     ->label('Poslední rezervace')
                     ->date('d.m.Y')

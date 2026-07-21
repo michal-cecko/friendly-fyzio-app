@@ -31,7 +31,7 @@ use App\Models\Room;
 use App\Models\RoomBlocking;
 use App\Models\Service;
 use App\Models\ServiceCategory;
-use App\Models\TherapistProfile;
+use App\Models\StaffProfile;
 use App\Models\TherapistSpecialization;
 use App\Models\TherapistWorkBlockSeries;
 use App\Models\User;
@@ -220,7 +220,7 @@ class DemoSeeder extends Seeder
                 'phone' => $def['phone'],
             ]);
 
-            $therapist = TherapistProfile::factory()->for($user)->create([
+            $therapist = StaffProfile::factory()->for($user)->create([
                 'title' => $def['title'],
                 'badge' => $def['badge'],
                 'bio' => $def['bio'],
@@ -481,7 +481,7 @@ class DemoSeeder extends Seeder
      *
      * @param  Collection<int, User>  $clients
      * @param  Collection<int, Service>  $services
-     * @param  Collection<int, TherapistProfile>  $therapists
+     * @param  Collection<int, StaffProfile>  $therapists
      * @param  Collection<int, Room>  $rooms
      */
     private function seedFinance($clients, $services, $therapists, $rooms): void

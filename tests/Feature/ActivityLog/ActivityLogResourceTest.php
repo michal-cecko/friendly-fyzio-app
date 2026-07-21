@@ -6,7 +6,7 @@ use App\Filament\Resources\ActivityLog\ActivityLogResource;
 use App\Filament\Resources\ActivityLog\Pages\ListActivityLog;
 use App\Models\Reservation;
 use App\Models\Service;
-use App\Models\TherapistProfile;
+use App\Models\StaffProfile;
 use App\Models\User;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -82,7 +82,7 @@ class ActivityLogResourceTest extends TestCase
     public function test_admin_sees_all_activities_therapist_only_their_scoped(): void
     {
         $therapistUser = User::factory()->therapist()->create();
-        $profile = TherapistProfile::factory()->create(['user_id' => $therapistUser->getKey()]);
+        $profile = StaffProfile::factory()->create(['user_id' => $therapistUser->getKey()]);
 
         $mine = Reservation::factory()->create(['therapist_id' => $profile->getKey()]);
         $other = Reservation::factory()->create();

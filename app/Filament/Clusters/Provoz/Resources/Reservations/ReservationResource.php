@@ -98,7 +98,7 @@ class ReservationResource extends Resource
     {
         return parent::getEloquentQuery()
             ->with(['client', 'service', 'therapist.user', 'room'])
-            ->when(static::therapistProfileScopeId(), fn (Builder $query, string $id) => $query->where('therapist_id', $id));
+            ->when(static::staffProfileScopeId(), fn (Builder $query, string $id) => $query->where('therapist_id', $id));
     }
 
     public static function getRelations(): array

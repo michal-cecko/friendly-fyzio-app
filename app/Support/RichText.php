@@ -67,13 +67,13 @@ class RichText
 
         $users = User::query()
             ->whereKey(StaffMentions::extractIds($html))
-            ->with('therapistProfile')
+            ->with('staffProfile')
             ->get()
             ->keyBy(fn (User $user): string => (string) $user->getKey());
 
         return StaffMentions::replaceMentions($html, function (?string $id, string $storedLabel) use ($users): string {
             $user = $id !== null ? $users->get($id) : null;
-            $profile = $user?->therapistProfile;
+            $profile = $user?->staffProfile;
             $name = e($user->name ?? $storedLabel);
 
             if ($profile && $profile->isPublished() && filled($profile->slug)) {

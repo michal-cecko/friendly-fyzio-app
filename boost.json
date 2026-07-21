@@ -13,6 +13,8 @@
     "sail": true,
     "skills": [
         "laravel-best-practices",
-        "tailwindcss-development"
+        "octane-development",
+        "tailwindcss-development",
+        "filament-security-audit"
     ]
 }

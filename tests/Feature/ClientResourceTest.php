@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\Gender;
 use App\Enums\ReservationStatus;
 use App\Enums\UserRole;
 use App\Filament\Clusters\Provoz\Resources\Clients\Pages\CreateClient;
@@ -110,6 +111,8 @@ class ClientResourceTest extends TestCase
                 'clientProfile' => [
                     'address_city' => 'Brno',
                     'occupation' => 'Programátor',
+                    'gender' => Gender::Female->value,
+                    'birth_number' => '905728/5963',
                     'billing_name' => 'Firma s.r.o.',
                     'company_ico' => '12345678',
                 ],
@@ -122,6 +125,8 @@ class ClientResourceTest extends TestCase
         $this->assertNotNull($created);
         $this->assertSame(1, ClientProfile::where('user_id', $created->getKey())->count());
         $this->assertSame('Brno', $created->clientProfile->address_city);
+        $this->assertSame(Gender::Female, $created->clientProfile->gender);
+        $this->assertSame('905728/5963', $created->clientProfile->birth_number);
         $this->assertSame('Firma s.r.o.', $created->clientProfile->billing_name);
         $this->assertSame('12345678', $created->clientProfile->company_ico);
     }

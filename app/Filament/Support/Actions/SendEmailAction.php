@@ -92,6 +92,8 @@ class SendEmailAction extends Action
             ])
             ->action(function (Model $record, array $data): void {
                 if (($data['mode'] ?? 'template') === 'custom') {
+                    $sender = auth()->user();
+
                     Notification::route('mail', $data['recipient'])
                         ->notify(new CustomEmailNotification(
                             record: $record,
@@ -99,6 +101,8 @@ class SendEmailAction extends Action
                             bodyHtml: $data['body'],
                             cc: $data['cc'] ?? [],
                             bcc: $data['bcc'] ?? [],
+                            replyToAddress: $sender?->email,
+                            replyToName: $sender?->name,
                         ));
                 } else {
                     /** @var Emailable $record */

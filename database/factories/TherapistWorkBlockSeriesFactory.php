@@ -5,7 +5,7 @@ namespace Database\Factories;
 use App\Enums\DayOfWeek;
 use App\Enums\WeekType;
 use App\Models\Room;
-use App\Models\TherapistProfile;
+use App\Models\StaffProfile;
 use App\Models\TherapistWorkBlockSeries;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -23,7 +23,7 @@ class TherapistWorkBlockSeriesFactory extends Factory
         $startsOn = now()->startOfDay();
 
         return [
-            'therapist_id' => TherapistProfile::factory(),
+            'therapist_id' => StaffProfile::factory(),
             'room_id' => Room::factory(),
             'day_of_week' => fake()->randomElement(DayOfWeek::cases()),
             'week_type' => WeekType::All,

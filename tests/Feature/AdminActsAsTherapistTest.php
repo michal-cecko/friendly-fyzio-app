@@ -24,7 +24,7 @@ class AdminActsAsTherapistTest extends TestCase
     {
         $admin = User::factory()->admin()->create(['acts_as_therapist' => true]);
 
-        $profile = $admin->therapistProfile;
+        $profile = $admin->staffProfile;
 
         $this->assertNotNull($profile);
         $this->assertFalse($profile->isPublished());
@@ -36,9 +36,9 @@ class AdminActsAsTherapistTest extends TestCase
         $therapist = User::factory()->therapist()->create();
         $customer = User::factory()->customer()->create();
 
-        $this->assertNull($admin->therapistProfile);
-        $this->assertNull($therapist->therapistProfile);
-        $this->assertNull($customer->therapistProfile);
+        $this->assertNull($admin->staffProfile);
+        $this->assertNull($therapist->staffProfile);
+        $this->assertNull($customer->staffProfile);
     }
 
     public function test_is_therapist_and_scope_cover_opted_in_admins(): void
@@ -75,6 +75,6 @@ class AdminActsAsTherapistTest extends TestCase
         $admin->refresh();
 
         $this->assertTrue($admin->acts_as_therapist);
-        $this->assertNotNull($admin->therapistProfile);
+        $this->assertNotNull($admin->staffProfile);
     }
 }

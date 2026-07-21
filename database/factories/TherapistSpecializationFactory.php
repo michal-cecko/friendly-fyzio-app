@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Models\TherapistProfile;
+use App\Models\StaffProfile;
 use App\Models\TherapistSpecialization;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -19,7 +19,7 @@ class TherapistSpecializationFactory extends Factory
     public function definition(): array
     {
         return [
-            'therapist_id' => TherapistProfile::factory(),
+            'therapist_id' => StaffProfile::factory(),
             'name' => fake()->randomElement([
                 'Pánevní dno',
                 'Těhotenství & porod',

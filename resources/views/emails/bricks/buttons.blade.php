@@ -19,7 +19,7 @@
                                 $fg = $isOutline ? $accent : '#FFFFFF';
                             @endphp
                             <td style="padding:8px;">
-                                <a href="{{ $url }}" style="display:inline-block;background-color:{{ $bg }};color:{{ $fg }};border:1px solid {{ $accent }};border-radius:8px;padding:14px 28px;font-family:'Open Sans',Arial,sans-serif;font-size:15px;font-weight:600;text-decoration:none;">{{ $btn['text'] ?? '' }}</a>
+                                <a href="{{ $url }}" class="e-btn" style="display:inline-block;background-color:{{ $bg }};color:{{ $fg }};border:1px solid {{ $accent }};border-radius:8px;padding:14px 28px;font-family:'Open Sans',Arial,sans-serif;font-size:15px;font-weight:600;text-decoration:none;">{{ $btn['text'] ?? '' }}</a>
                             </td>
                         @endforeach
                     </tr>

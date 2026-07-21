@@ -12,7 +12,7 @@
     <tr>
         <td style="background-color:#FFF8FA;border-radius:8px;padding:24px;text-align:center;">
             @if(filled($title))
-                <div style="font-family:'Montserrat',Arial,sans-serif;font-size:16px;font-weight:700;color:#1A1A1A;padding-bottom:16px;">{{ $title }}</div>
+                <div class="e-title" style="font-family:'Montserrat',Arial,sans-serif;font-size:16px;font-weight:700;color:#1A1A1A;padding-bottom:16px;">{{ $title }}</div>
             @endif
 
             @if($showQr)
@@ -21,21 +21,21 @@
 
             <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;border-collapse:collapse;text-align:left;">
                 <tr>
-                    <td style="{{ $labelStyle }}">Částka:</td>
-                    <td style="{{ $valueStyle }}"><strong style="color:#1A1A1A;">@{{ castka }} Kč</strong></td>
+                    <td class="e-text" style="{{ $labelStyle }}">Částka:</td>
+                    <td class="e-text" style="{{ $valueStyle }}"><strong style="color:#1A1A1A;">@{{ castka }} Kč</strong></td>
                 </tr>
                 <tr>
-                    <td style="{{ $labelStyle }}">Účet:</td>
-                    <td style="{{ $valueStyle }}">@{{ iban }}</td>
+                    <td class="e-text" style="{{ $labelStyle }}">Účet:</td>
+                    <td class="e-text" style="{{ $valueStyle }}">@{{ iban }}</td>
                 </tr>
                 <tr>
-                    <td style="{{ $labelStyle }}">Variabilní symbol:</td>
-                    <td style="{{ $valueStyle }}">@{{ vs }}</td>
+                    <td class="e-text" style="{{ $labelStyle }}">Variabilní symbol:</td>
+                    <td class="e-text" style="{{ $valueStyle }}">@{{ vs }}</td>
                 </tr>
                 @if($showDue)
                     <tr>
-                        <td style="{{ $labelStyle }}">Splatnost:</td>
-                        <td style="{{ $valueStyle }}"><strong style="color:#D9534F;">@{{ splatnost }}</strong></td>
+                        <td class="e-text" style="{{ $labelStyle }}">Splatnost:</td>
+                        <td class="e-text" style="{{ $valueStyle }}"><strong style="color:#D9534F;">@{{ splatnost }}</strong></td>
                     </tr>
                 @endif
             </table>

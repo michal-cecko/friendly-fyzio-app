@@ -14,7 +14,7 @@ use App\Models\ReservationDayWaitlistEntry;
 use App\Models\Room;
 use App\Models\Service;
 use App\Models\ServiceCategory;
-use App\Models\TherapistProfile;
+use App\Models\StaffProfile;
 use App\Models\TherapistWorkBlock;
 use App\Models\User;
 use App\Notifications\ReservationTemplateNotification;
@@ -35,7 +35,7 @@ class ReservationWizardTest extends TestCase
 
     private Service $service;
 
-    private TherapistProfile $therapist;
+    private StaffProfile $therapist;
 
     protected function setUp(): void
     {
@@ -53,7 +53,7 @@ class ReservationWizardTest extends TestCase
             'published_at' => now(),
         ]);
 
-        $this->therapist = TherapistProfile::factory()->create(['published_at' => now()]);
+        $this->therapist = StaffProfile::factory()->create(['published_at' => now()]);
         $this->service->therapists()->attach($this->therapist);
 
         TherapistWorkBlock::factory()->create([
@@ -85,7 +85,7 @@ class ReservationWizardTest extends TestCase
 
         // A second therapist keeps the therapist step in play (a single therapist is
         // auto-selected and skipped), so this exercises the full manual flow.
-        TherapistProfile::factory()->create(['published_at' => now()]);
+        StaffProfile::factory()->create(['published_at' => now()]);
 
         Livewire::test(ReservationWizard::class)
             ->assertSet('stepIndex', 0)
@@ -148,7 +148,7 @@ class ReservationWizardTest extends TestCase
 
     public function test_therapist_step_shown_when_multiple_qualify(): void
     {
-        $other = TherapistProfile::factory()->create(['published_at' => now()]);
+        $other = StaffProfile::factory()->create(['published_at' => now()]);
         $this->service->therapists()->attach($other);
 
         $component = Livewire::withQueryParams(['sluzba' => $this->service->slug])
@@ -163,7 +163,7 @@ class ReservationWizardTest extends TestCase
     {
         // Publishing gates the public team page and profile detail only — an
         // unpublished profile must still be bookable through the wizard.
-        $unpublished = TherapistProfile::factory()->create(['published_at' => null]);
+        $unpublished = StaffProfile::factory()->create(['published_at' => null]);
         $this->service->therapists()->attach($unpublished);
 
         $component = Livewire::withQueryParams(['sluzba' => $this->service->slug])
@@ -212,7 +212,7 @@ class ReservationWizardTest extends TestCase
     {
         // The mirror of the service rule: a therapist who performs nothing bookable
         // is a dead end in the picker.
-        $orphan = TherapistProfile::factory()->create(['published_at' => now()]);
+        $orphan = StaffProfile::factory()->create(['published_at' => now()]);
 
         $ids = Livewire::test(ReservationWizard::class)->instance()->therapists->pluck('id');
 
@@ -238,7 +238,7 @@ class ReservationWizardTest extends TestCase
 
     public function test_therapist_deep_link_prefills_and_starts_therapist_first(): void
     {
-        TherapistProfile::factory()->create(['published_at' => now()]);
+        StaffProfile::factory()->create(['published_at' => now()]);
 
         $component = Livewire::withQueryParams(['terapeut' => $this->therapist->slug])
             ->test(ReservationWizard::class);
@@ -252,7 +252,7 @@ class ReservationWizardTest extends TestCase
     public function test_default_starts_in_therapist_first_order(): void
     {
         // A second therapist makes the therapist step a real choice (not auto-skipped).
-        TherapistProfile::factory()->create(['published_at' => now()]);
+        StaffProfile::factory()->create(['published_at' => now()]);
 
         $component = Livewire::test(ReservationWizard::class);
 
@@ -417,10 +417,10 @@ class ReservationWizardTest extends TestCase
             ->assertSet('examType', ExamType::Vstupni->value);
     }
 
-    public function test_email_exists_gate_logs_in_and_books_under_existing_account(): void
+    public function test_guest_with_existing_email_books_without_logging_in(): void
     {
         Notification::fake();
-        $existing = User::factory()->customer()->create(['email' => 'dup@example.com', 'password' => Hash::make('tajneheslo')]);
+        $existing = User::factory()->customer()->create(['email' => 'dup@example.com']);
 
         Livewire::test(ReservationWizard::class)
             ->set('therapistSlug', $this->therapist->slug)
@@ -434,13 +434,65 @@ class ReservationWizardTest extends TestCase
             ->set('phone', '+420604793255')
             ->set('agreeCancellation', true)
             ->call('submit')
-            ->assertSet('gate', 'email_exists')
-            ->set('loginPassword', 'tajneheslo')
-            ->call('logIn')
+            ->assertSet('gate', null)
             ->assertSet('confirmationId', fn ($value): bool => $value !== null);
 
+        $this->assertGuest();
         $this->assertSame(1, User::where('email', 'dup@example.com')->count());
         $this->assertSame($existing->id, Reservation::sole()->client_id);
+    }
+
+    public function test_existing_email_shows_inline_login_hint_and_login_prefills_without_booking(): void
+    {
+        $existing = User::factory()->customer()->create(['email' => 'dup@example.com', 'password' => Hash::make('tajneheslo')]);
+
+        $component = Livewire::test(ReservationWizard::class)
+            ->set('email', 'neznamy@example.com')
+            ->assertSet('emailKnown', false)
+            ->set('email', 'dup@example.com')
+            ->assertSet('emailKnown', true)
+            ->call('showLogin')
+            ->assertSet('gate', 'email_exists')
+            ->assertSet('loginEmail', 'dup@example.com')
+            ->set('loginPassword', 'tajneheslo')
+            ->call('logIn')
+            ->assertSet('gate', null)
+            ->assertSet('emailKnown', false)
+            ->assertSet('confirmationId', null);
+
+        $this->assertAuthenticatedAs($existing);
+        $this->assertSame(0, Reservation::count());
+
+        Notification::fake();
+
+        $component
+            ->set('therapistSlug', $this->therapist->slug)
+            ->set('categorySlug', $this->category->slug)
+            ->set('serviceSlug', $this->service->slug)
+            ->set('date', $this->date->toDateString())
+            ->set('startTime', '08:00')
+            ->set('firstName', 'Jana')
+            ->set('lastName', 'Nováková')
+            ->set('phone', '+420604793255')
+            ->set('agreeCancellation', true)
+            ->call('submit')
+            ->assertSet('confirmationId', fn ($value): bool => $value !== null);
+
+        $this->assertSame($existing->id, Reservation::sole()->client_id);
+    }
+
+    public function test_continue_without_login_closes_the_optional_panel_and_keeps_the_email(): void
+    {
+        User::factory()->customer()->create(['email' => 'dup@example.com']);
+
+        Livewire::test(ReservationWizard::class)
+            ->set('email', 'dup@example.com')
+            ->call('showLogin')
+            ->assertSet('gate', 'email_exists')
+            ->call('continueWithoutLogin')
+            ->assertSet('gate', null)
+            ->assertSet('email', 'dup@example.com')
+            ->assertSet('emailKnown', true);
     }
 
     public function test_calendar_flags_a_fully_booked_future_day_as_full(): void

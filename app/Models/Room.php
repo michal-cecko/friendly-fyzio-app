@@ -16,7 +16,26 @@ class Room extends Model
     /** @use HasFactory<RoomFactory> */
     use Auditable, HasFactory, HasUuids;
 
-    protected $fillable = ['building_id', 'name'];
+    protected $fillable = ['building_id', 'name', 'short_name'];
+
+    /**
+     * Compact room label for tight UI (calendar chips, selects): the
+     * shortcut when one is set, otherwise the full name.
+     */
+    public function getDisplayShortNameAttribute(): string
+    {
+        return $this->short_name ?: $this->name;
+    }
+
+    /**
+     * Full label for room selects: name with the shortcut and building appended.
+     */
+    public function getPickerLabelAttribute(): string
+    {
+        $label = $this->short_name ? "{$this->name} ({$this->short_name})" : $this->name;
+
+        return $this->building ? "{$label} · {$this->building->name}" : $label;
+    }
 
     public function building(): BelongsTo
     {

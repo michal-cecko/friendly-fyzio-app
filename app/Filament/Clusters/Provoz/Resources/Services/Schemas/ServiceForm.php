@@ -8,7 +8,7 @@ use App\Filament\Support\Schemas\PresenceBanner;
 use App\Filament\Support\Schemas\ResponsiveColumns;
 use App\Mason\BrickRegistry;
 use App\Models\Service;
-use App\Models\TherapistProfile;
+use App\Models\StaffProfile;
 use App\Support\Settings;
 use Awcodes\Mason\Mason;
 use Filament\Actions\Action;
@@ -169,7 +169,7 @@ class ServiceForm
                                 Select::make('therapists')
                                     ->label('Terapeuti')
                                     ->relationship('therapists')
-                                    ->getOptionLabelFromRecordUsing(fn (TherapistProfile $record): ?string => $record->user?->name)
+                                    ->getOptionLabelFromRecordUsing(fn (StaffProfile $record): ?string => $record->user?->name)
                                     ->multiple()
                                     ->preload(),
                             ]),

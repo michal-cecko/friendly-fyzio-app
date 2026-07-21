@@ -113,7 +113,7 @@ class Service extends Model implements HasPublicPage
 
     public function therapists(): BelongsToMany
     {
-        return $this->belongsToMany(TherapistProfile::class, 'service_therapists', 'service_id', 'therapist_id');
+        return $this->belongsToMany(StaffProfile::class, 'service_therapists', 'service_id', 'therapist_id');
     }
 
     public function reservations(): HasMany
