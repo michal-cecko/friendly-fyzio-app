@@ -8,7 +8,8 @@ use App\Enums\OfferVisibility;
 use App\Models\Course;
 use App\Models\CourseCategory;
 use App\Models\CourseSeries;
-use App\Models\OneTimeLesson;
+use App\Models\EventCategory;
+use App\Models\OneOffEvent;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -17,14 +18,15 @@ use Livewire\Component;
 use Livewire\WithPagination;
 
 /**
- * The public "Pohybové kurzy" archive: a switcher between semester courses and
- * one-time lessons, category pills, an availability toggle, text search and
- * pagination — every filter lives in the query string so results are
- * shareable/deep-linkable. The kurzy tab shows one card per LISTED SERIES
- * (public, open-or-full run), so a course with two upcoming terms appears
- * twice and each card links straight to its term; courses without a listed
- * run surface once in the muted "Připravujeme" tail. Rendered by the
- * course-archive CMS brick.
+ * The public "Pohybové kurzy" archive: category pills, an availability toggle,
+ * text search and pagination — every filter lives in the query string so
+ * results are shareable/deep-linkable. The grid shows one card per LISTED
+ * SERIES (public, open-or-full run), so a course with two upcoming terms
+ * appears twice and each card links straight to its term; courses without a
+ * listed run surface once in the muted "Připravujeme" tail. One-off events
+ * moved to their own category pages — an encouragement section under the grid
+ * cross-sells course-derived events ("try a single session first"). Rendered
+ * by the course-archive CMS brick.
  */
 class CourseArchive extends Component
 {
@@ -32,9 +34,6 @@ class CourseArchive extends Component
 
     /** @var array<string, mixed> */
     public array $config = [];
-
-    #[Url(as: 'typ')]
-    public string $type = 'kurzy';
 
     #[Url(as: 'kategorie')]
     public ?string $category = null;
@@ -44,11 +43,6 @@ class CourseArchive extends Component
 
     #[Url(as: 'hledani')]
     public string $search = '';
-
-    public function updatedType(): void
-    {
-        $this->resetPage('strana');
-    }
 
     public function updatedCategory(): void
     {
@@ -62,12 +56,6 @@ class CourseArchive extends Component
 
     public function updatedSearch(): void
     {
-        $this->resetPage('strana');
-    }
-
-    public function selectType(string $type): void
-    {
-        $this->type = in_array($type, ['kurzy', 'lekce'], true) ? $type : 'kurzy';
         $this->resetPage('strana');
     }
 
@@ -90,25 +78,13 @@ class CourseArchive extends Component
 
     public function render(): View
     {
-        $lessons = $this->type === 'lekce';
-
         return view('livewire.course-archive', [
             'categories' => $this->categories(),
-            'results' => $lessons ? $this->lessons() : $this->courses(),
-            'preparing' => $lessons ? new Collection : $this->preparingCourses(),
+            'results' => $this->courses(),
+            'preparing' => $this->preparingCourses(),
             'showFilters' => (bool) ($this->config['show_filters'] ?? true),
             'showSearch' => (bool) ($this->config['show_search'] ?? true),
-            'showTypeSwitch' => (bool) ($this->config['show_type_switch'] ?? true),
-            'openCoursesCount' => Course::query()->published()
-                ->whereHas('series', fn (Builder $series) => $series
-                    ->where('status', CourseSeriesStatus::Open)
-                    ->when(! $this->includePrivate(), fn (Builder $query) => $query->where('visibility', CourseSeriesVisibility::Public))
-                    ->whereDate('end_date', '>=', today()))
-                ->count(),
-            'upcomingLessonsCount' => OneTimeLesson::query()->published()->upcoming()
-                ->when(! $this->includePrivate(), fn (Builder $series) => $series->where('visibility', OfferVisibility::Public))
-                ->whereHas('course', fn (Builder $course) => $course->published())
-                ->count(),
+            'crossSell' => $this->crossSell(),
         ]);
     }
 
@@ -156,7 +132,7 @@ class CourseArchive extends Component
      * Published courses with no publicly listed run — the muted "Připravujeme"
      * tail under the grid (their detail pages collect interest e-mails). Only
      * on the first page of an unfiltered/-searched listing, mirroring the
-     * workshop archive's past section.
+     * event archive's past section.
      *
      * @return Collection<int, Course>
      */
@@ -179,23 +155,50 @@ class CourseArchive extends Component
             ->get();
     }
 
-    protected function lessons(): mixed
+    /**
+     * The "try a single session first" encouragement under the course grid:
+     * configured copy, up to three upcoming course-derived events and a CTA to
+     * the configured event category page. Suppressed on filtered/paged views
+     * (mirrors the preparing tail) and via the brick toggle.
+     *
+     * @return array{title: string, text: string, url: ?string, events: Collection<int, OneOffEvent>}|null
+     */
+    protected function crossSell(): ?array
     {
-        return OneTimeLesson::query()
+        if (! ($this->config['cross_sell'] ?? true)) {
+            return null;
+        }
+
+        if ($this->availableOnly || filled($this->search) || (int) ($this->paginators['strana'] ?? 1) > 1) {
+            return null;
+        }
+
+        $categorySlug = (string) ($this->config['cross_sell_category'] ?? 'jednorazove-lekce');
+        $category = EventCategory::query()->published()->where('slug', $categorySlug)->first();
+
+        $events = OneOffEvent::query()
             ->published()
             ->upcoming()
-            ->when(! $this->includePrivate(), fn (Builder $query) => $query->where('visibility', OfferVisibility::Public))
-            ->withCount('activeTakers')
+            ->where('visibility', OfferVisibility::Public)
+            ->whereNotNull('course_id')
             ->whereHas('course', fn (Builder $course) => $course->published())
-            ->with(['course.category', 'room'])
-            ->when($this->category, fn (Builder $query, string $slug) => $query
-                ->whereHas('course.category', fn (Builder $category) => $category->where('slug', $slug)))
-            ->when(filled($this->search), fn (Builder $query) => $query
-                ->whereHas('course', fn (Builder $course) => $this->applySearch($course, ['name', 'description'])))
-            ->when($this->availableOnly, fn (Builder $query) => $query->hasSpotsLeft())
-            ->orderBy('lesson_date')
+            ->withCount('activeTakers')
+            ->with(['course', 'category'])
+            ->orderBy('event_date')
             ->orderBy('start_time')
-            ->paginate(6, pageName: 'strana');
+            ->limit(3)
+            ->get();
+
+        if ($category === null && $events->isEmpty()) {
+            return null;
+        }
+
+        return [
+            'title' => (string) ($this->config['cross_sell_title'] ?? 'Chcete si to nejdřív vyzkoušet?'),
+            'text' => (string) ($this->config['cross_sell_text'] ?? 'Přijďte na jednorázovou lekci bez závazku celého kurzu.'),
+            'url' => $category?->permalink,
+            'events' => $events,
+        ];
     }
 
     /**

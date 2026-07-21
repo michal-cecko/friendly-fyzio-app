@@ -14,12 +14,15 @@ class SlotCalendar
      * Every month between the two dates as a Monday-first grid of day cells.
      *
      * @param  array{available: array<int, string>, full: array<int, string>}  $availability
+     * @param  array<int, string>  $waitlisted  Full days the current visitor already joined the
+     *                                          pořadník for — rendered as 'waitlist' over 'full'.
      * @return array<int, array{label: string, weeks: array<int, array<int, ?array{date: string, day: int, available: bool, today: bool, queue: ?string}>>}>
      */
-    public static function months(Carbon $first, Carbon $last, array $availability): array
+    public static function months(Carbon $first, Carbon $last, array $availability, array $waitlisted = []): array
     {
         $available = array_flip($availability['available'] ?? []);
         $full = array_flip($availability['full'] ?? []);
+        $onWaitlist = array_flip($waitlisted);
         $today = Carbon::today();
         $months = [];
 
@@ -38,8 +41,13 @@ class SlotCalendar
                             'day' => $cursor->day,
                             'available' => isset($available[$ds]),
                             'today' => $cursor->isSameDay($today),
-                            // 'full' = works that day but fully booked ("pořadník").
-                            'queue' => isset($full[$ds]) ? 'full' : null,
+                            // 'waitlist' = a full day the visitor already joined; 'full' = works
+                            // that day but fully booked ("pořadník"), still joinable.
+                            'queue' => match (true) {
+                                isset($onWaitlist[$ds]) && isset($full[$ds]) => 'waitlist',
+                                isset($full[$ds]) => 'full',
+                                default => null,
+                            },
                         ];
                     } else {
                         $week[] = null;

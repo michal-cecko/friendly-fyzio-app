@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Filament\Clusters\Obsah\Resources\Pages\PageResource;
 use App\Mason\BrickRegistry;
+use App\Models\EventCategory;
 use App\Models\Page;
 use App\Support\Seo\LegacyRedirects;
 use Awcodes\Mason\Support\MasonRenderer;
@@ -14,6 +15,27 @@ class PageController extends Controller
 {
     public function show(string $slug = '/'): View|RedirectResponse
     {
+        // The retired "Jednorázové lekce" tab of the course archive lives on as
+        // its own category page; keep old deep links working.
+        if ($slug === 'kurzy' && request()->query('typ') === 'lekce') {
+            $lekce = EventCategory::query()->where('slug', 'jednorazove-lekce')->first();
+
+            if ($lekce !== null) {
+                return redirect()->to($lekce->permalink, 301);
+            }
+        }
+
+        // Event category landing pages resolve BEFORE CMS pages: a category's
+        // custom page has `pageable` set, and the owned-page redirect below
+        // would otherwise bounce the category URL to itself forever.
+        if ($slug !== '/') {
+            $category = EventCategory::query()->where('slug', $slug)->first();
+
+            if ($category !== null) {
+                return app(EventCategoryController::class)->show($category);
+            }
+        }
+
         $page = Page::query()
             ->when($slug === '/', fn ($query) => $query->where('system_key', 'home'))
             ->when($slug !== '/', fn ($query) => $query->where('slug', $slug))

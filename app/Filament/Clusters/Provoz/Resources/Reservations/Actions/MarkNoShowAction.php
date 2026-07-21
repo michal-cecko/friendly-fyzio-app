@@ -48,6 +48,7 @@ class MarkNoShowAction extends Action
             ))
             ->modalSubmitActionLabel('Označit nedostavení')
             ->visible(fn (Reservation $record): bool => $record->status !== ReservationStatus::Cancelled
+                && $record->settled_at === null
                 && $record->startsAt()->isPast())
             ->schema([
                 Toggle::make('notify_client')

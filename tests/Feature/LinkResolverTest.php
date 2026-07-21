@@ -4,12 +4,12 @@ namespace Tests\Feature;
 
 use App\Models\Course;
 use App\Models\CourseCategory;
+use App\Models\EventCategory;
 use App\Models\NavigationItem;
-use App\Models\OneTimeLesson;
+use App\Models\OneOffEvent;
 use App\Models\Page;
 use App\Models\Service;
 use App\Models\ServiceCategory;
-use App\Models\Workshop;
 use App\Support\InternalLinks;
 use App\Support\LinkResolver;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -35,32 +35,43 @@ class LinkResolverTest extends TestCase
         $this->assertNull(InternalLinks::resolve(''));
     }
 
-    public function test_internal_links_resolves_course_destinations(): void
+    public function test_internal_links_resolves_course_and_event_destinations(): void
     {
         $category = CourseCategory::factory()->create(['published_at' => now(), 'slug' => 'hormonalni-joga']);
         $course = Course::factory()->create(['published_at' => now()]);
-        $lesson = OneTimeLesson::factory()->create(['published_at' => now(), 'lesson_date' => today()->addWeek()]);
-        $workshop = Workshop::factory()->create(['published_at' => now(), 'workshop_date' => today()->addWeek()]);
+        // The data migration pre-seeds the canonical categories in every database.
+        $eventCategory = EventCategory::query()->where('slug', 'workshopy')->firstOrFail();
+        $event = OneOffEvent::factory()->forCategory($eventCategory)->create(['published_at' => now(), 'event_date' => today()->addWeek()]);
 
         $this->assertSame(url('/kurzy').'?kategorie=hormonalni-joga', InternalLinks::resolve("course-category:{$category->id}"));
         $this->assertSame($course->permalink(), InternalLinks::resolve("course:{$course->id}"));
-        $this->assertSame($lesson->permalink(), InternalLinks::resolve("lesson:{$lesson->id}"));
-        $this->assertSame($workshop->permalink(), InternalLinks::resolve("workshop:{$workshop->id}"));
+        $this->assertSame($eventCategory->permalink, InternalLinks::resolve("event-category:{$eventCategory->id}"));
+        $this->assertSame($event->permalink(), InternalLinks::resolve("event:{$event->id}"));
     }
 
-    public function test_options_include_course_categories_courses_lessons_and_workshops(): void
+    public function test_legacy_lesson_and_workshop_references_resolve_via_preserved_event_ids(): void
+    {
+        // Lessons and workshops merged into one-off events with PRESERVED ids,
+        // so old stored refs must keep resolving to the event permalink.
+        $event = OneOffEvent::factory()->create(['published_at' => now(), 'event_date' => today()->addWeek()]);
+
+        $this->assertSame($event->permalink(), InternalLinks::resolve("lesson:{$event->id}"));
+        $this->assertSame($event->permalink(), InternalLinks::resolve("workshop:{$event->id}"));
+    }
+
+    public function test_options_include_course_categories_courses_events_and_event_categories(): void
     {
         $category = CourseCategory::factory()->create(['published_at' => now()]);
         $course = Course::factory()->create(['published_at' => now()]);
-        $lesson = OneTimeLesson::factory()->create(['published_at' => now(), 'lesson_date' => today()->addWeek()]);
-        $workshop = Workshop::factory()->create(['published_at' => now(), 'workshop_date' => today()->addWeek()]);
+        $eventCategory = EventCategory::factory()->create();
+        $event = OneOffEvent::factory()->forCategory($eventCategory)->create(['published_at' => now(), 'event_date' => today()->addWeek()]);
 
         $options = InternalLinks::options();
 
         $this->assertArrayHasKey("course-category:{$category->id}", $options['Kurzy – kategorie']);
         $this->assertArrayHasKey("course:{$course->id}", $options['Kurzy – detail']);
-        $this->assertArrayHasKey("lesson:{$lesson->id}", $options['Jednorázové lekce']);
-        $this->assertArrayHasKey("workshop:{$workshop->id}", $options['Workshopy']);
+        $this->assertArrayHasKey("event-category:{$eventCategory->id}", $options['Jednorázové akce – kategorie']);
+        $this->assertArrayHasKey("event:{$event->id}", $options['Jednorázové akce']);
     }
 
     public function test_options_are_grouped_and_include_pages_routes_and_categories(): void

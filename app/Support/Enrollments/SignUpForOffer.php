@@ -8,16 +8,13 @@ use App\Enums\EmailTemplateKey;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Filament\Clusters\Kurzy\Resources\CourseEnrollments\CourseEnrollmentResource;
-use App\Filament\Clusters\Lekce\Resources\OneTimeLessonBookings\OneTimeLessonBookingResource;
-use App\Filament\Clusters\Workshopy\Resources\WorkshopRegistrations\WorkshopRegistrationResource;
+use App\Filament\Clusters\Kurzy\Resources\OneOffEventBookings\OneOffEventBookingResource;
 use App\Models\CourseEnrollment;
 use App\Models\CourseSeries;
-use App\Models\OneTimeLesson;
-use App\Models\OneTimeLessonBooking;
+use App\Models\OneOffEvent;
+use App\Models\OneOffEventBooking;
 use App\Models\Payment;
 use App\Models\User;
-use App\Models\Workshop;
-use App\Models\WorkshopRegistration;
 use App\Notifications\ClientAccountCreatedNotification;
 use App\Notifications\EnrollmentTemplateNotification;
 use App\Support\Clients\ResolveCustomerAccount;
@@ -28,7 +25,7 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Turns a validated public form submission into a persisted sign-up:
- * course-series enrollment, one-time lesson booking or workshop registration.
+ * course-series enrollment or one-off event booking.
  *
  * Booking is serialised per offer with a short cache lock and the offer state
  * is re-checked inside the transaction, so two people can't grab the last
@@ -83,13 +80,13 @@ class SignUpForOffer
         return $enrollment;
     }
 
-    public function forLesson(OneTimeLesson $lesson, EnrollmentData $data, bool $viaPresale = false): OneTimeLessonBooking
+    public function forEvent(OneOffEvent $event, EnrollmentData $data, bool $viaPresale = false): OneOffEventBooking
     {
-        /** @var OneTimeLessonBooking $booking */
-        [$booking, $payment, $client, $isNewAccount] = $this->locked('lesson:'.$lesson->getKey(), function () use ($lesson, $data, $viaPresale): array {
-            $lesson->refresh()->load('course');
+        /** @var OneOffEventBooking $booking */
+        [$booking, $payment, $client, $isNewAccount] = $this->locked('event:'.$event->getKey(), function () use ($event, $data, $viaPresale): array {
+            $event->refresh()->load(['course', 'category']);
 
-            $state = $viaPresale ? $lesson->offerStateForPresale() : $lesson->offerState();
+            $state = $viaPresale ? $event->offerStateForPresale() : $event->offerState();
 
             if (! $state->acceptsRegistrations()) {
                 throw new OfferClosedException;
@@ -97,78 +94,34 @@ class SignUpForOffer
 
             [$client, $isNewAccount] = ResolveCustomerAccount::resolve($data->client, $data->name, $data->email, $data->phone);
 
-            if ($lesson->bookings()->where('client_id', $client->id)->whereIn('status', BookingStatus::occupying())->exists()) {
+            if ($event->bookings()->where('client_id', $client->id)->whereIn('status', BookingStatus::occupying())->exists()) {
                 throw new AlreadySignedUpException;
             }
 
-            $booking = $lesson->bookings()->create([
+            $booking = $event->bookings()->create([
                 'client_id' => $client->id,
                 'status' => BookingStatus::Confirmed,
                 'payment_status' => PaymentStatus::Unpaid,
                 'note' => $data->note,
             ]);
 
-            return [$booking, $this->paymentRequest($booking, $client, (int) $lesson->price), $client, $isNewAccount];
+            return [$booking, $this->paymentRequest($booking, $client, (int) $event->price), $client, $isNewAccount];
         });
 
         $this->notify(
             $client,
             $isNewAccount,
             new EnrollmentTemplateNotification(
-                EmailTemplateKey::LessonBookingReceived,
-                EnrollmentEmailContext::forBooking($booking, PaymentEmailTokens::for($payment)),
+                EmailTemplateKey::EventBookingReceived,
+                EnrollmentEmailContext::forEventBooking($booking, PaymentEmailTokens::for($payment)),
             ),
-            $lesson->instructor,
-            EnrollmentEmailContext::offerTokens($lesson),
+            $event->instructor,
+            EnrollmentEmailContext::offerTokens($event),
             $booking->note,
-            OneTimeLessonBookingResource::getUrl('view', ['record' => $booking]),
+            OneOffEventBookingResource::getUrl('view', ['record' => $booking]),
         );
 
         return $booking;
-    }
-
-    public function forWorkshop(Workshop $workshop, EnrollmentData $data, bool $viaPresale = false): WorkshopRegistration
-    {
-        /** @var WorkshopRegistration $registration */
-        [$registration, $payment, $client, $isNewAccount] = $this->locked('workshop:'.$workshop->getKey(), function () use ($workshop, $data, $viaPresale): array {
-            $workshop->refresh();
-
-            $state = $viaPresale ? $workshop->offerStateForPresale() : $workshop->offerState();
-
-            if (! $state->acceptsRegistrations()) {
-                throw new OfferClosedException;
-            }
-
-            [$client, $isNewAccount] = ResolveCustomerAccount::resolve($data->client, $data->name, $data->email, $data->phone);
-
-            if ($workshop->registrations()->where('client_id', $client->id)->whereIn('status', BookingStatus::occupying())->exists()) {
-                throw new AlreadySignedUpException;
-            }
-
-            $registration = $workshop->registrations()->create([
-                'client_id' => $client->id,
-                'status' => BookingStatus::Confirmed,
-                'payment_status' => PaymentStatus::Unpaid,
-                'note' => $data->note,
-            ]);
-
-            return [$registration, $this->paymentRequest($registration, $client, (int) $workshop->price), $client, $isNewAccount];
-        });
-
-        $this->notify(
-            $client,
-            $isNewAccount,
-            new EnrollmentTemplateNotification(
-                EmailTemplateKey::WorkshopRegistrationReceived,
-                EnrollmentEmailContext::forRegistration($registration, PaymentEmailTokens::for($payment)),
-            ),
-            $workshop->instructor,
-            EnrollmentEmailContext::offerTokens($workshop),
-            $registration->note,
-            WorkshopRegistrationResource::getUrl('view', ['record' => $registration]),
-        );
-
-        return $registration;
     }
 
     /**
@@ -187,7 +140,7 @@ class SignUpForOffer
      * The unpaid QR payment request holding the spot: due when the configured
      * hold window runs out, after which the sign-up is auto-cancelled.
      */
-    protected function paymentRequest(CourseEnrollment|OneTimeLessonBooking|WorkshopRegistration $signup, User $client, int $amount): Payment
+    protected function paymentRequest(CourseEnrollment|OneOffEventBooking $signup, User $client, int $amount): Payment
     {
         return $signup->payments()->create([
             'client_id' => $client->id,

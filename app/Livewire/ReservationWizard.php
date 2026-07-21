@@ -5,12 +5,14 @@ namespace App\Livewire;
 use App\Enums\ExamType;
 use App\Enums\ReservationStatus;
 use App\Enums\ServiceType;
+use App\Models\ReservationDayWaitlistEntry;
 use App\Models\Service;
 use App\Models\ServiceCategory;
 use App\Models\TherapistProfile;
 use App\Models\User;
 use App\Support\Reservations\CreateReservationFromWizard;
 use App\Support\Reservations\DeactivatedClientException;
+use App\Support\Reservations\JoinReservationDayWaitlist;
 use App\Support\Reservations\ReservationBookingData;
 use App\Support\Reservations\ReservationSlots;
 use App\Support\Reservations\Slot;
@@ -97,6 +99,23 @@ class ReservationWizard extends Component
 
     /** Recency window (months) shown in the "lapsed client" message. */
     public ?int $lapsedMonths = null;
+
+    /** Day-waitlist ("pořadník") modal: the full day being joined, or null when closed. */
+    public ?string $waitlistModalDate = null;
+
+    public string $waitlistName = '';
+
+    public string $waitlistEmail = '';
+
+    public string $waitlistPhone = '';
+
+    /**
+     * Full days the visitor joined the pořadník for during this session — merged
+     * with the logged-in client's stored entries so those cells show as joined.
+     *
+     * @var array<int, string>
+     */
+    public array $sessionWaitlistedDates = [];
 
     public function mount(): void
     {
@@ -372,6 +391,37 @@ class ReservationWizard extends Component
     }
 
     /**
+     * Full days (Y-m-d) the current visitor already joined the pořadník for, in the
+     * current therapist scope — this session's joins plus, for a logged-in client,
+     * their stored pending entries. Drives the "waitlist" calendar cell state.
+     *
+     * @return array<int, string>
+     */
+    #[Computed]
+    public function waitlistedDates(): array
+    {
+        $dates = $this->sessionWaitlistedDates;
+
+        if (($user = auth()->user()) !== null) {
+            $scope = $this->resolvedTherapistId();
+
+            $stored = ReservationDayWaitlistEntry::query()
+                ->whereNull('notified_at')
+                ->where('client_id', $user->getKey())
+                ->where(fn ($query) => $scope === null
+                    ? $query->whereNull('therapist_id')
+                    : $query->where('therapist_id', $scope))
+                ->pluck('reservation_date')
+                ->map(fn ($date): string => Carbon::parse($date)->toDateString())
+                ->all();
+
+            $dates = array_merge($dates, $stored);
+        }
+
+        return array_values(array_unique($dates));
+    }
+
+    /**
      * @return array<int, Slot>
      */
     #[Computed]
@@ -401,7 +451,76 @@ class ReservationWizard extends Component
     {
         [$first, $last] = $this->calendarRange();
 
-        return SlotCalendar::months($first, $last, $this->calendarDays);
+        return SlotCalendar::months($first, $last, $this->calendarDays, $this->waitlistedDates);
+    }
+
+    // --- Day waitlist ("pořadník") --------------------------------------------
+
+    /**
+     * Open the pořadník modal for a full day, prefilling identity from the logged-in
+     * client when there is one (guests fill it in themselves).
+     */
+    public function openWaitlist(string $date): void
+    {
+        if (! in_array($date, $this->calendarDays['full'], true)) {
+            return;
+        }
+
+        $this->resetErrorBag();
+        $this->waitlistModalDate = $date;
+
+        if (($user = auth()->user()) !== null) {
+            $this->waitlistName = $this->waitlistName ?: (string) $user->name;
+            $this->waitlistEmail = $this->waitlistEmail ?: (string) $user->email;
+            $this->waitlistPhone = $this->waitlistPhone ?: (string) $user->phone;
+        }
+    }
+
+    public function closeWaitlist(): void
+    {
+        $this->reset('waitlistModalDate', 'waitlistName', 'waitlistEmail', 'waitlistPhone');
+        $this->resetErrorBag();
+    }
+
+    /**
+     * Join the pořadník for the modal's day, scoped to the currently browsed
+     * therapist (or "any"). Guests welcome; the browsed service rides along only to
+     * prefill the eventual booking link.
+     */
+    public function joinDayWaitlist(): void
+    {
+        $date = $this->waitlistModalDate;
+
+        if ($date === null || ! in_array($date, $this->calendarDays['full'], true)) {
+            $this->closeWaitlist();
+
+            return;
+        }
+
+        $this->validate([
+            'waitlistName' => ['required', 'string', 'max:255'],
+            'waitlistEmail' => ['required', 'email'],
+            'waitlistPhone' => ['nullable', 'string', 'max:30'],
+        ], [], [
+            'waitlistName' => 'jméno',
+            'waitlistEmail' => 'e-mail',
+            'waitlistPhone' => 'telefon',
+        ]);
+
+        app(JoinReservationDayWaitlist::class)->handle(
+            $this->resolvedTherapistId(),
+            $date,
+            trim($this->waitlistName),
+            trim($this->waitlistEmail),
+            filled($this->waitlistPhone) ? trim($this->waitlistPhone) : null,
+            $this->service,
+        );
+
+        $this->sessionWaitlistedDates[] = $date;
+        unset($this->waitlistedDates);
+        $this->closeWaitlist();
+
+        session()->flash('waitlist_joined', 'Zapsali jsme vás do pořadníku. Jakmile se místo uvolní, dáme vám e-mailem vědět.');
     }
 
     /**

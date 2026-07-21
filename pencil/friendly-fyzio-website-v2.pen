@@ -15641,184 +15641,6 @@
             },
             {
               "type": "frame",
-              "id": "V2Saw",
-              "name": "Category Cards",
-              "width": "fill_container",
-              "fill": {
-                "type": "color",
-                "color": "#FFFFFF",
-                "enabled": false
-              },
-              "layout": "vertical",
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "frame",
-                  "id": "MWqQN",
-                  "name": "catRow",
-                  "width": "fill_container",
-                  "gap": 16,
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "JfOJA",
-                      "name": "catPohybove",
-                      "width": "fill_container",
-                      "fill": "$--primary-light",
-                      "cornerRadius": "$--radius-xl",
-                      "stroke": "$--primary",
-                      "strokeWidth": 2,
-                      "strokeAlignment": "inner",
-                      "gap": 20,
-                      "padding": 24,
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "frame",
-                          "id": "U2KBO",
-                          "name": "ic1",
-                          "width": 56,
-                          "height": 56,
-                          "fill": "$--primary",
-                          "cornerRadius": 16,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "icon",
-                              "id": "hiO6m",
-                              "width": 24,
-                              "height": 24,
-                              "icon": "repeat",
-                              "library": "lucide",
-                              "fill": "$--background"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "gTOFf",
-                          "name": "txt1",
-                          "width": "fill_container",
-                          "layout": "vertical",
-                          "gap": 4,
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "oC4dU",
-                              "fill": "$--foreground",
-                              "content": "Pohybové kurzy",
-                              "fontFamily": "$--font-heading",
-                              "fontSize": 17,
-                              "fontWeight": "700"
-                            },
-                            {
-                              "type": "text",
-                              "id": "Nus7N",
-                              "fill": "$--foreground-muted",
-                              "content": "Pravidelné semestrální série lekcí",
-                              "lineHeight": 1.4,
-                              "fontFamily": "$--font-body",
-                              "fontSize": 13,
-                              "fontWeight": "normal"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "icon",
-                          "id": "4octA",
-                          "name": "arr1",
-                          "width": 20,
-                          "height": 20,
-                          "icon": "chevron-right",
-                          "library": "lucide",
-                          "fill": "$--primary"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "kX0Ca",
-                      "name": "catJednorazove",
-                      "width": "fill_container",
-                      "fill": "$--background-alt",
-                      "cornerRadius": "$--radius-xl",
-                      "stroke": "$--border",
-                      "strokeWidth": 1,
-                      "strokeAlignment": "inner",
-                      "gap": 20,
-                      "padding": 24,
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "frame",
-                          "id": "ExJT8",
-                          "name": "ic3",
-                          "width": 56,
-                          "height": 56,
-                          "fill": "$--primary-light",
-                          "cornerRadius": 16,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "icon",
-                              "id": "Cp5nc",
-                              "width": 24,
-                              "height": 24,
-                              "icon": "clock-3",
-                              "library": "lucide",
-                              "fill": "$--primary"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "8Gag7",
-                          "name": "txt3",
-                          "width": "fill_container",
-                          "layout": "vertical",
-                          "gap": 4,
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "RWrP3",
-                              "fill": "$--foreground",
-                              "content": "Jednorázové lekce",
-                              "fontFamily": "$--font-heading",
-                              "fontSize": 17,
-                              "fontWeight": "700"
-                            },
-                            {
-                              "type": "text",
-                              "id": "EBmKF",
-                              "fill": "$--foreground-muted",
-                              "content": "Jednotlivé lekce bez závazku",
-                              "lineHeight": 1.4,
-                              "fontFamily": "$--font-body",
-                              "fontSize": 13,
-                              "fontWeight": "normal"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "icon",
-                          "id": "dJEkz",
-                          "name": "arr3",
-                          "width": 20,
-                          "height": 20,
-                          "icon": "chevron-right",
-                          "library": "lucide",
-                          "fill": "$--primary"
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "frame",
               "id": "4x4z8",
               "name": "filterBar",
               "width": "fill_container",
@@ -16596,7 +16418,7 @@
               "ref": "D4GTL",
               "name": "pagination",
               "x": 590,
-              "y": 1290,
+              "y": 1154,
               "width": "fit_content",
               "height": "fit_content",
               "descendants": {
@@ -16888,7 +16710,7 @@
           "ref": "x1XZy",
           "width": "fill_container",
           "name": "ft",
-          "y": 3230,
+          "y": 3094,
           "height": "fit_content",
           "descendants": {
             "Lehga": {
@@ -30426,7 +30248,7 @@
                               "type": "frame",
                               "id": "hxe6r",
                               "name": "iconFrame",
-                              "width": 391.9096625176053,
+                              "width": 575.9096625176053,
                               "height": 40,
                               "fill": "$--warning",
                               "cornerRadius": "$--radius-full",
@@ -32114,7 +31936,7 @@
                               "type": "frame",
                               "id": "h3cG4",
                               "name": "iconF",
-                              "width": 1311.865042105323,
+                              "width": 1495.865042105323,
                               "height": 40,
                               "fill": "$--warning",
                               "cornerRadius": "$--radius-full",
@@ -84190,7 +84012,7 @@
                       "descendants": {
                         "MSASQ": {
                           "content": "Aktivní kurzy",
-                          "x": 24.04814235046943,
+                          "x": 24.048142350469423,
                           "y": 12,
                           "rotation": -0.16225630497652313,
                           "flipX": false,
@@ -84209,7 +84031,7 @@
                       "descendants": {
                         "MSASQ": {
                           "content": "Čekací listina",
-                          "x": 24.04814235046943,
+                          "x": 24.048142350469423,
                           "y": 12,
                           "rotation": -0.16225630497652313,
                           "flipX": false,
@@ -86386,7 +86208,7 @@
                       "type": "frame",
                       "id": "0SwEr",
                       "name": "currentCard",
-                      "width": 32365.550323783304,
+                      "width": 64091.38035404646,
                       "height": 90,
                       "fill": "$--background-alt",
                       "cornerRadius": "$--radius-md",
@@ -86440,7 +86262,7 @@
                       "type": "frame",
                       "id": "6X3KM",
                       "name": "newTermCard",
-                      "width": 33042.65388704237,
+                      "width": 65432.20421082567,
                       "height": 90,
                       "fill": "$--primary-light",
                       "cornerRadius": "$--radius-md",
@@ -95077,7 +94899,7 @@
                   "id": "S57ERA",
                   "name": "sigLineBoxR",
                   "width": 162,
-                  "height": 53.746842548414236,
+                  "height": 76.63870734934443,
                   "layout": "vertical",
                   "gap": 4,
                   "justifyContent": "end",
@@ -95100,7 +94922,7 @@
                   "fill": "$--foreground",
                   "textGrowth": "fixed-width-height",
                   "width": 131,
-                  "height": 8.445932400465093,
+                  "height": 12.043225440611264,
                   "content": "Podpis a razítko dodavatele",
                   "fontFamily": "Montserrat",
                   "fontSize": 9,
@@ -95113,7 +94935,7 @@
                   "fill": "$--foreground-muted",
                   "textGrowth": "fixed-width-height",
                   "width": 76,
-                  "height": 8.445932400465093,
+                  "height": 12.043225440611264,
                   "content": "Mgr. Lucie Fickerová",
                   "fontFamily": "Open Sans",
                   "fontSize": 8,
@@ -102593,7 +102415,7 @@
                   "id": "qEx0K",
                   "name": "sigLineBoxR",
                   "width": 162,
-                  "height": 30,
+                  "height": 58.32954545454545,
                   "layout": "vertical",
                   "gap": 4,
                   "justifyContent": "end",

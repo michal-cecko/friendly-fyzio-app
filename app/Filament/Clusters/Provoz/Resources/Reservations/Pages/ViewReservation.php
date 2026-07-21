@@ -7,14 +7,17 @@ use App\Filament\Clusters\Provoz\Resources\Reservations\Actions\CancelReservatio
 use App\Filament\Clusters\Provoz\Resources\Reservations\Actions\ConfirmReservationAction;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Actions\MarkNoShowAction;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Actions\RequestPaymentAction;
+use App\Filament\Clusters\Provoz\Resources\Reservations\Actions\ResolveDoctorNoteAction;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Actions\RestoreReservationAction;
-use App\Filament\Clusters\Provoz\Resources\Reservations\Actions\SendReservationEmailAction;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Actions\UnconfirmReservationAction;
 use App\Filament\Clusters\Provoz\Resources\Reservations\ReservationResource;
 use App\Filament\Support\Actions\ActivityLogAction;
 use App\Filament\Support\Actions\RecordPaymentAction;
+use App\Filament\Support\Actions\SendEmailAction;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
+use Filament\Support\Icons\Heroicon;
 
 class ViewReservation extends ViewRecord
 {
@@ -24,18 +27,31 @@ class ViewReservation extends ViewRecord
     {
         return [
             ConfirmReservationAction::make(),
-            UnconfirmReservationAction::make(),
-            SendReservationEmailAction::make(),
-            RecordPaymentAction::make(),
-            RequestPaymentAction::make(),
-            GenerateInvoiceFromPayableAction::make(),
-            MarkNoShowAction::make(),
             // A full edit page (not a modal): the notes RichEditor's mention menu
             // throws inside Filament modals, so editing lives on its own page.
             EditAction::make(),
-            CancelReservationAction::make(),
-            RestoreReservationAction::make(),
-            ActivityLogAction::make(),
+            ActionGroup::make([
+                RecordPaymentAction::make(),
+                RequestPaymentAction::make(),
+                ResolveDoctorNoteAction::make(),
+                GenerateInvoiceFromPayableAction::make(),
+            ])
+                ->label('Platby')
+                ->icon(Heroicon::OutlinedBanknotes)
+                ->button()
+                ->color('gray'),
+            ActionGroup::make([
+                SendEmailAction::make(),
+                UnconfirmReservationAction::make(),
+                MarkNoShowAction::make(),
+                CancelReservationAction::make(),
+                RestoreReservationAction::make(),
+                ActivityLogAction::make(),
+            ])
+                ->label('Další')
+                ->icon(Heroicon::OutlinedEllipsisHorizontal)
+                ->button()
+                ->color('gray'),
         ];
     }
 }

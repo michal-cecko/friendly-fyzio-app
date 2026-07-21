@@ -55,17 +55,21 @@ class Course extends Model
         return $this->hasMany(CourseSeries::class);
     }
 
-    public function oneTimeLessons(): HasMany
+    /**
+     * One-off events derived from this course (typically the "Jednorázové
+     * lekce" category) — the try-before-the-full-series cross-sell.
+     */
+    public function oneOffEvents(): HasMany
     {
-        return $this->hasMany(OneTimeLesson::class);
+        return $this->hasMany(OneOffEvent::class);
     }
 
-    public function upcomingOneTimeLessons(): HasMany
+    public function upcomingOneOffEvents(): HasMany
     {
-        return $this->oneTimeLessons()
+        return $this->oneOffEvents()
             ->published()
-            ->whereDate('lesson_date', '>=', today())
-            ->orderBy('lesson_date')
+            ->whereDate('event_date', '>=', today())
+            ->orderBy('event_date')
             ->orderBy('start_time');
     }
 

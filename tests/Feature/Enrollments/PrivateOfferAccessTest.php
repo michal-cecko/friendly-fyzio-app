@@ -6,13 +6,11 @@ use App\Enums\BookingStatus;
 use App\Enums\EmailTemplateKey;
 use App\Enums\OfferState;
 use App\Enums\OfferVisibility;
-use App\Filament\Clusters\Workshopy\Resources\Workshops\Pages\EditWorkshop;
-use App\Livewire\CourseArchive;
-use App\Livewire\WorkshopArchive;
-use App\Models\Course;
-use App\Models\OneTimeLesson;
+use App\Filament\Clusters\Kurzy\Resources\OneOffEvents\Pages\EditOneOffEvent;
+use App\Livewire\OneOffEventArchive;
+use App\Models\EventCategory;
+use App\Models\OneOffEvent;
 use App\Models\User;
-use App\Models\Workshop;
 use App\Notifications\EnrollmentTemplateNotification;
 use App\Support\Enrollments\EnrollmentData;
 use App\Support\Enrollments\OfferClosedException;
@@ -27,93 +25,79 @@ class PrivateOfferAccessTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function privateWorkshop(): Workshop
+    private function privateEvent(): OneOffEvent
     {
-        return Workshop::factory()->create([
-            'name' => 'Tajný workshop',
-            'visibility' => OfferVisibility::Private,
-            'published_at' => now(),
-            'workshop_date' => today()->addWeeks(2)->toDateString(),
-            'capacity' => 10,
-        ]);
+        return OneOffEvent::factory()
+            ->forCategory(EventCategory::query()->where('slug', 'workshopy')->firstOrFail())
+            ->create([
+                'name' => 'Tajný workshop',
+                'visibility' => OfferVisibility::Private,
+                'published_at' => now(),
+                'event_date' => today()->addWeeks(2)->toDateString(),
+                'capacity' => 10,
+            ]);
     }
 
     public function test_private_offer_reports_preparing_but_presale_state_opens(): void
     {
-        $workshop = $this->privateWorkshop();
+        $event = $this->privateEvent();
 
-        $this->assertTrue($workshop->isPrivate());
-        $this->assertSame(OfferState::Preparing, $workshop->offerState());
-        $this->assertSame(OfferState::Open, $workshop->offerStateForPresale());
-        $this->assertStringContainsString('predprodej=', $workshop->presaleUrl());
+        $this->assertTrue($event->isPrivate());
+        $this->assertSame(OfferState::Preparing, $event->offerState());
+        $this->assertSame(OfferState::Open, $event->offerStateForPresale());
+        $this->assertStringContainsString('predprodej=', $event->presaleUrl());
     }
 
-    public function test_private_workshop_hidden_from_guest_archive_but_shown_to_logged_in_customer(): void
+    public function test_private_event_hidden_from_guest_archive_but_shown_to_logged_in_customer(): void
     {
-        $workshop = $this->privateWorkshop();
+        $this->privateEvent();
 
-        Livewire::test(WorkshopArchive::class)->assertDontSee('Tajný workshop');
+        Livewire::test(OneOffEventArchive::class)->assertDontSee('Tajný workshop');
 
         $this->actingAs(User::factory()->customer()->create());
-        Livewire::test(WorkshopArchive::class)->assertSee('Tajný workshop');
+        Livewire::test(OneOffEventArchive::class)->assertSee('Tajný workshop');
     }
 
-    public function test_private_lesson_hidden_from_guest_archive_but_shown_to_logged_in_customer(): void
+    public function test_private_event_detail_is_404_for_guest_but_ok_for_customer_and_token(): void
     {
-        $course = Course::factory()->create(['published_at' => now()]);
-        OneTimeLesson::factory()->create([
-            'course_id' => $course->getKey(),
-            'visibility' => OfferVisibility::Private,
-            'published_at' => now(),
-            'lesson_date' => today()->addWeek()->toDateString(),
-        ]);
+        $event = $this->privateEvent();
 
-        Livewire::test(CourseArchive::class)->set('type', 'lekce')->assertDontSee($course->name);
-
-        $this->actingAs(User::factory()->customer()->create());
-        Livewire::test(CourseArchive::class)->set('type', 'lekce')->assertSee($course->name);
-    }
-
-    public function test_private_workshop_detail_is_404_for_guest_but_ok_for_customer_and_token(): void
-    {
-        $workshop = $this->privateWorkshop();
-
-        $this->get('/workshopy/'.$workshop->slug)->assertNotFound();
+        $this->get('/workshopy/'.$event->slug)->assertNotFound();
 
         // Shared hidden link unlocks it for anyone.
-        $this->get('/workshopy/'.$workshop->slug.'?predprodej='.$workshop->ensurePresaleToken())
+        $this->get('/workshopy/'.$event->slug.'?predprodej='.$event->ensurePresaleToken())
             ->assertOk()
             ->assertSee('Přihlásit se a zaplatit');
 
         // A logged-in customer sees it without the token.
         $this->actingAs(User::factory()->customer()->create());
-        $this->get('/workshopy/'.$workshop->slug)
+        $this->get('/workshopy/'.$event->slug)
             ->assertOk()
             ->assertSee('Přihlásit se a zaplatit');
     }
 
-    public function test_customer_can_enrol_in_a_private_workshop_via_presale_but_not_without(): void
+    public function test_customer_cannot_enrol_in_a_private_event_without_presale(): void
     {
         Notification::fake();
 
-        $workshop = $this->privateWorkshop();
+        $event = $this->privateEvent();
         $data = new EnrollmentData('Jana Nová', 'jana.private@example.cz', '+420 604 000 111', null, null);
 
         $this->expectException(OfferClosedException::class);
-        app(SignUpForOffer::class)->forWorkshop($workshop, $data);
+        app(SignUpForOffer::class)->forEvent($event, $data);
     }
 
-    public function test_presale_enrolment_in_a_private_workshop_succeeds(): void
+    public function test_presale_enrolment_in_a_private_event_succeeds(): void
     {
         Notification::fake();
 
-        $workshop = $this->privateWorkshop();
+        $event = $this->privateEvent();
         $data = new EnrollmentData('Jana Nová', 'jana.private2@example.cz', '+420 604 000 222', null, null);
 
-        $registration = app(SignUpForOffer::class)->forWorkshop($workshop, $data, viaPresale: true);
+        $booking = app(SignUpForOffer::class)->forEvent($event, $data, viaPresale: true);
 
-        $this->assertSame(BookingStatus::Confirmed, $registration->status);
-        $this->assertTrue($workshop->registrations()->whereKey($registration->getKey())->exists());
+        $this->assertSame(BookingStatus::Confirmed, $booking->status);
+        $this->assertTrue($event->bookings()->whereKey($booking->getKey())->exists());
     }
 
     public function test_invite_action_emails_selected_customers_and_is_hidden_for_public_offers(): void
@@ -122,10 +106,10 @@ class PrivateOfferAccessTest extends TestCase
         Filament::setCurrentPanel('admin');
         $this->actingAs(User::factory()->admin()->create());
 
-        $workshop = $this->privateWorkshop();
+        $event = $this->privateEvent();
         $recipients = User::factory()->customer()->count(2)->create();
 
-        Livewire::test(EditWorkshop::class, ['record' => $workshop->getKey()])
+        Livewire::test(EditOneOffEvent::class, ['record' => $event->getKey()])
             ->callAction('sendInvitation', [
                 'recipient_ids' => $recipients->pluck('id')->all(),
                 'zprava' => 'Vítejte v předprodeji.',
@@ -140,13 +124,13 @@ class PrivateOfferAccessTest extends TestCase
             );
         }
 
-        $public = Workshop::factory()->create([
+        $public = OneOffEvent::factory()->create([
             'visibility' => OfferVisibility::Public,
             'published_at' => now(),
-            'workshop_date' => today()->addWeeks(2)->toDateString(),
+            'event_date' => today()->addWeeks(2)->toDateString(),
         ]);
 
-        Livewire::test(EditWorkshop::class, ['record' => $public->getKey()])
+        Livewire::test(EditOneOffEvent::class, ['record' => $public->getKey()])
             ->assertActionHidden('sendInvitation');
     }
 }

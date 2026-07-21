@@ -7,9 +7,8 @@ use App\Enums\CourseEnrollmentStatus;
 use App\Models\CourseEnrollment;
 use App\Models\CourseLesson;
 use App\Models\LessonAttendance;
-use App\Models\OneTimeLessonBooking;
+use App\Models\OneOffEventBooking;
 use App\Models\User;
-use App\Models\WorkshopRegistration;
 use App\Support\Enrollments\CancellationWindowClosedException;
 use App\Support\Enrollments\CancelSignupAsClient;
 use App\Support\Substitutes\ExcuseFromLesson;
@@ -20,10 +19,10 @@ use Livewire\Attributes\Url;
 use Livewire\Component;
 
 /**
- * "Moje kurzy": everything the client signed up for — course runs, workshops and
- * one-time lessons — with self-cancellation inside the configured window and,
- * for course runs, the per-lesson excuse that mints substitute entries
- * (pencil frame Profile/My Courses).
+ * "Moje kurzy": everything the client signed up for — course runs and one-off
+ * events (workshopy, jednorázové lekce) — with self-cancellation inside the
+ * configured window and, for course runs, the per-lesson excuse that mints
+ * substitute entries (pencil frame Profile/My Courses).
  */
 class Courses extends Component
 {
@@ -103,7 +102,7 @@ class Courses extends Component
             : 'Z lekce jsme vás odhlásili. Na náhradní vstup už bohužel nevzniká nárok.');
     }
 
-    protected function signupBeingCancelled(): CourseEnrollment|OneTimeLessonBooking|WorkshopRegistration|null
+    protected function signupBeingCancelled(): CourseEnrollment|OneOffEventBooking|null
     {
         if (blank($this->confirmingCancelId)) {
             return null;
@@ -113,8 +112,7 @@ class Courses extends Component
 
         return match ($this->confirmingCancelType) {
             'enrollment' => $user->courseEnrollments()->with('series.course')->find($this->confirmingCancelId),
-            'booking' => $user->oneTimeLessonBookings()->with('lesson.course')->find($this->confirmingCancelId),
-            'registration' => $user->workshopRegistrations()->with('workshop')->find($this->confirmingCancelId),
+            'booking' => $user->oneOffEventBookings()->with('event.category')->find($this->confirmingCancelId),
             default => null,
         };
     }
@@ -139,40 +137,21 @@ class Courses extends Component
     }
 
     /**
-     * @return Collection<int, WorkshopRegistration>
-     */
-    protected function registrations(): Collection
-    {
-        $upcoming = $this->tab === 'aktualni';
-
-        return $this->user()->workshopRegistrations()
-            ->with(['workshop', 'payments'])
-            ->when($upcoming, fn ($query) => $query
-                ->whereIn('status', BookingStatus::occupying())
-                ->whereHas('workshop', fn ($workshop) => $workshop->whereDate('workshop_date', '>=', today())))
-            ->when(! $upcoming, fn ($query) => $query
-                ->where(fn ($inner) => $inner
-                    ->where('status', BookingStatus::Cancelled)
-                    ->orWhereHas('workshop', fn ($workshop) => $workshop->whereDate('workshop_date', '<', today()))))
-            ->get();
-    }
-
-    /**
-     * @return Collection<int, OneTimeLessonBooking>
+     * @return Collection<int, OneOffEventBooking>
      */
     protected function bookings(): Collection
     {
         $upcoming = $this->tab === 'aktualni';
 
-        return $this->user()->oneTimeLessonBookings()
-            ->with(['lesson.course', 'lesson.room', 'payments'])
+        return $this->user()->oneOffEventBookings()
+            ->with(['event.category', 'event.course', 'event.room', 'payments'])
             ->when($upcoming, fn ($query) => $query
                 ->whereIn('status', BookingStatus::occupying())
-                ->whereHas('lesson', fn ($lesson) => $lesson->whereDate('lesson_date', '>=', today())))
+                ->whereHas('event', fn ($event) => $event->whereDate('event_date', '>=', today())))
             ->when(! $upcoming, fn ($query) => $query
                 ->where(fn ($inner) => $inner
                     ->where('status', BookingStatus::Cancelled)
-                    ->orWhereHas('lesson', fn ($lesson) => $lesson->whereDate('lesson_date', '<', today()))))
+                    ->orWhereHas('event', fn ($event) => $event->whereDate('event_date', '<', today()))))
             ->get();
     }
 
@@ -207,7 +186,6 @@ class Courses extends Component
 
         return view('livewire.zone.courses', [
             'enrollments' => $enrollments,
-            'registrations' => $this->registrations(),
             'bookings' => $this->bookings(),
             'canCancel' => fn ($signup): bool => $cancel->isCancellable($signup),
             'lessonRows' => $expanded !== null && ($enrollment = $enrollments->firstWhere('id', $expanded))

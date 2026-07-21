@@ -99,6 +99,69 @@ class ReservationSlots
     }
 
     /**
+     * Whether a therapist has any bookable opening on a date, independent of
+     * service. Used by the day-waitlist notifier to confirm a freed slot is still
+     * free (e.g. a reactivation may have re-taken it) before e-mailing waiters.
+     *
+     * Service-agnostic on purpose: the waitlist is a therapist's whole day, so any
+     * future, past-lead-time gap of at least one block ({@see Settings::blockMinutes()})
+     * in their work blocks — after their own reservations, room reservations and room
+     * blockings are removed — counts as an opening.
+     */
+    public function therapistHasOpening(string $therapistId, Carbon $date): bool
+    {
+        $date = $date->copy()->startOfDay();
+        $workBlocks = $this->workBlocksForDate([$therapistId], $date)[$therapistId] ?? [];
+
+        if ($workBlocks === []) {
+            return false;
+        }
+
+        $reservations = $this->reservationsForDate($date);
+        $therapistBusy = $reservations['byTherapist'][$therapistId] ?? [];
+        $roomBlockings = $this->roomBlockingsForDate($date);
+
+        $minDuration = Settings::blockMinutes();
+        $cutoffMin = $this->leadCutoffMinutes($date);
+
+        foreach ($workBlocks as [$blockStart, $blockEnd, $roomId]) {
+            $busyAll = $this->mergeIntervals(array_merge($therapistBusy, $reservations['byRoom'][$roomId] ?? []));
+
+            foreach ($this->subtractIntervals($blockStart, $blockEnd, $roomBlockings[$roomId] ?? []) as [$subStart, $subEnd]) {
+                $busy = $this->clipIntervals($busyAll, $subStart, $subEnd);
+
+                foreach ($this->subtractIntervals($subStart, $subEnd, $busy) as [$freeStart, $freeEnd]) {
+                    if ($freeEnd - max($freeStart, $cutoffMin) >= $minDuration) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * The earliest bookable minute-of-day on a date given the lead-time guard:
+     * 0 for a future day, the cutoff's minute-of-day for today, or a value past
+     * midnight (so nothing qualifies) once the whole day is inside the lead window.
+     */
+    protected function leadCutoffMinutes(Carbon $date): int
+    {
+        $cutoff = Carbon::now(self::TIMEZONE)->addHours(Settings::leadTimeHours());
+
+        if ($date->greaterThan($cutoff->copy()->startOfDay())) {
+            return 0;
+        }
+
+        if ($date->lessThan($cutoff->copy()->startOfDay())) {
+            return 24 * 60 + 1;
+        }
+
+        return $cutoff->hour * 60 + $cutoff->minute;
+    }
+
+    /**
      * Offerable slots for the service on a single date. Data source for step 5.
      *
      * @return array<int, Slot>

@@ -3,11 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Course;
+use App\Models\EventCategory;
+use App\Models\OneOffEvent;
 use App\Models\Page;
 use App\Models\Service;
 use App\Models\ServiceCategory;
 use App\Models\TherapistProfile;
-use App\Models\Workshop;
 use Illuminate\Http\Response;
 use Illuminate\Support\Collection;
 
@@ -38,8 +39,11 @@ class SitemapController extends Controller
         Course::published()->get()
             ->each(fn (Course $course) => $urls->push($course->permalink()));
 
-        Workshop::published()->get()
-            ->each(fn (Workshop $workshop) => $urls->push($workshop->permalink()));
+        EventCategory::published()->get()
+            ->each(fn (EventCategory $category) => $urls->push($category->permalink));
+
+        OneOffEvent::published()->with('category')->get()
+            ->each(fn (OneOffEvent $event) => $urls->push($event->permalink()));
 
         TherapistProfile::published()->get()
             ->each(fn (TherapistProfile $therapist) => $urls->push($therapist->permalink));

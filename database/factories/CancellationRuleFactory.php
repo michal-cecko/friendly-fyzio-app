@@ -19,7 +19,6 @@ class CancellationRuleFactory extends Factory
         return [
             'service_id' => Service::factory(),
             'cancel_before_hours' => fake()->randomElement([12, 24, 48]),
-            'auto_cancel_after_days' => fake()->boolean(50) ? fake()->numberBetween(7, 30) : null,
         ];
     }
 }

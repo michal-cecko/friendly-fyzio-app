@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Contracts\Emailable;
+use App\Enums\EmailTemplateKey;
 use App\Enums\UserRole;
 use App\Models\Concerns\Auditable;
 use App\Notifications\Auth\ResetPasswordNotification;
 use App\Notifications\Auth\VerifyEmailNotification;
+use App\Notifications\ClientAccountCreatedNotification;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -24,7 +27,7 @@ use Spatie\Permission\Models\Role;
 use Spatie\Permission\Traits\HasRoles;
 use Spatie\Tags\HasTags;
 
-class User extends Authenticatable implements FilamentUser, HasPasskeys, MustVerifyEmail
+class User extends Authenticatable implements Emailable, FilamentUser, HasPasskeys, MustVerifyEmail
 {
     use Auditable, HasFactory, HasRoles, HasTags, HasUuids, InteractsWithPasskeys, Notifiable, SoftDeletes;
 
@@ -54,6 +57,41 @@ class User extends Authenticatable implements FilamentUser, HasPasskeys, MustVer
             'role' => UserRole::class,
             'acts_as_therapist' => 'boolean',
         ];
+    }
+
+    public function emailRecipientAddress(): ?string
+    {
+        return $this->email;
+    }
+
+    public function emailRecipientName(): ?string
+    {
+        return $this->name;
+    }
+
+    /**
+     * Users have no lifecycle mail worth resending except the "account created" welcome
+     * (which points to the login/forgotten-password flow, so it carries no one-time
+     * token). Verification & password-reset are framework flows and are intentionally
+     * excluded; custom compose is the primary path here.
+     *
+     * @return array<string, array<string, string>>
+     */
+    public function emailTemplateGroups(): array
+    {
+        return [
+            'Účet' => [
+                EmailTemplateKey::AccountCreated->value => EmailTemplateKey::AccountCreated->label(),
+            ],
+        ];
+    }
+
+    public function sendTemplateEmail(EmailTemplateKey $key): void
+    {
+        match ($key) {
+            EmailTemplateKey::AccountCreated => $this->notify(new ClientAccountCreatedNotification),
+            default => null,
+        };
     }
 
     protected static function booted(): void
@@ -180,14 +218,9 @@ class User extends Authenticatable implements FilamentUser, HasPasskeys, MustVer
         return $this->hasMany(Payment::class, 'client_id');
     }
 
-    public function workshopRegistrations(): HasMany
+    public function oneOffEventBookings(): HasMany
     {
-        return $this->hasMany(WorkshopRegistration::class, 'client_id');
-    }
-
-    public function oneTimeLessonBookings(): HasMany
-    {
-        return $this->hasMany(OneTimeLessonBooking::class, 'client_id');
+        return $this->hasMany(OneOffEventBooking::class, 'client_id');
     }
 
     /**

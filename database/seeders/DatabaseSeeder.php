@@ -16,6 +16,9 @@ class DatabaseSeeder extends Seeder
         $this->call(SettingsSeeder::class);
         $this->call(InvoiceSeriesSeeder::class);
         $this->call(EmailTemplateSeeder::class);
+        // Event categories seed before pages: the /workshopy page attaches to
+        // the Workshopy category as its custom page.
+        $this->call(EventCategorySeeder::class);
         $this->call(PageSeeder::class);
         $this->call(BannerSeeder::class);
         $this->call(ServiceCategorySeeder::class);

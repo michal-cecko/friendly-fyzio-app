@@ -6,19 +6,16 @@ use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Enums\ReservationStatus;
 use App\Filament\Clusters\Kurzy\Resources\CourseEnrollments\Pages\ListCourseEnrollments;
-use App\Filament\Clusters\Lekce\Resources\OneTimeLessonBookings\Pages\ListOneTimeLessonBookings;
+use App\Filament\Clusters\Kurzy\Resources\OneOffEventBookings\Pages\ListOneOffEventBookings;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Pages\ListReservations;
-use App\Filament\Clusters\Workshopy\Resources\WorkshopRegistrations\Pages\ListWorkshopRegistrations;
 use App\Models\CourseEnrollment;
 use App\Models\CourseSeries;
 use App\Models\InvoiceSeries;
-use App\Models\OneTimeLesson;
-use App\Models\OneTimeLessonBooking;
+use App\Models\OneOffEvent;
+use App\Models\OneOffEventBooking;
 use App\Models\Reservation;
 use App\Models\Service;
 use App\Models\User;
-use App\Models\Workshop;
-use App\Models\WorkshopRegistration;
 use App\Notifications\PaymentReceivedNotification;
 use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
@@ -152,37 +149,17 @@ class RecordPaymentActionTest extends TestCase
         $this->assertSame(PaymentStatus::Paid, $enrollment->fresh()->payment_status);
     }
 
-    public function test_records_payment_on_workshop_registration(): void
+    public function test_records_payment_on_one_off_event_booking(): void
     {
-        $registration = WorkshopRegistration::factory()->create([
-            'workshop_id' => Workshop::factory()->create(['price' => 950])->getKey(),
+        $booking = OneOffEventBooking::factory()->create([
+            'one_off_event_id' => OneOffEvent::factory()->create(['price' => 950])->getKey(),
             'payment_status' => PaymentStatus::Unpaid,
             'paid_at' => null,
         ]);
 
-        Livewire::test(ListWorkshopRegistrations::class)
-            ->callAction(TestAction::make('recordPayment')->table($registration), [
-                'amount' => 950,
-                'method' => PaymentMethod::Qr->value,
-                'received' => true,
-                'notify_client' => false,
-            ])
-            ->assertHasNoActionErrors();
-
-        $this->assertSame(PaymentStatus::Paid, $registration->fresh()->payment_status);
-    }
-
-    public function test_records_payment_on_one_time_lesson_booking(): void
-    {
-        $booking = OneTimeLessonBooking::factory()->create([
-            'lesson_id' => OneTimeLesson::factory()->create(['price' => 300])->getKey(),
-            'payment_status' => PaymentStatus::Unpaid,
-            'paid_at' => null,
-        ]);
-
-        Livewire::test(ListOneTimeLessonBookings::class)
+        Livewire::test(ListOneOffEventBookings::class)
             ->callAction(TestAction::make('recordPayment')->table($booking), [
-                'amount' => 300,
+                'amount' => 950,
                 'method' => PaymentMethod::Qr->value,
                 'received' => true,
                 'notify_client' => false,

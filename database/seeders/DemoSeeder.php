@@ -22,9 +22,10 @@ use App\Models\CourseCategory;
 use App\Models\CourseEnrollment;
 use App\Models\CourseLesson;
 use App\Models\CourseSeries;
+use App\Models\EventCategory;
 use App\Models\LessonAttendance;
-use App\Models\OneTimeLesson;
-use App\Models\OneTimeLessonBooking;
+use App\Models\OneOffEvent;
+use App\Models\OneOffEventBooking;
 use App\Models\Reservation;
 use App\Models\Room;
 use App\Models\RoomBlocking;
@@ -34,8 +35,6 @@ use App\Models\TherapistProfile;
 use App\Models\TherapistSpecialization;
 use App\Models\TherapistWorkBlockSeries;
 use App\Models\User;
-use App\Models\Workshop;
-use App\Models\WorkshopRegistration;
 use App\Support\Invoices\DocumentNumberAllocator;
 use App\Support\Invoices\InvoiceGenerator;
 use App\Support\Settings;
@@ -389,26 +388,43 @@ class DemoSeeder extends Seeder
 
         $coursesForLessons = Course::all();
 
-        // --- One-time lessons + bookings ---
+        $lekceCategory = EventCategory::query()->firstOrCreate(
+            ['slug' => 'jednorazove-lekce'],
+            ['name' => 'Jednorázové lekce', 'display_order' => 2, 'published_at' => now()],
+        );
+        $workshopCategory = EventCategory::query()->firstOrCreate(
+            ['slug' => 'workshopy'],
+            ['name' => 'Workshopy', 'display_order' => 1, 'published_at' => now()],
+        );
+
+        // --- One-off lesson-type events (course-derived) + bookings ---
         foreach (range(1, 6) as $ignored) {
             $hour = fake()->numberBetween(8, 18);
+            $course = $coursesForLessons->random();
+            $date = Carbon::now()->addDays(fake()->numberBetween(-7, 30));
 
-            $lesson = OneTimeLesson::factory()->create([
-                'course_id' => $coursesForLessons->random()->getKey(),
+            $lesson = OneOffEvent::factory()->create([
+                'event_category_id' => $lekceCategory->getKey(),
+                'course_id' => $course->getKey(),
                 'instructor_id' => $instructorIds->random(),
                 'room_id' => $rooms->random()->getKey(),
-                'lesson_date' => Carbon::now()->addDays(fake()->numberBetween(-7, 30))->toDateString(),
+                'name' => $course->name.' – jednorázová lekce',
+                'slug' => Str::slug($course->slug.'-'.$date->format('Y-m-d')).'-'.fake()->unique()->numberBetween(1, 100000),
+                'description' => null,
+                'event_date' => $date->toDateString(),
                 'start_time' => sprintf('%02d:00', $hour),
                 'end_time' => sprintf('%02d:00', $hour + 1),
+                'capacity' => fake()->numberBetween(4, 15),
+                'price' => fake()->numberBetween(200, 800),
                 'published_at' => now(),
             ]);
 
             foreach ($clients->random(fake()->numberBetween(2, 5)) as $client) {
                 $paymentStatus = fake()->randomElement([PaymentStatus::Paid, PaymentStatus::Unpaid]);
 
-                OneTimeLessonBooking::factory()->create([
+                OneOffEventBooking::factory()->create([
                     'client_id' => $client->getKey(),
-                    'lesson_id' => $lesson->getKey(),
+                    'one_off_event_id' => $lesson->getKey(),
                     'status' => 'confirmed',
                     'payment_status' => $paymentStatus,
                     'paid_at' => $paymentStatus === PaymentStatus::Paid ? now() : null,
@@ -416,18 +432,19 @@ class DemoSeeder extends Seeder
             }
         }
 
-        // --- Workshops + registrations ---
+        // --- Workshop-type events + bookings ---
         $workshopNames = ['Workshop zdravých zad', 'Dýchací techniky', 'Cvičení s overballem', 'Mobilita kyčlí', 'Pánevní dno'];
 
-        collect($workshopNames)->each(function (string $name) use ($instructorIds, $rooms, $clients) {
+        collect($workshopNames)->each(function (string $name) use ($workshopCategory, $instructorIds, $rooms, $clients) {
             $hour = fake()->numberBetween(9, 16);
 
-            $workshop = Workshop::factory()->create([
+            $workshop = OneOffEvent::factory()->create([
+                'event_category_id' => $workshopCategory->getKey(),
                 'instructor_id' => $instructorIds->random(),
                 'room_id' => $rooms->random()->getKey(),
                 'name' => $name,
                 'slug' => Str::slug($name),
-                'workshop_date' => Carbon::now()->addDays(fake()->numberBetween(-7, 45))->toDateString(),
+                'event_date' => Carbon::now()->addDays(fake()->numberBetween(-7, 45))->toDateString(),
                 'start_time' => sprintf('%02d:00', $hour),
                 'end_time' => sprintf('%02d:00', $hour + 2),
                 'published_at' => now(),
@@ -436,9 +453,9 @@ class DemoSeeder extends Seeder
             foreach ($clients->random(fake()->numberBetween(3, 8)) as $client) {
                 $paymentStatus = fake()->randomElement([PaymentStatus::Paid, PaymentStatus::Paid, PaymentStatus::Unpaid]);
 
-                WorkshopRegistration::factory()->create([
+                OneOffEventBooking::factory()->create([
                     'client_id' => $client->getKey(),
-                    'workshop_id' => $workshop->getKey(),
+                    'one_off_event_id' => $workshop->getKey(),
                     'status' => 'confirmed',
                     'payment_status' => $paymentStatus,
                     'paid_at' => $paymentStatus === PaymentStatus::Paid ? now() : null,
@@ -531,16 +548,16 @@ class DemoSeeder extends Seeder
             'due_at' => today()->addDays(Settings::paymentDueDays()),
         ]);
 
-        // 7) Workshop registration paid by transfer + invoiced (workshop title template).
-        $registration = WorkshopRegistration::query()
+        // 7) Event booking paid by transfer + invoiced (event title template).
+        $booking = OneOffEventBooking::query()
             ->where('payment_status', PaymentStatus::Unpaid)
-            ->with('workshop')
+            ->with('event')
             ->first();
 
-        if ($registration !== null) {
-            $generator->fromPayment($registration->payments()->create([
-                'client_id' => $registration->client_id,
-                'amount' => (int) $registration->workshop->price,
+        if ($booking !== null) {
+            $generator->fromPayment($booking->payments()->create([
+                'client_id' => $booking->client_id,
+                'amount' => (int) $booking->event->price,
                 'method' => PaymentMethod::Qr,
                 'status' => PaymentStatus::Paid,
                 'paid_at' => now()->subDay(),

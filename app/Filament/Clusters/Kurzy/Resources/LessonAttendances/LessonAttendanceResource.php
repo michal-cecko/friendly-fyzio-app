@@ -33,6 +33,8 @@ class LessonAttendanceResource extends Resource
 
     protected static ?int $navigationSort = 6;
 
+    protected static bool $shouldRegisterNavigation = false;
+
     protected static int $globalSearchResultsLimit = 10;
 
     public static function getModelLabel(): string

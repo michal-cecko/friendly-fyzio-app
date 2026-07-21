@@ -7,13 +7,12 @@ use App\Enums\CourseEnrollmentStatus;
 use App\Enums\EmailTemplateKey;
 use App\Enums\PaymentStatus;
 use App\Models\CourseEnrollment;
-use App\Models\OneTimeLessonBooking;
-use App\Models\WorkshopRegistration;
+use App\Models\OneOffEventBooking;
 use App\Notifications\EnrollmentTemplateNotification;
 use Illuminate\Support\Facades\DB;
 
 /**
- * The core cancellation of a course/lesson/workshop sign-up, shared by the
+ * The core cancellation of a course/event sign-up, shared by the
  * client zone ({@see CancelSignupAsClient}, which adds the cancellation-window
  * check) and the admin (which overrides the window). Withdraws any open payment
  * request and — through the sign-up observers — offers the freed spot to the
@@ -22,7 +21,7 @@ use Illuminate\Support\Facades\DB;
 class CancelSignup
 {
     public function __invoke(
-        CourseEnrollment|OneTimeLessonBooking|WorkshopRegistration $signup,
+        CourseEnrollment|OneOffEventBooking $signup,
         bool $notify = true,
         EmailTemplateKey $emailKey = EmailTemplateKey::EnrollmentCancelledByClient,
     ): void {
@@ -49,12 +48,8 @@ class CancelSignup
         }
     }
 
-    protected function offer(CourseEnrollment|OneTimeLessonBooking|WorkshopRegistration $signup): mixed
+    protected function offer(CourseEnrollment|OneOffEventBooking $signup): mixed
     {
-        return match (true) {
-            $signup instanceof CourseEnrollment => $signup->series,
-            $signup instanceof OneTimeLessonBooking => $signup->lesson,
-            $signup instanceof WorkshopRegistration => $signup->workshop,
-        };
+        return $signup instanceof CourseEnrollment ? $signup->series : $signup->event;
     }
 }

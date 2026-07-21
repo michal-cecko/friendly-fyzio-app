@@ -3,8 +3,7 @@
 namespace App\Support\Enrollments;
 
 use App\Models\CourseLesson;
-use App\Models\OneTimeLesson;
-use App\Models\Workshop;
+use App\Models\OneOffEvent;
 use App\Support\Reservations\ReservationChangeSnapshot;
 
 /**
@@ -20,7 +19,7 @@ class OfferScheduleSnapshot
     /**
      * @return array<string, string>
      */
-    public static function capture(CourseLesson|OneTimeLesson|Workshop $scheduled): array
+    public static function capture(CourseLesson|OneOffEvent $scheduled): array
     {
         $original = $scheduled->newQuery()->with('room.building')->find($scheduled->getKey());
 

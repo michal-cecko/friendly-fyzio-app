@@ -10,6 +10,7 @@ use App\Enums\ServiceVisibility;
 use App\Enums\UserRole;
 use App\Livewire\ReservationWizard;
 use App\Models\Reservation;
+use App\Models\ReservationDayWaitlistEntry;
 use App\Models\Room;
 use App\Models\Service;
 use App\Models\ServiceCategory;
@@ -506,5 +507,81 @@ class ReservationWizardTest extends TestCase
         }
 
         return null;
+    }
+
+    /**
+     * A fresh, fully-booked one-hour day for this test's service + therapist,
+     * returned as a Y-m-d string (distinct from the setUp's open day).
+     */
+    private function fullyBookedDay(): string
+    {
+        $date = $this->date->copy()->addDay();
+        $room = Room::factory()->create();
+
+        TherapistWorkBlock::factory()->create([
+            'therapist_id' => $this->therapist->id,
+            'room_id' => $room->id,
+            'work_date' => $date->toDateString(),
+            'start_time' => '08:00',
+            'end_time' => '09:00',
+        ]);
+
+        Reservation::factory()->confirmed()->create([
+            'service_id' => $this->service->id,
+            'therapist_id' => $this->therapist->id,
+            'room_id' => $room->id,
+            'client_id' => User::factory()->customer(),
+            'reservation_date' => $date->toDateString(),
+            'start_time' => '08:00',
+            'end_time' => '09:00',
+        ]);
+
+        return $date->toDateString();
+    }
+
+    public function test_a_full_day_lets_a_guest_join_the_day_waitlist(): void
+    {
+        Notification::fake();
+        $date = $this->fullyBookedDay();
+
+        Livewire::test(ReservationWizard::class, [
+            'serviceSlug' => $this->service->slug,
+            'therapistSlug' => $this->therapist->slug,
+        ])
+            ->call('openWaitlist', $date)
+            ->set('waitlistName', 'Jana Nováková')
+            ->set('waitlistEmail', 'jana@example.cz')
+            ->set('waitlistPhone', '+420604793255')
+            ->call('joinDayWaitlist')
+            ->assertHasNoErrors();
+
+        $this->assertTrue(
+            ReservationDayWaitlistEntry::query()
+                ->whereDate('reservation_date', $date)
+                ->where('therapist_id', $this->therapist->id)
+                ->whereNull('client_id')
+                ->where('email', 'jana@example.cz')
+                ->exists(),
+        );
+    }
+
+    public function test_a_joined_day_switches_from_full_to_the_waitlist_cell_state(): void
+    {
+        Notification::fake();
+        $date = $this->fullyBookedDay();
+
+        $component = Livewire::test(ReservationWizard::class, [
+            'serviceSlug' => $this->service->slug,
+            'therapistSlug' => $this->therapist->slug,
+        ]);
+
+        $this->assertSame('full', $this->findCell($component->instance()->calendarMonths(), $date)['queue']);
+
+        $component->call('openWaitlist', $date)
+            ->set('waitlistName', 'Jana')
+            ->set('waitlistEmail', 'jana@example.cz')
+            ->call('joinDayWaitlist');
+
+        $this->assertSame('waitlist', $this->findCell($component->instance()->calendarMonths(), $date)['queue']);
     }
 }

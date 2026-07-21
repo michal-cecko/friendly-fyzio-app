@@ -4,19 +4,17 @@ namespace App\Support\Enrollments;
 
 use App\Models\CourseEnrollment;
 use App\Models\CourseSeries;
-use App\Models\OneTimeLesson;
-use App\Models\OneTimeLessonBooking;
+use App\Models\OneOffEvent;
+use App\Models\OneOffEventBooking;
 use App\Models\Room;
 use App\Models\User;
-use App\Models\Workshop;
-use App\Models\WorkshopRegistration;
 use App\Support\Settings;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 /**
- * Builds the {{ token }} context for the course/lesson/workshop e-mails, the
- * counterpart of ReservationEmailContext for enrollables. Payment tokens
+ * Builds the {{ token }} context for the course/event e-mails, the counterpart
+ * of ReservationEmailContext for enrollables. Payment tokens
  * (castka/iban/vs/qr/splatnost) are merged in by the caller from
  * PaymentEmailTokens so they stay consistent with every other payment e-mail.
  */
@@ -43,32 +41,15 @@ class EnrollmentEmailContext
     /**
      * @return array<string, string>
      */
-    public static function forRegistration(WorkshopRegistration $registration, array $extra = []): array
+    public static function forEventBooking(OneOffEventBooking $booking, array $extra = []): array
     {
-        $workshop = $registration->workshop;
-
-        return [
-            'jmeno' => self::firstName($registration->client),
-            'workshop' => (string) ($workshop?->name ?? ''),
-            'termin' => $workshop !== null ? self::dateTimeLabel($workshop->startsAt()) : '',
-            'misto' => self::place($workshop?->room),
-            'rezervace_hodin' => (string) Settings::enrollmentHoldHours(),
-            ...$extra,
-        ];
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    public static function forBooking(OneTimeLessonBooking $booking, array $extra = []): array
-    {
-        $lesson = $booking->lesson;
+        $event = $booking->event;
 
         return [
             'jmeno' => self::firstName($booking->client),
-            'lekce' => (string) ($lesson?->course?->name ?? ''),
-            'termin' => $lesson !== null ? self::dateTimeLabel($lesson->startsAt()) : '',
-            'misto' => self::place($lesson?->room),
+            'nazev' => (string) ($event?->name ?? ''),
+            'termin' => $event !== null ? self::dateTimeLabel($event->startsAt()) : '',
+            'misto' => self::place($event?->room),
             'rezervace_hodin' => (string) Settings::enrollmentHoldHours(),
             ...$extra,
         ];
@@ -80,18 +61,14 @@ class EnrollmentEmailContext
      *
      * @return array<string, string>
      */
-    public static function offerTokens(CourseSeries|OneTimeLesson|Workshop $offer): array
+    public static function offerTokens(CourseSeries|OneOffEvent $offer): array
     {
         return match (true) {
             $offer instanceof CourseSeries => [
                 'nazev' => trim(($offer->course?->name ?? '').' ('.$offer->name.')'),
                 'termin' => self::seriesPeriod($offer),
             ],
-            $offer instanceof OneTimeLesson => [
-                'nazev' => (string) ($offer->course?->name ?? ''),
-                'termin' => self::dateTimeLabel($offer->startsAt()),
-            ],
-            $offer instanceof Workshop => [
+            $offer instanceof OneOffEvent => [
                 'nazev' => $offer->name,
                 'termin' => self::dateTimeLabel($offer->startsAt()),
             ],

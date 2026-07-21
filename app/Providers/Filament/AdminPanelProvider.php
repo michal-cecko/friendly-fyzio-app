@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Pages\Auth\Login;
 use App\Filament\Pages\Dashboard;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use DiscoveryDesign\FilamentGaze\FilamentGazePlugin;
@@ -43,7 +44,7 @@ class AdminPanelProvider extends PanelProvider
             ->brandLogoHeight('1.6rem')
             // Staff sign in here (customers live on the public /prihlaseni page
             // and are rejected by User::canAccessPanel()).
-            ->login()
+            ->login(Login::class)
             ->passwordReset()
             ->emailChangeVerification()
             ->profile()

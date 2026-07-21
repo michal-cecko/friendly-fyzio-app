@@ -6,10 +6,10 @@ use App\Enums\BookingStatus;
 use App\Enums\EmailTemplateKey;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
-use App\Filament\Clusters\Workshopy\Resources\WorkshopRegistrations\Pages\ListWorkshopRegistrations;
+use App\Filament\Clusters\Kurzy\Resources\OneOffEventBookings\Pages\ListOneOffEventBookings;
+use App\Models\OneOffEvent;
+use App\Models\OneOffEventBooking;
 use App\Models\User;
-use App\Models\Workshop;
-use App\Models\WorkshopRegistration;
 use App\Notifications\EnrollmentTemplateNotification;
 use App\Support\Enrollments\CancelSignup;
 use App\Support\Enrollments\JoinWaitlist;
@@ -33,46 +33,46 @@ class CancelSignupTest extends TestCase
         $this->actingAs(User::factory()->admin()->create());
     }
 
-    private function confirmedRegistration(int $capacity = 5): WorkshopRegistration
+    private function confirmedBooking(int $capacity = 5): OneOffEventBooking
     {
-        $workshop = Workshop::factory()->create([
+        $event = OneOffEvent::factory()->create([
             'capacity' => $capacity,
             'price' => 900,
-            'workshop_date' => today()->addWeeks(2)->toDateString(),
+            'event_date' => today()->addWeeks(2)->toDateString(),
         ]);
 
-        $registration = WorkshopRegistration::factory()->create([
-            'workshop_id' => $workshop->getKey(),
+        $booking = OneOffEventBooking::factory()->create([
+            'one_off_event_id' => $event->getKey(),
             'status' => BookingStatus::Confirmed,
             'payment_status' => PaymentStatus::Unpaid,
             'paid_at' => null,
         ]);
 
-        $registration->payments()->create([
-            'client_id' => $registration->client_id,
+        $booking->payments()->create([
+            'client_id' => $booking->client_id,
             'amount' => 900,
             'method' => PaymentMethod::Qr,
             'status' => PaymentStatus::Unpaid,
             'due_at' => now()->addHours(48),
         ]);
 
-        return $registration;
+        return $booking;
     }
 
     public function test_service_cancels_withdraws_open_payment_and_emails_clinic_template(): void
     {
         Notification::fake();
 
-        $registration = $this->confirmedRegistration();
+        $booking = $this->confirmedBooking();
 
-        app(CancelSignup::class)($registration, true, EmailTemplateKey::EnrollmentCancelledByClinic);
+        app(CancelSignup::class)($booking, true, EmailTemplateKey::EnrollmentCancelledByClinic);
 
-        $registration->refresh();
-        $this->assertSame(BookingStatus::Cancelled, $registration->status);
-        $this->assertSame(0, $registration->payments()->count());
+        $booking->refresh();
+        $this->assertSame(BookingStatus::Cancelled, $booking->status);
+        $this->assertSame(0, $booking->payments()->count());
 
         Notification::assertSentTo(
-            $registration->client,
+            $booking->client,
             EnrollmentTemplateNotification::class,
             fn (EnrollmentTemplateNotification $notification): bool => $notification->key === EmailTemplateKey::EnrollmentCancelledByClinic,
         );
@@ -82,76 +82,76 @@ class CancelSignupTest extends TestCase
     {
         Notification::fake();
 
-        $registration = $this->confirmedRegistration();
+        $booking = $this->confirmedBooking();
 
-        app(CancelSignup::class)($registration, false);
+        app(CancelSignup::class)($booking, false);
 
-        $this->assertSame(BookingStatus::Cancelled, $registration->fresh()->status);
-        Notification::assertNothingSentTo($registration->client);
+        $this->assertSame(BookingStatus::Cancelled, $booking->fresh()->status);
+        Notification::assertNothingSentTo($booking->client);
     }
 
     public function test_cancelling_frees_the_spot_and_promotes_the_waitlist(): void
     {
         Notification::fake();
 
-        // A full workshop with someone waiting.
-        $registration = $this->confirmedRegistration(capacity: 1);
-        JoinWaitlist::handle($registration->workshop, 'Náhradník Nový', 'nahradnik@example.cz');
+        // A full event with someone waiting.
+        $booking = $this->confirmedBooking(capacity: 1);
+        JoinWaitlist::handle($booking->event, 'Náhradník Nový', 'nahradnik@example.cz');
 
-        app(CancelSignup::class)($registration, false);
+        app(CancelSignup::class)($booking, false);
 
         // Auto-promotion (default on) fills the freed spot from the waitlist.
         $promoted = User::query()->where('email', 'nahradnik@example.cz')->sole();
-        $this->assertTrue($registration->workshop->registrations()
+        $this->assertTrue($booking->event->bookings()
             ->where('client_id', $promoted->id)
             ->whereIn('status', BookingStatus::occupying())
             ->exists());
     }
 
-    public function test_admin_row_action_cancels_the_registration(): void
+    public function test_admin_row_action_cancels_the_booking(): void
     {
         Notification::fake();
 
-        $registration = $this->confirmedRegistration();
+        $booking = $this->confirmedBooking();
 
-        Livewire::test(ListWorkshopRegistrations::class)
-            ->callAction(TestAction::make('cancelSignup')->table($registration), [
+        Livewire::test(ListOneOffEventBookings::class)
+            ->callAction(TestAction::make('cancelSignup')->table($booking), [
                 'notify_client' => false,
             ])
             ->assertHasNoActionErrors();
 
-        $this->assertSame(BookingStatus::Cancelled, $registration->fresh()->status);
+        $this->assertSame(BookingStatus::Cancelled, $booking->fresh()->status);
     }
 
     public function test_admin_row_action_hidden_for_already_cancelled(): void
     {
-        $registration = WorkshopRegistration::factory()->create([
+        $booking = OneOffEventBooking::factory()->create([
             'status' => BookingStatus::Cancelled,
         ]);
 
-        Livewire::test(ListWorkshopRegistrations::class)
-            ->assertActionHidden(TestAction::make('cancelSignup')->table($registration));
+        Livewire::test(ListOneOffEventBookings::class)
+            ->assertActionHidden(TestAction::make('cancelSignup')->table($booking));
     }
 
-    public function test_admin_bulk_action_cancels_selected_registrations(): void
+    public function test_admin_bulk_action_cancels_selected_bookings(): void
     {
         Notification::fake();
 
-        $workshop = Workshop::factory()->create(['capacity' => 10]);
-        $registrations = WorkshopRegistration::factory()->count(3)->create([
-            'workshop_id' => $workshop->getKey(),
+        $event = OneOffEvent::factory()->create(['capacity' => 10]);
+        $bookings = OneOffEventBooking::factory()->count(3)->create([
+            'one_off_event_id' => $event->getKey(),
             'status' => BookingStatus::Confirmed,
         ]);
 
-        Livewire::test(ListWorkshopRegistrations::class)
-            ->set('selectedTableRecords', $registrations->pluck('id')->all())
+        Livewire::test(ListOneOffEventBookings::class)
+            ->set('selectedTableRecords', $bookings->pluck('id')->all())
             ->callAction(TestAction::make('cancelSignups')->table()->bulk(), [
                 'notify_client' => false,
             ])
             ->assertHasNoActionErrors();
 
-        $registrations->each(function (WorkshopRegistration $registration): void {
-            $this->assertSame(BookingStatus::Cancelled, $registration->fresh()->status);
+        $bookings->each(function (OneOffEventBooking $booking): void {
+            $this->assertSame(BookingStatus::Cancelled, $booking->fresh()->status);
         });
     }
 }

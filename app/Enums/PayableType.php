@@ -10,8 +10,7 @@ enum PayableType: string
 {
     case Reservation = 'reservation';
     case CourseEnrollment = 'course_enrollment';
-    case WorkshopRegistration = 'workshop_registration';
-    case OneTimeLessonBooking = 'one_time_lesson_booking';
+    case OneOffEventBooking = 'one_off_event_booking';
 
     /**
      * Storno fees reuse the reservation tokens but have their own wording,
@@ -30,8 +29,7 @@ enum PayableType: string
         return match ($this) {
             self::Reservation => 'Rezervace',
             self::CourseEnrollment => 'Přihláška na kurz',
-            self::WorkshopRegistration => 'Registrace na workshop',
-            self::OneTimeLessonBooking => 'Jednorázová lekce',
+            self::OneOffEventBooking => 'Jednorázová akce',
         };
     }
 
@@ -50,8 +48,7 @@ enum PayableType: string
         return match ($this) {
             self::Reservation => '{{ sluzba }} – {{ datum }}',
             self::CourseEnrollment => '{{ kurz }} – {{ beh }}',
-            self::WorkshopRegistration => 'Workshop {{ workshop }} – {{ datum }}',
-            self::OneTimeLessonBooking => 'Jednorázová lekce {{ lekce }} – {{ datum }}',
+            self::OneOffEventBooking => '{{ nazev }} – {{ datum }}',
         };
     }
 
@@ -60,8 +57,7 @@ enum PayableType: string
         return match ($this) {
             self::Reservation => '{{ cas }}, {{ terapeut }}',
             self::CourseEnrollment => '{{ obdobi }}',
-            self::WorkshopRegistration => '{{ cas }}',
-            self::OneTimeLessonBooking => '{{ cas }}',
+            self::OneOffEventBooking => '{{ cas }}',
         };
     }
 
@@ -87,14 +83,8 @@ enum PayableType: string
                 'obdobi' => 'Období série (od – do)',
                 'klient' => 'Jméno klienta',
             ],
-            self::WorkshopRegistration => [
-                'workshop' => 'Název workshopu (Název pro fakturaci, jinak běžný název)',
-                'datum' => 'Datum konání',
-                'cas' => 'Čas začátku',
-                'klient' => 'Jméno klienta',
-            ],
-            self::OneTimeLessonBooking => [
-                'lekce' => 'Název lekce (Název pro fakturaci, jinak název kurzu)',
+            self::OneOffEventBooking => [
+                'nazev' => 'Název akce (Název pro fakturaci, jinak běžný název)',
                 'datum' => 'Datum konání',
                 'cas' => 'Čas začátku',
                 'klient' => 'Jméno klienta',

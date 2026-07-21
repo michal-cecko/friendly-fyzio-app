@@ -33,6 +33,19 @@ class EmailTemplateRenderer
     }
 
     /**
+     * Wrap an arbitrary HTML fragment (e.g. a RichEditor body from the custom e-mail
+     * composer) in the same fixed emails.layout chrome the CMS templates use, giving
+     * inline links the brand accent along the way.
+     */
+    public static function renderHtml(string $bodyHtml, string $subject): string
+    {
+        return view('emails.layout', [
+            'body' => self::styleContentLinks($bodyHtml),
+            'subject' => $subject,
+        ])->render();
+    }
+
+    /**
      * Replace every {{ token }} with its context value. Scalars are escaped;
      * HtmlString values (server-rendered fragments like the invoice items table)
      * are inserted raw — the type IS the raw-allowlist. Unknown tokens resolve

@@ -82,6 +82,15 @@ class Settings
     }
 
     /**
+     * Whether customers may join a day's waitlist ("pořadník") for a fully-booked
+     * day and get e-mailed when a slot on that therapist's day frees up.
+     */
+    public static function dayWaitlistEnabled(): bool
+    {
+        return (bool) self::get('reservation.day_waitlist_enabled', true);
+    }
+
+    /**
      * Minimum lead time (in hours) before a slot can be booked online.
      */
     public static function leadTimeHours(): int
@@ -142,21 +151,12 @@ class Settings
     }
 
     /**
-     * How many hours before a one-time lesson a client can still cancel their
-     * booking themselves in the client zone.
+     * How many hours before a one-off event (lekce, workshop, …) a client can
+     * still cancel their booking themselves in the client zone.
      */
-    public static function lessonCancelBeforeHours(): int
+    public static function eventCancelBeforeHours(): int
     {
-        return (int) self::get('enrollments.lesson_cancel_before_hours', 24);
-    }
-
-    /**
-     * How many days before a workshop a client can still cancel their
-     * registration themselves in the client zone.
-     */
-    public static function workshopCancelBeforeDays(): int
-    {
-        return (int) self::get('enrollments.workshop_cancel_before_days', 7);
+        return (int) self::get('enrollments.event_cancel_before_hours', 24);
     }
 
     /**
@@ -218,6 +218,15 @@ class Settings
     public static function noShowFeePercent(): int
     {
         return (int) self::get('payments.no_show_fee_percent', 100);
+    }
+
+    /**
+     * How many days before a top-up's validity date the client gets the
+     * "credit is about to expire" reminder e-mail. 0 disables the notification.
+     */
+    public static function creditExpiryNoticeDays(): int
+    {
+        return (int) self::get('credits.expiry_notice_days', 7);
     }
 
     /**

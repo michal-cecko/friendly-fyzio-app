@@ -7,11 +7,11 @@ use App\Enums\SettingValueType;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
 use App\Models\CourseSeries;
+use App\Models\OneOffEvent;
+use App\Models\OneOffEventBooking;
 use App\Models\ReviewRequest;
 use App\Models\Setting;
 use App\Models\User;
-use App\Models\Workshop;
-use App\Models\WorkshopRegistration;
 use App\Notifications\ReviewRequestNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
@@ -58,23 +58,48 @@ class SendReviewRequestsCommandTest extends TestCase
         Notification::assertSentTo($clientB, ReviewRequestNotification::class);
     }
 
-    public function test_sends_requests_to_workshop_registrants(): void
+    public function test_sends_requests_to_event_participants(): void
     {
         Notification::fake();
         $this->enableReviews();
 
-        $workshop = Workshop::factory()->create(['workshop_date' => now()->subDays(2)->toDateString()]);
+        $event = OneOffEvent::factory()->create(['event_date' => now()->subDays(2)->toDateString()]);
         $client = User::factory()->customer()->create();
-        WorkshopRegistration::factory()->create(['workshop_id' => $workshop->getKey(), 'client_id' => $client->getKey()]);
+        OneOffEventBooking::factory()->create(['one_off_event_id' => $event->getKey(), 'client_id' => $client->getKey()]);
 
         $this->artisan('reviews:send-requests')->assertSuccessful();
 
         $this->assertDatabaseHas('review_requests', [
             'user_id' => $client->getKey(),
-            'reviewable_type' => 'workshop',
-            'reviewable_id' => $workshop->getKey(),
+            'reviewable_type' => 'one_off_event',
+            'reviewable_id' => $event->getKey(),
             'channel' => ReviewRequestChannel::Automatic->value,
         ]);
+        Notification::assertSentTo($client, ReviewRequestNotification::class);
+    }
+
+    public function test_sends_requests_for_course_linked_events_and_targets_the_course(): void
+    {
+        Notification::fake();
+        $this->enableReviews();
+
+        // Lesson-type (course-derived) events are covered by the automatic
+        // command too; a submitted review will attach to the parent course.
+        $course = Course::factory()->create();
+        $event = OneOffEvent::factory()->withCourse($course)->create([
+            'event_date' => now()->subDays(2)->toDateString(),
+        ]);
+        $client = User::factory()->customer()->create();
+        OneOffEventBooking::factory()->create(['one_off_event_id' => $event->getKey(), 'client_id' => $client->getKey()]);
+
+        $this->artisan('reviews:send-requests')->assertSuccessful();
+
+        $request = ReviewRequest::query()
+            ->where('reviewable_type', 'one_off_event')
+            ->where('reviewable_id', $event->getKey())
+            ->sole();
+
+        $this->assertTrue($request->reviewTarget()->is($course));
         Notification::assertSentTo($client, ReviewRequestNotification::class);
     }
 
@@ -130,6 +155,12 @@ class SendReviewRequestsCommandTest extends TestCase
                 'client_id' => User::factory()->customer()->create()->getKey(),
             ]);
         }
+
+        $oldEvent = OneOffEvent::factory()->create(['event_date' => now()->subDays(20)->toDateString()]);
+        OneOffEventBooking::factory()->create([
+            'one_off_event_id' => $oldEvent->getKey(),
+            'client_id' => User::factory()->customer()->create()->getKey(),
+        ]);
 
         $this->artisan('reviews:send-requests')->assertSuccessful();
 

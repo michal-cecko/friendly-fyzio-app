@@ -3,6 +3,7 @@
 namespace App\Support\Seo;
 
 use App\Models\CourseCategory;
+use App\Models\OneOffEvent;
 use App\Models\Service;
 use App\Models\ServiceCategory;
 
@@ -27,7 +28,7 @@ class LegacyRedirects
         'fyzio-kurzy' => '/kurzy',
         'relaxace-ritualy/masaze' => '/sluzby/relaxace/lymphaticke-masaze',
         'relaxace-ritualy/bylinna-naparka' => '/sluzby/relaxace/bylinna-naparka',
-        'prihlaska-na-jednorazove-vstupy' => '/kurzy?typ=lekce',
+        'prihlaska-na-jednorazove-vstupy' => '/jednorazove-lekce',
         'rezervace-vstupniho-vysetreni' => '/rezervace',
         'rezervace-masazi' => '/rezervace?kategorie=relaxace',
     ];
@@ -46,6 +47,15 @@ class LegacyRedirects
 
         if (isset(self::MAP[$path])) {
             return self::MAP[$path];
+        }
+
+        // Old one-time-lesson URLs (/kurzy/{course}/lekce/{id}) — lessons became
+        // one-off events with PRESERVED ids, so the id resolves directly to the
+        // event's new canonical URL (or the course archive as a safety net).
+        if (preg_match('#^kurzy/[^/]+/lekce/([^/]+)$#', $path, $matches) === 1) {
+            $event = OneOffEvent::query()->with('category')->find($matches[1]);
+
+            return $event?->category !== null ? $event->permalink() : '/kurzy';
         }
 
         // Old /fyzio-kurzy/{category} course-category pages → the archive filtered

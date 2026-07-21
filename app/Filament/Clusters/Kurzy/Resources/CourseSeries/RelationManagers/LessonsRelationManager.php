@@ -70,6 +70,11 @@ class LessonsRelationManager extends RelationManager
                     ->modalHeading('Přidat lekci'),
             ])
             ->recordActions([
+                Action::make('detail')
+                    ->label('Detail')
+                    ->icon(Heroicon::OutlinedArrowTopRightOnSquare)
+                    ->color('gray')
+                    ->url(fn (CourseLesson $record): string => CourseLessonResource::getUrl('view', ['record' => $record])),
                 Action::make('edit')
                     ->label('Upravit')
                     ->icon(Heroicon::OutlinedPencilSquare)

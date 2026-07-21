@@ -12,9 +12,8 @@ use App\Enums\PaymentStatus;
 use App\Enums\UserRole;
 use App\Models\CourseLesson;
 use App\Models\CourseSeries;
-use App\Models\OneTimeLesson;
+use App\Models\OneOffEvent;
 use App\Models\User;
-use App\Models\Workshop;
 use App\Notifications\ClientAccountCreatedNotification;
 use App\Notifications\EnrollmentTemplateNotification;
 use App\Support\Enrollments\AlreadySignedUpException;
@@ -178,36 +177,74 @@ class SignUpForOfferTest extends TestCase
         $this->assertSame(CourseEnrollmentStatus::Active, $enrollment->status);
     }
 
-    public function test_workshop_registration_and_lesson_booking_paths(): void
+    public function test_event_booking_path_creates_booking_payment_and_emails(): void
     {
-        $workshop = Workshop::factory()->create([
-            'workshop_date' => today()->addWeeks(3)->toDateString(),
+        $event = OneOffEvent::factory()->published()->create([
+            'event_date' => today()->addWeeks(3)->toDateString(),
             'capacity' => 8,
             'price' => 3500,
-            'published_at' => now(),
         ]);
 
-        $registration = app(SignUpForOffer::class)->forWorkshop($workshop, $this->guestData());
-
-        $this->assertSame(BookingStatus::Confirmed, $registration->status);
-        $this->assertSame(3500, (int) $registration->payments()->sole()->amount);
-
-        $lesson = OneTimeLesson::factory()->create([
-            'lesson_date' => today()->addWeeks(2)->toDateString(),
-            'capacity' => 10,
-            'price' => 450,
-            'published_at' => now(),
-        ]);
-
-        $booking = app(SignUpForOffer::class)->forLesson($lesson, $this->guestData(['email' => 'lekce@example.cz']));
+        $booking = app(SignUpForOffer::class)->forEvent($event, $this->guestData(['email' => 'akce@example.cz']));
 
         $this->assertSame(BookingStatus::Confirmed, $booking->status);
-        $this->assertSame(450, (int) $booking->payments()->sole()->amount);
+        $this->assertSame(3500, (int) $booking->payments()->sole()->amount);
 
         Notification::assertSentTo(
-            User::query()->where('email', 'lekce@example.cz')->sole(),
+            User::query()->where('email', 'akce@example.cz')->sole(),
             EnrollmentTemplateNotification::class,
-            fn (EnrollmentTemplateNotification $notification): bool => $notification->key === EmailTemplateKey::LessonBookingReceived,
+            fn (EnrollmentTemplateNotification $notification): bool => $notification->key === EmailTemplateKey::EventBookingReceived
+                && $notification->tokens['nazev'] === $event->name,
         );
+
+        Notification::assertSentTo($event->instructor, EnrollmentTemplateNotification::class, fn (EnrollmentTemplateNotification $notification): bool => $notification->key === EmailTemplateKey::TherapistEnrollmentCreated);
+    }
+
+    public function test_full_event_rejects_booking(): void
+    {
+        $event = OneOffEvent::factory()->published()->create([
+            'event_date' => today()->addWeeks(2)->toDateString(),
+            'capacity' => 1,
+            'price' => 450,
+        ]);
+
+        app(SignUpForOffer::class)->forEvent($event, $this->guestData());
+
+        $this->expectException(OfferClosedException::class);
+
+        app(SignUpForOffer::class)->forEvent($event, $this->guestData(['email' => 'druha@example.cz']));
+    }
+
+    public function test_duplicate_active_event_booking_is_rejected(): void
+    {
+        $event = OneOffEvent::factory()->published()->create([
+            'event_date' => today()->addWeeks(2)->toDateString(),
+            'capacity' => 5,
+        ]);
+
+        app(SignUpForOffer::class)->forEvent($event, $this->guestData());
+
+        $this->expectException(AlreadySignedUpException::class);
+
+        app(SignUpForOffer::class)->forEvent($event, $this->guestData());
+    }
+
+    public function test_presale_token_opens_unpublished_event_but_regular_signup_stays_closed(): void
+    {
+        $event = OneOffEvent::factory()->unpublished()->create([
+            'event_date' => today()->addWeeks(2)->toDateString(),
+            'capacity' => 5,
+        ]);
+
+        try {
+            app(SignUpForOffer::class)->forEvent($event, $this->guestData());
+            $this->fail('An unpublished event must reject a regular sign-up.');
+        } catch (OfferClosedException) {
+            // expected
+        }
+
+        $booking = app(SignUpForOffer::class)->forEvent($event, $this->guestData(), viaPresale: true);
+
+        $this->assertSame(BookingStatus::Confirmed, $booking->status);
     }
 }

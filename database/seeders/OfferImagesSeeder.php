@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Course;
-use App\Models\Workshop;
+use App\Models\OneOffEvent;
 use Database\Seeders\Concerns\ImportsMedia;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Seeder;
@@ -46,7 +46,7 @@ class OfferImagesSeeder extends Seeder
         }
 
         foreach (self::WORKSHOP_PHOTOS as $slug => $photo) {
-            $this->backfill(Workshop::query(), $slug, $photo);
+            $this->backfill(OneOffEvent::query(), $slug, $photo);
         }
     }
 

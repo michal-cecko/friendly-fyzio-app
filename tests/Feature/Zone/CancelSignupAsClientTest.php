@@ -10,11 +10,9 @@ use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Models\CourseEnrollment;
 use App\Models\CourseSeries;
-use App\Models\OneTimeLesson;
-use App\Models\OneTimeLessonBooking;
+use App\Models\OneOffEvent;
+use App\Models\OneOffEventBooking;
 use App\Models\User;
-use App\Models\Workshop;
-use App\Models\WorkshopRegistration;
 use App\Notifications\EnrollmentTemplateNotification;
 use App\Support\Enrollments\CancellationWindowClosedException;
 use App\Support\Enrollments\CancelSignupAsClient;
@@ -98,21 +96,21 @@ class CancelSignupAsClientTest extends TestCase
             ->exists());
     }
 
-    public function test_lesson_bookings_use_an_hour_based_window(): void
+    public function test_event_bookings_use_a_single_hour_based_window(): void
     {
-        // Default: 24 hours before the lesson.
-        $soon = OneTimeLessonBooking::factory()
-            ->for(OneTimeLesson::factory()->create([
-                'lesson_date' => today()->toDateString(),
+        // Default: 24 hours before the event — for every event type.
+        $soon = OneOffEventBooking::factory()
+            ->for(OneOffEvent::factory()->create([
+                'event_date' => today()->toDateString(),
                 'start_time' => now()->addHours(2)->format('H:i:s'),
-            ]), 'lesson')
+            ]), 'event')
             ->create(['status' => BookingStatus::Confirmed]);
 
-        $later = OneTimeLessonBooking::factory()
-            ->for(OneTimeLesson::factory()->create([
-                'lesson_date' => today()->addDays(5)->toDateString(),
+        $later = OneOffEventBooking::factory()
+            ->for(OneOffEvent::factory()->create([
+                'event_date' => today()->addDays(5)->toDateString(),
                 'start_time' => '18:00:00',
-            ]), 'lesson')
+            ]), 'event')
             ->create(['status' => BookingStatus::Confirmed]);
 
         $cancel = app(CancelSignupAsClient::class);
@@ -123,20 +121,6 @@ class CancelSignupAsClientTest extends TestCase
         $cancel($later);
 
         $this->assertSame(BookingStatus::Cancelled, $later->fresh()->status);
-    }
-
-    public function test_workshop_registrations_use_a_day_based_window(): void
-    {
-        $registration = WorkshopRegistration::factory()
-            ->for(Workshop::factory()->create([
-                'workshop_date' => today()->addDays(30)->toDateString(),
-                'start_time' => '10:00:00',
-            ]))
-            ->create(['status' => BookingStatus::Confirmed]);
-
-        app(CancelSignupAsClient::class)($registration);
-
-        $this->assertSame(BookingStatus::Cancelled, $registration->fresh()->status);
     }
 
     public function test_an_already_cancelled_signup_cannot_be_cancelled_again(): void

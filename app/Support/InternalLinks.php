@@ -4,19 +4,21 @@ namespace App\Support;
 
 use App\Models\Course;
 use App\Models\CourseCategory;
-use App\Models\OneTimeLesson;
+use App\Models\EventCategory;
+use App\Models\OneOffEvent;
 use App\Models\Page;
 use App\Models\Service;
 use App\Models\ServiceCategory;
-use App\Models\Workshop;
 
 /**
  * Canonical registry of internal link destinations for the CMS link picker.
  *
  * A destination is stored as a single reference string:
  * "page:{uuid}" | "route:{name}" | "category:{uuid}" | "service:{uuid}" |
- * "course-category:{uuid}" | "course:{uuid}" | "lesson:{uuid}" | "workshop:{uuid}".
- * Both the picker options and {@see LinkResolver} read from here, so labels and
+ * "course-category:{uuid}" | "course:{uuid}" | "event:{uuid}" |
+ * "event-category:{uuid}". The legacy "lesson:"/"workshop:" kinds still resolve
+ * (their ids were preserved when both merged into one-off events). Both the
+ * picker options and {@see LinkResolver} read from here, so labels and
  * resolution never drift.
  */
 class InternalLinks
@@ -65,8 +67,8 @@ class InternalLinks
             ->all();
 
         // Course categories link to the category-scoped course archive
-        // (/kurzy?kategorie={slug}); courses, lessons and workshops to their
-        // public detail pages.
+        // (/kurzy?kategorie={slug}); courses and one-off events to their
+        // public detail pages, event categories to their landing pages.
         $courseCategories = CourseCategory::query()
             ->published()
             ->orderBy('name')
@@ -81,22 +83,22 @@ class InternalLinks
             ->mapWithKeys(fn (string $name, string $id): array => ["course:{$id}" => $name])
             ->all();
 
-        $lessons = OneTimeLesson::query()
+        $eventCategories = EventCategory::query()
             ->published()
-            ->upcoming()
-            ->with('course')
-            ->get()
-            ->mapWithKeys(fn (OneTimeLesson $lesson): array => [
-                "lesson:{$lesson->getKey()}" => $lesson->course?->name.' – '.$lesson->startsAt()->format('j. n. Y'),
-            ])
-            ->all();
-
-        $workshops = Workshop::query()
-            ->published()
-            ->upcoming()
+            ->orderBy('display_order')
             ->orderBy('name')
             ->pluck('name', 'id')
-            ->mapWithKeys(fn (string $name, string $id): array => ["workshop:{$id}" => $name])
+            ->mapWithKeys(fn (string $name, string $id): array => ["event-category:{$id}" => $name])
+            ->all();
+
+        $events = OneOffEvent::query()
+            ->published()
+            ->upcoming()
+            ->orderBy('event_date')
+            ->get()
+            ->mapWithKeys(fn (OneOffEvent $event): array => [
+                "event:{$event->getKey()}" => $event->name.' – '.$event->startsAt()->format('j. n. Y'),
+            ])
             ->all();
 
         return array_filter([
@@ -106,8 +108,8 @@ class InternalLinks
             'Stránky služeb' => $services,
             'Kurzy – kategorie' => $courseCategories,
             'Kurzy – detail' => $courses,
-            'Jednorázové lekce' => $lessons,
-            'Workshopy' => $workshops,
+            'Jednorázové akce – kategorie' => $eventCategories,
+            'Jednorázové akce' => $events,
         ]);
     }
 
@@ -128,8 +130,10 @@ class InternalLinks
             'service' => Service::find($id)?->permalink,
             'course-category' => self::courseCategoryArchive($id),
             'course' => Course::find($id)?->permalink(),
-            'lesson' => OneTimeLesson::find($id)?->permalink(),
-            'workshop' => Workshop::find($id)?->permalink(),
+            'event-category' => EventCategory::find($id)?->permalink,
+            // Legacy aliases: lesson/workshop ids were preserved by the
+            // one-off event migration, so old stored refs keep resolving.
+            'event', 'lesson', 'workshop' => OneOffEvent::query()->with('category')->find($id)?->permalink(),
             'route' => $id !== null && array_key_exists($id, self::ROUTES) ? route($id) : null,
             default => null,
         };

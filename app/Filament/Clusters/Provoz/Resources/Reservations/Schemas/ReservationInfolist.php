@@ -78,6 +78,7 @@ class ReservationInfolist
                     ->schema([
                         TextEntry::make('status')->label('Stav')->badge(),
                         TextEntry::make('payment_status')->label('Platba')->badge(),
+                        TextEntry::make('settled_at')->label('Vybaveno v')->dateTime('d.m.Y H:i')->badge()->color('success')->placeholder('—'),
                         TextEntry::make('confirmed_by')->label('Potvrdil')->badge()->placeholder('—'),
                         TextEntry::make('confirmedBy.name')->label('Potvrdil (osoba)')->placeholder('—'),
                         TextEntry::make('confirmed_at')->label('Potvrzeno v')->dateTime('d.m.Y H:i')->placeholder('—'),
@@ -112,9 +113,15 @@ class ReservationInfolist
                             ->state(fn (Reservation $record): string => number_format($record->stornoFee(), 0, ',', ' ').' Kč')
                             ->badge()
                             ->color('warning'),
+                        TextEntry::make('doctor_note_resolved_at')
+                            ->label('Vyřešeno v')
+                            ->dateTime('d.m.Y H:i')
+                            ->badge()
+                            ->color('success')
+                            ->placeholder('— dosud nevyřešeno'),
                         TextEntry::make('doctor_note_hint')
                             ->hiddenLabel()
-                            ->state('Storno poplatek je pozastaven do doručení potvrzení od lékaře. Pokud potvrzení nedorazí, doúčtujte poplatek přes „Vyžádat platbu".')
+                            ->state('Storno poplatek je pozastaven do doručení potvrzení od lékaře. Vyřešte přes akci „Vyřešit storno (lékařské potvrzení)" — buď potvrzení přijměte a poplatek prominěte, nebo jej doúčtujte, pokud nedorazí.')
                             ->columnSpanFull()
                             ->color('gray'),
                     ]),

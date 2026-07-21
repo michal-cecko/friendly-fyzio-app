@@ -4,7 +4,7 @@ use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\InstagramOAuthController;
 use App\Http\Controllers\NewsletterController;
-use App\Http\Controllers\OneTimeLessonController;
+use App\Http\Controllers\OneOffEventController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\Pdf\CustomerInvoiceDownloadController;
 use App\Http\Controllers\Pdf\InvoiceExportDownloadController;
@@ -15,7 +15,6 @@ use App\Http\Controllers\ServiceCategoryController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\TherapistController;
-use App\Http\Controllers\WorkshopController;
 use App\Http\Middleware\EnsureZoneCustomer;
 use App\Models\Reservation;
 use App\Support\Seo\LegacyRedirects;
@@ -29,14 +28,9 @@ Route::passkeys();
 // Newsletter signup — subscribes the email to the configured MailerLite group.
 Route::post('/newsletter', NewsletterController::class)->name('newsletter.subscribe');
 
-// Temporary dev route — remove before production
-Route::get('/dev/er-diagram', function () {
-    return view('dev.er-diagram');
-});
-
 // Public CMS pages. The homepage is the system page keyed "home"; every other
 // published page resolves by slug. Reserved prefixes (Filament panels, Livewire,
-// passkeys, storage, dev, health) are excluded from the catch-all.
+// passkeys, storage, health) are excluded from the catch-all.
 Route::get('/', [PageController::class, 'show'])->name('home');
 
 // Public service category pages (default data-driven layout, or a custom page
@@ -58,16 +52,13 @@ Route::get('/sluzby/{category:slug}/{service:slug}', [ServiceController::class, 
 Route::get('/o-nas/{therapist:slug}', [TherapistController::class, 'show'])
     ->name('therapist.show');
 
-// Public course, one-time lesson and workshop detail pages. The archives at
-// /kurzy and /workshopy are CMS pages (served by the catch-all); these deeper
-// paths have two+ segments, so they never collide with it. A course's hidden
-// pre-sale link (?predprodej=token) unlocks an otherwise closed course page.
+// Public course detail pages. The /kurzy archive is a CMS page (served by the
+// catch-all) and one-off event categories (/workshopy, /jednorazove-lekce, …)
+// resolve inside PageController; event details are the two-segment catch-all
+// near the bottom. A course's hidden pre-sale link (?predprodej=token) unlocks
+// an otherwise closed course page.
 Route::get('/kurzy/{course:slug}', [CourseController::class, 'show'])
     ->name('course.show');
-Route::get('/kurzy/{course:slug}/lekce/{lesson}', [OneTimeLessonController::class, 'show'])
-    ->name('lesson.show');
-Route::get('/workshopy/{workshop:slug}', [WorkshopController::class, 'show'])
-    ->name('workshop.show');
 
 // Public reservation wizard. One unified component; deep-link via query params
 // (?sluzba= service slug, ?terapeut= therapist slug, ?kategorie= category slug) to start
@@ -169,12 +160,26 @@ Route::get('/nahledy/export-faktur', InvoiceExportDownloadController::class)
 // Public XML sitemap — every canonical public URL, built from model permalinks.
 Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
 
+// One-off event detail pages nest under their category slug (/workshopy/{slug},
+// /jednorazove-lekce/{slug}, …). Categories are data, so this is a two-segment
+// catch-all; it must precede page.show, whose `.*` pattern also swallows
+// multi-segment paths. The controller resolves the pair manually and falls
+// through to LegacyRedirects for unknown two-segment paths (which previously
+// reached PageController — e.g. /relaxace-ritualy/masaze).
+Route::get('/{category}/{event}', [OneOffEventController::class, 'show'])
+    ->where([
+        'category' => '(?!(?:admin|kurzy|sluzby|o-nas|rezervace|recenze|nahledy|muj-ucet|klientska-zona|prihlaseni|registrace|overeni-emailu|odhlaseni|instagram|livewire|passkeys|storage|up)/)[^/]+',
+        'event' => '[^/]+',
+    ])
+    ->name('one-off-event.show');
+
 Route::get('/{slug}', [PageController::class, 'show'])
-    ->where('slug', '^(?!admin|klientska-zona|muj-ucet|livewire|passkeys|storage|dev|up|rezervace|prihlaseni|registrace|overeni-emailu|odhlaseni|instagram|nahledy).*$')
+    ->where('slug', '^(?!admin|klientska-zona|muj-ucet|livewire|passkeys|storage|up|rezervace|prihlaseni|registrace|overeni-emailu|odhlaseni|instagram|nahledy).*$')
     ->name('page.show');
 
-// Multi-segment old live-site URLs (e.g. /fyzio-kurzy/joga) match no route above
-// and never hit the single-segment catch-all; 301 them to the new scheme, else 404.
+// Old live-site URLs with 3+ segments (e.g. /kurzy/joga/lekce/{id}) end up in
+// page.show's catch-all and resolve through LegacyRedirects there; this
+// fallback only catches paths excluded from every pattern above.
 Route::fallback(function (Request $request) {
     $target = LegacyRedirects::resolve($request->path());
 

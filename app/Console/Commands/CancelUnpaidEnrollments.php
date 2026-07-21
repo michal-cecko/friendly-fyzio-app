@@ -7,8 +7,7 @@ use App\Enums\CourseEnrollmentStatus;
 use App\Enums\EmailTemplateKey;
 use App\Enums\PaymentStatus;
 use App\Models\CourseEnrollment;
-use App\Models\OneTimeLessonBooking;
-use App\Models\WorkshopRegistration;
+use App\Models\OneOffEventBooking;
 use App\Notifications\EnrollmentTemplateNotification;
 use App\Support\Enrollments\EnrollmentEmailContext;
 use Illuminate\Console\Command;
@@ -27,7 +26,7 @@ class CancelUnpaidEnrollments extends Command
 {
     protected $signature = 'enrollments:cancel-unpaid';
 
-    protected $description = 'Cancel course/lesson/workshop sign-ups whose payment hold expired and offer the spots to the waitlist';
+    protected $description = 'Cancel course/event sign-ups whose payment hold expired and offer the spots to the waitlist';
 
     public function handle(): int
     {
@@ -44,25 +43,14 @@ class CancelUnpaidEnrollments extends Command
                 $cancelled++;
             });
 
-        OneTimeLessonBooking::query()
+        OneOffEventBooking::query()
             ->whereIn('status', BookingStatus::occupying())
             ->where('payment_status', '!=', PaymentStatus::Paid)
-            ->whereHas('lesson', fn (Builder $query) => $query->whereDate('lesson_date', '>=', today()))
+            ->whereHas('event', fn (Builder $query) => $query->whereDate('event_date', '>=', today()))
             ->tap(fn (Builder $query) => $this->withExpiredHold($query))
-            ->with(['lesson.course', 'client'])
-            ->each(function (OneTimeLessonBooking $booking) use (&$cancelled): void {
-                $this->cancel($booking, BookingStatus::Cancelled, EnrollmentEmailContext::offerTokens($booking->lesson));
-                $cancelled++;
-            });
-
-        WorkshopRegistration::query()
-            ->whereIn('status', BookingStatus::occupying())
-            ->where('payment_status', '!=', PaymentStatus::Paid)
-            ->whereHas('workshop', fn (Builder $query) => $query->whereDate('workshop_date', '>=', today()))
-            ->tap(fn (Builder $query) => $this->withExpiredHold($query))
-            ->with(['workshop', 'client'])
-            ->each(function (WorkshopRegistration $registration) use (&$cancelled): void {
-                $this->cancel($registration, BookingStatus::Cancelled, EnrollmentEmailContext::offerTokens($registration->workshop));
+            ->with(['event', 'client'])
+            ->each(function (OneOffEventBooking $booking) use (&$cancelled): void {
+                $this->cancel($booking, BookingStatus::Cancelled, EnrollmentEmailContext::offerTokens($booking->event));
                 $cancelled++;
             });
 
@@ -84,7 +72,7 @@ class CancelUnpaidEnrollments extends Command
     /**
      * @param  array<string, string>  $offerTokens
      */
-    protected function cancel(CourseEnrollment|OneTimeLessonBooking|WorkshopRegistration $signup, CourseEnrollmentStatus|BookingStatus $cancelledStatus, array $offerTokens): void
+    protected function cancel(CourseEnrollment|OneOffEventBooking $signup, CourseEnrollmentStatus|BookingStatus $cancelledStatus, array $offerTokens): void
     {
         DB::transaction(function () use ($signup, $cancelledStatus): void {
             // Withdraw the expired payment request so the overdue reminder sweep

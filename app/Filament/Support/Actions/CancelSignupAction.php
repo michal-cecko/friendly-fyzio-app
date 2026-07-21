@@ -4,8 +4,7 @@ namespace App\Filament\Support\Actions;
 
 use App\Enums\EmailTemplateKey;
 use App\Models\CourseEnrollment;
-use App\Models\OneTimeLessonBooking;
-use App\Models\WorkshopRegistration;
+use App\Models\OneOffEventBooking;
 use App\Support\Enrollments\CancelSignup;
 use App\Support\Enrollments\SignupStatus;
 use Filament\Actions\Action;
@@ -15,8 +14,8 @@ use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Admin cancellation of a course enrollment / lesson booking / workshop
- * registration. Unlike the client-zone flow it overrides the cancellation
+ * Admin cancellation of a course enrollment / one-off event booking.
+ * Unlike the client-zone flow it overrides the cancellation
  * window (staff can cancel anytime); the freed spot is offered to the waitlist
  * via the sign-up observers. A toggle controls whether the client is e-mailed.
  */
@@ -47,8 +46,7 @@ class CancelSignupAction extends Action
             ])
             ->action(function (Model $record, array $data): void {
                 if (! $record instanceof CourseEnrollment
-                    && ! $record instanceof OneTimeLessonBooking
-                    && ! $record instanceof WorkshopRegistration) {
+                    && ! $record instanceof OneOffEventBooking) {
                     return;
                 }
 

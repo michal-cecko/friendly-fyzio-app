@@ -117,7 +117,7 @@ class ReservationStaffActionsTest extends TestCase
 
         // A client-facing key → the client.
         Livewire::test(ListReservations::class)
-            ->callAction(TestAction::make('sendReservationEmail')->table($reservation), [
+            ->callAction(TestAction::make('sendEmail')->table($reservation), [
                 'template_key' => EmailTemplateKey::ReservationReminder->value,
             ])
             ->assertHasNoActionErrors();
@@ -130,7 +130,7 @@ class ReservationStaffActionsTest extends TestCase
 
         // A therapist-facing key → the therapist's user.
         Livewire::test(ListReservations::class)
-            ->callAction(TestAction::make('sendReservationEmail')->table($reservation), [
+            ->callAction(TestAction::make('sendEmail')->table($reservation), [
                 'template_key' => EmailTemplateKey::TherapistReservationCreated->value,
             ])
             ->assertHasNoActionErrors();
@@ -152,7 +152,7 @@ class ReservationStaffActionsTest extends TestCase
         // No unpaid payment → the storno/unpaid keys are not selectable, so choosing one
         // is rejected by the Select's options validation.
         Livewire::test(ListReservations::class)
-            ->callAction(TestAction::make('sendReservationEmail')->table($reservation), [
+            ->callAction(TestAction::make('sendEmail')->table($reservation), [
                 'template_key' => EmailTemplateKey::ReservationUnpaid->value,
             ])
             ->assertHasActionErrors(['template_key']);
@@ -168,7 +168,7 @@ class ReservationStaffActionsTest extends TestCase
         ]);
 
         Livewire::test(ListReservations::class)
-            ->callAction(TestAction::make('sendReservationEmail')->table($reservation), [
+            ->callAction(TestAction::make('sendEmail')->table($reservation), [
                 'template_key' => EmailTemplateKey::ReservationUnpaid->value,
             ])
             ->assertHasNoActionErrors();

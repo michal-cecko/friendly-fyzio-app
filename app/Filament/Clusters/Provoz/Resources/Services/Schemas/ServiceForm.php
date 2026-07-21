@@ -154,10 +154,6 @@ class ServiceForm
                                     ->required()
                                     ->default(24)
                                     ->minValue(0),
-                                TextInput::make('auto_cancel_after_days')
-                                    ->label('Automaticky zrušit po (dnech)')
-                                    ->integer()
-                                    ->minValue(0),
                             ]),
                         Section::make('Místnosti a terapeuti')
                             ->icon(Heroicon::OutlinedBuildingOffice)

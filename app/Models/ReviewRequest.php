@@ -80,9 +80,8 @@ class ReviewRequest extends Model
         $reviewable = $this->reviewable;
 
         return match (true) {
-            $reviewable instanceof Workshop => 'workshop „'.$reviewable->name.'“',
+            $reviewable instanceof OneOffEvent => 'akci „'.$reviewable->name.'“',
             $reviewable instanceof CourseSeries => 'kurz „'.($reviewable->course?->name ?? $reviewable->name).'“',
-            $reviewable instanceof OneTimeLesson => 'lekci „'.($reviewable->course?->name ?? '').'“',
             $reviewable instanceof Reservation => 'návštěvu „'.($reviewable->service?->name ?? '').'“'
                 .($reviewable->reservation_date !== null ? ' ('.$reviewable->reservation_date->format('d.m.Y').')' : ''),
             default => 'vaši návštěvu',
@@ -98,9 +97,10 @@ class ReviewRequest extends Model
         $reviewable = $this->reviewable;
 
         return match (true) {
-            $reviewable instanceof Workshop => $reviewable,
+            // Course-linked events (jednorázové lekce) attach to the course
+            // programme; standalone events (workshopy) carry their own reviews.
+            $reviewable instanceof OneOffEvent => $reviewable->course ?? $reviewable,
             $reviewable instanceof CourseSeries => $reviewable->course,
-            $reviewable instanceof OneTimeLesson => $reviewable->course,
             $reviewable instanceof Reservation => $reviewable->service,
             default => $reviewable,
         };

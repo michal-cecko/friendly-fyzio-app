@@ -8,11 +8,10 @@ use App\Enums\EmailTemplateKey;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Models\CourseSeries;
-use App\Models\OneTimeLesson;
+use App\Models\OneOffEvent;
 use App\Models\Payment;
 use App\Models\User;
 use App\Models\WaitlistEntry;
-use App\Models\Workshop;
 use App\Notifications\ClientAccountCreatedNotification;
 use App\Notifications\EnrollmentTemplateNotification;
 use App\Support\Clients\ResolveCustomerAccount;
@@ -37,14 +36,14 @@ class PromoteFromWaitlist
      * has automatic waitlist promotion switched on. The manual "promote from
      * waitlist" admin action calls {@see handle()} directly and ignores the flag.
      */
-    public static function handleAutomatic(CourseSeries|OneTimeLesson|Workshop|null $offer): void
+    public static function handleAutomatic(CourseSeries|OneOffEvent|null $offer): void
     {
         if ($offer !== null && $offer->autoPromotesWaitlist()) {
             self::handle($offer);
         }
     }
 
-    public static function handle(CourseSeries|OneTimeLesson|Workshop $offer): void
+    public static function handle(CourseSeries|OneOffEvent $offer): void
     {
         // Never promote into a closed offer (ended series, past event, manual full).
         while (self::offerOpenForPromotion($offer) && $offer->spotsLeft() > 0) {
@@ -98,17 +97,17 @@ class PromoteFromWaitlist
         }
     }
 
-    protected static function offerOpenForPromotion(CourseSeries|OneTimeLesson|Workshop $offer): bool
+    protected static function offerOpenForPromotion(CourseSeries|OneOffEvent $offer): bool
     {
         $offer->refresh();
 
         return match (true) {
             $offer instanceof CourseSeries => ! $offer->hasEnded(),
-            $offer instanceof OneTimeLesson, $offer instanceof Workshop => ! $offer->isPast(),
+            $offer instanceof OneOffEvent => ! $offer->isPast(),
         };
     }
 
-    protected static function createSignup(CourseSeries|OneTimeLesson|Workshop $offer, User $client): mixed
+    protected static function createSignup(CourseSeries|OneOffEvent $offer, User $client): mixed
     {
         if ($offer instanceof CourseSeries) {
             if ($offer->enrollments()->where('client_id', $client->id)->where('status', CourseEnrollmentStatus::Active)->exists()) {
@@ -123,7 +122,7 @@ class PromoteFromWaitlist
             ]);
         }
 
-        $relation = $offer instanceof OneTimeLesson ? $offer->bookings() : $offer->registrations();
+        $relation = $offer->bookings();
 
         if ($relation->clone()->where('client_id', $client->id)->whereIn('status', BookingStatus::occupying())->exists()) {
             throw new AlreadySignedUpException;
@@ -137,12 +136,12 @@ class PromoteFromWaitlist
         ]);
     }
 
-    protected static function amountDue(CourseSeries|OneTimeLesson|Workshop $offer): int
+    protected static function amountDue(CourseSeries|OneOffEvent $offer): int
     {
         return $offer instanceof CourseSeries ? $offer->currentPrice() : (int) $offer->price;
     }
 
-    protected static function notifyPromoted(User $client, CourseSeries|OneTimeLesson|Workshop $offer, Payment $payment, bool $isNewAccount): void
+    protected static function notifyPromoted(User $client, CourseSeries|OneOffEvent $offer, Payment $payment, bool $isNewAccount): void
     {
         $client->notify(new EnrollmentTemplateNotification(EmailTemplateKey::WaitlistSpotAvailable, [
             'jmeno' => EnrollmentEmailContext::firstName($client),
