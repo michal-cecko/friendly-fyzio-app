@@ -6,20 +6,16 @@ use App\Enums\BookingStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Filament\Clusters\Kurzy\Resources\CourseSeries\Pages\ViewCourseSeries;
-use App\Filament\Clusters\Lekce\Resources\OneTimeLessons\Pages\ViewOneTimeLesson;
-use App\Filament\Clusters\Workshopy\Resources\WorkshopRegistrations\Pages\ListWorkshopRegistrations;
-use App\Filament\Clusters\Workshopy\Resources\Workshops\Pages\ViewWorkshop;
+use App\Filament\Clusters\Kurzy\Resources\OneOffEventBookings\Pages\ListOneOffEventBookings;
+use App\Filament\Clusters\Kurzy\Resources\OneOffEvents\Pages\ViewOneOffEvent;
 use App\Filament\Support\RelationManagers\CourseSeriesEnrollmentsRelationManager;
-use App\Filament\Support\RelationManagers\OneTimeLessonBookingsRelationManager;
-use App\Filament\Support\RelationManagers\WorkshopSignupsRelationManager;
+use App\Filament\Support\RelationManagers\OneOffEventBookingsRelationManager;
 use App\Models\CourseEnrollment;
 use App\Models\CourseSeries;
 use App\Models\InvoiceSeries;
-use App\Models\OneTimeLesson;
-use App\Models\OneTimeLessonBooking;
+use App\Models\OneOffEvent;
+use App\Models\OneOffEventBooking;
 use App\Models\User;
-use App\Models\Workshop;
-use App\Models\WorkshopRegistration;
 use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -44,25 +40,25 @@ class SignupsAdminActionsTest extends TestCase
     {
         Notification::fake();
 
-        $workshop = Workshop::factory()->create(['capacity' => 10, 'price' => 900]);
-        $registrations = WorkshopRegistration::factory()->count(2)->create([
-            'workshop_id' => $workshop->getKey(),
+        $event = OneOffEvent::factory()->create(['capacity' => 10, 'price' => 900]);
+        $bookings = OneOffEventBooking::factory()->count(2)->create([
+            'one_off_event_id' => $event->getKey(),
             'status' => BookingStatus::Confirmed,
             'payment_status' => PaymentStatus::Unpaid,
             'paid_at' => null,
         ]);
 
-        Livewire::test(ListWorkshopRegistrations::class)
-            ->set('selectedTableRecords', $registrations->pluck('id')->all())
+        Livewire::test(ListOneOffEventBookings::class)
+            ->set('selectedTableRecords', $bookings->pluck('id')->all())
             ->callAction(TestAction::make('markSignupsPaid')->table()->bulk(), [
                 'method' => PaymentMethod::Qr->value,
                 'notify_client' => false,
             ])
             ->assertHasNoActionErrors();
 
-        $registrations->each(function (WorkshopRegistration $registration): void {
-            $this->assertSame(PaymentStatus::Paid, $registration->fresh()->payment_status);
-            $this->assertSame(1, $registration->payments()->count());
+        $bookings->each(function (OneOffEventBooking $booking): void {
+            $this->assertSame(PaymentStatus::Paid, $booking->fresh()->payment_status);
+            $this->assertSame(1, $booking->payments()->count());
         });
     }
 
@@ -70,15 +66,15 @@ class SignupsAdminActionsTest extends TestCase
     {
         $series = InvoiceSeries::factory()->asDefault()->create(['prefix' => 'FF']);
 
-        $workshop = Workshop::factory()->create(['capacity' => 10, 'price' => 900]);
-        $paid = WorkshopRegistration::factory()->count(2)->create([
-            'workshop_id' => $workshop->getKey(),
+        $event = OneOffEvent::factory()->create(['capacity' => 10, 'price' => 900]);
+        $paid = OneOffEventBooking::factory()->count(2)->create([
+            'one_off_event_id' => $event->getKey(),
             'status' => BookingStatus::Confirmed,
             'payment_status' => PaymentStatus::Paid,
             'paid_at' => now(),
         ]);
-        $unpaid = WorkshopRegistration::factory()->create([
-            'workshop_id' => $workshop->getKey(),
+        $unpaid = OneOffEventBooking::factory()->create([
+            'one_off_event_id' => $event->getKey(),
             'status' => BookingStatus::Confirmed,
             'payment_status' => PaymentStatus::Unpaid,
             'paid_at' => null,
@@ -86,7 +82,7 @@ class SignupsAdminActionsTest extends TestCase
 
         $selected = $paid->pluck('id')->push($unpaid->id)->all();
 
-        Livewire::test(ListWorkshopRegistrations::class)
+        Livewire::test(ListOneOffEventBookings::class)
             ->set('selectedTableRecords', $selected)
             ->callAction(TestAction::make('generateInvoices')->table()->bulk(), [
                 'series_id' => $series->getKey(),
@@ -95,8 +91,8 @@ class SignupsAdminActionsTest extends TestCase
             ])
             ->assertHasNoActionErrors();
 
-        $paid->each(function (WorkshopRegistration $registration): void {
-            $this->assertTrue($registration->invoice()->exists());
+        $paid->each(function (OneOffEventBooking $booking): void {
+            $this->assertTrue($booking->invoice()->exists());
         });
         $this->assertFalse($unpaid->invoice()->exists());
     }
@@ -105,16 +101,16 @@ class SignupsAdminActionsTest extends TestCase
     {
         Notification::fake();
 
-        $workshop = Workshop::factory()->create([
+        $event = OneOffEvent::factory()->create([
             'capacity' => 5,
             'price' => 900,
-            'workshop_date' => today()->addWeeks(2)->toDateString(),
+            'event_date' => today()->addWeeks(2)->toDateString(),
             'published_at' => now(),
         ]);
 
-        Livewire::test(WorkshopSignupsRelationManager::class, [
-            'ownerRecord' => $workshop,
-            'pageClass' => ViewWorkshop::class,
+        Livewire::test(OneOffEventBookingsRelationManager::class, [
+            'ownerRecord' => $event,
+            'pageClass' => ViewOneOffEvent::class,
         ])
             ->callAction(TestAction::make('addParticipant')->table(), [
                 'name' => 'Nový Účastník',
@@ -125,30 +121,30 @@ class SignupsAdminActionsTest extends TestCase
             ->assertHasNoActionErrors();
 
         $client = User::query()->where('email', 'novy@example.cz')->sole();
-        $registration = $workshop->registrations()->where('client_id', $client->id)->sole();
+        $booking = $event->bookings()->where('client_id', $client->id)->sole();
 
-        $this->assertSame(BookingStatus::Confirmed, $registration->status);
-        $this->assertSame(1, $registration->payments()->count());
+        $this->assertSame(BookingStatus::Confirmed, $booking->status);
+        $this->assertSame(1, $booking->payments()->count());
     }
 
     public function test_add_participant_is_refused_when_the_offer_is_full(): void
     {
         Notification::fake();
 
-        $workshop = Workshop::factory()->create([
+        $event = OneOffEvent::factory()->create([
             'capacity' => 1,
             'price' => 900,
-            'workshop_date' => today()->addWeeks(2)->toDateString(),
+            'event_date' => today()->addWeeks(2)->toDateString(),
             'published_at' => now(),
         ]);
-        WorkshopRegistration::factory()->create([
-            'workshop_id' => $workshop->getKey(),
+        OneOffEventBooking::factory()->create([
+            'one_off_event_id' => $event->getKey(),
             'status' => BookingStatus::Confirmed,
         ]);
 
-        Livewire::test(WorkshopSignupsRelationManager::class, [
-            'ownerRecord' => $workshop,
-            'pageClass' => ViewWorkshop::class,
+        Livewire::test(OneOffEventBookingsRelationManager::class, [
+            'ownerRecord' => $event,
+            'pageClass' => ViewOneOffEvent::class,
         ])
             ->callAction(TestAction::make('addParticipant')->table(), [
                 'name' => 'Pozdní Zájemce',
@@ -161,19 +157,19 @@ class SignupsAdminActionsTest extends TestCase
         $this->assertFalse(User::query()->where('email', 'pozdni@example.cz')->exists());
     }
 
-    public function test_signups_relation_manager_lists_the_offer_registrations(): void
+    public function test_bookings_relation_manager_lists_the_event_signups(): void
     {
-        $workshop = Workshop::factory()->create(['capacity' => 10]);
-        $registrations = WorkshopRegistration::factory()->count(2)->create([
-            'workshop_id' => $workshop->getKey(),
+        $event = OneOffEvent::factory()->create(['capacity' => 10]);
+        $bookings = OneOffEventBooking::factory()->count(2)->create([
+            'one_off_event_id' => $event->getKey(),
             'status' => BookingStatus::Confirmed,
         ]);
 
-        Livewire::test(WorkshopSignupsRelationManager::class, [
-            'ownerRecord' => $workshop,
-            'pageClass' => ViewWorkshop::class,
+        Livewire::test(OneOffEventBookingsRelationManager::class, [
+            'ownerRecord' => $event,
+            'pageClass' => ViewOneOffEvent::class,
         ])
-            ->assertCanSeeTableRecords($registrations);
+            ->assertCanSeeTableRecords($bookings);
     }
 
     public function test_course_series_enrollments_relation_manager_lists_records(): void
@@ -188,19 +184,5 @@ class SignupsAdminActionsTest extends TestCase
             'pageClass' => ViewCourseSeries::class,
         ])
             ->assertCanSeeTableRecords($enrollments);
-    }
-
-    public function test_one_time_lesson_bookings_relation_manager_lists_records(): void
-    {
-        $lesson = OneTimeLesson::factory()->create(['capacity' => 10]);
-        $bookings = OneTimeLessonBooking::factory()->count(2)->create([
-            'lesson_id' => $lesson->getKey(),
-        ]);
-
-        Livewire::test(OneTimeLessonBookingsRelationManager::class, [
-            'ownerRecord' => $lesson,
-            'pageClass' => ViewOneTimeLesson::class,
-        ])
-            ->assertCanSeeTableRecords($bookings);
     }
 }

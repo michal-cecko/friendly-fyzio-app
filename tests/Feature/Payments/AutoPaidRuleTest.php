@@ -7,12 +7,10 @@ use App\Enums\PaymentStatus;
 use App\Enums\ReservationStatus;
 use App\Models\CourseEnrollment;
 use App\Models\CourseSeries;
-use App\Models\OneTimeLesson;
-use App\Models\OneTimeLessonBooking;
+use App\Models\OneOffEvent;
+use App\Models\OneOffEventBooking;
 use App\Models\Reservation;
 use App\Models\Service;
-use App\Models\Workshop;
-use App\Models\WorkshopRegistration;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -45,31 +43,15 @@ class AutoPaidRuleTest extends TestCase
         $this->assertNotNull($enrollment->paid_at);
     }
 
-    public function test_paid_payment_marks_workshop_registration_paid_with_paid_at(): void
+    public function test_paid_payment_marks_one_off_event_booking_paid_with_paid_at(): void
     {
-        $registration = WorkshopRegistration::factory()->create([
-            'workshop_id' => Workshop::factory()->create(['price' => 950])->getKey(),
+        $booking = OneOffEventBooking::factory()->create([
+            'one_off_event_id' => OneOffEvent::factory()->create(['price' => 950])->getKey(),
             'payment_status' => PaymentStatus::Unpaid,
             'paid_at' => null,
         ]);
 
-        $this->payFor($registration, 950);
-
-        $registration->refresh();
-
-        $this->assertSame(PaymentStatus::Paid, $registration->payment_status);
-        $this->assertNotNull($registration->paid_at);
-    }
-
-    public function test_paid_payment_marks_one_time_lesson_booking_paid_with_paid_at(): void
-    {
-        $booking = OneTimeLessonBooking::factory()->create([
-            'lesson_id' => OneTimeLesson::factory()->create(['price' => 300])->getKey(),
-            'payment_status' => PaymentStatus::Unpaid,
-            'paid_at' => null,
-        ]);
-
-        $this->payFor($booking, 300);
+        $this->payFor($booking, 950);
 
         $booking->refresh();
 

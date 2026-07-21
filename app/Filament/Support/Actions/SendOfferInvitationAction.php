@@ -5,9 +5,8 @@ namespace App\Filament\Support\Actions;
 use App\Enums\EmailTemplateKey;
 use App\Enums\UserRole;
 use App\Models\CourseSeries;
-use App\Models\OneTimeLesson;
+use App\Models\OneOffEvent;
 use App\Models\User;
-use App\Models\Workshop;
 use App\Notifications\EnrollmentTemplateNotification;
 use App\Support\Enrollments\EnrollmentEmailContext;
 use Filament\Actions\Action;
@@ -21,7 +20,7 @@ use Filament\Support\Icons\Heroicon;
  * customers — one or many. Each recipient gets the offer's shared hidden link
  * ({@see EmailTemplateKey::OfferInvitation}, `{{ odkaz }}` = presaleUrl), through
  * which they can sign up even while the offer is Private. Shared header action
- * across the course-series, one-time-lesson and workshop resources; only shown
+ * across the course-series and one-off-event resources; only shown
  * for a Private offer.
  */
 class SendOfferInvitationAction extends Action
@@ -39,7 +38,7 @@ class SendOfferInvitationAction extends Action
             ->label('Poslat pozvánku')
             ->icon(Heroicon::OutlinedEnvelope)
             ->color('gray')
-            ->visible(fn (CourseSeries|OneTimeLesson|Workshop $record): bool => $record->isPrivate())
+            ->visible(fn (CourseSeries|OneOffEvent $record): bool => $record->isPrivate())
             ->modalHeading('Poslat přednostní pozvánku')
             ->modalDescription('Vybraní zákazníci dostanou e-mail s přihlašovacím odkazem, přes který se mohou přihlásit, i když termín není veřejně otevřený.')
             ->modalSubmitActionLabel('Odeslat')
@@ -67,7 +66,7 @@ class SendOfferInvitationAction extends Action
                     ->label('Osobní zpráva (nepovinné)')
                     ->rows(3),
             ])
-            ->action(function (CourseSeries|OneTimeLesson|Workshop $record, array $data): void {
+            ->action(function (CourseSeries|OneOffEvent $record, array $data): void {
                 $url = $record->presaleUrl();
                 $offerTokens = EnrollmentEmailContext::offerTokens($record);
                 $message = (string) ($data['zprava'] ?? '');

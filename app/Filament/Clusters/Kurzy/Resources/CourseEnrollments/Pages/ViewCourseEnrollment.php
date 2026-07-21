@@ -6,6 +6,7 @@ use App\Filament\Clusters\Finance\Resources\Invoices\Actions\GenerateInvoiceFrom
 use App\Filament\Clusters\Kurzy\Resources\CourseEnrollments\CourseEnrollmentResource;
 use App\Filament\Support\Actions\ActivityLogAction;
 use App\Filament\Support\Actions\RecordPaymentAction;
+use App\Filament\Support\Actions\SendEmailAction;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
 
@@ -16,6 +17,7 @@ class ViewCourseEnrollment extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            SendEmailAction::make(),
             RecordPaymentAction::make(),
             GenerateInvoiceFromPayableAction::make(),
             EditAction::make(),

@@ -5,8 +5,7 @@ namespace App\Support\Enrollments;
 use App\Enums\BookingStatus;
 use App\Enums\CourseEnrollmentStatus;
 use App\Models\CourseEnrollment;
-use App\Models\OneTimeLessonBooking;
-use App\Models\WorkshopRegistration;
+use App\Models\OneOffEventBooking;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -16,7 +15,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class SignupStatus
 {
-    public static function isActive(CourseEnrollment|OneTimeLessonBooking|WorkshopRegistration $signup): bool
+    public static function isActive(CourseEnrollment|OneOffEventBooking $signup): bool
     {
         return $signup instanceof CourseEnrollment
             ? $signup->status === CourseEnrollmentStatus::Active
@@ -26,8 +25,7 @@ class SignupStatus
     public static function isSignup(Model $record): bool
     {
         return $record instanceof CourseEnrollment
-            || $record instanceof OneTimeLessonBooking
-            || $record instanceof WorkshopRegistration;
+            || $record instanceof OneOffEventBooking;
     }
 
     public static function isActiveSignup(Model $record): bool

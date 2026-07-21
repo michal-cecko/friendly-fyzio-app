@@ -23,7 +23,7 @@ class ReviewsTable
     private const TYPE_LABELS = [
         'course' => 'Kurz',
         'course_series' => 'Kurz',
-        'workshop' => 'Workshop',
+        'one_off_event' => 'Jednorázová akce',
         'service' => 'Služba',
         'one_time_lesson' => 'Lekce',
         'reservation' => 'Rezervace',
@@ -72,7 +72,7 @@ class ReviewsTable
                     ->label('Typ')
                     ->options([
                         'course' => 'Kurz',
-                        'workshop' => 'Workshop',
+                        'one_off_event' => 'Jednorázová akce',
                         'service' => 'Služba',
                     ]),
             ])

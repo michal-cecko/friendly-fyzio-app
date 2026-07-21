@@ -7,6 +7,7 @@ use App\Filament\Clusters\Kurzy\Resources\CourseLessons\Pages\CreateCourseLesson
 use App\Filament\Clusters\Kurzy\Resources\CourseLessons\Pages\EditCourseLesson;
 use App\Filament\Clusters\Kurzy\Resources\CourseLessons\Pages\ListCourseLessons;
 use App\Filament\Clusters\Kurzy\Resources\CourseLessons\Pages\ViewCourseLesson;
+use App\Filament\Clusters\Kurzy\Resources\CourseLessons\RelationManagers\AttendancesRelationManager;
 use App\Filament\Clusters\Kurzy\Resources\CourseLessons\Schemas\CourseLessonForm;
 use App\Filament\Clusters\Kurzy\Resources\CourseLessons\Schemas\CourseLessonInfolist;
 use App\Filament\Clusters\Kurzy\Resources\CourseLessons\Tables\CourseLessonsTable;
@@ -103,7 +104,7 @@ class CourseLessonResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            AttendancesRelationManager::class,
         ];
     }
 

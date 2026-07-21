@@ -48,6 +48,10 @@ class ReactivateReservation
                     'cancellation_reason' => null,
                     'confirmation_sent_at' => null,
                     'reminder_sent_at' => null,
+                    // The reservation is active again — reset the "handled" markers.
+                    'settled_at' => null,
+                    'doctor_note_requested_at' => null,
+                    'doctor_note_resolved_at' => null,
                 ]);
             });
         } catch (UniqueConstraintViolationException $exception) {

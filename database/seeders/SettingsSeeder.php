@@ -56,6 +56,17 @@ class SettingsSeeder extends Seeder
         ]);
 
         $this->upsert([
+            'key' => 'reservation.day_waitlist_enabled',
+            'value' => '1',
+            'type' => SettingValueType::Boolean,
+            'label' => 'Pořadník na plné dny',
+            'group' => 'Rezervace',
+            'description' => 'Umožní klientům zapsat se do pořadníku na plně obsazený den a upozorní je e-mailem, jakmile se u terapeuta na ten den uvolní místo.',
+            'config' => null,
+            'sort' => 4,
+        ]);
+
+        $this->upsert([
             'key' => 'reservation.lead_time_hours',
             'value' => '0',
             'type' => SettingValueType::Integer,
@@ -176,6 +187,17 @@ class SettingsSeeder extends Seeder
             'sort' => 4,
         ]);
 
+        $this->upsert([
+            'key' => 'credits.expiry_notice_days',
+            'value' => '7',
+            'type' => SettingValueType::Integer,
+            'label' => 'Upozornění na vypršení kreditu (dní předem)',
+            'group' => 'Platby',
+            'description' => 'Kolik dní před vypršením kreditu se klientovi odešle upozornění e-mailem. 0 = vypnuto.',
+            'config' => ['min' => 0, 'step' => 1, 'suffix' => 'dní'],
+            'sort' => 5,
+        ]);
+
         $this->seedInvoicing();
 
         $this->upsert([
@@ -236,8 +258,7 @@ class SettingsSeeder extends Seeder
         foreach ([
             ['enrollments.hold_hours', '48', 'Rezervace místa (hodin)', 'Jak dlouho drží nezaplacená přihláška místo, než je automaticky zrušena a nabídnuta náhradníkům.', 'hodin', 0],
             ['enrollments.course_cancel_before_days', '7', 'Odhlášení z kurzu (dní předem)', 'Do kolika dní před začátkem série se klient může sám odhlásit v klientské zóně.', 'dní', 1],
-            ['enrollments.lesson_cancel_before_hours', '24', 'Odhlášení z lekce (hodin předem)', 'Do kolika hodin před jednorázovou lekcí se klient může sám odhlásit.', 'hodin', 2],
-            ['enrollments.workshop_cancel_before_days', '7', 'Odhlášení z workshopu (dní předem)', 'Do kolika dní před workshopem se klient může sám odhlásit.', 'dní', 3],
+            ['enrollments.event_cancel_before_hours', '24', 'Odhlášení z akce (hodin předem)', 'Do kolika hodin před jednorázovou akcí (lekce, workshop…) se klient může sám odhlásit.', 'hodin', 2],
             ['substitutes.token_validity_days', '30', 'Platnost náhradního vstupu (dní)', 'Jak dlouho po včasné omluvě z lekce platí náhradní vstup.', 'dní', 4],
         ] as [$key, $value, $label, $description, $suffix, $sort]) {
             $this->upsert([

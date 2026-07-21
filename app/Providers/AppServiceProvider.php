@@ -7,13 +7,12 @@ use App\Listeners\LogSentEmail;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
 use App\Models\CourseSeries;
+use App\Models\EventCategory;
 use App\Models\Navigation;
-use App\Models\OneTimeLesson;
-use App\Models\OneTimeLessonBooking;
+use App\Models\OneOffEvent;
+use App\Models\OneOffEventBooking;
 use App\Models\Reservation;
 use App\Models\Service;
-use App\Models\Workshop;
-use App\Models\WorkshopRegistration;
 use App\Notifications\Auth\VerifyEmailChangeNotification;
 use App\Observers\MediaLibraryItemObserver;
 use Filament\Actions\Action;
@@ -59,12 +58,11 @@ class AppServiceProvider extends ServiceProvider
             'service' => Service::class,
             'course_series' => CourseSeries::class,
             'course' => Course::class,
-            'workshop' => Workshop::class,
-            'one_time_lesson' => OneTimeLesson::class,
+            'event_category' => EventCategory::class,
+            'one_off_event' => OneOffEvent::class,
             'reservation' => Reservation::class,
             'course_enrollment' => CourseEnrollment::class,
-            'workshop_registration' => WorkshopRegistration::class,
-            'one_time_lesson_booking' => OneTimeLessonBooking::class,
+            'one_off_event_booking' => OneOffEventBooking::class,
         ]);
 
         FilamentIcon::register([

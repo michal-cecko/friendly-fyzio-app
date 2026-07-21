@@ -15,6 +15,7 @@ use App\Mason\Bricks\HtmlBlockBrick;
 use App\Mason\Bricks\InstagramBrick;
 use App\Mason\Bricks\LastMinuteBrick;
 use App\Mason\Bricks\NewsletterBrick;
+use App\Mason\Bricks\OneOffEventArchiveBrick;
 use App\Mason\Bricks\PageIntroBrick;
 use App\Mason\Bricks\PhotoTextBrick;
 use App\Mason\Bricks\PriceListBrick;
@@ -29,7 +30,6 @@ use App\Mason\Bricks\StepsBrick;
 use App\Mason\Bricks\TeamBrick;
 use App\Mason\Bricks\TestimonialsBrick;
 use App\Mason\Bricks\TextListBrick;
-use App\Mason\Bricks\WorkshopArchiveBrick;
 use Awcodes\Mason\Brick;
 use Awcodes\Mason\BrickGroup;
 
@@ -80,7 +80,7 @@ class BrickRegistry
             BrickGroup::make('Kurzy a workshopy')->bricks([
                 EnrollingNowBrick::class,
                 CourseArchiveBrick::class,
-                WorkshopArchiveBrick::class,
+                OneOffEventArchiveBrick::class,
             ]),
             BrickGroup::make('Sociální sítě')->bricks([
                 InstagramBrick::class,

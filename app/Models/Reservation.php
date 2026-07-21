@@ -2,14 +2,18 @@
 
 namespace App\Models;
 
+use App\Contracts\Emailable;
 use App\Contracts\Payable;
 use App\Enums\ConfirmationSource;
+use App\Enums\EmailTemplateKey;
 use App\Enums\PayableType;
 use App\Enums\PaymentStatus;
 use App\Enums\ReservationStatus;
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\IsPayable;
 use App\Observers\ReservationObserver;
+use App\Support\ActivityLog\LogActivity;
+use App\Support\Emails\ReservationEmailer;
 use App\Support\Payments\ReservationPaymentStatus;
 use App\Support\Settings;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
@@ -25,7 +29,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\URL;
 
 #[ObservedBy(ReservationObserver::class)]
-class Reservation extends Model implements Payable
+class Reservation extends Model implements Emailable, Payable
 {
     use Auditable, HasFactory, HasUuids, Prunable, SoftDeletes;
 
@@ -82,6 +86,8 @@ class Reservation extends Model implements Payable
         'confirmed_by_id',
         'reminder_sent_at',
         'doctor_note_requested_at',
+        'doctor_note_resolved_at',
+        'settled_at',
         'is_control_therapy',
         'notes',
         'cancellation_reason',
@@ -98,6 +104,8 @@ class Reservation extends Model implements Payable
             'confirmed_by' => ConfirmationSource::class,
             'reminder_sent_at' => 'datetime',
             'doctor_note_requested_at' => 'datetime',
+            'doctor_note_resolved_at' => 'datetime',
+            'settled_at' => 'datetime',
             'is_control_therapy' => 'boolean',
         ];
     }
@@ -183,6 +191,29 @@ class Reservation extends Model implements Payable
     public function client(): BelongsTo
     {
         return $this->belongsTo(User::class, 'client_id');
+    }
+
+    public function emailRecipientAddress(): ?string
+    {
+        return $this->client?->email;
+    }
+
+    public function emailRecipientName(): ?string
+    {
+        return $this->client?->name;
+    }
+
+    /**
+     * @return array<string, array<string, string>>
+     */
+    public function emailTemplateGroups(): array
+    {
+        return ReservationEmailer::templateGroups($this);
+    }
+
+    public function sendTemplateEmail(EmailTemplateKey $key): void
+    {
+        ReservationEmailer::send($this, $key);
     }
 
     /**
@@ -279,6 +310,44 @@ class Reservation extends Model implements Payable
     public function markPaymentPaid(): void
     {
         $this->recalculatePaymentStatus();
+    }
+
+    /**
+     * Whether the reservation's obligation is closed given its final status: an
+     * attended visit that is paid, or a storno whose fee was raised and paid. A
+     * doctor-note waive sets {@see settled_at} directly (it clears no fee), so it
+     * is intentionally not covered here.
+     */
+    public function qualifiesAsSettled(): bool
+    {
+        // Computed from the payments, not the cached payment_status column, so free
+        // (price 0, no payment row) visits — whose cache is never refreshed — settle
+        // too. A visit with nothing owed has paid (0) >= due (0).
+        $paid = (int) $this->payments()->where('status', PaymentStatus::Paid->value)->sum('amount');
+
+        if ($this->status === ReservationStatus::Confirmed) {
+            return $this->startsAt()->isPast() && $paid >= $this->paymentAmountDue();
+        }
+
+        if ($this->status === ReservationStatus::Cancelled) {
+            // A storno whose fee was raised and covered. (A waive sets settled_at directly.)
+            return $this->payments()->exists() && $paid >= $this->paymentAmountDue();
+        }
+
+        return false;
+    }
+
+    /**
+     * Stamps `settled_at` ("Vybaveno") once the obligation is closed. Monotonic —
+     * it never clears the marker here (a payment reversal must not un-settle a
+     * handled reservation); only an explicit reactivation resets it.
+     */
+    public function markSettledIfQualifies(): void
+    {
+        if ($this->settled_at === null && $this->qualifiesAsSettled()) {
+            $this->update(['settled_at' => now()]);
+            LogActivity::record('reservation_completed', $this, 'Rezervace vybavena');
+        }
     }
 
     public function payableTherapist(): ?User

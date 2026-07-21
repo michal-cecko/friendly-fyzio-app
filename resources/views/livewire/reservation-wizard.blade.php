@@ -266,16 +266,16 @@
                                                             @if ($cell === null)
                                                                 <span class="h-10"></span>
 
-                                                            {{-- Full day → join the waitlist. Awaits the day-waitlist backend. --}}
+                                                            {{-- Full day → join the pořadník (waitlist) for this therapist's day. --}}
                                                             @elseif ($cell['queue'] === 'full')
-                                                                <span class="mx-auto flex h-10 w-10 flex-col items-center justify-center gap-0.5 rounded-full bg-amber-100 text-sm font-semibold text-amber-500" title="V pořadníku">
+                                                                <button type="button" wire:click="openWaitlist('{{ $cell['date'] }}')" class="mx-auto flex h-10 w-10 flex-col items-center justify-center gap-0.5 rounded-full bg-amber-100 text-sm font-semibold text-amber-500 transition hover:bg-amber-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400" title="Zapsat se do pořadníku">
                                                                     {{ $cell['day'] }}
                                                                     <svg class="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" /></svg>
-                                                                </span>
+                                                                </button>
 
-                                                            {{-- Already on the day's waitlist. Awaits the day-waitlist backend. --}}
+                                                            {{-- Already on this day's pořadník. --}}
                                                             @elseif ($cell['queue'] === 'waitlist')
-                                                                <span class="mx-auto flex h-10 w-10 flex-col items-center justify-center gap-0.5 rounded-full bg-surface-alt text-sm font-medium text-[#666666]" title="Pořadník dostupný">
+                                                                <span class="mx-auto flex h-10 w-10 flex-col items-center justify-center gap-0.5 rounded-full bg-surface-alt text-sm font-medium text-[#666666]" title="Jste v pořadníku">
                                                                     {{ $cell['day'] }}
                                                                     <svg class="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 22h14M5 2h14M17 22v-4.17a2 2 0 0 0-.59-1.42L12 12l-4.41 4.41A2 2 0 0 0 7 17.83V22M7 2v4.17a2 2 0 0 0 .59 1.42L12 12l4.41-4.41A2 2 0 0 0 17 6.17V2" /></svg>
                                                                 </span>
@@ -315,8 +315,8 @@
                                             <span class="flex items-center gap-1.5"><span class="h-3 w-3 rounded-full border-2 border-primary"></span>Dnes</span>
                                             <span class="flex items-center gap-1.5"><span class="h-1.5 w-1.5 rounded-full bg-primary"></span>Dostupné</span>
                                             <span class="flex items-center gap-1.5"><span class="text-[11px] text-[#888888]">5</span>Nedostupné</span>
-                                            <span class="flex items-center gap-1.5"><span class="h-3 w-3 rounded-full border border-amber-500 bg-amber-100"></span>V pořadníku</span>
-                                            <span class="flex items-center gap-1.5"><span class="h-3 w-3 rounded-full border border-line bg-surface-alt"></span>Pořadník dostupný</span>
+                                            <span class="flex items-center gap-1.5"><span class="h-3 w-3 rounded-full border border-amber-500 bg-amber-100"></span>Plno — zapsat do pořadníku</span>
+                                            <span class="flex items-center gap-1.5"><span class="h-3 w-3 rounded-full border border-line bg-surface-alt"></span>Jste v pořadníku</span>
                                         </div>
 
                                         @if ($this->availableDays === [])
@@ -432,6 +432,49 @@
                     </aside>
                 </div>
             </div>
+        </div>
+    @endif
+
+    {{-- Day-waitlist ("pořadník") modal --}}
+    @if ($waitlistModalDate)
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+            <div class="absolute inset-0 bg-black/40" wire:click="closeWaitlist"></div>
+            <div class="relative w-full max-w-md rounded-2xl border border-line bg-white p-7 shadow-xl">
+                <h3 class="font-heading text-xl font-semibold text-neutral-900">Zapsat se do pořadníku</h3>
+                <p class="mt-2 text-sm {{ $muted }}">
+                    Den <strong>{{ \Illuminate\Support\Carbon::parse($waitlistModalDate)->locale('cs')->isoFormat('D. MMMM YYYY') }}</strong>
+                    je plně obsazený. Necháme vám vědět e-mailem, jakmile se u vybraného terapeuta na tento den uvolní místo.
+                </p>
+
+                <div class="mt-5 space-y-4">
+                    <div>
+                        <label for="waitlistName" class="mb-1 block text-sm font-medium text-neutral-900">Jméno a příjmení</label>
+                        <input id="waitlistName" type="text" wire:model="waitlistName" class="w-full rounded-xl border border-line px-4 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
+                        @error('waitlistName') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                    </div>
+                    <div>
+                        <label for="waitlistEmail" class="mb-1 block text-sm font-medium text-neutral-900">E-mail</label>
+                        <input id="waitlistEmail" type="email" wire:model="waitlistEmail" class="w-full rounded-xl border border-line px-4 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
+                        @error('waitlistEmail') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                    </div>
+                    <div>
+                        <label for="waitlistPhone" class="mb-1 block text-sm font-medium text-neutral-900">Telefon <span class="{{ $muted }}">(nepovinné)</span></label>
+                        <input id="waitlistPhone" type="tel" wire:model="waitlistPhone" class="w-full rounded-xl border border-line px-4 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
+                        @error('waitlistPhone') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                    </div>
+                </div>
+
+                <div class="mt-6 flex items-center justify-end gap-3">
+                    <button type="button" wire:click="closeWaitlist" class="rounded-full px-5 py-2.5 text-sm font-semibold text-[#666666] transition hover:bg-surface-alt">Zrušit</button>
+                    <button type="button" wire:click="joinDayWaitlist" wire:loading.attr="disabled" class="rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-dark">Zapsat do pořadníku</button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    @if (session('waitlist_joined'))
+        <div class="fixed bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-full bg-neutral-900 px-6 py-3 text-sm font-medium text-white shadow-lg" x-data x-init="setTimeout(() => $el.remove(), 6000)">
+            {{ session('waitlist_joined') }}
         </div>
     @endif
 </div>

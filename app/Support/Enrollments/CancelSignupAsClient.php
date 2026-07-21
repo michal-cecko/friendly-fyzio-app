@@ -3,13 +3,12 @@
 namespace App\Support\Enrollments;
 
 use App\Models\CourseEnrollment;
-use App\Models\OneTimeLessonBooking;
-use App\Models\WorkshopRegistration;
+use App\Models\OneOffEventBooking;
 use App\Support\Settings;
 use Illuminate\Support\Carbon;
 
 /**
- * Client-initiated cancellation of a course/lesson/workshop sign-up from the
+ * Client-initiated cancellation of a course/event sign-up from the
  * client zone (docs §4.1: "klient môže zrušiť do X dní pred začiatkom").
  * Each offer type has its own configurable window; past it the client has to
  * call the clinic. Cancelling withdraws any open payment request and — through
@@ -22,7 +21,7 @@ class CancelSignupAsClient
 {
     public function __construct(private CancelSignup $cancelSignup) {}
 
-    public function __invoke(CourseEnrollment|OneTimeLessonBooking|WorkshopRegistration $signup): void
+    public function __invoke(CourseEnrollment|OneOffEventBooking $signup): void
     {
         if (! $this->isCancellable($signup)) {
             throw new CancellationWindowClosedException;
@@ -35,7 +34,7 @@ class CancelSignupAsClient
      * Whether the client may still cancel this sign-up themselves: it must be
      * active and the offer must start beyond its configured cutoff.
      */
-    public function isCancellable(CourseEnrollment|OneTimeLessonBooking|WorkshopRegistration $signup): bool
+    public function isCancellable(CourseEnrollment|OneOffEventBooking $signup): bool
     {
         if (! $this->isActive($signup)) {
             return false;
@@ -49,23 +48,20 @@ class CancelSignupAsClient
     /**
      * The moment self-cancellation closes for this sign-up.
      */
-    public function deadline(CourseEnrollment|OneTimeLessonBooking|WorkshopRegistration $signup): ?Carbon
+    public function deadline(CourseEnrollment|OneOffEventBooking $signup): ?Carbon
     {
         return match (true) {
             $signup instanceof CourseEnrollment => $signup->series?->start_date
                 ?->copy()
                 ->startOfDay()
                 ->subDays(Settings::courseCancelBeforeDays()),
-            $signup instanceof OneTimeLessonBooking => $signup->lesson
+            $signup instanceof OneOffEventBooking => $signup->event
                 ?->startsAt()
-                ->subHours(Settings::lessonCancelBeforeHours()),
-            $signup instanceof WorkshopRegistration => $signup->workshop
-                ?->startsAt()
-                ->subDays(Settings::workshopCancelBeforeDays()),
+                ->subHours(Settings::eventCancelBeforeHours()),
         };
     }
 
-    protected function isActive(CourseEnrollment|OneTimeLessonBooking|WorkshopRegistration $signup): bool
+    protected function isActive(CourseEnrollment|OneOffEventBooking $signup): bool
     {
         return SignupStatus::isActive($signup);
     }

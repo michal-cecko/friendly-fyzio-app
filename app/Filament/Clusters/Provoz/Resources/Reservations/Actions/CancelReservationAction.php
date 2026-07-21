@@ -40,7 +40,7 @@ class CancelReservationAction extends Action
             ->modalHeading('Zrušit')
             ->modalIcon(Heroicon::OutlinedTrash)
             ->modalSubmitActionLabel('Zrušit rezervaci')
-            ->visible(fn (Reservation $record): bool => ! $record->trashed())
+            ->visible(fn (Reservation $record): bool => ! $record->trashed() && $record->settled_at === null)
             ->schema([
                 Textarea::make('cancellation_reason')
                     ->label('Důvod zrušení')

@@ -3,8 +3,7 @@
 namespace App\Filament\Support\Actions;
 
 use App\Models\CourseSeries;
-use App\Models\OneTimeLesson;
-use App\Models\Workshop;
+use App\Models\OneOffEvent;
 use App\Support\Enrollments\AlreadySignedUpException;
 use App\Support\Enrollments\EnrollmentData;
 use App\Support\Enrollments\OfferClosedException;
@@ -77,8 +76,7 @@ class AddParticipantAction extends Action
                 try {
                     match (true) {
                         $offer instanceof CourseSeries => $action->forSeries($offer, $enrollment),
-                        $offer instanceof OneTimeLesson => $action->forLesson($offer, $enrollment),
-                        $offer instanceof Workshop => $action->forWorkshop($offer, $enrollment),
+                        $offer instanceof OneOffEvent => $action->forEvent($offer, $enrollment),
                         default => null,
                     };
                 } catch (OfferClosedException) {

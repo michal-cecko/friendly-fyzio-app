@@ -5,9 +5,9 @@ namespace App\Filament\Clusters\Obsah\Resources\Reviews\Schemas;
 use App\Enums\UserRole;
 use App\Filament\Support\Schemas\PresenceBanner;
 use App\Models\Course;
+use App\Models\OneOffEvent;
 use App\Models\Service;
 use App\Models\User;
-use App\Models\Workshop;
 use Filament\Forms\Components\MorphToSelect;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -79,9 +79,9 @@ class ReviewForm
                                 MorphToSelect\Type::make(Course::class)
                                     ->titleAttribute('name')
                                     ->label('Kurz'),
-                                MorphToSelect\Type::make(Workshop::class)
+                                MorphToSelect\Type::make(OneOffEvent::class)
                                     ->titleAttribute('name')
-                                    ->label('Workshop'),
+                                    ->label('Jednorázová akce'),
                                 MorphToSelect\Type::make(Service::class)
                                     ->titleAttribute('name')
                                     ->label('Služba'),

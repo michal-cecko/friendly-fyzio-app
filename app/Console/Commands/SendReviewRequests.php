@@ -4,9 +4,9 @@ namespace App\Console\Commands;
 
 use App\Enums\ReviewRequestChannel;
 use App\Models\CourseSeries;
+use App\Models\OneOffEvent;
 use App\Models\ReviewRequest;
 use App\Models\User;
-use App\Models\Workshop;
 use App\Notifications\ReviewRequestNotification;
 use App\Support\Settings;
 use Illuminate\Console\Command;
@@ -14,16 +14,16 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 
 /**
- * Emails course and workshop participants a magic link to the on-site review form
- * a couple of days after their event ends. Runs daily; a small catch-up window and
- * a per-participant dedup check keep it idempotent, so a missed run is recovered and
- * nobody is asked twice for the same event.
+ * Emails course and one-off event participants a magic link to the on-site
+ * review form a couple of days after their event ends. Runs daily; a small
+ * catch-up window and a per-participant dedup check keep it idempotent, so a
+ * missed run is recovered and nobody is asked twice for the same event.
  */
 class SendReviewRequests extends Command
 {
     protected $signature = 'reviews:send-requests';
 
-    protected $description = 'Send review-request e-mails to participants of courses and workshops that ended recently';
+    protected $description = 'Send review-request e-mails to participants of courses and one-off events that ended recently';
 
     public function handle(): int
     {
@@ -51,12 +51,12 @@ class SendReviewRequests extends Command
                 $sent += $this->notifyParticipants($series, $this->clientsFrom($series->enrollments()->with('client')->get()));
             });
 
-        Workshop::query()
-            ->whereDate('workshop_date', '>=', $windowStart)
-            ->whereDate('workshop_date', '<=', $windowEnd)
+        OneOffEvent::query()
+            ->whereDate('event_date', '>=', $windowStart)
+            ->whereDate('event_date', '<=', $windowEnd)
             ->get()
-            ->each(function (Workshop $workshop) use (&$sent): void {
-                $sent += $this->notifyParticipants($workshop, $this->clientsFrom($workshop->registrations()->with('client')->get()));
+            ->each(function (OneOffEvent $event) use (&$sent): void {
+                $sent += $this->notifyParticipants($event, $this->clientsFrom($event->bookings()->with('client')->get()));
             });
 
         $this->info("Odesláno {$sent} žádostí o recenzi.");

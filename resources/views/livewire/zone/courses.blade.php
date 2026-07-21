@@ -31,13 +31,14 @@
         @endforeach
     </div>
 
-    @if($enrollments->isEmpty() && $registrations->isEmpty() && $bookings->isEmpty())
+    @if($enrollments->isEmpty() && $bookings->isEmpty())
         <div class="rounded-2xl border border-line bg-white px-6 py-12 text-center">
             <p class="font-heading text-base font-semibold text-neutral-900">
                 {{ $tab === 'aktualni' ? 'Zatím nejste přihlášeni na žádný kurz.' : 'Zatím tu nejsou žádné minulé přihlášky.' }}
             </p>
             <p class="mt-2 text-sm text-neutral-500">
-                Prohlédněte si <a href="{{ url('/kurzy') }}" class="font-medium text-primary-dark underline">nabídku kurzů</a>
+                Prohlédněte si <a href="{{ url('/kurzy') }}" class="font-medium text-primary-dark underline">nabídku kurzů</a>,
+                <a href="{{ url('/jednorazove-lekce') }}" class="font-medium text-primary-dark underline">jednorázových lekcí</a>
                 nebo <a href="{{ url('/workshopy') }}" class="font-medium text-primary-dark underline">workshopů</a>.
             </p>
         </div>
@@ -135,47 +136,18 @@
         </div>
     @endif
 
-    {{-- Workshops --}}
-    @if($registrations->isNotEmpty())
-        <div class="flex flex-col gap-4">
-            <h2 class="font-heading text-base font-bold text-neutral-900">Workshopy</h2>
-            @foreach($registrations as $registration)
-                <div class="{{ $cardClass }} flex-row flex-wrap items-center justify-between gap-4 p-5">
-                    <div class="min-w-0">
-                        <div class="flex flex-wrap items-center gap-2.5">
-                            <h3 class="font-heading text-base font-semibold text-neutral-900">{{ $registration->workshop?->name ?? 'Workshop' }}</h3>
-                            @if($registration->payment_status === PaymentStatus::Paid)
-                                {!! $badge('bg-emerald-50 text-emerald-700', 'Zaplaceno') !!}
-                            @elseif($registration->status === \App\Enums\BookingStatus::Cancelled)
-                                {!! $badge('bg-neutral-100 text-neutral-600', 'Zrušeno') !!}
-                            @else
-                                {!! $badge('bg-amber-50 text-amber-700', 'Čeká na platbu') !!}
-                            @endif
-                        </div>
-                        <p class="mt-1 text-sm text-neutral-500">{{ $registration->workshop?->startsAt()?->translatedFormat('j. n. Y · H:i') }}</p>
-                    </div>
-
-                    @if($canCancel($registration))
-                        <button
-                            type="button"
-                            wire:click="confirmCancel('registration', '{{ $registration->id }}')"
-                            class="shrink-0 rounded-full border-[1.5px] border-red-200 bg-white px-4 py-1.5 font-heading text-xs font-semibold text-red-600 transition hover:bg-red-50"
-                        >Odhlásit se</button>
-                    @endif
-                </div>
-            @endforeach
-        </div>
-    @endif
-
-    {{-- One-time lessons --}}
+    {{-- One-off events --}}
     @if($bookings->isNotEmpty())
         <div class="flex flex-col gap-4">
-            <h2 class="font-heading text-base font-bold text-neutral-900">Jednorázové lekce</h2>
+            <h2 class="font-heading text-base font-bold text-neutral-900">Jednorázové akce</h2>
             @foreach($bookings as $booking)
                 <div class="{{ $cardClass }} flex-row flex-wrap items-center justify-between gap-4 p-5">
                     <div class="min-w-0">
                         <div class="flex flex-wrap items-center gap-2.5">
-                            <h3 class="font-heading text-base font-semibold text-neutral-900">{{ $booking->lesson?->course?->name ?? 'Lekce' }}</h3>
+                            <h3 class="font-heading text-base font-semibold text-neutral-900">{{ $booking->event?->name ?? 'Akce' }}</h3>
+                            @if($booking->event?->category?->name)
+                                {!! $badge('bg-primary-light text-primary-dark', e($booking->event->category->name)) !!}
+                            @endif
                             @if($booking->payment_status === PaymentStatus::Paid)
                                 {!! $badge('bg-emerald-50 text-emerald-700', 'Zaplaceno') !!}
                             @elseif($booking->status === \App\Enums\BookingStatus::Cancelled)
@@ -185,8 +157,8 @@
                             @endif
                         </div>
                         <p class="mt-1 text-sm text-neutral-500">
-                            {{ $booking->lesson?->startsAt()?->translatedFormat('j. n. Y · H:i') }}
-                            @if($booking->lesson?->room?->name) · {{ $booking->lesson->room->name }} @endif
+                            {{ $booking->event?->startsAt()?->translatedFormat('j. n. Y · H:i') }}
+                            @if($booking->event?->room?->name) · {{ $booking->event->room->name }} @endif
                         </p>
                     </div>
 

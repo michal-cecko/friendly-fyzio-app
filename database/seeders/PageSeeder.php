@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\EventCategory;
 use App\Models\Page;
 use App\Support\Settings;
 use Database\Seeders\Concerns\ImportsMedia;
@@ -19,6 +20,7 @@ class PageSeeder extends Seeder
         $this->pricingPage();
         $this->coursesPage();
         $this->workshopsPage();
+        $this->lessonsPage();
         $this->stornoTermsPage();
         $this->voucherPage();
 
@@ -28,9 +30,9 @@ class PageSeeder extends Seeder
     }
 
     /**
-     * The "Pohybové kurzy" archive page: hero + the data-driven course/lesson
-     * archive brick (type switcher, category pills, availability, search,
-     * pagination — all in the URL) + newsletter signup.
+     * The "Pohybové kurzy" archive page: hero + the data-driven course archive
+     * brick (category pills, availability, search, pagination — all in the
+     * URL, plus the one-off-event cross-sell section) + newsletter signup.
      */
     private function coursesPage(): void
     {
@@ -41,13 +43,13 @@ class PageSeeder extends Seeder
                 'title' => 'Pohybové kurzy',
                 'is_system' => true,
                 'published_at' => now(),
-                'meta_title' => 'Pohybové kurzy a lekce – FriendlyFyzio',
-                'meta_description' => 'Vyberte si z pravidelných semestrálních kurzů nebo jednorázových lekcí vedených našimi fyzioterapeutkami. Hormonální jóga, SM systém, kurzy pro těhotné a další.',
+                'meta_title' => 'Pohybové kurzy – FriendlyFyzio',
+                'meta_description' => 'Vyberte si z pravidelných semestrálních kurzů vedených našimi fyzioterapeutkami. Hormonální jóga, SM systém, kurzy pro těhotné a další.',
                 'content' => [
                     $this->brick('hero', [
-                        'eyebrow' => 'KURZY & LEKCE',
-                        'title' => 'Pohybové kurzy, workshopy a lekce',
-                        'features' => '<p>Vyberte si z pravidelných semestrálních kurzů, víkendových workshopů nebo jednorázových lekcí. Každý program je vedený našimi zkušenými fyzioterapeutkami a přizpůsobený všem úrovním.</p>',
+                        'eyebrow' => 'KURZY',
+                        'title' => 'Pohybové kurzy',
+                        'features' => '<p>Vyberte si z pravidelných semestrálních kurzů vedených našimi zkušenými fyzioterapeutkami a přizpůsobených všem úrovním. Nechcete se hned vázat? Vyzkoušejte nejdřív jednorázovou lekci.</p>',
                         'image' => $this->media(
                             'https://images.unsplash.com/photo-1542202800305-1d573ea6a890?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
                             'kurzy-hero',
@@ -58,11 +60,14 @@ class PageSeeder extends Seeder
                     ]),
                     $this->brick('course-archive', [
                         'eyebrow' => 'Aktuální nabídka',
-                        'title' => 'Naše kurzy a lekce',
+                        'title' => 'Naše kurzy',
                         'subtitle' => 'Filtrujte podle kategorie a najděte kurz, který vám vyhovuje.',
-                        'show_type_switch' => true,
                         'show_filters' => true,
                         'show_search' => true,
+                        'cross_sell' => true,
+                        'cross_sell_title' => 'Chcete si to nejdřív vyzkoušet?',
+                        'cross_sell_text' => 'Přijďte na jednorázovou lekci bez závazku celého kurzu.',
+                        'cross_sell_category' => 'jednorazove-lekce',
                     ]),
                     $this->brick('newsletter', [
                         'title' => 'Přihlaste se k odběru novinek',
@@ -77,12 +82,15 @@ class PageSeeder extends Seeder
     }
 
     /**
-     * The "Workshopy" archive page: hero + the data-driven workshop archive
-     * brick (search in the URL, muted past workshops) + newsletter signup.
+     * The "Workshopy" archive page — the custom Mason page of the Workshopy
+     * event category (pageable), served at the category URL: hero + the
+     * event archive brick pinned to the category + newsletter signup.
      */
     private function workshopsPage(): void
     {
-        Page::updateOrCreate(
+        $category = EventCategory::query()->where('slug', 'workshopy')->first();
+
+        $page = Page::updateOrCreate(
             ['system_key' => 'workshopy'],
             [
                 'slug' => 'workshopy',
@@ -101,13 +109,14 @@ class PageSeeder extends Seeder
                             'workshopy-hero',
                         ),
                         'buttons' => [
-                            ['text' => 'Prohlédnout workshopy', 'link_type' => 'custom', 'url' => '#workshopy-archiv', 'icon' => 'calendar', 'style' => 'primary'],
+                            ['text' => 'Prohlédnout workshopy', 'link_type' => 'custom', 'url' => '#akce-archiv', 'icon' => 'calendar', 'style' => 'primary'],
                         ],
                     ]),
-                    $this->brick('workshop-archive', [
+                    $this->brick('event-archive', [
                         'eyebrow' => 'Otevřené veřejnosti',
                         'title' => 'Aktuální workshopy',
                         'subtitle' => 'Vzdělávací akce pro všechny — pod vedením interních fyzioterapeutek i pozvaných externích lektorů.',
+                        'category' => 'workshopy',
                         'show_search' => true,
                         'show_past' => true,
                     ]),
@@ -121,6 +130,77 @@ class PageSeeder extends Seeder
                 ],
             ],
         );
+
+        // pageable_* are not mass assignable on Page — attach via the relation.
+        $this->attachToCategory($page, $category);
+    }
+
+    /**
+     * The "Jednorázové lekce" page — the custom Mason page of the
+     * jednorazove-lekce event category (pageable), served at the category URL:
+     * hero + the event archive brick pinned to the category + newsletter.
+     */
+    private function lessonsPage(): void
+    {
+        $category = EventCategory::query()->where('slug', 'jednorazove-lekce')->first();
+
+        $page = Page::updateOrCreate(
+            ['system_key' => 'jednorazove-lekce'],
+            [
+                'slug' => 'jednorazove-lekce',
+                'title' => 'Jednorázové lekce',
+                'is_system' => true,
+                'published_at' => now(),
+                'meta_title' => 'Jednorázové lekce – FriendlyFyzio',
+                'meta_description' => 'Vyzkoušejte si cvičení bez závazku celého kurzu. Jednorázové vstupy na lekce vedené našimi fyzioterapeutkami — hormonální jóga, SM systém a další.',
+                'content' => [
+                    $this->brick('hero', [
+                        'eyebrow' => 'JEDNORÁZOVÉ LEKCE',
+                        'title' => 'Vyzkoušejte lekci bez závazku',
+                        'features' => '<p>Nechcete se hned vázat na celý semestrální kurz? Přijďte na jednorázovou lekci — jeden vstup na jedno cvičení pod vedením našich fyzioterapeutek. Pokud vás lekce nadchne, můžete kdykoliv plynule přejít na celou sérii.</p>',
+                        'image' => $this->media(
+                            'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
+                            'jednorazove-lekce-hero',
+                        ),
+                        'buttons' => [
+                            ['text' => 'Prohlédnout termíny', 'link_type' => 'custom', 'url' => '#akce-archiv', 'icon' => 'calendar', 'style' => 'primary'],
+                        ],
+                    ]),
+                    $this->brick('event-archive', [
+                        'eyebrow' => 'Volné termíny',
+                        'title' => 'Aktuální jednorázové lekce',
+                        'subtitle' => 'Vyberte si termín, který vám vyhovuje — kapacity jsou aktuální.',
+                        'category' => 'jednorazove-lekce',
+                        'show_search' => true,
+                        'show_past' => true,
+                    ]),
+                    $this->brick('newsletter', [
+                        'title' => 'Přihlaste se k odběru novinek',
+                        'subtitle' => 'Chcete se dozvědět o kurzech, workshopech a novinkách jako první?',
+                        'placeholder' => 'Váš e-mail',
+                        'button_text' => 'Odebírat',
+                        'consent' => 'Odesláním souhlasím se zpracováním osobních údajů.',
+                    ]),
+                ],
+            ],
+        );
+
+        $this->attachToCategory($page, $category);
+    }
+
+    /**
+     * Make the page the category's custom page (served at the category URL).
+     * The pageable_* morph columns are not mass assignable, so updateOrCreate
+     * cannot set them — associate through the relation instead.
+     */
+    private function attachToCategory(Page $page, ?EventCategory $category): void
+    {
+        if ($category === null || $page->pageable_id === $category->getKey()) {
+            return;
+        }
+
+        $page->pageable()->associate($category);
+        $page->save();
     }
 
     private function homepage(): void
@@ -363,8 +443,7 @@ class PageSeeder extends Seeder
         $feePercent = Settings::stornoFeePercent();
         $noShowPercent = Settings::noShowFeePercent();
         $courseDays = Settings::courseCancelBeforeDays();
-        $lessonHours = Settings::lessonCancelBeforeHours();
-        $workshopDays = Settings::workshopCancelBeforeDays();
+        $eventHours = Settings::eventCancelBeforeHours();
 
         Page::updateOrCreate(
             ['system_key' => 'storno-podminky'],
@@ -388,12 +467,11 @@ class PageSeeder extends Seeder
                     ]),
                     $this->brick('rich-text', [
                         'content' => implode('', [
-                            '<h2>Kurzy, lekce a workshopy</h2>',
-                            '<p>Přihlášky na kurzy, jednorázové lekce a workshopy se hradí předem (QR platbou). Nezaplacená přihláška po uplynutí rezervační lhůty automaticky propadá a místo nabídneme dalším zájemcům.</p>',
+                            '<h2>Kurzy a jednorázové akce</h2>',
+                            '<p>Přihlášky na kurzy a jednorázové akce (lekce, workshopy) se hradí předem (QR platbou). Nezaplacená přihláška po uplynutí rezervační lhůty automaticky propadá a místo nabídneme dalším zájemcům.</p>',
                             '<ul>',
                             "<li><strong>Pohybové kurzy</strong> – odhlásit se můžete nejpozději {$courseDays} dní před začátkem série.</li>",
-                            "<li><strong>Jednorázové lekce</strong> – odhlásit se můžete nejpozději {$lessonHours} hodin před lekcí.</li>",
-                            "<li><strong>Workshopy</strong> – odhlásit se můžete nejpozději {$workshopDays} dní před konáním.</li>",
+                            "<li><strong>Jednorázové akce</strong> (lekce, workshopy) – odhlásit se můžete nejpozději {$eventHours} hodin před konáním.</li>",
                             '</ul>',
                             "<p>Při pozdějším zrušení termínu fyzioterapie nebo masáže, u kterého již platí storno lhůta, účtujeme storno poplatek ve výši {$feePercent} % z ceny. Po uplynutí storno lhůty už zrušení online není možné – kontaktujte nás prosím telefonicky.</p>",
                             '<h2>Náhradní vstupy u kurzů</h2>',

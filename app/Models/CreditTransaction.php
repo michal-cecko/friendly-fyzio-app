@@ -26,6 +26,7 @@ class CreditTransaction extends Model
         'description',
         'expires_at',
         'related_transaction_id',
+        'expiry_notified_at',
     ];
 
     protected function casts(): array
@@ -34,6 +35,7 @@ class CreditTransaction extends Model
             'amount' => 'integer',
             'type' => CreditTransactionType::class,
             'expires_at' => 'datetime',
+            'expiry_notified_at' => 'datetime',
         ];
     }
 

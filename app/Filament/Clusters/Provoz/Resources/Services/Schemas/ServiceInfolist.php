@@ -64,9 +64,6 @@ class ServiceInfolist
                                 TextEntry::make('cancellationRule.cancel_before_hours')
                                     ->label('Zrušit nejpozději (hodin předem)')
                                     ->placeholder('—'),
-                                TextEntry::make('cancellationRule.auto_cancel_after_days')
-                                    ->label('Automaticky zrušit po (dnech)')
-                                    ->placeholder('—'),
                             ]),
                         Section::make('Místnosti a terapeuti')
                             ->icon(Heroicon::OutlinedBuildingOffice)

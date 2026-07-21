@@ -46,7 +46,7 @@ class RolePermissionSeeder extends Seeder
             // Their own reservations + recording payments after a visit.
             'ViewAny:Reservation', 'View:Reservation', 'Update:Reservation',
             'ViewAny:Payment', 'View:Payment', 'Create:Payment',
-            // Courses / workshops / one-time lessons they instruct, plus enrollment
+            // Courses / one-off events they instruct, plus enrollment
             // rosters and attendance marking (all row-scoped to their offerings).
             'ViewAny:Course', 'View:Course',
             'ViewAny:CourseCategory', 'View:CourseCategory',
@@ -54,8 +54,8 @@ class RolePermissionSeeder extends Seeder
             'ViewAny:CourseLesson', 'View:CourseLesson',
             'ViewAny:CourseEnrollment', 'View:CourseEnrollment',
             'ViewAny:LessonAttendance', 'View:LessonAttendance', 'Create:LessonAttendance', 'Update:LessonAttendance',
-            'ViewAny:Workshop', 'View:Workshop',
-            'ViewAny:OneTimeLesson', 'View:OneTimeLesson',
+            'ViewAny:OneOffEvent', 'View:OneOffEvent',
+            'ViewAny:EventCategory', 'View:EventCategory',
         ])->get());
 
         // super_admin needs no explicit permissions — it bypasses every check via Gate::before.

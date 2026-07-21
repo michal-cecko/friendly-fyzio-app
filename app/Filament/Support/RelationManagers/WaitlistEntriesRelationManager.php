@@ -4,9 +4,8 @@ namespace App\Filament\Support\RelationManagers;
 
 use App\Models\Course;
 use App\Models\CourseSeries;
-use App\Models\OneTimeLesson;
+use App\Models\OneOffEvent;
 use App\Models\WaitlistEntry;
-use App\Models\Workshop;
 use App\Support\Enrollments\PromoteFromWaitlist;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -118,11 +117,11 @@ class WaitlistEntriesRelationManager extends RelationManager
             ]);
     }
 
-    protected function promotableOffer(): CourseSeries|OneTimeLesson|Workshop|null
+    protected function promotableOffer(): CourseSeries|OneOffEvent|null
     {
         $owner = $this->getOwnerRecord();
 
-        return $owner instanceof CourseSeries || $owner instanceof OneTimeLesson || $owner instanceof Workshop
+        return $owner instanceof CourseSeries || $owner instanceof OneOffEvent
             ? $owner
             : null;
     }

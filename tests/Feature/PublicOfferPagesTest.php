@@ -2,20 +2,17 @@
 
 namespace Tests\Feature;
 
-use App\Enums\BookingStatus;
 use App\Enums\CourseEnrollmentStatus;
 use App\Enums\CourseSeriesStatus;
 use App\Enums\CourseSeriesVisibility;
 use App\Livewire\CourseArchive;
 use App\Livewire\OfferSignupForm;
-use App\Livewire\WorkshopArchive;
 use App\Models\Course;
 use App\Models\CourseCategory;
 use App\Models\CourseSeries;
-use App\Models\OneTimeLesson;
+use App\Models\EventCategory;
+use App\Models\OneOffEvent;
 use App\Models\User;
-use App\Models\Workshop;
-use App\Models\WorkshopRegistration;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
@@ -41,6 +38,17 @@ class PublicOfferPagesTest extends TestCase
             'status' => CourseSeriesStatus::Open,
             ...$attributes,
         ]);
+    }
+
+    protected function upcomingEvent(array $attributes = []): OneOffEvent
+    {
+        return OneOffEvent::factory()
+            ->forCategory(EventCategory::query()->where('slug', 'workshopy')->firstOrFail())
+            ->create([
+                'event_date' => today()->addWeeks(3)->toDateString(),
+                'published_at' => now(),
+                ...$attributes,
+            ]);
     }
 
     public function test_published_course_detail_renders_with_signup_form(): void
@@ -89,42 +97,79 @@ class PublicOfferPagesTest extends TestCase
             ->assertSee('Chci vědět první');
     }
 
-    public function test_workshop_detail_renders_and_unpublished_is_hidden(): void
+    public function test_event_detail_renders_and_unpublished_is_hidden(): void
     {
-        $workshop = Workshop::factory()->create([
-            'workshop_date' => today()->addWeeks(3)->toDateString(),
-            'published_at' => now(),
-        ]);
+        $event = $this->upcomingEvent();
 
-        $this->get('/workshopy/'.$workshop->slug)
+        $this->get('/workshopy/'.$event->slug)
             ->assertOk()
-            ->assertSee($workshop->name)
+            ->assertSee($event->name)
             ->assertSee('Přihlásit se a zaplatit');
 
-        $draft = Workshop::factory()->create(['published_at' => null]);
+        $draft = OneOffEvent::factory()
+            ->forCategory($event->category)
+            ->unpublished()
+            ->create();
 
         $this->get('/workshopy/'.$draft->slug)->assertNotFound();
     }
 
-    public function test_lesson_detail_renders_and_is_scoped_to_its_course(): void
+    public function test_unpublished_event_is_previewable_by_staff(): void
     {
-        $course = $this->publishedCourse();
-        $lesson = OneTimeLesson::factory()->for($course)->create([
-            'lesson_date' => today()->addWeeks(2)->toDateString(),
-            'published_at' => now(),
-        ]);
+        $event = $this->upcomingEvent(['published_at' => null]);
 
-        $this->get('/kurzy/'.$course->slug.'/lekce/'.$lesson->getKey())
+        $this->get('/workshopy/'.$event->slug)->assertNotFound();
+
+        $this->actingAs(User::factory()->admin()->create());
+
+        $this->get('/workshopy/'.$event->slug)
             ->assertOk()
-            ->assertSee($course->name)
-            ->assertSee('Rezervovat místo');
-
-        $otherCourse = $this->publishedCourse();
-
-        $this->get('/kurzy/'.$otherCourse->slug.'/lekce/'.$lesson->getKey())->assertNotFound();
+            ->assertSee('Náhled');
     }
 
-    public function test_course_archive_filters_by_type_category_search_and_availability(): void
+    public function test_presale_token_unlocks_unpublished_event_page(): void
+    {
+        $event = $this->upcomingEvent(['published_at' => null]);
+        $token = $event->ensurePresaleToken();
+
+        $this->get('/workshopy/'.$event->slug.'?predprodej='.$token)
+            ->assertOk()
+            ->assertSee('Přihlásit se a zaplatit');
+
+        $this->get('/workshopy/'.$event->slug.'?predprodej=chybny-token')->assertNotFound();
+    }
+
+    public function test_past_event_stays_reachable_without_signup(): void
+    {
+        $event = $this->upcomingEvent([
+            'event_date' => today()->subWeeks(2)->toDateString(),
+        ]);
+
+        $this->get('/workshopy/'.$event->slug)
+            ->assertOk()
+            ->assertSee($event->name)
+            ->assertDontSee('Přihlásit se a zaplatit');
+    }
+
+    public function test_course_linked_event_falls_back_to_course_description(): void
+    {
+        $course = $this->publishedCourse(['description' => 'Popis převzatý z kurzu.']);
+        $event = OneOffEvent::factory()
+            ->forCategory(EventCategory::query()->where('slug', 'jednorazove-lekce')->firstOrFail())
+            ->withCourse($course)
+            ->published()
+            ->create([
+                'description' => null,
+                'event_date' => today()->addWeeks(2)->toDateString(),
+            ]);
+
+        $this->get('/jednorazove-lekce/'.$event->slug)
+            ->assertOk()
+            ->assertSee($event->name)
+            ->assertSee('Popis převzatý z kurzu.');
+    }
+
+    public function test_course_archive_filters_by_category_search_and_availability(): void
     {
         $joga = CourseCategory::factory()->create(['name' => 'Jóga', 'slug' => 'joga', 'published_at' => now()]);
         $sm = CourseCategory::factory()->create(['name' => 'SM systém', 'slug' => 'sm-system', 'published_at' => now()]);
@@ -159,47 +204,6 @@ class PublicOfferPagesTest extends TestCase
             ->assertDontSee('SM cvičení');
     }
 
-    public function test_course_archive_lesson_type_lists_upcoming_published_lessons(): void
-    {
-        $course = $this->publishedCourse(['name' => 'Jin jóga']);
-
-        OneTimeLesson::factory()->for($course)->create([
-            'lesson_date' => today()->addWeek()->toDateString(),
-            'published_at' => now(),
-        ]);
-        OneTimeLesson::factory()->for($course)->create([
-            'lesson_date' => today()->subWeek()->toDateString(),
-            'published_at' => now(),
-        ]);
-
-        Livewire::test(CourseArchive::class)
-            ->set('type', 'lekce')
-            ->assertSee('Jin jóga')
-            ->assertSee('Zobrazeno 1');
-    }
-
-    public function test_workshop_archive_searches_and_shows_past_muted(): void
-    {
-        Workshop::factory()->create([
-            'name' => 'Workshop zdravých zad',
-            'workshop_date' => today()->addWeeks(2)->toDateString(),
-            'published_at' => now(),
-        ]);
-        Workshop::factory()->create([
-            'name' => 'Proběhlý seminář',
-            'workshop_date' => today()->subWeeks(2)->toDateString(),
-            'published_at' => now(),
-        ]);
-
-        Livewire::test(WorkshopArchive::class)
-            ->assertSee('Workshop zdravých zad')
-            ->assertSee('Proběhlé workshopy')
-            ->assertSee('Proběhlý seminář')
-            ->set('search', 'zdravých')
-            ->assertSee('Workshop zdravých zad')
-            ->assertDontSee('Proběhlý seminář');
-    }
-
     public function test_signup_form_component_submits_and_validates_terms(): void
     {
         Notification::fake();
@@ -218,6 +222,24 @@ class PublicOfferPagesTest extends TestCase
             ->assertSet('completed', 'signup');
 
         $this->assertTrue($series->enrollments()->whereHas('client', fn ($query) => $query->where('email', 'jana.form@example.cz'))->exists());
+    }
+
+    public function test_signup_form_submits_event_bookings(): void
+    {
+        Notification::fake();
+
+        $event = $this->upcomingEvent(['capacity' => 5]);
+
+        Livewire::test(OfferSignupForm::class, ['offerType' => 'event', 'offerId' => $event->getKey()])
+            ->set('name', 'Jana Formulářová')
+            ->set('email', 'jana.akce@example.cz')
+            ->set('phone', '+420604123456')
+            ->set('terms', true)
+            ->call('submit')
+            ->assertHasNoErrors()
+            ->assertSet('completed', 'signup');
+
+        $this->assertTrue($event->bookings()->whereHas('client', fn ($query) => $query->where('email', 'jana.akce@example.cz'))->exists());
     }
 
     public function test_signup_form_waitlist_join_and_leave(): void
@@ -375,50 +397,5 @@ class PublicOfferPagesTest extends TestCase
             ->call('gotoPage', 2, 'strana')
             ->assertSee('Kurz číslo 7')
             ->assertDontSee('Kurz číslo 1');
-    }
-
-    public function test_workshop_archive_available_only_hides_full_workshops(): void
-    {
-        Workshop::factory()->create([
-            'name' => 'Volný workshop',
-            'workshop_date' => today()->addWeeks(2)->toDateString(),
-            'capacity' => 8,
-            'published_at' => now(),
-        ]);
-
-        $full = Workshop::factory()->create([
-            'name' => 'Plný workshop',
-            'workshop_date' => today()->addWeeks(2)->toDateString(),
-            'capacity' => 1,
-            'published_at' => now(),
-        ]);
-
-        // A pending registration holds the spot, so it must count as taken.
-        WorkshopRegistration::factory()->for($full)->create(['status' => BookingStatus::Pending]);
-
-        Livewire::test(WorkshopArchive::class)
-            ->assertSee('Volný workshop')
-            ->assertSee('Plný workshop')
-            ->set('availableOnly', true)
-            ->assertSee('Volný workshop')
-            ->assertDontSee('Plný workshop');
-    }
-
-    public function test_workshop_archive_paginates_six_per_page(): void
-    {
-        foreach (range(1, 7) as $week) {
-            Workshop::factory()->create([
-                'name' => "Workshop číslo {$week}",
-                'workshop_date' => today()->addWeeks($week)->toDateString(),
-                'published_at' => now(),
-            ]);
-        }
-
-        Livewire::test(WorkshopArchive::class)
-            ->assertSee('Workshop číslo 1')
-            ->assertDontSee('Workshop číslo 7')
-            ->call('gotoPage', 2, 'strana')
-            ->assertSee('Workshop číslo 7')
-            ->assertDontSee('Workshop číslo 1');
     }
 }

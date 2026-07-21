@@ -11,9 +11,10 @@ use App\Models\Course;
 use App\Models\CourseCategory;
 use App\Models\CourseLesson;
 use App\Models\CourseSeries;
+use App\Models\EventCategory;
+use App\Models\OneOffEvent;
 use App\Models\Room;
 use App\Models\User;
-use App\Models\Workshop;
 use Database\Seeders\Concerns\ImportsMedia;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
@@ -22,7 +23,8 @@ use Illuminate\Support\Carbon;
  * Idempotent demo records covering every public offer state from the designs:
  * an open course, a running (mid-series, pro-rated) one, a full course with a
  * waitlist, a "preparing" course (Inactive series + pre-sale token), a course
- * with no series at all (interest form) and a full workshop with a waitlist.
+ * with no series at all (interest form) and a full workshop-category event
+ * with a waitlist.
  * Safe to re-run — everything is keyed by slug.
  */
 class CourseOfferStatesSeeder extends Seeder
@@ -66,16 +68,22 @@ class CourseOfferStatesSeeder extends Seeder
         // 4) Course without any series — pure interest sign-up.
         $this->course($category, $instructor, 'Jin jóga', 'Hluboké protahování a uvolnění, držení pozic pro regeneraci tkání.', 'photo-1506126613408-eca07ce68773');
 
-        // 5) Full workshop with a queue.
-        $workshop = Workshop::query()->updateOrCreate(
+        // 5) Full workshop-category event with a queue.
+        $workshopCategory = EventCategory::query()->firstOrCreate(
+            ['slug' => 'workshopy'],
+            ['name' => 'Workshopy', 'display_order' => 1, 'published_at' => now()],
+        );
+
+        $workshop = OneOffEvent::query()->updateOrCreate(
             ['slug' => 'baby-massage-workshop'],
             [
+                'event_category_id' => $workshopCategory->getKey(),
                 'instructor_id' => $instructor->getKey(),
                 'room_id' => $room->getKey(),
                 'name' => 'Baby massage workshop',
                 'description' => 'Naučte se techniky masáže pro vaše miminko. Dvoudenní workshop pod vedením zkušené fyzioterapeutky.',
                 'featured_image' => $this->media('https://images.unsplash.com/photo-1719942274381-c4c05b0dcf68?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080', 'demo-baby-massage'),
-                'workshop_date' => today()->addWeeks(5)->toDateString(),
+                'event_date' => today()->addWeeks(5)->toDateString(),
                 'start_time' => '09:00',
                 'end_time' => '13:00',
                 'capacity' => 4,
@@ -84,7 +92,7 @@ class CourseOfferStatesSeeder extends Seeder
             ],
         );
 
-        $clients->skip(6)->take(4)->each(fn (User $client) => $workshop->registrations()->firstOrCreate(
+        $clients->skip(6)->take(4)->each(fn (User $client) => $workshop->bookings()->firstOrCreate(
             ['client_id' => $client->getKey()],
             ['status' => BookingStatus::Confirmed, 'payment_status' => PaymentStatus::Paid, 'paid_at' => now()],
         ));

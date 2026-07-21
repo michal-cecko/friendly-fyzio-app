@@ -15,6 +15,8 @@ use App\Models\CourseEnrollment;
 use App\Models\CourseLesson;
 use App\Models\CourseSeries;
 use App\Models\LessonAttendance;
+use App\Models\OneOffEvent;
+use App\Models\OneOffEventBooking;
 use App\Models\Payment;
 use App\Models\Reservation;
 use App\Models\Room;
@@ -23,8 +25,6 @@ use App\Models\SubstituteRule;
 use App\Models\SubstituteToken;
 use App\Models\TherapistProfile;
 use App\Models\User;
-use App\Models\Workshop;
-use App\Models\WorkshopRegistration;
 use App\Support\Credits\CreditLedger;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
@@ -89,8 +89,7 @@ class ClientZoneDemoSeeder extends Seeder
             $enrollment->forceDelete();
         });
 
-        $client->workshopRegistrations()->forceDelete();
-        $client->oneTimeLessonBookings()->forceDelete();
+        $client->oneOffEventBookings()->forceDelete();
         $client->reservations()->forceDelete();
     }
 
@@ -317,19 +316,19 @@ class ClientZoneDemoSeeder extends Seeder
             'due_at' => today()->addDays(2),
         ]);
 
-        // Workshop registration (unpaid, QR).
-        $workshop = Workshop::query()->whereDate('workshop_date', '>=', today()->addWeeks(2))->first();
+        // One-off event booking (unpaid, QR).
+        $event = OneOffEvent::query()->whereDate('event_date', '>=', today()->addWeeks(2))->first();
 
-        if ($workshop !== null) {
-            $registration = WorkshopRegistration::create([
+        if ($event !== null) {
+            $booking = OneOffEventBooking::create([
                 'client_id' => $client->getKey(),
-                'workshop_id' => $workshop->getKey(),
+                'one_off_event_id' => $event->getKey(),
                 'status' => BookingStatus::Confirmed,
                 'payment_status' => PaymentStatus::Unpaid,
             ]);
-            $registration->payments()->create([
+            $booking->payments()->create([
                 'client_id' => $client->getKey(),
-                'amount' => $workshop->price,
+                'amount' => $event->price,
                 'method' => PaymentMethod::Qr,
                 'status' => PaymentStatus::Unpaid,
                 'due_at' => today()->addDays(3),

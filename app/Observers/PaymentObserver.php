@@ -84,7 +84,10 @@ class PaymentObserver
     private function syncReservation(Payment $payment): void
     {
         if ($payment->payable instanceof Reservation) {
-            $payment->payable->recalculatePaymentStatus();
+            $reservation = $payment->payable;
+            $reservation->recalculatePaymentStatus();
+            // A past visit now fully paid — or a storno fee just settled — is closed.
+            $reservation->markSettledIfQualifies();
         }
     }
 

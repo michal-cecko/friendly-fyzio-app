@@ -5,17 +5,16 @@ namespace App\Support\Enrollments;
 use App\Enums\EmailTemplateKey;
 use App\Models\Course;
 use App\Models\CourseSeries;
-use App\Models\OneTimeLesson;
+use App\Models\OneOffEvent;
 use App\Models\User;
 use App\Models\WaitlistEntry;
-use App\Models\Workshop;
 use App\Notifications\EnrollmentTemplateNotification;
 use Illuminate\Support\Facades\Notification;
 
 /**
  * Adds someone to a waitlist. Two flavours share the storage:
  *
- * - a FULL offer (course series / one-time lesson / workshop) — the classic
+ * - a FULL offer (course series / one-off event) — the classic
  *   queue, confirmed by the "waitlist_joined" e-mail with the position;
  * - a Course — the "chci vědět první" interest list of a course that has no
  *   open registration yet; those get e-mailed when a series opens.
@@ -26,7 +25,7 @@ use Illuminate\Support\Facades\Notification;
 class JoinWaitlist
 {
     public static function handle(
-        Course|CourseSeries|OneTimeLesson|Workshop $waitlistable,
+        Course|CourseSeries|OneOffEvent $waitlistable,
         ?string $name,
         string $email,
         ?string $phone = null,

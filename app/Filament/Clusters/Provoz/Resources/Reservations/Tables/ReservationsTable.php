@@ -10,12 +10,13 @@ use App\Filament\Clusters\Provoz\Resources\Reservations\Actions\CancelReservatio
 use App\Filament\Clusters\Provoz\Resources\Reservations\Actions\ConfirmReservationAction;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Actions\MarkNoShowAction;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Actions\RequestPaymentAction;
+use App\Filament\Clusters\Provoz\Resources\Reservations\Actions\ResolveDoctorNoteAction;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Actions\RestoreReservationAction;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Actions\RestoreReservationBulkAction;
-use App\Filament\Clusters\Provoz\Resources\Reservations\Actions\SendReservationEmailAction;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Actions\UnconfirmReservationAction;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Schemas\ReservationForm;
 use App\Filament\Support\Actions\RecordPaymentAction;
+use App\Filament\Support\Actions\SendEmailAction;
 use App\Filament\Support\Actions\SendReviewRequestAction;
 use App\Filament\Support\Tables\TimestampColumns;
 use App\Models\Reservation;
@@ -78,6 +79,11 @@ class ReservationsTable
                     ->icon(fn ($state): string|BackedEnum|null => $state !== null ? Heroicon::OutlinedDocumentText : null)
                     ->color('warning')
                     ->toggleable(),
+                IconColumn::make('settled_at')
+                    ->label('Vybaveno')
+                    ->tooltip('Vyřízeno – proběhlo a uhrazeno (nebo storno vyřešeno)')
+                    ->icon(fn ($state): string|BackedEnum|null => $state !== null ? Heroicon::CheckCircle : null)
+                    ->color('success'),
                 ...TimestampColumns::make(),
             ])
             ->filters([
@@ -92,7 +98,12 @@ class ReservationsTable
                     ->options(ConfirmationSource::class),
                 Filter::make('doctor_note_pending')
                     ->label('Čeká na potvrzení od lékaře')
-                    ->query(fn (Builder $query): Builder => $query->whereNotNull('doctor_note_requested_at'))
+                    ->query(fn (Builder $query): Builder => $query->whereNotNull('doctor_note_requested_at')
+                        ->whereNull('doctor_note_resolved_at'))
+                    ->toggle(),
+                Filter::make('settled')
+                    ->label('Vybaveno')
+                    ->query(fn (Builder $query): Builder => $query->whereNotNull('settled_at'))
                     ->toggle(),
                 TrashedFilter::make(),
             ])
@@ -102,9 +113,10 @@ class ReservationsTable
                     ->schema(ReservationForm::components()),
                 ConfirmReservationAction::make(),
                 UnconfirmReservationAction::make(),
-                SendReservationEmailAction::make(),
+                SendEmailAction::make(),
                 RecordPaymentAction::make(),
                 RequestPaymentAction::make(),
+                ResolveDoctorNoteAction::make(),
                 MarkNoShowAction::make(),
                 SendReviewRequestAction::make(),
                 CancelReservationAction::make(),

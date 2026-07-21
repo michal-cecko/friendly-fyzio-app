@@ -3,11 +3,7 @@
 
     $inputClasses = 'w-full rounded-xl border border-line bg-white px-4 py-3 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20';
     $labelClasses = 'mb-1.5 block text-sm font-medium text-neutral-900';
-    $typeLabel = match ($offerType) {
-        'series' => 'kurz',
-        'lesson' => 'lekci',
-        'workshop' => 'workshop',
-    };
+    $typeLabel = $offerType === 'series' ? 'kurz' : 'akci';
 @endphp
 
 <div class="flex flex-col gap-8">

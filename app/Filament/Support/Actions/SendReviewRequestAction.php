@@ -4,7 +4,7 @@ namespace App\Filament\Support\Actions;
 
 use App\Enums\ReservationStatus;
 use App\Enums\ReviewRequestChannel;
-use App\Models\OneTimeLessonBooking;
+use App\Models\OneOffEventBooking;
 use App\Models\Reservation;
 use App\Models\ReviewRequest;
 use App\Models\User;
@@ -17,9 +17,9 @@ use Illuminate\Database\Eloquent\Model;
 
 /**
  * Manually asks a client to leave a review by e-mailing them a magic link to the
- * on-site review form. Works on completed therapy reservations and one-time lesson
- * bookings; the reviewed entity is the reservation itself or the booking's lesson.
- * Automatic requests for courses/workshops are handled by the reviews:send-requests
+ * on-site review form. Works on completed therapy reservations and one-off event
+ * bookings; the reviewed entity is the reservation itself or the booking's event.
+ * Automatic requests for courses/events are handled by the reviews:send-requests
  * command.
  */
 class SendReviewRequestAction extends Action
@@ -86,15 +86,15 @@ class SendReviewRequestAction extends Action
     {
         return match (true) {
             $record instanceof Reservation => $record->client,
-            $record instanceof OneTimeLessonBooking => $record->client,
+            $record instanceof OneOffEventBooking => $record->client,
             default => null,
         };
     }
 
     private static function resolveReviewable(Model $record): Model
     {
-        return $record instanceof OneTimeLessonBooking
-            ? $record->lesson
+        return $record instanceof OneOffEventBooking
+            ? $record->event
             : $record;
     }
 
@@ -110,8 +110,8 @@ class SendReviewRequestAction extends Action
             $record instanceof Reservation => $record->status === ReservationStatus::Confirmed
                 && $record->reservation_date !== null
                 && ! $record->reservation_date->isFuture(),
-            $record instanceof OneTimeLessonBooking => $record->lesson?->lesson_date !== null
-                && ! $record->lesson->lesson_date->isFuture(),
+            $record instanceof OneOffEventBooking => $record->event?->event_date !== null
+                && ! $record->event->event_date->isFuture(),
             default => false,
         };
     }

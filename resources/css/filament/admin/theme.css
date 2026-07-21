@@ -43,8 +43,9 @@
     }
 }
 
-/* Otherwise-inconspicuous links inside page content get an underline and a trailing
-   external-link glyph so they unambiguously read as links. Covers two cases: plain
+/* Otherwise-inconspicuous links inside page content get a bold, primary-coloured
+   treatment and a trailing external-link glyph so they unambiguously read as links
+   (no underline). Covers two cases: plain
    anchors with no Filament class (links authored in rich text / custom views), and
    linked infolist entries — `TextEntry->url()` renders an `<a.fi-in-entry-content>`
    that Filament leaves visually indistinguishable from a non-linked value. Scoped to
@@ -60,8 +61,8 @@
     width: fit-content;
     gap: 0.2em;
     color: var(--primary-600, #2563eb);
-    text-decoration: underline;
-    text-underline-offset: 2px;
+    font-weight: 600;
+    text-decoration: none;
 }
 
 .fi-main a[href]:not([class])::after,

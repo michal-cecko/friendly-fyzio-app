@@ -219,7 +219,6 @@ erDiagram
         bigint id PK
         bigint service_id FK
         int cancel_before_hours
-        int auto_cancel_after_days
         timestamp created_at
         timestamp updated_at
     }

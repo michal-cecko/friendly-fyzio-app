@@ -12,7 +12,6 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('service_id')->unique()->constrained()->cascadeOnDelete();
             $table->integer('cancel_before_hours');
-            $table->integer('auto_cancel_after_days')->nullable();
             $table->timestamps();
         });
     }

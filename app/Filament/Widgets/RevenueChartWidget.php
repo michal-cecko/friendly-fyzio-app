@@ -29,8 +29,7 @@ class RevenueChartWidget extends ApexChartWidget
     private const SERIES_LABELS = [
         'reservation' => 'Terapie',
         'course_enrollment' => 'Kurzy',
-        'workshop_registration' => 'Workshopy',
-        'one_time_lesson_booking' => 'Lekce',
+        'one_off_event_booking' => 'Jednorázové akce',
     ];
 
     protected function getFilters(): ?array
@@ -70,7 +69,7 @@ class RevenueChartWidget extends ApexChartWidget
                 }
             });
 
-        // Always show the four offering types; add "Ostatní" only when it has data.
+        // Always show the three offering types; add "Ostatní" only when it has data.
         $series = [];
         foreach ($sums as $label => $byDay) {
             if ($label === 'Ostatní' && array_sum($byDay) === 0) {
