@@ -43,8 +43,6 @@ class ServiceSeeder extends Seeder
 
     protected const string DENISA = 'denisa.novakova@friendlyfyzio.cz';
 
-    protected const string AMANI = 'lucie.amani@friendlyfyzio.cz';
-
     public function run(): void
     {
         $categories = ServiceCategory::query()->pluck('id', 'slug');
@@ -63,7 +61,7 @@ class ServiceSeeder extends Seeder
 
         // Šárka is the one physiotherapist who does not list pregnancy care.
         $pregnancyTherapists = array_values(array_diff(self::PHYSIOTHERAPISTS, ['sarka.antosikova@friendlyfyzio.cz']));
-        $pelvicFloorTherapists = [...self::PHYSIOTHERAPISTS, self::AMANI];
+        $pelvicFloorTherapists = self::PHYSIOTHERAPISTS;
         // Apparatus therapy is phone-booked only, but any practising therapist
         // may record such a visit, so all of them are attached.
         $everyone = array_keys($profiles);
@@ -231,7 +229,7 @@ class ServiceSeeder extends Seeder
                 'duration' => 60,
                 'price' => 1200,
                 'visibility' => ServiceVisibility::Hidden,
-                'therapists' => [self::DENISA, self::AMANI],
+                'therapists' => [self::DENISA],
             ],
             // Přístrojová terapie is booked over the phone, so it stays out of
             // the public wizard — staff can still schedule it in the calendar.

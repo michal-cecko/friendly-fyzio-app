@@ -2,8 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Enums\Capability;
-use App\Models\User;
 use Illuminate\Database\Seeder;
 
 /**
@@ -22,21 +20,12 @@ use Illuminate\Database\Seeder;
  */
 class ProductionSeeder extends Seeder
 {
-    /** The owner's account, kept separate from the team seeded by RealDataSeeder. */
-    protected const string OWNER_EMAIL = 'ceckomichal@gmail.com';
-
-    /**
-     * Only ever applied when the account is first created, so a password
-     * changed in the app survives re-running the seeder. Change it after the
-     * first sign-in.
-     */
-    protected const string OWNER_INITIAL_PASSWORD = 'FriendlyFyzio2026!';
-
     public function run(): void
     {
         $this->call(FoundationSeeder::class);
 
-        // Staff, building and rooms, then the client history.
+        // Staff (incl. the owner super-admin), building and rooms, then the
+        // client history and course archive.
         $this->call(RealDataSeeder::class);
 
         // Services need the therapists and rooms above: an unstaffed service
@@ -47,37 +36,30 @@ class ProductionSeeder extends Seeder
         // runs last.
         $this->call(ServicePagesSeeder::class);
 
-        $this->seedOwnerAccount();
+        $this->importLaserReservations();
     }
 
     /**
-     * The owner's login — the sole super-administrator, the only account that
-     * may grant admin/super-admin capabilities and delete other admins.
-     * Deliberately not part of RealDataSeeder (which mirrors the public team
-     * page): this account belongs to nobody on /o-nas. It holds only the
-     * SuperAdmin capability, so it gets no therapist profile and stays out of
-     * the booking flow.
+     * Imports the Laser+Kryo calendar as laser reservations. Runs here rather
+     * than in RealDataSeeder because it needs the "Laserová terapie" service
+     * that ServiceSeeder creates above. Gitignored snapshot, so a checkout
+     * without it simply skips; tests exercise the command against a fixture.
      */
-    protected function seedOwnerAccount(): void
+    protected function importLaserReservations(): void
     {
-        $user = User::query()->firstOrNew(['email' => self::OWNER_EMAIL]);
-
-        $user->fill(['name' => 'Michal Cecko']);
-
-        if (! $user->exists) {
-            // The 'hashed' cast on the model hashes this on assignment.
-            $user->forceFill(['password' => self::OWNER_INITIAL_PASSWORD]);
-
-            $this->command?->warn(sprintf(
-                'Created super-administrator %s with the initial password "%s" — change it after signing in.',
-                self::OWNER_EMAIL,
-                self::OWNER_INITIAL_PASSWORD,
-            ));
+        if (app()->runningUnitTests()) {
+            return;
         }
 
-        $user->email_verified_at ??= now();
-        $user->save();
+        $snapshot = base_path('export/googlecalendar/laser-kryo.json');
 
-        $user->syncCapabilities([Capability::SuperAdmin]);
+        if (! is_file($snapshot)) {
+            $this->command?->warn("Laser+Kryo snapshot not found at {$snapshot} — skipping laser reservations.");
+
+            return;
+        }
+
+        $this->command?->info('Importing laser reservations from the Laser+Kryo calendar…');
+        $this->command?->call('laser:import', ['path' => 'export/googlecalendar/laser-kryo.json']);
     }
 }

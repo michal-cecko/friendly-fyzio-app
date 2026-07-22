@@ -32,11 +32,83 @@ class RealDataSeeder extends Seeder
     /** Where the gitignored Ergobody CSV exports live, relative to the project. */
     protected const string ERGOBODY_PATH = 'export/ergobody';
 
+    /** Where the gitignored Google Sheets exports (courses, vouchers) live. */
+    protected const string GOOGLESHEETS_PATH = 'export/googlesheets';
+
+    /** Where the gitignored Google Calendar snapshots (work blocks) live. */
+    protected const string GOOGLECALENDAR_PATH = 'export/googlecalendar';
+
+    /** The site owner / developer account (kept off the public team page). */
+    protected const string OWNER_EMAIL = 'ceckomichal@gmail.com';
+
+    /**
+     * Only applied when the account is first created, so a password changed in
+     * the app survives re-running the seeder. Change it after the first sign-in.
+     */
+    protected const string OWNER_INITIAL_PASSWORD = 'FriendlyFyzio2026!';
+
     public function run(): void
     {
         $this->seedStaff();
+        $this->seedOwner();
         $this->seedBuildingAndRooms();
         $this->importErgobodyExport();
+        $this->importCoursesExport();
+        $this->importWorkBlocksExport();
+    }
+
+    /**
+     * Imports therapist work blocks from the ambulance Google Calendar snapshot
+     * (needs the staff profiles and ambulance rooms above). Gitignored, so a
+     * checkout without the snapshot simply skips it; tests exercise the command
+     * against a fixture.
+     */
+    protected function importWorkBlocksExport(): void
+    {
+        if (app()->runningUnitTests()) {
+            return;
+        }
+
+        $snapshot = base_path(self::GOOGLECALENDAR_PATH.'/ambulance.json');
+
+        if (! is_file($snapshot)) {
+            $this->command?->warn("Ambulance calendar snapshot not found at {$snapshot} — skipping work blocks.");
+
+            return;
+        }
+
+        $this->command?->info('Importing therapist work blocks from the ambulance calendar…');
+        $this->command?->call('work-blocks:import', ['path' => self::GOOGLECALENDAR_PATH.'/ambulance.json']);
+    }
+
+    /**
+     * The owner/developer's login — a super-administrator who may grant
+     * admin/super-admin capabilities and delete other admins. Deliberately NOT
+     * part of the public {@see staff()} team array: this account belongs to
+     * nobody on /o-nas, holds only the SuperAdmin capability, gets no therapist
+     * profile and stays out of the booking flow.
+     */
+    protected function seedOwner(): void
+    {
+        $user = User::query()->firstOrNew(['email' => self::OWNER_EMAIL]);
+
+        $user->fill(['name' => 'Michal Čečko']);
+
+        if (! $user->exists) {
+            // The 'hashed' cast on the model hashes this on assignment.
+            $user->forceFill(['password' => self::OWNER_INITIAL_PASSWORD]);
+
+            $this->command?->warn(sprintf(
+                'Created super-administrator %s with the initial password "%s" — change it after signing in.',
+                self::OWNER_EMAIL,
+                self::OWNER_INITIAL_PASSWORD,
+            ));
+        }
+
+        $user->email_verified_at ??= now();
+        $user->save();
+
+        $user->syncCapabilities([Capability::SuperAdmin]);
     }
 
     /**
@@ -60,6 +132,29 @@ class RealDataSeeder extends Seeder
 
         $this->command?->info('Importing Ergobody client history (this takes a few minutes)…');
         $this->command?->call('ergobody:import', ['path' => self::ERGOBODY_PATH]);
+    }
+
+    /**
+     * Imports the historical autumn-2025 course catalogue and rosters. Runs
+     * after the client history so roster names resolve against imported
+     * clients; gitignored, so a checkout without the sheets simply skips it.
+     */
+    protected function importCoursesExport(): void
+    {
+        if (app()->runningUnitTests()) {
+            return;
+        }
+
+        $directory = base_path(self::GOOGLESHEETS_PATH);
+
+        if (! glob($directory.'/*Seznam*.csv')) {
+            $this->command?->warn("Course catalogue not found in {$directory} — skipping course history.");
+
+            return;
+        }
+
+        $this->command?->info('Importing historical courses, workshops and enrollments…');
+        $this->command?->call('courses:import', ['path' => self::GOOGLESHEETS_PATH]);
     }
 
     protected function seedStaff(): void
@@ -164,7 +259,9 @@ class RealDataSeeder extends Seeder
                 'name' => 'Lucie Fickerová',
                 'title_before' => 'Mgr.',
                 'email' => 'lucie.fickerova@friendlyfyzio.cz',
-                'capabilities' => [Capability::Admin, Capability::Therapist],
+                // The clinic's owner: a super-administrator (may manage admins),
+                // who also practises as a physiotherapist.
+                'capabilities' => [Capability::SuperAdmin, Capability::Therapist],
                 'title' => 'Fyzioterapeut',
                 'photo' => 'lucie-fickerova.jpg',
                 'specializations' => [
@@ -276,9 +373,11 @@ class RealDataSeeder extends Seeder
                 'photo' => 'adela-macurova.jpg',
             ],
             [
+                // Lucie Amani teaches courses/workshops but does not do 1:1
+                // physiotherapy — a lecturer, not a bookable therapist.
                 'name' => 'Lucie Amani',
                 'email' => 'lucie.amani@friendlyfyzio.cz',
-                'capabilities' => [Capability::Therapist],
+                'capabilities' => [Capability::Lecturer],
                 'title' => 'Pohybový specialista',
                 'photo' => 'lucie-amani.jpg',
                 'is_collaborator' => true,
@@ -288,18 +387,9 @@ class RealDataSeeder extends Seeder
                     ['name' => 'Bylinná napářka', 'icon' => 'leaf'],
                 ],
             ],
-            [
-                'name' => 'Jakub Trepáč',
-                'title_before' => 'Mgr.',
-                'email' => 'jakub.trepac@friendlyfyzio.cz',
-                'capabilities' => [Capability::Therapist],
-                'title' => 'Fyzioterapeut',
-                'photo' => 'jakub-trepac.jpg',
-                'is_collaborator' => true,
-                'specializations' => [
-                    ['name' => 'Dětská fyzioterapie', 'icon' => 'baby'],
-                ],
-            ],
+            // Jakub Trepáč is an external collaborator listed only for reference,
+            // not a team member — kept off /o-nas (a static brick presents him
+            // below the team). Intentionally absent from the seeded staff.
         ];
     }
 }

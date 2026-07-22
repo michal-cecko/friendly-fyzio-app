@@ -24,7 +24,8 @@ class RealDataSeederTest extends TestCase
         $this->seedRealData();
 
         $lucie = User::query()->where('email', 'lucie.fickerova@friendlyfyzio.cz')->firstOrFail();
-        $this->assertTrue($lucie->isAdmin());
+        $this->assertTrue($lucie->isSuperAdmin());
+        $this->assertTrue($lucie->isAdmin(), 'A super-admin is also an admin.');
         $this->assertTrue($lucie->isTherapist());
         $this->assertSame('Mgr.', $lucie->title_before);
         $this->assertSame('Lucie Fickerová', $lucie->name);
@@ -43,14 +44,26 @@ class RealDataSeederTest extends TestCase
         $this->assertNotNull($adela->staffProfile?->published_at);
         $this->assertSame('Asistentka', $adela->staffProfile->title);
 
+        // Lucie Amani, the one remaining collaborator (Jakub is off the team).
         $this->assertSame(
-            2,
+            1,
             StaffProfile::query()->where('is_collaborator', true)->count(),
         );
 
-        $this->assertSame(12, StaffProfile::query()->count());
-        // 10 pure therapists plus Lucie, who is an admin and a therapist.
-        $this->assertSame(11, User::query()->therapists()->count());
+        // Lucie Amani is a lecturer, not a bookable therapist.
+        $amani = User::query()->where('email', 'lucie.amani@friendlyfyzio.cz')->firstOrFail();
+        $this->assertTrue($amani->isLecturer());
+        $this->assertFalse($amani->isTherapist());
+
+        // The owner super-admin: seeded here but off the public team (no profile).
+        $owner = User::query()->where('email', 'ceckomichal@gmail.com')->firstOrFail();
+        $this->assertSame('Michal Čečko', $owner->name);
+        $this->assertTrue($owner->isSuperAdmin());
+        $this->assertNull($owner->staffProfile);
+
+        $this->assertSame(11, StaffProfile::query()->count());
+        // 8 pure therapists plus Lucie Fickerová, who is a super-admin and a therapist.
+        $this->assertSame(9, User::query()->therapists()->count());
     }
 
     public function test_seeds_building_and_rooms_with_shortcuts(): void
@@ -75,8 +88,9 @@ class RealDataSeederTest extends TestCase
         $this->seedRealData();
         $this->seed(RealDataSeeder::class);
 
+        // 11 team members + the owner super-admin (who has no team profile).
         $this->assertSame(12, User::query()->count());
-        $this->assertSame(12, StaffProfile::query()->count());
+        $this->assertSame(11, StaffProfile::query()->count());
         $this->assertSame(1, Building::query()->count());
         $this->assertSame(4, Room::query()->count());
     }

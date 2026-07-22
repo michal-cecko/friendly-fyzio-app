@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\Capability;
 use App\Enums\EmailTemplateKey;
 use App\Enums\ExamType;
 use App\Enums\ReservationStatus;
@@ -171,6 +172,22 @@ class ReservationWizardTest extends TestCase
         $this->assertTrue(
             $component->instance()->therapists->pluck('id')->contains($unpublished->id),
         );
+    }
+
+    public function test_lecturer_with_a_linked_service_is_not_offered(): void
+    {
+        // A lecturer (or the assistant) can have a service link but does not do
+        // 1:1 therapy — only holders of the Therapist capability are bookable.
+        $lecturerProfile = StaffProfile::factory()->create(['published_at' => now()]);
+        $lecturerProfile->user->syncCapabilities([Capability::Lecturer]);
+        $this->service->therapists()->attach($lecturerProfile);
+
+        $component = Livewire::withQueryParams(['sluzba' => $this->service->slug])
+            ->test(ReservationWizard::class);
+
+        $offered = $component->instance()->therapists->pluck('id');
+        $this->assertFalse($offered->contains($lecturerProfile->id));
+        $this->assertTrue($offered->contains($this->therapist->id));
     }
 
     public function test_service_without_a_therapist_is_not_offered(): void

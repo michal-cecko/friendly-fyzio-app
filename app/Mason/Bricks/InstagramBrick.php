@@ -2,6 +2,7 @@
 
 namespace App\Mason\Bricks;
 
+use App\Filament\Clusters\Obsah\Resources\InstagramConnections\InstagramConnectionResource;
 use App\Mason\Support\Fields;
 use App\Mason\Support\LinkPickerField;
 use App\Models\InstagramConnection;
@@ -34,9 +35,24 @@ class InstagramBrick extends Brick
 
     public static function toHtml(array $config, ?array $data = null): ?string
     {
+        $posts = self::resolvePosts($config);
+
+        // Real content = posts synced from a connected Instagram account. Legacy
+        // manually-picked images (old seeded demo data) no longer count — the
+        // block is public only when a connection has real posts. Otherwise it's a
+        // placeholder: hidden entirely from visitors, and shown to admins with a
+        // warning + a link to connect an account.
+        $isPlaceholder = $posts->isEmpty();
+
+        if ($isPlaceholder && ! auth()->user()?->isAdmin()) {
+            return '';
+        }
+
         return view('bricks.instagram', [
             'config' => $config,
-            'posts' => self::resolvePosts($config),
+            'posts' => $posts,
+            'showPlaceholderWarning' => $isPlaceholder,
+            'connectUrl' => $isPlaceholder ? InstagramConnectionResource::getUrl() : null,
         ])->render();
     }
 
