@@ -22,10 +22,10 @@ class TherapistScopeTest extends TestCase
      */
     private function therapistWithProfile(): array
     {
+        // The Therapist capability auto-creates the staff profile.
         $user = User::factory()->therapist()->create();
-        $profile = StaffProfile::factory()->create(['user_id' => $user->id]);
 
-        return [$user, $profile];
+        return [$user, $user->staffProfile];
     }
 
     public function test_a_therapist_only_sees_their_own_reservations(): void
@@ -95,7 +95,7 @@ class TherapistScopeTest extends TestCase
 
     public function test_an_admin_acting_as_therapist_is_not_scoped(): void
     {
-        $admin = User::factory()->admin()->create(['acts_as_therapist' => true]);
+        $admin = User::factory()->admin()->therapist()->create();
         [, $profileOther] = $this->therapistWithProfile();
 
         Reservation::factory()->create(['therapist_id' => $profileOther->id]);

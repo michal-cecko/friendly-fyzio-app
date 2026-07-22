@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Enums\UserRole;
+use App\Enums\Capability;
 use App\Models\User;
 use Illuminate\Console\Command;
 
@@ -49,7 +49,12 @@ class PruneUnverifiedUsers extends Command
         $cutoff = now()->subHours((int) $this->option('hours'));
 
         $query = User::query()
-            ->where('role', UserRole::Customer)
+            ->customers()
+            // A customer who also holds a staff capability is never abandonment.
+            ->whereDoesntHave('roles', fn ($roles) => $roles->whereIn(
+                'name',
+                array_map(fn (Capability $c): string => $c->roleName(), Capability::cases()),
+            ))
             ->whereNull('email_verified_at')
             ->where('created_at', '<', $cutoff);
 

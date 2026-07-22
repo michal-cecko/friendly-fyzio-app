@@ -4,7 +4,6 @@ namespace App\Filament\Clusters\Kurzy\Resources\OneOffEventBookings\Schemas;
 
 use App\Enums\BookingStatus;
 use App\Enums\PaymentStatus;
-use App\Enums\UserRole;
 use App\Filament\Support\Schemas\PresenceBanner;
 use App\Models\OneOffEvent;
 use Filament\Forms\Components\DateTimePicker;
@@ -31,7 +30,7 @@ class OneOffEventBookingForm
                     ->required(),
                 Select::make('client_id')
                     ->label('Klient')
-                    ->relationship('client', 'name', fn (Builder $query): Builder => $query->where('role', UserRole::Customer))
+                    ->relationship('client', 'name', fn (Builder $query): Builder => $query->customers())
                     ->searchable()
                     ->preload()
                     ->native(false)

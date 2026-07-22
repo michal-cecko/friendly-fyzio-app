@@ -5,7 +5,6 @@ namespace App\Filament\Widgets;
 use App\Enums\DayOfWeek;
 use App\Enums\EmailTemplateKey;
 use App\Enums\ReservationStatus;
-use App\Enums\UserRole;
 use App\Filament\Clusters\Kurzy\Resources\CourseLessons\CourseLessonResource;
 use App\Filament\Clusters\Kurzy\Resources\OneOffEvents\OneOffEventResource;
 use App\Filament\Clusters\Provoz\Resources\ReservationDayWaitlist\ReservationDayWaitlistResource;
@@ -212,9 +211,13 @@ class ReservationCalendar extends FullCalendarWidget
      */
     public function therapists(): Collection
     {
-        // A pure therapist only filters (and sees) their own calendar.
+        // A pure therapist (therapist, not also an admin) only sees their own
+        // calendar; admins keep the all-therapists view.
+        $user = auth()->user();
+        $pureTherapist = $user instanceof User && $user->isTherapist() && ! $user->isAdmin();
+
         return $this->therapistCache ??= StaffProfile::query()->with('user')
-            ->when(auth()->user()?->role === UserRole::Therapist, fn (Builder $query) => $query->where('user_id', auth()->id()))
+            ->when($pureTherapist, fn (Builder $query) => $query->where('user_id', $user->getKey()))
             ->get();
     }
 
@@ -259,7 +262,7 @@ class ReservationCalendar extends FullCalendarWidget
         // A pure therapist's calendar defaults to their own schedule (unless a URL
         // filter says otherwise); admins keep the all-therapists view.
         $user = auth()->user();
-        if ($user?->role === UserRole::Therapist && $this->therapistIds === []) {
+        if ($user instanceof User && $user->isTherapist() && ! $user->isAdmin() && $this->therapistIds === []) {
             $ownProfileId = $user->staffProfile?->getKey();
             if ($ownProfileId !== null) {
                 $this->therapistIds = [$ownProfileId];
@@ -899,7 +902,7 @@ class ReservationCalendar extends FullCalendarWidget
                     ->multiple()
                     ->searchable()
                     ->getSearchResultsUsing(fn (string $search): array => User::query()
-                        ->where('role', UserRole::Customer)
+                        ->customers()
                         ->whereRaw('LOWER(name) LIKE ?', ['%'.mb_strtolower($search).'%'])
                         ->orderBy('name')
                         ->limit(50)

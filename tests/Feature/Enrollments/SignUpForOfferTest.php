@@ -9,7 +9,6 @@ use App\Enums\CourseSeriesVisibility;
 use App\Enums\EmailTemplateKey;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
-use App\Enums\UserRole;
 use App\Models\CourseLesson;
 use App\Models\CourseSeries;
 use App\Models\OneOffEvent;
@@ -65,7 +64,7 @@ class SignUpForOfferTest extends TestCase
         $enrollment = app(SignUpForOffer::class)->forSeries($series, $this->guestData());
 
         $client = User::query()->where('email', 'jana.testovaci@example.cz')->sole();
-        $this->assertSame(UserRole::Customer, $client->role);
+        $this->assertTrue($client->isCustomer());
 
         $this->assertDatabaseHas('course_enrollments', [
             'id' => $enrollment->id,

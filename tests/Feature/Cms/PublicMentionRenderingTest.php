@@ -35,7 +35,7 @@ class PublicMentionRenderingTest extends TestCase
 
     public function test_mention_of_user_with_published_profile_links_to_the_public_profile(): void
     {
-        $therapist = User::factory()->therapist()->create(['name' => 'Jana Terapeutka']);
+        $therapist = User::factory()->create(['name' => 'Jana Terapeutka']);
         StaffProfile::factory()->published()->create([
             'user_id' => $therapist->id,
             'slug' => 'jana-terapeutka',
@@ -50,7 +50,7 @@ class PublicMentionRenderingTest extends TestCase
 
     public function test_mention_of_user_without_published_profile_renders_a_plain_name(): void
     {
-        $therapist = User::factory()->therapist()->create(['name' => 'Jana Terapeutka']);
+        $therapist = User::factory()->create(['name' => 'Jana Terapeutka']);
         StaffProfile::factory()->unpublished()->create([
             'user_id' => $therapist->id,
             'slug' => 'jana-terapeutka',

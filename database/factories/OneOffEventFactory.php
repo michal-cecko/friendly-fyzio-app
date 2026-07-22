@@ -26,7 +26,7 @@ class OneOffEventFactory extends Factory
         return [
             'event_category_id' => EventCategory::factory(),
             'course_id' => null,
-            'instructor_id' => User::factory()->therapist(),
+            'instructor_id' => User::factory()->lecturer(),
             'room_id' => Room::factory(),
             'name' => $name,
             'slug' => Str::slug($name),

@@ -2,7 +2,6 @@
 
 namespace App\Support\Mentions;
 
-use App\Enums\UserRole;
 use App\Models\User;
 use Filament\Actions\Action;
 use Filament\Forms\Components\RichEditor\MentionProvider;
@@ -220,7 +219,7 @@ class StaffMentions
      */
     private static function staffQuery(): Builder
     {
-        return User::query()->where('role', '!=', UserRole::Customer);
+        return User::query()->staff();
     }
 
     /**

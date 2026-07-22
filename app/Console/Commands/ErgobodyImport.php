@@ -2,11 +2,11 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\Capability;
 use App\Enums\Gender;
 use App\Enums\PaymentStatus;
 use App\Enums\ReservationStatus;
 use App\Enums\ServiceVisibility;
-use App\Enums\UserRole;
 use App\Models\ClientNote;
 use App\Models\ClientProfile;
 use App\Models\Reservation;
@@ -444,7 +444,6 @@ class ErgobodyImport extends Command
                 'name' => $name,
                 'email' => $email,
                 'phone' => $this->normalizePhone($pick('Telefon') ?? ''),
-                'role' => UserRole::Customer,
             ]);
 
             if (! $user->exists) {
@@ -452,6 +451,7 @@ class ErgobodyImport extends Command
             }
 
             $user->save();
+            $user->markAsCustomer();
 
             if ($start) {
                 $user->forceFill(['created_at' => $start->copy()->startOfDay()])->saveQuietly();
@@ -519,12 +519,13 @@ class ErgobodyImport extends Command
                 $user = User::query()->firstOrNew(['email' => $email]);
 
                 if (! $user->exists) {
-                    $user->fill(['name' => $name, 'role' => UserRole::Therapist]);
+                    $user->fill(['name' => $name]);
                     $user->forceFill([
                         'password' => Str::password(40),
                         'deactivated_at' => now(),
                     ]);
                     $user->save();
+                    $user->grantCapability(Capability::Therapist);
                     $this->bump('former_therapists_created');
                 }
             }
@@ -533,7 +534,7 @@ class ErgobodyImport extends Command
         $full = $surnames = $firstNames = [];
         $surnameCounts = $firstNameCounts = [];
 
-        $staff = User::query()->where('role', '!=', UserRole::Customer)->get(['id', 'name']);
+        $staff = User::query()->staff()->get(['id', 'name']);
 
         foreach ($staff as $user) {
             $normalized = $this->normalizeSignature($user->name);

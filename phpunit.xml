@@ -27,6 +27,11 @@
         <env name="DB_DATABASE" value=":memory:"/>
         <env name="DB_URL" value=""/>
         <env name="MAIL_MAILER" value="array"/>
+        <!-- The pre-launch guards are deployment safety measures, not app
+             behaviour: tests must exercise the real mail and schedule paths.
+             SuppressNonAdminMailTest switches the guard on explicitly. -->
+        <env name="MAIL_SUPPRESS_NON_ADMIN" value="false"/>
+        <env name="SCHEDULED_TASKS_ENABLED" value="true"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="PULSE_ENABLED" value="false"/>

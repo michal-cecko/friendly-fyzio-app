@@ -2,12 +2,12 @@
 
 namespace App\Support\Reservations;
 
+use App\Enums\Capability;
 use App\Enums\ConfirmationSource;
 use App\Enums\EmailTemplateKey;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Enums\ReservationStatus;
-use App\Enums\UserRole;
 use App\Http\Controllers\ReservationManageController;
 use App\Models\Payment;
 use App\Models\Reservation;
@@ -192,7 +192,7 @@ class ClientReservationActions
 
     protected function notifyStaffOfDoctorNote(Reservation $reservation): void
     {
-        $admins = User::query()->where('role', UserRole::Admin)->get();
+        $admins = User::query()->whereHas('roles', fn ($q) => $q->where('name', Capability::Admin->roleName()))->get();
 
         if ($admins->isEmpty()) {
             return;

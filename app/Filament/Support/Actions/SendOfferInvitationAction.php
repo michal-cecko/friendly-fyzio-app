@@ -3,7 +3,6 @@
 namespace App\Filament\Support\Actions;
 
 use App\Enums\EmailTemplateKey;
-use App\Enums\UserRole;
 use App\Models\CourseSeries;
 use App\Models\OneOffEvent;
 use App\Models\User;
@@ -49,7 +48,7 @@ class SendOfferInvitationAction extends Action
                     ->required()
                     ->searchable()
                     ->getSearchResultsUsing(fn (string $search): array => User::query()
-                        ->where('role', UserRole::Customer)
+                        ->customers()
                         ->whereNull('deactivated_at')
                         ->where(fn ($query) => $query
                             ->where('name', 'like', "%{$search}%")

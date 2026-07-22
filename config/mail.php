@@ -122,4 +122,21 @@ return [
         'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Suppress Mail To Non-Administrators
+    |--------------------------------------------------------------------------
+    |
+    | Pre-launch guard (see App\Listeners\SuppressNonAdminMail). While the
+    | database holds real imported client records but the clinic is not live,
+    | only administrators receive e-mail; customers and therapists are held back.
+    |
+    | It defaults to ON deliberately: forgetting to enable it could mail
+    | fifteen hundred real clients, while forgetting to disable it only delays
+    | mail. Set MAIL_SUPPRESS_NON_ADMIN=false to go live.
+    |
+    */
+
+    'suppress_non_admin' => env('MAIL_SUPPRESS_NON_ADMIN', true),
+
 ];

@@ -2,7 +2,6 @@
 
 namespace App\Filament\Clusters\Provoz\Resources\ReservationDayWaitlist;
 
-use App\Enums\UserRole;
 use App\Filament\Clusters\Provoz\ProvozCluster;
 use App\Filament\Clusters\Provoz\Resources\ReservationDayWaitlist\Pages\ListReservationDayWaitlistEntries;
 use App\Filament\Clusters\Provoz\Resources\ReservationDayWaitlist\Tables\ReservationDayWaitlistTable;
@@ -24,7 +23,7 @@ class ReservationDayWaitlistResource extends Resource
 
     public static function canAccess(): bool
     {
-        return auth()->user()?->role === UserRole::Admin;
+        return auth()->user()?->isAdmin();
     }
 
     public static function getModelLabel(): string

@@ -2,7 +2,6 @@
 
 namespace App\Filament\Pages;
 
-use App\Enums\UserRole;
 use App\Filament\Clusters\Finance\Resources\Invoices\InvoiceResource;
 use App\Filament\Clusters\Provoz\Resources\Clients\ClientResource;
 use App\Filament\Widgets\ReservationCalendar;
@@ -34,7 +33,7 @@ class Dashboard extends BaseDashboard
     {
         $hidden = [ReservationCalendar::class];
 
-        if (auth()->user()?->role === UserRole::Admin) {
+        if (auth()->user()?->isAdmin()) {
             $hidden[] = AccountWidget::class;
             $hidden[] = FilamentInfoWidget::class;
         }
@@ -52,7 +51,7 @@ class Dashboard extends BaseDashboard
      */
     protected function getHeaderActions(): array
     {
-        if (auth()->user()?->role !== UserRole::Admin) {
+        if (! auth()->user()?->isAdmin()) {
             return [];
         }
 

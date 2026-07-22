@@ -2,13 +2,14 @@
 
 namespace Tests\Feature;
 
-use App\Enums\UserRole;
+use App\Enums\Capability;
 use App\Filament\Clusters\System\Resources\Users\Pages\CreateUser;
 use App\Filament\Clusters\System\Resources\Users\Pages\EditUser;
 use App\Filament\Clusters\System\Resources\Users\Pages\ListUsers;
 use App\Filament\Clusters\System\Resources\Users\Pages\ViewUser;
 use App\Filament\Clusters\System\Resources\Users\RelationManagers\InstructedLessonsRelationManager;
 use App\Filament\Clusters\System\Resources\Users\RelationManagers\TherapistReservationsRelationManager;
+use App\Filament\Clusters\System\Resources\Users\UserResource;
 use App\Models\User;
 use App\Notifications\Auth\ResetPasswordNotification as ResetPassword;
 use Filament\Facades\Filament;
@@ -17,7 +18,6 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Permission;
-use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 class UserResourceTest extends TestCase
@@ -35,13 +35,19 @@ class UserResourceTest extends TestCase
         }
     }
 
-    public function test_account_type_syncs_matching_shield_role(): void
+    public function test_capabilities_map_to_the_backing_shield_roles(): void
     {
-        $this->assertTrue(User::factory()->admin()->create()->hasRole('super_admin'));
+        $this->assertTrue(User::factory()->admin()->create()->hasRole('admin'));
         $this->assertTrue(User::factory()->therapist()->create()->hasRole('therapist'));
+        $this->assertTrue(User::factory()->lecturer()->create()->hasRole('lecturer'));
         $this->assertFalse(
-            User::factory()->customer()->create()->hasAnyRole(['super_admin', 'admin', 'therapist'])
+            User::factory()->customer()->create()->hasAnyRole(['super_admin', 'admin', 'therapist', 'lecturer'])
         );
+
+        // Capabilities compose: an admin who also practises holds both.
+        $both = User::factory()->admin()->therapist()->create();
+        $this->assertTrue($both->isAdmin());
+        $this->assertTrue($both->isTherapist());
     }
 
     public function test_deactivated_staff_lose_panel_access(): void
@@ -105,7 +111,7 @@ class UserResourceTest extends TestCase
             ->fillForm([
                 'name' => 'Nový Uživatel',
                 'email' => 'novy@example.test',
-                'role' => UserRole::Therapist->value,
+                'capabilities' => [Capability::Therapist->value],
                 'permissions' => [$permission->getKey()],
             ])
             ->call('create')
@@ -129,7 +135,7 @@ class UserResourceTest extends TestCase
                 'title_before' => 'Bc.',
                 'title_after' => 'DiS.',
                 'email' => 'petra.tituly@example.test',
-                'role' => UserRole::Therapist->value,
+                'capabilities' => [Capability::Therapist->value],
             ])
             ->call('create')
             ->assertHasNoFormErrors();
@@ -227,18 +233,42 @@ class UserResourceTest extends TestCase
             ->assertHasActionErrors(['password']);
     }
 
-    public function test_impersonate_action_requires_permission(): void
+    public function test_impersonation_is_an_admin_capability(): void
     {
-        // Super admins bypass all gates.
         $this->assertTrue(User::factory()->admin()->create()->canImpersonate());
+        $this->assertTrue(User::factory()->admin()->therapist()->create()->canImpersonate());
+        $this->assertFalse(User::factory()->therapist()->create()->canImpersonate());
+        $this->assertFalse(User::factory()->lecturer()->create()->canImpersonate());
+        $this->assertFalse(User::factory()->customer()->create()->canImpersonate());
+    }
 
-        // Therapists have no impersonate permission by default.
-        $therapist = User::factory()->therapist()->create();
-        $this->assertFalse($therapist->canImpersonate());
+    public function test_only_a_super_admin_may_delete_an_admin_account(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $superAdmin = User::factory()->create();
+        $superAdmin->grantCapability(Capability::SuperAdmin);
+        $plainTherapist = User::factory()->therapist()->create();
 
-        // Granting the permission enables it.
-        $therapist->givePermissionTo('Impersonate:User');
-        app(PermissionRegistrar::class)->forgetCachedPermissions();
-        $this->assertTrue($therapist->fresh()->canImpersonate());
+        $this->actingAs($admin);
+        $this->assertFalse(UserResource::canDeleteUser(User::factory()->admin()->create()));
+        $this->assertTrue(UserResource::canDeleteUser($plainTherapist));
+
+        $this->actingAs($superAdmin);
+        $this->assertTrue(UserResource::canDeleteUser(User::factory()->admin()->create()));
+    }
+
+    public function test_a_plain_admin_cannot_grant_admin_or_super_admin(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $target = User::factory()->therapist()->create();
+
+        // A tampered submission adding Admin/SuperAdmin is ignored for a non-super-admin.
+        $target->applyCapabilitySelection(
+            [Capability::Therapist, Capability::Admin, Capability::SuperAdmin],
+            $admin,
+        );
+
+        $this->assertTrue($target->fresh()->isTherapist());
+        $this->assertFalse($target->fresh()->isAdmin());
     }
 }

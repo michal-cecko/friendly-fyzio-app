@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Enums\EmailTemplateKey;
 use App\Enums\ReservationStatus;
-use App\Enums\UserRole;
 use App\Filament\Clusters\Kurzy\Resources\CourseLessons\CourseLessonResource;
 use App\Filament\Clusters\Kurzy\Resources\OneOffEvents\OneOffEventResource;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Pages\EditReservation;
@@ -764,7 +763,7 @@ class CalendarTest extends TestCase
 
         $client = User::query()->where('email', 'anna@example.com')->firstOrFail();
         $this->assertSame('Anna Nováková', $client->name);
-        $this->assertSame(UserRole::Customer, $client->role);
+        $this->assertTrue($client->isCustomer());
         $this->assertNotNull($client->clientProfile);
     }
 
@@ -787,7 +786,7 @@ class CalendarTest extends TestCase
         $client = User::query()->where('name', 'Anna Nováková')->firstOrFail();
         $this->assertMatchesRegularExpression('/^anna\.novakova\d{4}@friendlyfyzio\.cz$/', $client->email);
         $this->assertSame('+420 777 123 456', $client->phone);
-        $this->assertSame(UserRole::Customer, $client->role);
+        $this->assertTrue($client->isCustomer());
     }
 
     public function test_inline_client_requires_phone_when_no_email(): void

@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Enums\Gender;
 use App\Enums\ReservationStatus;
-use App\Enums\UserRole;
 use App\Filament\Clusters\Provoz\Resources\Clients\Pages\CreateClient;
 use App\Filament\Clusters\Provoz\Resources\Clients\Pages\EditClient;
 use App\Filament\Clusters\Provoz\Resources\Clients\Pages\ListClients;
@@ -96,7 +95,7 @@ class ClientResourceTest extends TestCase
         $created = User::where('email', 'klient@example.test')->first();
 
         $this->assertNotNull($created);
-        $this->assertSame(UserRole::Customer, $created->role);
+        $this->assertTrue($created->isCustomer());
         $this->assertFalse($created->hasAnyRole(['super_admin', 'admin', 'therapist']));
     }
 

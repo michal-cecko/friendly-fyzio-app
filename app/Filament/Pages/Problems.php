@@ -2,7 +2,6 @@
 
 namespace App\Filament\Pages;
 
-use App\Enums\UserRole;
 use App\Support\Reservations\ConflictFinder;
 use BackedEnum;
 use Filament\Pages\Page;
@@ -25,7 +24,7 @@ class Problems extends Page
 
     public static function canAccess(): bool
     {
-        return auth()->user()?->role === UserRole::Admin;
+        return auth()->user()?->isAdmin();
     }
 
     public static function shouldRegisterNavigation(): bool

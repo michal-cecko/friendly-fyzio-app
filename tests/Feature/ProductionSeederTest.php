@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Enums\ServiceVisibility;
-use App\Enums\UserRole;
 use App\Models\Building;
 use App\Models\Course;
 use App\Models\EmailTemplate;
@@ -58,19 +57,21 @@ class ProductionSeederTest extends TestCase
         );
     }
 
-    public function test_seeds_the_owner_administrator_account(): void
+    public function test_seeds_the_owner_super_administrator_account(): void
     {
         $this->seedProduction();
 
         $owner = User::query()->where('email', 'ceckomichal@gmail.com')->firstOrFail();
 
-        $this->assertSame(UserRole::Admin, $owner->role);
+        $this->assertTrue($owner->isSuperAdmin());
+        $this->assertTrue($owner->isAdmin(), 'A super-admin is also an admin.');
         $this->assertTrue($owner->isStaff());
         $this->assertTrue(Hash::check('FriendlyFyzio2026!', $owner->password));
         $this->assertNotNull($owner->email_verified_at);
 
-        // He is not on the team page and must not be bookable.
-        $this->assertFalse($owner->acts_as_therapist);
+        // He is not on the team page, not bookable, and not a lecturer.
+        $this->assertFalse($owner->isTherapist());
+        $this->assertFalse($owner->isLecturer());
         $this->assertNull($owner->staffProfile);
     }
 
@@ -96,7 +97,7 @@ class ProductionSeederTest extends TestCase
         $this->assertSame(0, Course::query()->count(), 'Demo courses must not reach a live install.');
         $this->assertSame(0, OneOffEvent::query()->count());
         $this->assertSame(0, Reservation::query()->count());
-        $this->assertSame(0, User::query()->where('role', UserRole::Customer)->count());
+        $this->assertSame(0, User::query()->customers()->count());
 
         foreach (['admin@friendly-fyzio.test', 'therapist@friendly-fyzio.test'] as $testLogin) {
             $this->assertNull(

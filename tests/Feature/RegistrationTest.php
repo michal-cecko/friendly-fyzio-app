@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Enums\UserRole;
 use App\Livewire\PublicRegister;
 use App\Models\ClientProfile;
 use App\Models\User;
@@ -44,7 +43,7 @@ class RegistrationTest extends TestCase
         $user = User::where('email', 'jan@example.com')->firstOrFail();
 
         $this->assertSame('Jan Novák', $user->name);
-        $this->assertSame(UserRole::Customer, $user->role);
+        $this->assertTrue($user->isCustomer());
         $this->assertNull($user->email_verified_at);
         $this->assertDatabaseHas(ClientProfile::class, ['user_id' => $user->id]);
         $this->assertAuthenticatedAs($user);

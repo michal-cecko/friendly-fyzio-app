@@ -2,7 +2,6 @@
 
 namespace App\Filament\Clusters\Obsah\Resources\Reviews\Schemas;
 
-use App\Enums\UserRole;
 use App\Filament\Support\Schemas\PresenceBanner;
 use App\Models\Course;
 use App\Models\OneOffEvent;
@@ -48,7 +47,7 @@ class ReviewForm
                             ->relationship(
                                 'client',
                                 'name',
-                                fn (Builder $query) => $query->where('role', UserRole::Customer),
+                                fn (Builder $query) => $query->customers(),
                             )
                             ->searchable()
                             ->preload()

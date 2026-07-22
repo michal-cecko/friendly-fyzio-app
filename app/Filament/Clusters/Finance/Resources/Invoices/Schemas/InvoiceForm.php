@@ -5,7 +5,6 @@ namespace App\Filament\Clusters\Finance\Resources\Invoices\Schemas;
 use App\Enums\DocumentType;
 use App\Enums\InvoiceStatus;
 use App\Enums\PaymentMethod;
-use App\Enums\UserRole;
 use App\Models\Invoice;
 use App\Models\InvoiceSeries;
 use App\Models\User;
@@ -60,7 +59,7 @@ class InvoiceForm
                             ->relationship(
                                 'client',
                                 'name',
-                                fn (Builder $query): Builder => $query->where('role', UserRole::Customer),
+                                fn (Builder $query): Builder => $query->customers(),
                             )
                             ->searchable()
                             ->preload()

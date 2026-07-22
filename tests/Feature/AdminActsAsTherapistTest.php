@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\Capability;
 use App\Filament\Clusters\System\Resources\Users\Pages\EditUser;
 use App\Models\User;
 use Filament\Facades\Filament;
@@ -9,6 +10,11 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
 
+/**
+ * Capabilities compose: an admin who also practises simply holds the Therapist
+ * capability alongside Admin. This covers what the old `acts_as_therapist` flag
+ * expressed, now as a first-class capability.
+ */
 class AdminActsAsTherapistTest extends TestCase
 {
     use RefreshDatabase;
@@ -20,31 +26,27 @@ class AdminActsAsTherapistTest extends TestCase
         Filament::setCurrentPanel('admin');
     }
 
-    public function test_opting_in_auto_creates_an_unpublished_therapist_profile(): void
+    public function test_therapist_and_lecturer_capabilities_auto_create_an_unpublished_profile(): void
     {
-        $admin = User::factory()->admin()->create(['acts_as_therapist' => true]);
+        foreach ([Capability::Therapist, Capability::Lecturer] as $capability) {
+            $user = User::factory()->create();
+            $user->grantCapability($capability);
 
-        $profile = $admin->staffProfile;
-
-        $this->assertNotNull($profile);
-        $this->assertFalse($profile->isPublished());
+            $this->assertNotNull($user->staffProfile, $capability->value.' should get a profile');
+            $this->assertFalse($user->staffProfile->isPublished());
+        }
     }
 
-    public function test_no_profile_is_created_without_the_flag_or_for_other_roles(): void
+    public function test_pure_admins_and_customers_get_no_profile(): void
     {
-        $admin = User::factory()->admin()->create();
-        $therapist = User::factory()->therapist()->create();
-        $customer = User::factory()->customer()->create();
-
-        $this->assertNull($admin->staffProfile);
-        $this->assertNull($therapist->staffProfile);
-        $this->assertNull($customer->staffProfile);
+        $this->assertNull(User::factory()->admin()->create()->staffProfile);
+        $this->assertNull(User::factory()->customer()->create()->staffProfile);
     }
 
-    public function test_is_therapist_and_scope_cover_opted_in_admins(): void
+    public function test_is_therapist_and_scope_cover_admins_who_also_practise(): void
     {
         $therapist = User::factory()->therapist()->create();
-        $actingAdmin = User::factory()->admin()->create(['acts_as_therapist' => true]);
+        $actingAdmin = User::factory()->admin()->therapist()->create();
         $plainAdmin = User::factory()->admin()->create();
         $customer = User::factory()->customer()->create();
 
@@ -61,20 +63,41 @@ class AdminActsAsTherapistTest extends TestCase
         $this->assertFalse($ids->contains($customer->getKey()));
     }
 
-    public function test_admin_can_opt_in_another_admin_via_the_user_form(): void
+    public function test_a_plain_admin_can_add_the_therapist_capability_via_the_form(): void
     {
+        // Therapist is an operational capability any admin may assign.
         $this->actingAs(User::factory()->admin()->create());
 
-        $admin = User::factory()->admin()->create();
+        $target = User::factory()->lecturer()->create();
 
-        Livewire::test(EditUser::class, ['record' => $admin->getKey()])
-            ->fillForm(['acts_as_therapist' => true])
+        Livewire::test(EditUser::class, ['record' => $target->getKey()])
+            ->fillForm(['capabilities' => [Capability::Therapist->value]])
             ->call('save')
             ->assertHasNoFormErrors();
 
-        $admin->refresh();
+        $target->refresh();
 
-        $this->assertTrue($admin->acts_as_therapist);
-        $this->assertNotNull($admin->staffProfile);
+        $this->assertTrue($target->isTherapist());
+        $this->assertNotNull($target->staffProfile);
+    }
+
+    public function test_a_super_admin_can_compose_admin_and_therapist_via_the_form(): void
+    {
+        $superAdmin = User::factory()->create();
+        $superAdmin->grantCapability(Capability::SuperAdmin);
+        $this->actingAs($superAdmin);
+
+        $target = User::factory()->lecturer()->create();
+
+        Livewire::test(EditUser::class, ['record' => $target->getKey()])
+            ->fillForm(['capabilities' => [Capability::Admin->value, Capability::Therapist->value]])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $target->refresh();
+
+        $this->assertTrue($target->isAdmin());
+        $this->assertTrue($target->isTherapist());
+        $this->assertNotNull($target->staffProfile);
     }
 }

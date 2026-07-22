@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Enums\NavigationLocation;
 use App\Listeners\LogSentEmail;
+use App\Listeners\SuppressNonAdminMail;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
 use App\Models\CourseSeries;
@@ -13,6 +14,7 @@ use App\Models\OneOffEvent;
 use App\Models\OneOffEventBooking;
 use App\Models\Reservation;
 use App\Models\Service;
+use App\Models\User;
 use App\Notifications\Auth\VerifyEmailChangeNotification;
 use App\Observers\MediaLibraryItemObserver;
 use Filament\Actions\Action;
@@ -27,8 +29,10 @@ use Filament\Forms\Components\RichEditor\TextColor;
 use Filament\Support\Facades\FilamentIcon;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Notifications\Events\NotificationSending;
 use Illuminate\Notifications\Events\NotificationSent;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use RalphJSmit\Filament\MediaLibrary\Models\MediaLibraryItem;
@@ -50,6 +54,23 @@ class AppServiceProvider extends ServiceProvider
         // image columns, WYSIWYG content) must not be deleted — the vendor model
         // can't carry an #[ObservedBy] attribute, so the observer registers here.
         MediaLibraryItem::observe(MediaLibraryItemObserver::class);
+
+        // The Admin capability grants access to everything that isn't gated by a
+        // different capability. Filament resource/policy checks are all Gates, so
+        // an all-abilities bypass here is the cleanest expression of that — it
+        // extends Shield's own super_admin bypass down to plain admins. The
+        // therapist/lecturer-specific behaviours (being bookable, being an
+        // assignable instructor) are capability predicates, not Gates, so they
+        // are unaffected; and the super-admin-only rules (managing admins,
+        // granting admin/super-admin) are explicit isSuperAdmin() checks, also
+        // not Gates. Returning null (not false) lets non-admins fall through to
+        // the normal checks.
+        Gate::before(fn ($user): ?bool => $user instanceof User && $user->isAdmin() ? true : null);
+
+        // Pre-launch guard: hold back e-mail to anyone but administrators while
+        // the database carries real client records (MAIL_SUPPRESS_NON_ADMIN).
+        // Registered before the logger so suppressed mail is never logged as sent.
+        Event::listen(NotificationSending::class, SuppressNonAdminMail::class);
 
         // Record every outgoing e-mail (manual or automatic) in the activity log.
         Event::listen(NotificationSent::class, LogSentEmail::class);

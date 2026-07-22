@@ -2,22 +2,30 @@
 
 namespace App\Filament\Clusters\System\Resources\Users\Schemas;
 
-use App\Enums\UserRole;
+use App\Enums\Capability;
 use App\Filament\Support\Schemas\PresenceBanner;
-use App\Models\User;
+use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\ToggleButtons;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
-use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 
 class UserForm
 {
+    /**
+     * Capabilities the signed-in user may grant, or all of them when unauthenticated
+     * (never happens in the panel, but keeps the schema pure for tests/tooling).
+     *
+     * @return list<Capability>
+     */
+    protected static function assignableCapabilities(): array
+    {
+        return auth()->user()?->assignableCapabilities() ?? Capability::cases();
+    }
+
     public static function configure(Schema $schema): Schema
     {
         return $schema
@@ -61,23 +69,24 @@ class UserForm
                         Tab::make('Oprávnění')
                             ->icon(Heroicon::OutlinedShieldCheck)
                             ->schema([
-                                ToggleButtons::make('role')
-                                    ->label('Role')
-                                    ->options(collect(UserRole::cases())
-                                        ->reject(fn (UserRole $role): bool => $role === UserRole::Customer)
-                                        ->mapWithKeys(fn (UserRole $role): array => [$role->value => $role->getLabel()])
+                                CheckboxList::make('capabilities')
+                                    // Only the capabilities the current user may assign are shown;
+                                    // Admin / super-admin appear only for a super-admin. Any the
+                                    // actor can't manage are preserved on save by
+                                    // User::applyCapabilitySelection(), so nothing is lost.
+                                    ->label('Schopnosti')
+                                    ->options(fn (): array => collect(self::assignableCapabilities())
+                                        ->mapWithKeys(fn (Capability $c): array => [$c->value => $c->getLabel()])
                                         ->all())
-                                    ->required()
-                                    ->inline()
-                                    ->live()
-                                    ->helperText('Určuje přístup do administrace i odpovídající roli oprávnění. Klienti se spravují v sekci Klienti.'),
-                                Toggle::make('acts_as_therapist')
-                                    ->label('Působí i jako terapeut')
-                                    ->visible(fn (Get $get): bool => in_array($get('role'), [UserRole::Admin, UserRole::Admin->value], true))
-                                    ->disabled(fn (?User $record): bool => $record?->staffProfile !== null)
-                                    ->helperText(fn (?User $record): string => $record?->staffProfile !== null
-                                        ? 'Administrátor má terapeutický profil. Pro vypnutí nejprve smažte jeho profil v sekci Terapeuti.'
-                                        : 'Založí administrátorovi nepublikovaný profil terapeuta — objeví se v kalendáři, pracovní době a rezervacích.'),
+                                    ->descriptions([
+                                        Capability::SuperAdmin->value => 'Nejvyšší přístup; jen super administrátor může přidělit administrátory a super administrátory.',
+                                        Capability::Admin->value => 'Správa celé administrace.',
+                                        Capability::Therapist->value => 'Rezervovatelný na terapie, kalendář a pracovní doba.',
+                                        Capability::Lecturer->value => 'Může být lektorem kurzů, lekcí a workshopů.',
+                                    ])
+                                    // Not a model column — the Create/Edit pages read it out of the
+                                    // form data and apply it via User::applyCapabilitySelection().
+                                    ->helperText('Bez zvolené schopnosti je uživatel pouze klient. Schopnosti lze libovolně kombinovat.'),
                                 Select::make('permissions')
                                     ->label('Přímá oprávnění')
                                     ->relationship('permissions', 'name')

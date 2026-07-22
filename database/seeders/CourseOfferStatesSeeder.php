@@ -6,7 +6,6 @@ use App\Enums\BookingStatus;
 use App\Enums\CourseEnrollmentStatus;
 use App\Enums\CourseSeriesStatus;
 use App\Enums\PaymentStatus;
-use App\Enums\UserRole;
 use App\Models\Course;
 use App\Models\CourseCategory;
 use App\Models\CourseLesson;
@@ -33,7 +32,7 @@ class CourseOfferStatesSeeder extends Seeder
 
     public function run(): void
     {
-        $instructor = User::query()->where('role', UserRole::Therapist)->first()
+        $instructor = User::query()->therapists()->first()
             ?? User::factory()->therapist()->create();
         $room = Room::query()->first() ?? Room::factory()->create();
         $category = CourseCategory::query()->firstOrCreate(
@@ -41,7 +40,7 @@ class CourseOfferStatesSeeder extends Seeder
             ['name' => 'Jóga', 'display_order' => 0, 'published_at' => now()],
         );
 
-        $clients = User::query()->where('role', UserRole::Customer)->limit(12)->get();
+        $clients = User::query()->customers()->limit(12)->get();
 
         // 1) Full course with a queue — the waitlist state.
         $full = $this->course($category, $instructor, 'Hormonální jóga', 'Cvičení zaměřené na podporu hormonů a endokrinního systému. Vhodné pro ženy všech věků.', 'photo-1518459031867-a89b944bffe4');

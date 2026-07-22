@@ -3,8 +3,8 @@
 namespace App\Models;
 
 use App\Contracts\Emailable;
+use App\Enums\Capability;
 use App\Enums\EmailTemplateKey;
-use App\Enums\UserRole;
 use App\Models\Concerns\Auditable;
 use App\Notifications\Auth\ResetPasswordNotification;
 use App\Notifications\Auth\VerifyEmailNotification;
@@ -22,6 +22,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Collection;
 use Spatie\LaravelPasskeys\Models\Concerns\HasPasskeys;
 use Spatie\LaravelPasskeys\Models\Concerns\InteractsWithPasskeys;
 use Spatie\Permission\Models\Role;
@@ -32,6 +33,9 @@ class User extends Authenticatable implements Emailable, FilamentUser, HasPasske
 {
     use Auditable, HasFactory, HasRoles, HasTags, HasUuids, InteractsWithPasskeys, Notifiable, SoftDeletes;
 
+    /** The Spatie role marking a client-zone identity (see isCustomer()). */
+    public const string CUSTOMER_ROLE = 'customer';
+
     protected $fillable = [
         'name',
         'title_before',
@@ -39,8 +43,6 @@ class User extends Authenticatable implements Emailable, FilamentUser, HasPasske
         'email',
         'phone',
         'password',
-        'role',
-        'acts_as_therapist',
         'newsletter_opted_in_at',
         'deactivated_at',
     ];
@@ -57,8 +59,6 @@ class User extends Authenticatable implements Emailable, FilamentUser, HasPasske
             'newsletter_opted_in_at' => 'datetime',
             'deactivated_at' => 'datetime',
             'password' => 'hashed',
-            'role' => UserRole::class,
-            'acts_as_therapist' => 'boolean',
         ];
     }
 
@@ -110,29 +110,20 @@ class User extends Authenticatable implements Emailable, FilamentUser, HasPasske
         };
     }
 
-    protected static function booted(): void
+    /**
+     * Therapists and lecturers need an unpublished profile: the calendar,
+     * working hours and instructor pickers all key off its existence. Pure
+     * admins/super-admins don't perform clinic work, so they get one only if
+     * explicitly placed on the team (e.g. the assistant, seeded her own).
+     *
+     * Called from the capability mutators rather than a save hook, because
+     * capabilities are Spatie roles — granting one doesn't re-save the user.
+     */
+    protected function ensureStaffProfile(): void
     {
-        // The account type (UserRole) is the single source of truth for a user's
-        // panel role: keep the matching Shield/Spatie role in sync on every save.
-        static::saved(function (self $user): void {
-            $roleName = $user->role?->shieldRole();
-
-            if ($roleName) {
-                Role::findOrCreate($roleName);
-                $user->syncRoles([$roleName]);
-            } else {
-                $user->syncRoles([]);
-            }
-        });
-
-        // An administrator who opts in as a practising therapist gets a therapist
-        // profile automatically (unpublished): the calendar, working hours, and
-        // booking flows all key off the profile's existence.
-        static::saved(function (self $user): void {
-            if ($user->role === UserRole::Admin && $user->acts_as_therapist && $user->staffProfile()->doesntExist()) {
-                $user->staffProfile()->create([]);
-            }
-        });
+        if (($this->isTherapist() || $this->isLecturer()) && $this->staffProfile()->doesntExist()) {
+            $this->staffProfile()->create([]);
+        }
     }
 
     /**
@@ -156,22 +147,140 @@ class User extends Authenticatable implements Emailable, FilamentUser, HasPasske
     }
 
     /**
-     * Staff accounts (administrators and therapists) belong in the admin panel;
-     * customers belong in the client zone.
+     * The staff capabilities this user holds (Admin / Therapist / Lecturer),
+     * derived from the backing Spatie roles.
+     *
+     * @return Collection<int, Capability>
      */
-    public function isStaff(): bool
+    public function capabilities(): Collection
     {
-        return in_array($this->role, [UserRole::Admin, UserRole::Therapist], true);
+        return $this->getRoleNames()
+            ->map(fn (string $role): ?Capability => Capability::fromRoleName($role))
+            ->filter()
+            ->values();
+    }
+
+    public function hasCapability(Capability $capability): bool
+    {
+        return $this->hasRole($capability->roleName());
     }
 
     /**
-     * Whether this user works as a therapist: either by account type, or as an
-     * administrator who opted in via the "acts as therapist" flag.
+     * Replace this user's capabilities, leaving any non-capability roles (the
+     * `customer` identity) untouched.
+     *
+     * @param  iterable<Capability>  $capabilities
+     */
+    public function syncCapabilities(iterable $capabilities): void
+    {
+        $target = collect($capabilities)->map(function (Capability $c): string {
+            Role::findOrCreate($c->roleName());
+
+            return $c->roleName();
+        });
+
+        $keep = $this->getRoleNames()
+            ->reject(fn (string $role): bool => Capability::fromRoleName($role) !== null);
+
+        $this->syncRoles($keep->merge($target)->unique()->all());
+        $this->ensureStaffProfile();
+    }
+
+    public function grantCapability(Capability $capability): void
+    {
+        Role::findOrCreate($capability->roleName());
+        $this->assignRole($capability->roleName());
+        $this->ensureStaffProfile();
+    }
+
+    /**
+     * Apply a capability selection made by $actor, enforcing that the actor may
+     * only change capabilities they are allowed to assign. Capabilities the
+     * actor cannot manage (Admin / SuperAdmin for a non-super-admin) are kept as
+     * they were, so a form tamper can neither escalate nor strip privileges.
+     *
+     * @param  iterable<Capability|string>  $selected
+     */
+    public function applyCapabilitySelection(iterable $selected, self $actor): void
+    {
+        $assignable = collect($actor->assignableCapabilities());
+
+        $chosen = collect($selected)
+            ->map(fn (Capability|string $c): Capability => $c instanceof Capability ? $c : Capability::from($c))
+            ->filter(fn (Capability $c): bool => $assignable->contains($c));
+
+        $locked = $this->capabilities()->reject(fn (Capability $c): bool => $assignable->contains($c));
+
+        $this->syncCapabilities($locked->merge($chosen)->unique());
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->hasCapability(Capability::SuperAdmin);
+    }
+
+    /**
+     * Admin-level access. A super-admin is always an admin (a strict superset),
+     * so this covers both tiers.
+     */
+    public function isAdmin(): bool
+    {
+        return $this->hasCapability(Capability::Admin) || $this->isSuperAdmin();
+    }
+
+    /**
+     * The capabilities the current user is allowed to grant or revoke on others.
+     * Admin and SuperAdmin are reserved for super-admins; anyone managing users
+     * may still assign the operational capabilities.
+     *
+     * @return list<Capability>
+     */
+    public function assignableCapabilities(): array
+    {
+        return $this->isSuperAdmin()
+            ? Capability::cases()
+            : array_values(array_filter(
+                Capability::cases(),
+                fn (Capability $c): bool => ! $c->requiresSuperAdmin(),
+            ));
+    }
+
+    /**
+     * Whether this user works as a therapist: bookable for 1:1 reservations,
+     * shown in the calendar and the booking wizard.
      */
     public function isTherapist(): bool
     {
-        return $this->role === UserRole::Therapist
-            || ($this->role === UserRole::Admin && $this->acts_as_therapist);
+        return $this->hasCapability(Capability::Therapist);
+    }
+
+    public function isLecturer(): bool
+    {
+        return $this->hasCapability(Capability::Lecturer);
+    }
+
+    /**
+     * Staff hold at least one capability and belong in the admin panel;
+     * everyone else lives in the client zone.
+     */
+    public function isStaff(): bool
+    {
+        return $this->hasAnyRole(array_map(fn (Capability $c): string => $c->roleName(), Capability::cases()));
+    }
+
+    /**
+     * A client-zone identity, independent of staff capabilities — a user may be
+     * both a customer and staff (see the `customer` role).
+     */
+    public function isCustomer(): bool
+    {
+        return $this->hasRole(self::CUSTOMER_ROLE);
+    }
+
+    public function markAsCustomer(): void
+    {
+        Role::findOrCreate(self::CUSTOMER_ROLE);
+        $this->assignRole(self::CUSTOMER_ROLE);
     }
 
     /**
@@ -179,11 +288,23 @@ class User extends Authenticatable implements Emailable, FilamentUser, HasPasske
      */
     public function scopeTherapists(Builder $query): Builder
     {
-        return $query->where(fn (Builder $q): Builder => $q
-            ->where('role', UserRole::Therapist)
-            ->orWhere(fn (Builder $q): Builder => $q
-                ->where('role', UserRole::Admin)
-                ->where('acts_as_therapist', true)));
+        return $query->whereHas('roles', fn (Builder $q): Builder => $q->where('name', Capability::Therapist->roleName()));
+    }
+
+    public function scopeLecturers(Builder $query): Builder
+    {
+        return $query->whereHas('roles', fn (Builder $q): Builder => $q->where('name', Capability::Lecturer->roleName()));
+    }
+
+    public function scopeStaff(Builder $query): Builder
+    {
+        return $query->whereHas('roles', fn (Builder $q): Builder => $q
+            ->whereIn('name', array_map(fn (Capability $c): string => $c->roleName(), Capability::cases())));
+    }
+
+    public function scopeCustomers(Builder $query): Builder
+    {
+        return $query->whereHas('roles', fn (Builder $q): Builder => $q->where('name', self::CUSTOMER_ROLE));
     }
 
     /**
@@ -207,12 +328,32 @@ class User extends Authenticatable implements Emailable, FilamentUser, HasPasske
     }
 
     /**
-     * Whether this user may impersonate other users in the panel.
-     * Gated by the Shield "Impersonate:User" permission (super admins bypass via Gate::before).
+     * Whether this user may impersonate others in the panel — an admin
+     * capability (which includes super-admins).
      */
     public function canImpersonate(): bool
     {
-        return $this->can('Impersonate:User');
+        return $this->isAdmin();
+    }
+
+    /**
+     * Guards who may be impersonated: nobody may step into a super-admin, and
+     * only a super-admin may impersonate another admin. Prevents a plain admin
+     * escalating to owner-tier access by impersonating one.
+     */
+    public function canBeImpersonated(): bool
+    {
+        $actor = auth()->user();
+
+        if ($this->isSuperAdmin()) {
+            return false;
+        }
+
+        if ($this->isAdmin()) {
+            return $actor instanceof self && $actor->isSuperAdmin();
+        }
+
+        return true;
     }
 
     public function clientProfile(): HasOne

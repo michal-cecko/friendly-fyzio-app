@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Artisan;
 use Spatie\Permission\Models\Permission;
@@ -36,8 +37,27 @@ class RolePermissionSeeder extends Seeder
         $superAdmin = Role::firstOrCreate(['name' => config('filament-shield.super_admin.name', 'super_admin')]);
         $admin = Role::firstOrCreate(['name' => 'admin']);
         $therapist = Role::firstOrCreate(['name' => 'therapist']);
+        $lecturer = Role::firstOrCreate(['name' => 'lecturer']);
+        // The `customer` role is an identity marker, not a panel role — it carries
+        // no permissions (customers never reach the admin panel).
+        Role::firstOrCreate(['name' => User::CUSTOMER_ROLE]);
 
         $admin->syncPermissions(Permission::all());
+
+        // Lecturers manage the courses/events they instruct (rows scoped to
+        // their instructor_id via ScopedToTherapist's lecturer branch).
+        $lecturer->syncPermissions(Permission::whereIn('name', [
+            'View:MediaLibrary',
+            'ViewAny:Course', 'View:Course',
+            'ViewAny:CourseCategory', 'View:CourseCategory',
+            'ViewAny:CourseSeries', 'View:CourseSeries',
+            'ViewAny:CourseLesson', 'View:CourseLesson',
+            'ViewAny:CourseEnrollment', 'View:CourseEnrollment',
+            'ViewAny:LessonAttendance', 'View:LessonAttendance', 'Create:LessonAttendance', 'Update:LessonAttendance',
+            'ViewAny:OneOffEvent', 'View:OneOffEvent',
+            'ViewAny:OneOffEventBooking', 'View:OneOffEventBooking',
+            'ViewAny:EventCategory', 'View:EventCategory',
+        ])->get());
         $therapist->syncPermissions(Permission::whereIn('name', [
             'View:MediaLibrary',
             'View:Calendar',

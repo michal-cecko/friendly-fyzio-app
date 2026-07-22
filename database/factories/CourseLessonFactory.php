@@ -22,7 +22,7 @@ class CourseLessonFactory extends Factory
 
         return [
             'series_id' => CourseSeries::factory(),
-            'instructor_id' => User::factory()->therapist(),
+            'instructor_id' => User::factory()->lecturer(),
             'room_id' => Room::factory(),
             'lesson_date' => fake()->dateTimeBetween('-1 month', '+2 months')->format('Y-m-d'),
             'start_time' => sprintf('%02d:00', $start),

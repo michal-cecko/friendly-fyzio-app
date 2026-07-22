@@ -22,7 +22,7 @@ class CourseFactory extends Factory
 
         return [
             'category_id' => CourseCategory::factory(),
-            'instructor_id' => User::factory()->therapist(),
+            'instructor_id' => User::factory()->lecturer(),
             'name' => $name,
             'slug' => Str::slug($name),
             'description' => fake()->boolean(60) ? fake()->paragraph() : null,

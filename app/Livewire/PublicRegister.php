@@ -2,7 +2,6 @@
 
 namespace App\Livewire;
 
-use App\Enums\UserRole;
 use App\Models\User;
 use App\Rules\TurnstileTokenValid;
 use Illuminate\Auth\Events\Registered;
@@ -57,10 +56,10 @@ class PublicRegister extends Component
             'email' => $this->email,
             'phone' => $this->phone,
             'password' => $this->password,
-            'role' => UserRole::Customer,
             'newsletter_opted_in_at' => $this->newsletter ? now() : null,
         ]);
 
+        $user->markAsCustomer();
         $user->clientProfile()->create();
 
         event(new Registered($user));

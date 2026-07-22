@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Enums\UserRole;
+use App\Enums\Capability;
 use App\Models\Building;
 use App\Models\Room;
 use App\Models\StaffProfile;
@@ -70,8 +70,6 @@ class RealDataSeeder extends Seeder
             $user->fill([
                 'name' => $member['name'],
                 'title_before' => $member['title_before'] ?? null,
-                'role' => $member['role'],
-                'acts_as_therapist' => $member['acts_as_therapist'] ?? false,
             ]);
 
             // Staff set their own password via the "zapomenuté heslo" flow.
@@ -81,6 +79,8 @@ class RealDataSeeder extends Seeder
 
             $user->email_verified_at ??= now();
             $user->save();
+
+            $user->syncCapabilities($member['capabilities']);
 
             $profile = StaffProfile::query()->updateOrCreate(
                 ['user_id' => $user->getKey()],
@@ -150,8 +150,7 @@ class RealDataSeeder extends Seeder
      *     name: string,
      *     title_before?: string,
      *     email: string,
-     *     role: UserRole,
-     *     acts_as_therapist?: bool,
+     *     capabilities: list<Capability>,
      *     title: string,
      *     photo: string,
      *     is_collaborator?: bool,
@@ -165,8 +164,7 @@ class RealDataSeeder extends Seeder
                 'name' => 'Lucie Fickerová',
                 'title_before' => 'Mgr.',
                 'email' => 'lucie.fickerova@friendlyfyzio.cz',
-                'role' => UserRole::Admin,
-                'acts_as_therapist' => true,
+                'capabilities' => [Capability::Admin, Capability::Therapist],
                 'title' => 'Fyzioterapeut',
                 'photo' => 'lucie-fickerova.jpg',
                 'specializations' => [
@@ -180,7 +178,7 @@ class RealDataSeeder extends Seeder
                 'name' => 'Renáta Prnka',
                 'title_before' => 'Mgr.',
                 'email' => 'renata.prnka@friendlyfyzio.cz',
-                'role' => UserRole::Therapist,
+                'capabilities' => [Capability::Therapist],
                 'title' => 'Fyzioterapeut',
                 'photo' => 'renata-prnka.jpg',
                 'specializations' => [
@@ -194,7 +192,7 @@ class RealDataSeeder extends Seeder
             [
                 'name' => 'Šárka Antošíková',
                 'email' => 'sarka.antosikova@friendlyfyzio.cz',
-                'role' => UserRole::Therapist,
+                'capabilities' => [Capability::Therapist],
                 'title' => 'Fyzioterapeut',
                 'photo' => 'sarka-antosikova.jpg',
                 'specializations' => [
@@ -208,7 +206,7 @@ class RealDataSeeder extends Seeder
                 'name' => 'Lada Činčilová',
                 'title_before' => 'Mgr.',
                 'email' => 'lada.cincilova@friendlyfyzio.cz',
-                'role' => UserRole::Therapist,
+                'capabilities' => [Capability::Therapist],
                 'title' => 'Fyzioterapeut',
                 'photo' => 'lada-cincilova.jpg',
                 'specializations' => [
@@ -223,7 +221,7 @@ class RealDataSeeder extends Seeder
                 'name' => 'Ema Murčová',
                 'title_before' => 'Bc.',
                 'email' => 'ema.murcova@friendlyfyzio.cz',
-                'role' => UserRole::Therapist,
+                'capabilities' => [Capability::Therapist],
                 'title' => 'Fyzioterapeut',
                 'photo' => 'ema-murcova.jpg',
                 'specializations' => [
@@ -237,7 +235,7 @@ class RealDataSeeder extends Seeder
                 'name' => 'Daniela Steblová',
                 'title_before' => 'Mgr.',
                 'email' => 'daniela.steblova@friendlyfyzio.cz',
-                'role' => UserRole::Therapist,
+                'capabilities' => [Capability::Therapist],
                 'title' => 'Fyzioterapeut',
                 'photo' => 'daniela-steblova.jpg',
                 'specializations' => [
@@ -248,14 +246,14 @@ class RealDataSeeder extends Seeder
             [
                 'name' => 'Michaela Hrubá',
                 'email' => 'michaela.hruba@friendlyfyzio.cz',
-                'role' => UserRole::Therapist,
+                'capabilities' => [Capability::Therapist],
                 'title' => 'Kondiční trenér',
                 'photo' => 'michaela-hruba.jpg',
             ],
             [
                 'name' => 'Denisa Nováková',
                 'email' => 'denisa.novakova@friendlyfyzio.cz',
-                'role' => UserRole::Therapist,
+                'capabilities' => [Capability::Therapist],
                 'title' => 'Masér, lektor, bylinná napářka',
                 'photo' => 'denisa-novakova.jpg',
                 'specializations' => [
@@ -266,21 +264,21 @@ class RealDataSeeder extends Seeder
             [
                 'name' => 'Kristýna Černá',
                 'email' => 'kristyna.cerna@friendlyfyzio.cz',
-                'role' => UserRole::Therapist,
+                'capabilities' => [Capability::Therapist],
                 'title' => 'Lektorka jógy',
                 'photo' => 'kristyna-cerna.jpg',
             ],
             [
                 'name' => 'Adéla Macurová',
                 'email' => 'adela.macurova@friendlyfyzio.cz',
-                'role' => UserRole::Admin,
+                'capabilities' => [Capability::Admin],
                 'title' => 'Asistentka',
                 'photo' => 'adela-macurova.jpg',
             ],
             [
                 'name' => 'Lucie Amani',
                 'email' => 'lucie.amani@friendlyfyzio.cz',
-                'role' => UserRole::Therapist,
+                'capabilities' => [Capability::Therapist],
                 'title' => 'Pohybový specialista',
                 'photo' => 'lucie-amani.jpg',
                 'is_collaborator' => true,
@@ -294,7 +292,7 @@ class RealDataSeeder extends Seeder
                 'name' => 'Jakub Trepáč',
                 'title_before' => 'Mgr.',
                 'email' => 'jakub.trepac@friendlyfyzio.cz',
-                'role' => UserRole::Therapist,
+                'capabilities' => [Capability::Therapist],
                 'title' => 'Fyzioterapeut',
                 'photo' => 'jakub-trepac.jpg',
                 'is_collaborator' => true,

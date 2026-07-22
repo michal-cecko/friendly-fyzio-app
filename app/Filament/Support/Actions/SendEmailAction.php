@@ -109,6 +109,19 @@ class SendEmailAction extends Action
                     $record->sendTemplateEmail(EmailTemplateKey::from($data['template_key']));
                 }
 
+                // Before launch only administrators actually receive mail, so
+                // staff must not be told a message went out when it did not.
+                if (config('mail.suppress_non_admin')) {
+                    FilamentNotification::make()
+                        ->title('E-mail nebyl odeslán.')
+                        ->body('Odesílání e-mailů klientům a terapeutům je před spuštěním pozastaveno.')
+                        ->warning()
+                        ->persistent()
+                        ->send();
+
+                    return;
+                }
+
                 FilamentNotification::make()
                     ->title('E-mail byl odeslán.')
                     ->success()
