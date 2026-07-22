@@ -30,7 +30,7 @@ class ServiceSeeder extends Seeder
 {
     /**
      * The six physiotherapists, by login e-mail. Lucie is an administrator who
-     * also practises, so she is included via `acts_as_therapist`.
+     * also practises, so she also holds the Therapist capability.
      */
     protected const array PHYSIOTHERAPISTS = [
         'lucie.fickerova@friendlyfyzio.cz',

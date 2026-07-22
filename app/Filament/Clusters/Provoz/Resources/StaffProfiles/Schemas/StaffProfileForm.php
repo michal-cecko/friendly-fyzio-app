@@ -41,8 +41,14 @@ class StaffProfileForm
                 ->schema(array_values(array_filter([
                     $withUser
                         ? Select::make('user_id')
-                            ->label('Terapeut (uživatel)')
-                            ->relationship('user', 'name', fn (Builder $query): Builder => $query->therapists())
+                            ->label('Člen týmu (uživatel)')
+                            // Therapists and lecturers already have a profile
+                            // auto-created; this manual flow is for adding one to
+                            // any other staff member (e.g. a pure admin like the
+                            // assistant) who should appear on the team page.
+                            ->relationship('user', 'name', fn (Builder $query): Builder => $query
+                                ->staff()
+                                ->whereDoesntHave('staffProfile'))
                             ->searchable()
                             ->preload()
                             ->required()

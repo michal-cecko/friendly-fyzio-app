@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Enums\UserRole;
 use App\Models\Building;
 use App\Models\Room;
 use App\Models\StaffProfile;
@@ -25,8 +24,8 @@ class RealDataSeederTest extends TestCase
         $this->seedRealData();
 
         $lucie = User::query()->where('email', 'lucie.fickerova@friendlyfyzio.cz')->firstOrFail();
-        $this->assertSame(UserRole::Admin, $lucie->role);
-        $this->assertTrue($lucie->acts_as_therapist);
+        $this->assertTrue($lucie->isAdmin());
+        $this->assertTrue($lucie->isTherapist());
         $this->assertSame('Mgr.', $lucie->title_before);
         $this->assertSame('Lucie Fickerová', $lucie->name);
         $this->assertTrue($lucie->isTherapist());
@@ -38,8 +37,8 @@ class RealDataSeederTest extends TestCase
 
         // Adéla is admin-only but still presented on the team page.
         $adela = User::query()->where('email', 'adela.macurova@friendlyfyzio.cz')->firstOrFail();
-        $this->assertSame(UserRole::Admin, $adela->role);
-        $this->assertFalse($adela->acts_as_therapist);
+        $this->assertTrue($adela->isAdmin());
+        $this->assertFalse($adela->isTherapist());
         $this->assertFalse($adela->isTherapist());
         $this->assertNotNull($adela->staffProfile?->published_at);
         $this->assertSame('Asistentka', $adela->staffProfile->title);
@@ -50,7 +49,8 @@ class RealDataSeederTest extends TestCase
         );
 
         $this->assertSame(12, StaffProfile::query()->count());
-        $this->assertSame(10, User::query()->where('role', UserRole::Therapist)->count());
+        // 10 pure therapists plus Lucie, who is an admin and a therapist.
+        $this->assertSame(11, User::query()->therapists()->count());
     }
 
     public function test_seeds_building_and_rooms_with_shortcuts(): void

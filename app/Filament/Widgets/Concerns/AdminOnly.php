@@ -2,8 +2,6 @@
 
 namespace App\Filament\Widgets\Concerns;
 
-use App\Enums\UserRole;
-
 /**
  * Restricts a dashboard widget to admins. Pure therapists (and the acts-as
  * variant is still an Admin) get their own dashboard later; until then they see
@@ -13,6 +11,6 @@ trait AdminOnly
 {
     public static function canView(): bool
     {
-        return auth()->user()?->role === UserRole::Admin;
+        return auth()->user()?->isAdmin();
     }
 }

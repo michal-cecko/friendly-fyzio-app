@@ -69,6 +69,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Scheduled Tasks
+    |--------------------------------------------------------------------------
+    |
+    | Master switch for everything in routes/console.php. Held off until launch
+    | so background jobs cannot act on — or e-mail about — the real client
+    | records already imported into the database. See routes/console.php for the
+    | one job with a deadline (work-blocks:extend).
+    |
+    */
+
+    'scheduled_tasks_enabled' => env('SCHEDULED_TASKS_ENABLED', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Locale Configuration
     |--------------------------------------------------------------------------
     |

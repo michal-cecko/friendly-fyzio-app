@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\UserRole;
 use Illuminate\Database\Eloquent\Model;
 
 abstract class Controller
@@ -14,7 +13,7 @@ abstract class Controller
     {
         $user = auth()->user();
 
-        return $user !== null && in_array($user->role, [UserRole::Admin, UserRole::Therapist], true);
+        return $user !== null && $user->isStaff();
     }
 
     /**

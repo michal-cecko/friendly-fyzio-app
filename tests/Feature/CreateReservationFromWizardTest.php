@@ -8,7 +8,6 @@ use App\Enums\PaymentStatus;
 use App\Enums\ReservationStatus;
 use App\Enums\ServiceType;
 use App\Enums\ServiceVisibility;
-use App\Enums\UserRole;
 use App\Jobs\SubscribeToNewsletterJob;
 use App\Models\ClientProfile;
 use App\Models\Reservation;
@@ -112,7 +111,7 @@ class CreateReservationFromWizardTest extends TestCase
         $this->assertSame($this->date->toDateString(), $reservation->reservation_date->toDateString());
 
         $client = User::where('email', 'jana@example.com')->sole();
-        $this->assertSame(UserRole::Customer, $client->role);
+        $this->assertTrue($client->isCustomer());
         $this->assertNotNull($client->newsletter_opted_in_at);
         $this->assertDatabaseHas(ClientProfile::class, ['user_id' => $client->id]);
 

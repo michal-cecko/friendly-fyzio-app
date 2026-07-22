@@ -87,7 +87,7 @@ class CourseRelationManagersTest extends TestCase
     public function test_lesson_can_be_created_inline_for_the_owning_series(): void
     {
         $series = CourseSeries::factory()->create();
-        $instructor = User::factory()->therapist()->create();
+        $instructor = User::factory()->lecturer()->create();
         $room = Room::factory()->create();
 
         Livewire::test(LessonsRelationManager::class, [

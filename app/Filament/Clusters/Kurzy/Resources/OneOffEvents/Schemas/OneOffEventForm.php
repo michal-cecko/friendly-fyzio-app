@@ -3,7 +3,6 @@
 namespace App\Filament\Clusters\Kurzy\Resources\OneOffEvents\Schemas;
 
 use App\Enums\OfferVisibility;
-use App\Enums\UserRole;
 use App\Filament\Support\Schemas\NotifyParticipantsToggle;
 use App\Filament\Support\Schemas\PresenceBanner;
 use Filament\Forms\Components\DatePicker;
@@ -60,7 +59,7 @@ class OneOffEventForm
                     ->columnSpanFull(),
                 Select::make('instructor_id')
                     ->label('Lektor')
-                    ->relationship('instructor', 'name', fn (Builder $query): Builder => $query->whereIn('role', [UserRole::Admin, UserRole::Therapist]))
+                    ->relationship('instructor', 'name', fn (Builder $query): Builder => $query->lecturers())
                     ->searchable()
                     ->preload()
                     ->native(false)

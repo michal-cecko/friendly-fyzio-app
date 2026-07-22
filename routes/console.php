@@ -3,6 +3,22 @@
 use App\Models\Reservation;
 use Illuminate\Support\Facades\Schedule;
 
+/*
+| Scheduled tasks are switched off until launch (SCHEDULED_TASKS_ENABLED).
+|
+| The database already carries real imported client records, so leaving the
+| schedule running would let jobs act on — and e-mail about — live customer
+| data before the clinic goes live. Flip SCHEDULED_TASKS_ENABLED=true in .env
+| to bring it all back; nothing below has been removed.
+|
+| One job has a real deadline: `work-blocks:extend` keeps the therapists'
+| work-block horizon rolling 26 weeks ahead, so it must be running again well
+| before that runway is used up, or the calendar will run out of future slots.
+*/
+if (! config('app.scheduled_tasks_enabled')) {
+    return;
+}
+
 Schedule::command('users:prune-unverified')->daily();
 // Purge reservations that have sat in the trash for 30 days (their payments are
 // kept, only unlinked — see Reservation::booted()).

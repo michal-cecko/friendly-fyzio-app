@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\ActivityLog;
 
-use App\Enums\UserRole;
 use App\Filament\Resources\ActivityLog\Pages\ListActivityLog;
 use App\Filament\Resources\ActivityLog\Pages\ViewActivityLog;
 use App\Filament\Resources\ActivityLog\Schemas\ActivityLogInfolist;
@@ -68,7 +67,7 @@ class ActivityLogResource extends Resource
 
         // Admins see everything; a pure therapist sees only what they touched or
         // what belongs to them (their reservations and the courses they teach).
-        if ($user?->role === UserRole::Admin) {
+        if ($user?->isAdmin()) {
             return $query;
         }
 

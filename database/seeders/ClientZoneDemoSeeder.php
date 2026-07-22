@@ -9,7 +9,6 @@ use App\Enums\CreditTransactionType;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Enums\ReservationStatus;
-use App\Enums\UserRole;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
 use App\Models\CourseLesson;
@@ -60,11 +59,12 @@ class ClientZoneDemoSeeder extends Seeder
             'name' => 'Jana Nováková',
             'phone' => '+420 604 111 222',
             'password' => 'password',
-            'role' => UserRole::Customer,
             'email_verified_at' => now(),
             'deactivated_at' => null,
             'deleted_at' => null,
         ])->save();
+
+        $client->markAsCustomer();
 
         $client->clientProfile()->updateOrCreate([], [
             'billing_name' => 'Nováková Consulting s.r.o.',

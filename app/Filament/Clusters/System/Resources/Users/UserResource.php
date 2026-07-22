@@ -2,7 +2,6 @@
 
 namespace App\Filament\Clusters\System\Resources\Users;
 
-use App\Enums\UserRole;
 use App\Filament\Clusters\System\Resources\Users\Pages\CreateUser;
 use App\Filament\Clusters\System\Resources\Users\Pages\EditUser;
 use App\Filament\Clusters\System\Resources\Users\Pages\ListUsers;
@@ -45,7 +44,34 @@ class UserResource extends Resource
      */
     public static function canAccess(): bool
     {
-        return auth()->user()?->role === UserRole::Admin;
+        return auth()->user()?->isAdmin() ?? false;
+    }
+
+    /**
+     * Creating a staff account is admin-level; but only a super-admin may create
+     * one carrying an admin/super-admin capability — the capability checkboxes
+     * for those tiers are already disabled for non-super-admins, and the delete
+     * guard mirrors this.
+     */
+    public static function canCreate(): bool
+    {
+        return auth()->user()?->isAdmin() ?? false;
+    }
+
+    /**
+     * An admin/super-admin account may only be deleted by a super-admin, so a
+     * plain admin can't remove a peer or the owner. Everyone else stays deletable
+     * by any admin.
+     */
+    public static function canDeleteUser(User $record): bool
+    {
+        $actor = auth()->user();
+
+        if (! $actor instanceof User) {
+            return false;
+        }
+
+        return $record->isAdmin() ? $actor->isSuperAdmin() : $actor->isAdmin();
     }
 
     public static function getModelLabel(): string
@@ -79,14 +105,13 @@ class UserResource extends Resource
         /** @var User $record */
         return array_filter([
             'E-mail' => $record->email,
-            'Role' => $record->role?->getLabel(),
+            'Schopnosti' => $record->capabilities()->map(fn ($c) => $c->getLabel())->implode(', ') ?: null,
         ]);
     }
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()
-            ->whereNot('role', UserRole::Customer);
+        return parent::getEloquentQuery()->staff();
     }
 
     public static function form(Schema $schema): Schema

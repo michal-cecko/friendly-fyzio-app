@@ -39,7 +39,7 @@ class OneOffEventResourceTest extends TestCase
     public function test_admin_can_create_record(): void
     {
         $category = EventCategory::factory()->create();
-        $instructor = User::factory()->therapist()->create();
+        $instructor = User::factory()->lecturer()->create();
         $room = Room::factory()->create();
 
         Livewire::test(CreateOneOffEvent::class)
@@ -70,7 +70,7 @@ class OneOffEventResourceTest extends TestCase
     {
         $category = EventCategory::factory()->create();
         $course = Course::factory()->create();
-        $instructor = User::factory()->therapist()->create();
+        $instructor = User::factory()->lecturer()->create();
         $room = Room::factory()->create();
 
         Livewire::test(CreateOneOffEvent::class)

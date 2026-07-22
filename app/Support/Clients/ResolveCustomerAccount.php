@@ -2,7 +2,6 @@
 
 namespace App\Support\Clients;
 
-use App\Enums\UserRole;
 use App\Models\User;
 use App\Support\Reservations\DeactivatedClientException;
 use Illuminate\Support\Str;
@@ -52,11 +51,11 @@ class ResolveCustomerAccount
             'name' => $name,
             'email' => $email,
             'phone' => $phone,
-            'role' => UserRole::Customer,
             'password' => Str::random(40),
             'newsletter_opted_in_at' => $newsletter ? now() : null,
         ]);
 
+        $user->markAsCustomer();
         $user->clientProfile()->firstOrCreate([]);
 
         return [$user, true];

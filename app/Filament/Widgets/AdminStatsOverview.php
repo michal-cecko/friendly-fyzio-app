@@ -3,7 +3,6 @@
 namespace App\Filament\Widgets;
 
 use App\Enums\ReservationStatus;
-use App\Enums\UserRole;
 use App\Filament\Clusters\Provoz\Resources\Reservations\ReservationResource;
 use App\Filament\Pages\Calendar;
 use App\Filament\Widgets\Concerns\AdminOnly;
@@ -37,7 +36,7 @@ class AdminStatsOverview extends StatsOverviewWidget
             ->count();
 
         $newClients = User::query()
-            ->where('role', UserRole::Customer)
+            ->customers()
             ->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])
             ->count();
 

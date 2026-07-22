@@ -2,7 +2,6 @@
 
 namespace App\Filament\Clusters\Kurzy\Resources\CourseLessons\Schemas;
 
-use App\Enums\UserRole;
 use App\Filament\Support\Schemas\NotifyParticipantsToggle;
 use App\Filament\Support\Schemas\PresenceBanner;
 use Filament\Forms\Components\DatePicker;
@@ -30,7 +29,7 @@ class CourseLessonForm
                     ->hidden(fn ($livewire): bool => $livewire instanceof RelationManager),
                 Select::make('instructor_id')
                     ->label('Lektor')
-                    ->relationship('instructor', 'name', fn (Builder $query): Builder => $query->whereIn('role', [UserRole::Admin, UserRole::Therapist]))
+                    ->relationship('instructor', 'name', fn (Builder $query): Builder => $query->lecturers())
                     ->searchable()
                     ->preload()
                     ->native(false)

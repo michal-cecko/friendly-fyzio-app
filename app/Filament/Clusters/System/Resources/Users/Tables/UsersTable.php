@@ -2,7 +2,8 @@
 
 namespace App\Filament\Clusters\System\Resources\Users\Tables;
 
-use App\Enums\UserRole;
+use App\Enums\Capability;
+use App\Filament\Clusters\System\Resources\Users\UserResource;
 use App\Filament\Support\Tables\TimestampColumns;
 use App\Models\User;
 use Filament\Actions\BulkActionGroup;
@@ -19,6 +20,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class UsersTable
 {
@@ -37,10 +39,11 @@ class UsersTable
                     ->sortable()
                     ->copyable()
                     ->icon(Heroicon::OutlinedEnvelope),
-                TextColumn::make('role')
-                    ->label('Typ účtu')
+                TextColumn::make('capabilities')
+                    ->label('Schopnosti')
                     ->badge()
-                    ->sortable(),
+                    ->state(fn (User $record): array => $record->capabilities()->all())
+                    ->placeholder('—'),
                 IconColumn::make('email_verified_at')
                     ->label('Ověřen email?')
                     ->boolean()
@@ -48,17 +51,24 @@ class UsersTable
                 ...TimestampColumns::make(),
             ])
             ->filters([
-                SelectFilter::make('role')
-                    ->label('Typ účtu')
-                    ->options(collect(UserRole::cases())
-                        ->reject(fn (UserRole $role): bool => $role === UserRole::Customer)
-                        ->mapWithKeys(fn (UserRole $role): array => [$role->value => $role->getLabel()])
-                        ->all()),
+                SelectFilter::make('capability')
+                    ->label('Schopnost')
+                    ->options(collect(Capability::cases())
+                        ->mapWithKeys(fn (Capability $c): array => [$c->value => $c->getLabel()])
+                        ->all())
+                    ->query(fn (Builder $query, array $data): Builder => $query->when(
+                        $data['value'] ?? null,
+                        fn (Builder $query, string $value) => $query->whereHas(
+                            'roles',
+                            fn (Builder $roles) => $roles->where('name', Capability::from($value)->roleName()),
+                        ),
+                    )),
                 TrashedFilter::make(),
             ])
             ->recordActions([
                 EditAction::make(),
-                DeleteAction::make(),
+                DeleteAction::make()
+                    ->visible(fn (User $record): bool => UserResource::canDeleteUser($record)),
                 RestoreAction::make(),
                 ForceDeleteAction::make(),
             ])

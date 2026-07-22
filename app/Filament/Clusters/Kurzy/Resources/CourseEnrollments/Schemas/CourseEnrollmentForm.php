@@ -4,7 +4,6 @@ namespace App\Filament\Clusters\Kurzy\Resources\CourseEnrollments\Schemas;
 
 use App\Enums\CourseEnrollmentStatus;
 use App\Enums\PaymentStatus;
-use App\Enums\UserRole;
 use App\Filament\Support\Schemas\PresenceBanner;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
@@ -29,7 +28,7 @@ class CourseEnrollmentForm
                     ->required(),
                 Select::make('client_id')
                     ->label('Klient')
-                    ->relationship('client', 'name', fn (Builder $query): Builder => $query->where('role', UserRole::Customer))
+                    ->relationship('client', 'name', fn (Builder $query): Builder => $query->customers())
                     ->searchable()
                     ->preload()
                     ->native(false)

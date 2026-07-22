@@ -2,7 +2,6 @@
 
 namespace App\Filament\Clusters\Kurzy\Resources\Courses\Schemas;
 
-use App\Enums\UserRole;
 use App\Filament\Support\Schemas\PresenceBanner;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
@@ -41,7 +40,7 @@ class CourseForm
                     ->native(false),
                 Select::make('instructor_id')
                     ->label('Lektor')
-                    ->relationship('instructor', 'name', fn (Builder $query): Builder => $query->whereIn('role', [UserRole::Admin, UserRole::Therapist]))
+                    ->relationship('instructor', 'name', fn (Builder $query): Builder => $query->lecturers())
                     ->searchable()
                     ->preload()
                     ->native(false)

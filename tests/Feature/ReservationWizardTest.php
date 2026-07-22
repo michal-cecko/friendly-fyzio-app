@@ -7,7 +7,6 @@ use App\Enums\ExamType;
 use App\Enums\ReservationStatus;
 use App\Enums\ServiceType;
 use App\Enums\ServiceVisibility;
-use App\Enums\UserRole;
 use App\Livewire\ReservationWizard;
 use App\Models\Reservation;
 use App\Models\ReservationDayWaitlistEntry;
@@ -116,7 +115,7 @@ class ReservationWizardTest extends TestCase
         ]);
 
         $client = User::where('email', 'jana@example.com')->sole();
-        $this->assertSame(UserRole::Customer, $client->role);
+        $this->assertTrue($client->isCustomer());
         Notification::assertSentTo(
             $client,
             ReservationTemplateNotification::class,

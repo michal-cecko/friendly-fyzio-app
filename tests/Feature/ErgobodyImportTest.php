@@ -6,7 +6,6 @@ use App\Console\Commands\ErgobodyImport;
 use App\Enums\Gender;
 use App\Enums\PaymentStatus;
 use App\Enums\ReservationStatus;
-use App\Enums\UserRole;
 use App\Filament\Widgets\ReservationCalendar;
 use App\Models\ClientNote;
 use App\Models\Reservation;
@@ -29,10 +28,9 @@ class ErgobodyImportTest extends TestCase
     {
         parent::setUp();
 
-        $this->lucie = User::factory()->admin()->create([
+        $this->lucie = User::factory()->admin()->therapist()->create([
             'name' => 'Lucie Fickerová',
             'email' => 'lucie.fickerova@friendlyfyzio.cz',
-            'acts_as_therapist' => true,
         ]);
 
         $this->sarka = User::factory()->therapist()->create([
@@ -57,7 +55,7 @@ class ErgobodyImportTest extends TestCase
 
         $this->assertSame('Barbora Testová', $barbora->name);
         $this->assertSame('+420720936876', $barbora->phone);
-        $this->assertSame(UserRole::Customer, $barbora->role);
+        $this->assertTrue($barbora->isCustomer());
         $this->assertNull($barbora->email_verified_at);
         $this->assertSame('2024-01-02', $barbora->created_at->toDateString());
         $this->assertTrue($barbora->tags->pluck('name')->contains(ErgobodyImport::IMPORT_TAG));
@@ -96,7 +94,7 @@ class ErgobodyImportTest extends TestCase
         $this->assertSame(1, User::query()->where('name', 'Lucie Fickerová')->count());
 
         $lucie = $this->lucie->fresh();
-        $this->assertSame(UserRole::Admin, $lucie->role);
+        $this->assertTrue($lucie->isAdmin());
         $this->assertSame('lucie.fickerova@friendlyfyzio.cz', $lucie->email, 'Her login e-mail is untouched.');
         $this->assertSame('fyzioterapeut', $lucie->clientProfile->occupation);
         $this->assertSame('65.00', $lucie->clientProfile->weight);
@@ -108,7 +106,7 @@ class ErgobodyImportTest extends TestCase
         $this->runImport();
 
         $former = User::query()->where('email', 'renata.dojcsanova@friendlyfyzio.cz')->firstOrFail();
-        $this->assertSame(UserRole::Therapist, $former->role);
+        $this->assertTrue($former->isTherapist());
         $this->assertNotNull($former->deactivated_at);
 
         // She gets a profile only so her historical visits have somewhere to

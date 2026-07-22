@@ -85,7 +85,7 @@ class BricksTest extends TestCase
             'attrs' => ['id' => $id, 'config' => $config],
         ];
 
-        $publishedUser = User::factory()->therapist()->create(['name' => 'Mgr. Lucie Fičkerová']);
+        $publishedUser = User::factory()->create(['name' => 'Mgr. Lucie Fičkerová']);
         $published = StaffProfile::factory()->for($publishedUser)->published()->create([
             'slug' => 'lucie-fickerova',
             'title' => 'Fyzioterapeutka, zakladatelka',
@@ -96,7 +96,7 @@ class BricksTest extends TestCase
             'display_order' => 0,
         ]);
 
-        $draftUser = User::factory()->therapist()->create(['name' => 'Jana Beránková']);
+        $draftUser = User::factory()->create(['name' => 'Jana Beránková']);
         $draft = StaffProfile::factory()->for($draftUser)->unpublished()->create(['title' => 'Masérka']);
 
         Page::factory()->system('home')->create([

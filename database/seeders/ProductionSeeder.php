@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Enums\UserRole;
+use App\Enums\Capability;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -51,27 +51,25 @@ class ProductionSeeder extends Seeder
     }
 
     /**
-     * The owner's administrator login. Deliberately not part of RealDataSeeder,
-     * which mirrors the public team page: this account belongs to nobody on
-     * /o-nas and must never show up there. As a plain administrator without
-     * `acts_as_therapist` it also gets no therapist profile, so it stays out of
+     * The owner's login — the sole super-administrator, the only account that
+     * may grant admin/super-admin capabilities and delete other admins.
+     * Deliberately not part of RealDataSeeder (which mirrors the public team
+     * page): this account belongs to nobody on /o-nas. It holds only the
+     * SuperAdmin capability, so it gets no therapist profile and stays out of
      * the booking flow.
      */
     protected function seedOwnerAccount(): void
     {
         $user = User::query()->firstOrNew(['email' => self::OWNER_EMAIL]);
 
-        $user->fill([
-            'name' => 'Michal Cecko',
-            'role' => UserRole::Admin,
-        ]);
+        $user->fill(['name' => 'Michal Cecko']);
 
         if (! $user->exists) {
             // The 'hashed' cast on the model hashes this on assignment.
             $user->forceFill(['password' => self::OWNER_INITIAL_PASSWORD]);
 
             $this->command?->warn(sprintf(
-                'Created administrator %s with the initial password "%s" — change it after signing in.',
+                'Created super-administrator %s with the initial password "%s" — change it after signing in.',
                 self::OWNER_EMAIL,
                 self::OWNER_INITIAL_PASSWORD,
             ));
@@ -79,5 +77,7 @@ class ProductionSeeder extends Seeder
 
         $user->email_verified_at ??= now();
         $user->save();
+
+        $user->syncCapabilities([Capability::SuperAdmin]);
     }
 }

@@ -38,7 +38,7 @@ class CourseLessonResourceTest extends TestCase
     public function test_admin_can_create_record(): void
     {
         $series = CourseSeries::factory()->create();
-        $instructor = User::factory()->therapist()->create();
+        $instructor = User::factory()->lecturer()->create();
         $room = Room::factory()->create();
 
         Livewire::test(CreateCourseLesson::class)

@@ -81,8 +81,8 @@ class ActivityLogResourceTest extends TestCase
 
     public function test_admin_sees_all_activities_therapist_only_their_scoped(): void
     {
-        $therapistUser = User::factory()->therapist()->create();
-        $profile = StaffProfile::factory()->create(['user_id' => $therapistUser->getKey()]);
+        $profile = StaffProfile::factory()->create();
+        $therapistUser = $profile->user;
 
         $mine = Reservation::factory()->create(['therapist_id' => $profile->getKey()]);
         $other = Reservation::factory()->create();

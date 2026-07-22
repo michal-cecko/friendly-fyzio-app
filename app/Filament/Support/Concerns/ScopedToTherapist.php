@@ -2,14 +2,13 @@
 
 namespace App\Filament\Support\Concerns;
 
-use App\Enums\UserRole;
 use App\Models\User;
 
 /**
  * Row-level scoping for the therapist portal. A pure therapist (role Therapist)
  * only sees their own data in the shared admin resources; administrators — including
- * an admin who also practises via `acts_as_therapist` — keep full access (the scope
- * helpers return null for them, leaving the query unfiltered).
+ * an admin who also practises (Therapist + Admin) keeps full, unscoped access
+ * (the scope helpers return null for them, leaving the query unfiltered).
  */
 trait ScopedToTherapist
 {
@@ -35,6 +34,7 @@ trait ScopedToTherapist
     {
         $user = auth()->user();
 
-        return $user instanceof User && $user->role === UserRole::Therapist ? $user : null;
+        // A therapist who is not also an admin: admins keep full, unscoped access.
+        return $user instanceof User && $user->isTherapist() && ! $user->isAdmin() ? $user : null;
     }
 }

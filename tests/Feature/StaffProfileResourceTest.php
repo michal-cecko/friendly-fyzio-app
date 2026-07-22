@@ -23,27 +23,38 @@ class StaffProfileResourceTest extends TestCase
         Filament::setCurrentPanel('admin');
     }
 
-    public function test_admin_can_create_therapist_profile_with_generated_slug(): void
+    public function test_admin_can_create_a_profile_for_a_staff_member_without_one(): void
     {
         $this->actingAs(User::factory()->admin()->create());
 
-        $therapistUser = User::factory()->therapist()->create(['name' => 'Mgr. Lucie Fičkerová']);
+        // A pure admin (the assistant case) has no auto-created profile, so the
+        // manual create flow adds one and generates the slug from their name.
+        $assistant = User::factory()->admin()->create(['name' => 'Mgr. Lucie Fičkerová']);
+        $this->assertNull($assistant->staffProfile);
 
         Livewire::test(CreateStaffProfile::class)
             ->fillForm([
-                'user_id' => $therapistUser->getKey(),
+                'user_id' => $assistant->getKey(),
                 'title' => 'Fyzioterapeutka, zakladatelka',
                 'published_at' => now(),
             ])
             ->call('create')
             ->assertHasNoFormErrors();
 
-        $profile = StaffProfile::where('user_id', $therapistUser->getKey())->first();
+        $profile = StaffProfile::where('user_id', $assistant->getKey())->first();
 
         $this->assertNotNull($profile);
         $this->assertSame('Fyzioterapeutka, zakladatelka', $profile->title);
         $this->assertStringContainsString('lucie-fickerova', $profile->slug); // auto-generated from the user's name
         $this->assertTrue($profile->isPublished());
+    }
+
+    public function test_a_therapist_gets_an_auto_created_profile_with_a_slug(): void
+    {
+        $therapist = User::factory()->therapist()->create(['name' => 'Jana Terapeutka']);
+
+        $this->assertNotNull($therapist->staffProfile);
+        $this->assertStringContainsString('jana-terapeutka', $therapist->staffProfile->slug);
     }
 
     public function test_profile_relation_manager_is_visible_only_for_therapists(): void

@@ -2,7 +2,6 @@
 
 namespace App\Filament\Clusters\Provoz\Resources\Clients;
 
-use App\Enums\UserRole;
 use App\Filament\Clusters\Provoz\ProvozCluster;
 use App\Filament\Clusters\Provoz\Resources\Clients\Pages\CreateClient;
 use App\Filament\Clusters\Provoz\Resources\Clients\Pages\EditClient;
@@ -85,7 +84,7 @@ class ClientResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->where('role', UserRole::Customer)
+            ->customers()
             // "My Clients": a therapist only sees customers they have treated.
             ->when(static::staffProfileScopeId(), fn (Builder $query, string $id) => $query
                 ->whereHas('reservations', fn (Builder $reservations) => $reservations->where('therapist_id', $id)));

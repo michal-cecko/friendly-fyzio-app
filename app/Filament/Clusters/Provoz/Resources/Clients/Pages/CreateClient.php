@@ -2,8 +2,8 @@
 
 namespace App\Filament\Clusters\Provoz\Resources\Clients\Pages;
 
-use App\Enums\UserRole;
 use App\Filament\Clusters\Provoz\Resources\Clients\ClientResource;
+use App\Models\User;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Str;
 
@@ -17,12 +17,17 @@ class CreateClient extends CreateRecord
      */
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        $data['role'] = UserRole::Customer;
-
         // Password is managed via the "Reset hesla" action, not the form, so a
         // new account starts with a random password the admin can later set.
         $data['password'] = Str::password(16);
 
         return $data;
+    }
+
+    protected function afterCreate(): void
+    {
+        /** @var User $record */
+        $record = $this->record;
+        $record->markAsCustomer();
     }
 }
