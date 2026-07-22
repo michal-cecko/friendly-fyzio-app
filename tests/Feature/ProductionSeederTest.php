@@ -25,6 +25,25 @@ class ProductionSeederTest extends TestCase
 {
     use RefreshDatabase;
 
+    /** A throwaway value, not a real credential — the seeder reads it from the env. */
+    private const string OWNER_TEST_PASSWORD = 'test-owner-initial-pw';
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        putenv('OWNER_INITIAL_PASSWORD='.self::OWNER_TEST_PASSWORD);
+        $_ENV['OWNER_INITIAL_PASSWORD'] = self::OWNER_TEST_PASSWORD;
+    }
+
+    protected function tearDown(): void
+    {
+        putenv('OWNER_INITIAL_PASSWORD');
+        unset($_ENV['OWNER_INITIAL_PASSWORD']);
+
+        parent::tearDown();
+    }
+
     protected function seedProduction(): void
     {
         // Run through Artisan rather than $this->seed(): RolePermissionSeeder
@@ -66,7 +85,7 @@ class ProductionSeederTest extends TestCase
         $this->assertTrue($owner->isSuperAdmin());
         $this->assertTrue($owner->isAdmin(), 'A super-admin is also an admin.');
         $this->assertTrue($owner->isStaff());
-        $this->assertTrue(Hash::check('FriendlyFyzio2026!', $owner->password));
+        $this->assertTrue(Hash::check(self::OWNER_TEST_PASSWORD, $owner->password));
         $this->assertNotNull($owner->email_verified_at);
 
         // He is not on the team page, not bookable, and not a lecturer.

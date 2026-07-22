@@ -41,12 +41,6 @@ class RealDataSeeder extends Seeder
     /** The site owner / developer account (kept off the public team page). */
     protected const string OWNER_EMAIL = 'ceckomichal@gmail.com';
 
-    /**
-     * Only applied when the account is first created, so a password changed in
-     * the app survives re-running the seeder. Change it after the first sign-in.
-     */
-    protected const string OWNER_INITIAL_PASSWORD = 'FriendlyFyzio2026!';
-
     public function run(): void
     {
         $this->seedStaff();
@@ -95,14 +89,17 @@ class RealDataSeeder extends Seeder
         $user->fill(['name' => 'Michal Čečko']);
 
         if (! $user->exists) {
-            // The 'hashed' cast on the model hashes this on assignment.
-            $user->forceFill(['password' => self::OWNER_INITIAL_PASSWORD]);
+            // Never hardcode a credential. The initial password comes from the
+            // OWNER_INITIAL_PASSWORD env var; without it, a random one is set and
+            // the owner uses "zapomenuté heslo". The value is never printed.
+            $initial = (string) env('OWNER_INITIAL_PASSWORD', '');
 
-            $this->command?->warn(sprintf(
-                'Created super-administrator %s with the initial password "%s" — change it after signing in.',
-                self::OWNER_EMAIL,
-                self::OWNER_INITIAL_PASSWORD,
-            ));
+            // The 'hashed' cast hashes this on assignment.
+            $user->forceFill(['password' => $initial !== '' ? $initial : Str::password(24)]);
+
+            $this->command?->warn($initial !== ''
+                ? sprintf('Created super-administrator %s from OWNER_INITIAL_PASSWORD — change it after signing in.', self::OWNER_EMAIL)
+                : sprintf('Created super-administrator %s with a random password — use "zapomenuté heslo" to set one.', self::OWNER_EMAIL));
         }
 
         $user->email_verified_at ??= now();
