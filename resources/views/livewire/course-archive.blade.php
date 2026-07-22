@@ -60,10 +60,17 @@
             <span class="flex h-14 w-14 items-center justify-center rounded-full bg-primary-light text-primary">
                 <x-lucide name="calendar-x" class="h-6 w-6" />
             </span>
-            <p class="font-heading text-lg font-semibold text-neutral-900">
-                Žádné kurzy neodpovídají zadaným filtrům.
-            </p>
-            <p class="max-w-md text-sm leading-relaxed text-neutral-600">Zkuste změnit kategorii, zrušit vyhledávání — nebo se nám ozvěte a poradíme vám s výběrem.</p>
+            @if($filtersActive)
+                <p class="font-heading text-lg font-semibold text-neutral-900">
+                    Žádné kurzy neodpovídají zadaným filtrům.
+                </p>
+                <p class="max-w-md text-sm leading-relaxed text-neutral-600">Zkuste změnit kategorii, zrušit vyhledávání — nebo se nám ozvěte a poradíme vám s výběrem.</p>
+            @else
+                <p class="font-heading text-lg font-semibold text-neutral-900">
+                    Zatím nemáme vypsaný žádný otevřený termín.
+                </p>
+                <p class="max-w-md text-sm leading-relaxed text-neutral-600">Nové kurzy právě chystáme. Nechte nám na sebe kontakt a dáme vám vědět, jakmile otevřeme přihlašování.</p>
+            @endif
         </div>
     @else
         <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3" wire:loading.class="opacity-50">

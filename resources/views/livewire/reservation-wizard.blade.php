@@ -124,12 +124,12 @@
                                                         <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18 21a8 8 0 0 0-16 0M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3" /><circle cx="10" cy="8" r="5" /></svg>
                                                     </span>
                                                     <span class="font-heading text-sm font-semibold text-neutral-900">Nezáleží</span>
-                                                    <span class="text-xs {{ $muted }}">Více volných termínů</span>
                                                 </div>
                                             </label>
                                         @endif
                                         @foreach ($this->therapists as $therapist)
-                                            @php($name = $therapist->user?->full_name ?? 'Terapeut')
+                                            @php($name = $therapist->user?->name ?? 'Terapeut')
+                                            @php($firstName = \Illuminate\Support\Str::of($name)->trim()->before(' '))
                                             @php($photo = \App\Support\Media::url($therapist->photo, 'thumb'))
                                             <label wire:key="th-{{ $therapist->id }}" class="cursor-pointer">
                                                 <input type="radio" wire:model="therapistSlug" value="{{ $therapist->slug }}" class="peer sr-only">
@@ -141,8 +141,7 @@
                                                             {{ \App\Support\Avatar::initials($name) }}
                                                         @endif
                                                     </span>
-                                                    <span class="font-heading text-sm font-semibold text-neutral-900">{{ $name }}</span>
-                                                    <span class="text-xs {{ $muted }}">{{ $therapist->is_collaborator ? 'Spolupracující terapeut' : 'Terapeut' }}</span>
+                                                    <span class="font-heading text-sm font-semibold text-neutral-900">{{ $firstName }}</span>
                                                 </div>
                                             </label>
                                         @endforeach

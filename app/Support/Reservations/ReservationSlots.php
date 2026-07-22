@@ -249,10 +249,12 @@ class ReservationSlots
     protected function baseTherapistIds(Service $service, ?string $therapistId): array
     {
         // Deliberately not filtered by published_at: publishing only controls the
-        // public team page and profile detail, not who can be booked — matching
-        // the wizard's therapist picker. Bookability = performs the service and
-        // has work blocks in the window.
+        // public team page and profile detail, not who can be booked. The
+        // `bookable` scope pins this to actual therapists (Therapist capability +
+        // active account), so "Nezáleží" only ever spreads across therapists —
+        // never a lecturer or the assistant who happens to link the service.
         return $service->therapists()
+            ->bookable()
             ->when($therapistId, fn ($query) => $query->whereKey($therapistId))
             ->pluck('staff_profiles.id')
             ->all();

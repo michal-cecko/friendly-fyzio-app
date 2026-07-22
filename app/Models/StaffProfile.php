@@ -6,6 +6,7 @@ use App\Contracts\HasPermalink;
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\Publishable;
 use Database\Factories\StaffProfileFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -91,6 +92,20 @@ class StaffProfile extends Model implements HasPermalink
     public function services(): BelongsToMany
     {
         return $this->belongsToMany(Service::class, 'service_therapists', 'therapist_id', 'service_id');
+    }
+
+    /**
+     * Profiles that may be offered a NEW booking, the single source of truth for
+     * "who is bookable": an active user holding the Therapist capability who
+     * performs at least one bookable service. A lecturer or the assistant — a
+     * profile with services but no therapist capability — is therefore never
+     * offered in the reservation wizard or its slot engine.
+     */
+    public function scopeBookable(Builder $query): Builder
+    {
+        return $query
+            ->whereHas('user', fn (Builder $user): Builder => $user->whereNull('deactivated_at')->therapists())
+            ->whereHas('services', fn (Builder $service): Builder => $service->bookable());
     }
 
     public function workBlocks(): HasMany

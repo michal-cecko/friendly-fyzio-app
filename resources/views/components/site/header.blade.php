@@ -24,6 +24,37 @@
         ['url' => url('/muj-ucet/profil'), 'label' => 'Můj profil'],
     ];
 
+    // Current page, normalized to a slash-trimmed path ('' for the homepage), so
+    // nav links can highlight the active page/section.
+    $currentPath = trim(request()->path(), '/');
+
+    $navPath = fn (?string $url): ?string => $url === null
+        ? null
+        : trim((string) parse_url($url, PHP_URL_PATH), '/');
+
+    // A leaf is active on its exact page or anything beneath it (so /sluzby stays
+    // lit on /sluzby/fyzioterapie); the homepage ('') matches only itself.
+    $pathActive = function (?string $url) use ($currentPath, $navPath): bool {
+        $path = $navPath($url);
+
+        if ($path === null) {
+            return false;
+        }
+
+        return $path === ''
+            ? $currentPath === ''
+            : $currentPath === $path || str_starts_with($currentPath, $path.'/');
+    };
+
+    // A parent is active when its own link or any of its children match.
+    $itemActive = function ($item) use ($pathActive): bool {
+        if ($pathActive($item->resolvedUrl())) {
+            return true;
+        }
+
+        return $item->children->contains(fn ($child): bool => $pathActive($child->resolvedUrl()));
+    };
+
     // Icon snippets (lucide, 24x24). Stroke inherits currentColor so size/color
     // is controlled by the wrapping element's font-size and text color utilities.
     $icon = [
@@ -110,9 +141,14 @@
         <div class="border-t border-line">
             <nav class="ff-container flex items-center justify-center gap-8 py-3">
                 @foreach($items as $item)
+                    @php($active = $itemActive($item))
                     @if($item->children->isNotEmpty())
                         <div class="group relative">
-                            <a href="{{ $item->resolvedUrl() ?? '#' }}" class="inline-flex items-center gap-1 text-sm font-medium text-neutral-900 transition hover:text-primary">
+                            <a href="{{ $item->resolvedUrl() ?? '#' }}" @if($active) aria-current="page" @endif @class([
+                                'inline-flex items-center gap-1 text-sm font-medium transition hover:text-primary',
+                                'text-primary' => $active,
+                                'text-neutral-900' => ! $active,
+                            ])>
                                 {{ $item->label }}
                                 <svg class="h-3.5 w-3.5 text-neutral-500 transition group-hover:rotate-180 group-hover:text-primary" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">{!! $icon['chevron-down'] !!}</svg>
                             </a>
@@ -129,7 +165,11 @@
                             </div>
                         </div>
                     @else
-                        <a href="{{ $item->resolvedUrl() ?? '#' }}" target="{{ $item->target }}" class="text-sm font-medium text-neutral-900 transition hover:text-primary">{{ $item->label }}</a>
+                        <a href="{{ $item->resolvedUrl() ?? '#' }}" target="{{ $item->target }}" @if($active) aria-current="page" @endif @class([
+                            'text-sm font-medium transition hover:text-primary',
+                            'text-primary' => $active,
+                            'text-neutral-900' => ! $active,
+                        ])>{{ $item->label }}</a>
                     @endif
                 @endforeach
             </nav>
@@ -160,10 +200,11 @@
         <div class="flex flex-col gap-5 p-6">
             <div>
                 @foreach($items as $item)
+                    @php($active = $itemActive($item))
                     @if($item->children->isNotEmpty())
                         <div data-accordion>
                             <button type="button" data-accordion-trigger class="flex w-full items-center justify-between border-b border-line py-[18px] text-left">
-                                <span data-accordion-label class="font-heading text-lg font-medium text-neutral-900">{{ $item->label }}</span>
+                                <span data-accordion-label @class(['font-heading text-lg font-medium', 'text-primary' => $active, 'text-neutral-900' => ! $active])>{{ $item->label }}</span>
                                 <svg data-accordion-icon class="h-5 w-5 shrink-0 text-neutral-400 transition-transform" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">{!! $icon['chevron-right'] !!}</svg>
                             </button>
                             <div data-accordion-panel class="hidden">
@@ -178,8 +219,8 @@
                             </div>
                         </div>
                     @else
-                        <a href="{{ $item->resolvedUrl() ?? '#' }}" target="{{ $item->target }}" class="flex items-center justify-between border-b border-line py-[18px]">
-                            <span class="font-heading text-lg font-medium text-neutral-900">{{ $item->label }}</span>
+                        <a href="{{ $item->resolvedUrl() ?? '#' }}" target="{{ $item->target }}" @if($active) aria-current="page" @endif class="flex items-center justify-between border-b border-line py-[18px]">
+                            <span @class(['font-heading text-lg font-medium', 'text-primary' => $active, 'text-neutral-900' => ! $active])>{{ $item->label }}</span>
                             <svg class="h-5 w-5 shrink-0 text-neutral-400" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">{!! $icon['chevron-right'] !!}</svg>
                         </a>
                     @endif

@@ -259,14 +259,12 @@ class ReservationWizard extends Component
     {
         // Deliberately not filtered by the therapist's own published_at: publishing
         // only controls the public team page and profile detail, not who can be
-        // booked. A therapist is offered only if they perform at least one bookable
-        // service (otherwise picking them is a dead end).
+        // booked. Bookability (Therapist capability + an active account + at least
+        // one bookable service) lives in one place, StaffProfile::scopeBookable —
+        // so lecturers and the assistant never appear here.
         return StaffProfile::query()
             ->with('user')
-            // Staff who have left keep a profile so their historical visits stay
-            // attributed, but must never be offered a new booking.
-            ->whereHas('user', fn ($q) => $q->whereNull('deactivated_at'))
-            ->whereHas('services', fn ($q) => $q->bookable())
+            ->bookable()
             ->when($this->service, fn ($query) => $query->whereHas('services', fn ($q) => $q->whereKey($this->service->id)))
             ->get()
             ->sortBy(fn (StaffProfile $therapist): string => $therapist->user?->name ?? '')

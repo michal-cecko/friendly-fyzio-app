@@ -84,6 +84,7 @@ class CourseArchive extends Component
             'preparing' => $this->preparingCourses(),
             'showFilters' => (bool) ($this->config['show_filters'] ?? true),
             'showSearch' => (bool) ($this->config['show_search'] ?? true),
+            'filtersActive' => $this->category !== null || filled($this->search) || $this->availableOnly,
             'crossSell' => $this->crossSell(),
         ]);
     }
