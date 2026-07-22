@@ -29,3 +29,6 @@ rr
 
 # Composer auth credentials (provide via Dokploy COMPOSER_AUTH build arg)
 auth.json
+
+# Raw data exports used by the one-off import commands (client records — never commit)
+/export
