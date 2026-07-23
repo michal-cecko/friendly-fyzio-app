@@ -36,9 +36,18 @@ class EnrollingNowBrick extends Brick
 
     public static function toHtml(array $config, ?array $data = null): ?string
     {
+        $categories = EnrollingNow::cached();
+
+        // With no open runs the section would be an empty shell, so it is
+        // hidden from the public site entirely. The editor preview keeps
+        // rendering it so admins can still see the brick on the page.
+        if ($categories === [] && ! request()->routeIs('mason.preview', 'mason.entry')) {
+            return '';
+        }
+
         return view('bricks.enrolling-now', [
             'config' => $config,
-            'categories' => EnrollingNow::cached(),
+            'categories' => $categories,
         ])->render();
     }
 

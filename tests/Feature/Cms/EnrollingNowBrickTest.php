@@ -139,6 +139,13 @@ class EnrollingNowBrickTest extends TestCase
         $this->assertSame(['Áčko', 'Béčko'], $titles);
     }
 
+    public function test_brick_renders_nothing_on_the_public_site_when_nothing_is_enrolling(): void
+    {
+        // No open runs -> the section is hidden entirely instead of rendering
+        // an empty shell with just the heading.
+        $this->assertSame('', EnrollingNowBrick::toHtml(['title' => 'Právě přihlašujeme']));
+    }
+
     public function test_rendered_brick_links_the_category_and_each_course(): void
     {
         $category = $this->publishedCategory(['name' => 'Jóga', 'slug' => 'joga']);
