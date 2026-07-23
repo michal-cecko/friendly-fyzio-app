@@ -332,15 +332,23 @@ class PageSeeder extends Seeder
                         'background' => 'alt',
                         'columns' => 4,
                     ]),
-                    // Jakub is an external collaborator, not a core team member,
-                    // so he's presented as a static block below the data-driven
-                    // team grid rather than as a bookable therapist profile.
+                    // Jakub and Lucie Amani are external collaborators, not core
+                    // team members — they rent space in the centre rather than
+                    // treating our clients. They're presented as static blocks
+                    // below the data-driven team grid, never as bookable profiles.
                     $this->brick('photo-text', [
                         'eyebrow' => 'Externí spolupráce',
                         'image' => $this->mediaFromPath(database_path('seeders/data/team/jakub-trepac.jpg'), 'Jakub Trepáč'),
                         'image_position' => 'right',
                         'title' => 'Mgr. Jakub Trepáč',
                         'body' => '<p>Externí spolupracovník našeho centra se specializací na <strong>dětskou fyzioterapii</strong>.</p>',
+                    ]),
+                    $this->brick('photo-text', [
+                        'eyebrow' => 'Externí spolupráce',
+                        'image' => $this->mediaFromPath(database_path('seeders/data/team/lucie-amani.jpg'), 'Lucie Amani'),
+                        'image_position' => 'left',
+                        'title' => 'Lucie Amani',
+                        'body' => '<p>Pohybová specialistka, která v našem centru využívá prostory pro <strong>vlastní kurzy</strong> zaměřené na <strong>SM systém</strong> a <strong>pohyb pánevního dna</strong>.</p>',
                     ]),
                 ],
             ],

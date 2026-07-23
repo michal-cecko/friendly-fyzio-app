@@ -15,6 +15,7 @@ use App\Models\OneOffEventBooking;
 use App\Models\Reservation;
 use App\Models\Service;
 use App\Models\User;
+use App\Notifications\Auth\FilamentResetPasswordNotification;
 use App\Notifications\Auth\VerifyEmailChangeNotification;
 use App\Observers\MediaLibraryItemObserver;
 use Filament\Actions\Action;
@@ -23,6 +24,7 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\View\ActionsIconAlias;
+use Filament\Auth\Notifications\ResetPassword as FilamentResetPassword;
 use Filament\Auth\Notifications\VerifyEmailChange as FilamentVerifyEmailChange;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\RichEditor\TextColor;
@@ -41,11 +43,14 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        // Render the Filament e-mail-change verification from the dashboard-editable
-        // CMS template (the admin panel's profile still uses it). Registration,
-        // e-mail verification and password reset run through the public auth pages
-        // and dispatch App\Notifications\Auth\* directly.
+        // Render Filament's own notifications from the dashboard-editable CMS
+        // templates: the admin panel's profile dispatches the e-mail-change
+        // verification and its "forgot password" page dispatches the reset
+        // notification directly, bypassing the User model hooks. Registration and
+        // e-mail verification run through the public auth pages and dispatch
+        // App\Notifications\Auth\* directly.
         $this->app->bind(FilamentVerifyEmailChange::class, VerifyEmailChangeNotification::class);
+        $this->app->bind(FilamentResetPassword::class, FilamentResetPasswordNotification::class);
     }
 
     public function boot(): void

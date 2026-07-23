@@ -75,7 +75,7 @@ RUN echo "upload_max_filesize = 128M" > /usr/local/etc/php/conf.d/php.ini \
 COPY --from=build --chown=www-data:www-data /var/www /var/www
 
 RUN chmod -R 755 /var/www/storage /var/www/bootstrap/cache /var/www/public \
-    && chmod +x /var/www/rr \
+    && chmod +x /var/www/rr /var/www/docker/entrypoint.sh \
     && /var/www/rr --version
 
 EXPOSE 8000
@@ -86,4 +86,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
 ENV LOG_CHANNEL=single
 ENV ENV=/etc/profile
 
-CMD ["bash", "-c", "php artisan optimize && touch storage/logs/laravel.log && tail -f storage/logs/laravel.log & php artisan octane:start --server=roadrunner --host=0.0.0.0 --port=8000 --workers=2 --max-requests=500"]
+CMD ["/var/www/docker/entrypoint.sh"]

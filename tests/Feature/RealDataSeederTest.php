@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\Capability;
 use App\Models\Building;
 use App\Models\Room;
 use App\Models\StaffProfile;
@@ -17,6 +18,21 @@ class RealDataSeederTest extends TestCase
     protected function seedRealData(): void
     {
         $this->seed(RealDataSeeder::class);
+    }
+
+    public function test_prunes_external_room_renters_seeded_by_earlier_installs(): void
+    {
+        // An earlier install seeded Lucie Amani as a lecturer with a staff
+        // profile (and thus panel access). She only rents rooms, so a re-seed
+        // must remove her account and her cascade-linked profile.
+        $amani = User::factory()->create(['email' => 'lucie.amani@friendlyfyzio.cz']);
+        $amani->syncCapabilities([Capability::Lecturer]);
+        $this->assertNotNull($amani->staffProfile);
+
+        $this->seedRealData();
+
+        $this->assertSame(0, User::query()->where('email', 'lucie.amani@friendlyfyzio.cz')->count());
+        $this->assertSame(0, StaffProfile::query()->where('user_id', $amani->getKey())->count());
     }
 
     public function test_seeds_the_team_with_roles_profiles_and_specializations(): void
@@ -44,16 +60,10 @@ class RealDataSeederTest extends TestCase
         $this->assertNotNull($adela->staffProfile?->published_at);
         $this->assertSame('Asistentka', $adela->staffProfile->title);
 
-        // Lucie Amani, the one remaining collaborator (Jakub is off the team).
-        $this->assertSame(
-            1,
-            StaffProfile::query()->where('is_collaborator', true)->count(),
-        );
-
-        // Lucie Amani is a lecturer, not a bookable therapist.
-        $amani = User::query()->where('email', 'lucie.amani@friendlyfyzio.cz')->firstOrFail();
-        $this->assertTrue($amani->isLecturer());
-        $this->assertFalse($amani->isTherapist());
+        // Lucie Amani and Jakub Trepáč only rent rooms — neither is seeded as
+        // staff, so no account, no profile, and no place on the team grid.
+        $this->assertSame(0, StaffProfile::query()->where('is_collaborator', true)->count());
+        $this->assertSame(0, User::query()->where('email', 'lucie.amani@friendlyfyzio.cz')->count());
 
         // The owner super-admin: seeded here but off the public team (no profile).
         $owner = User::query()->where('email', 'ceckomichal@gmail.com')->firstOrFail();
@@ -61,7 +71,7 @@ class RealDataSeederTest extends TestCase
         $this->assertTrue($owner->isSuperAdmin());
         $this->assertNull($owner->staffProfile);
 
-        $this->assertSame(11, StaffProfile::query()->count());
+        $this->assertSame(10, StaffProfile::query()->count());
         // 8 pure therapists plus Lucie Fickerová, who is a super-admin and a therapist.
         $this->assertSame(9, User::query()->therapists()->count());
     }
@@ -88,9 +98,9 @@ class RealDataSeederTest extends TestCase
         $this->seedRealData();
         $this->seed(RealDataSeeder::class);
 
-        // 11 team members + the owner super-admin (who has no team profile).
-        $this->assertSame(12, User::query()->count());
-        $this->assertSame(11, StaffProfile::query()->count());
+        // 10 team members + the owner super-admin (who has no team profile).
+        $this->assertSame(11, User::query()->count());
+        $this->assertSame(10, StaffProfile::query()->count());
         $this->assertSame(1, Building::query()->count());
         $this->assertSame(4, Room::query()->count());
     }

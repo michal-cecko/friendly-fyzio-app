@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Console\Commands\CoursesImport;
 use App\Enums\Capability;
 use App\Models\Building;
 use App\Models\Room;
@@ -41,14 +42,46 @@ class RealDataSeeder extends Seeder
     /** The site owner / developer account (kept off the public team page). */
     protected const string OWNER_EMAIL = 'ceckomichal@gmail.com';
 
+    /**
+     * External room-renters who were seeded as staff in earlier installs: they
+     * only rent rooms, so they must have no account and no panel access. Pruned
+     * on every run so the seeder converges. See {@see pruneExternalRentalStaff}.
+     *
+     * @var list<string>
+     */
+    protected const array EXTERNAL_RENTAL_EMAILS = [
+        'lucie.amani@friendlyfyzio.cz',
+    ];
+
     public function run(): void
     {
         $this->seedStaff();
+        $this->pruneExternalRentalStaff();
         $this->seedOwner();
         $this->seedBuildingAndRooms();
         $this->importErgobodyExport();
         $this->importCoursesExport();
         $this->importWorkBlocksExport();
+    }
+
+    /**
+     * Remove any external room-renter previously seeded as staff (e.g. Lucie
+     * Amani). A hard delete is required — {@see User} soft-deletes, and only a
+     * real DELETE cascades their staff profile and their own rental
+     * courses/events (all unpublished and enrollment-free). {@see CoursesImport}
+     * skips their catalogue rows, so nothing is recreated. Idempotent: a no-op
+     * once the account is gone.
+     */
+    protected function pruneExternalRentalStaff(): void
+    {
+        User::query()
+            ->withTrashed()
+            ->whereIn('email', self::EXTERNAL_RENTAL_EMAILS)
+            ->get()
+            ->each(function (User $user): void {
+                $this->command?->warn("Removing external room-renter {$user->email} — not a team member.");
+                $user->forceDelete();
+            });
     }
 
     /**
@@ -369,24 +402,12 @@ class RealDataSeeder extends Seeder
                 'title' => 'Asistentka',
                 'photo' => 'adela-macurova.jpg',
             ],
-            [
-                // Lucie Amani teaches courses/workshops but does not do 1:1
-                // physiotherapy — a lecturer, not a bookable therapist.
-                'name' => 'Lucie Amani',
-                'email' => 'lucie.amani@friendlyfyzio.cz',
-                'capabilities' => [Capability::Lecturer],
-                'title' => 'Pohybový specialista',
-                'photo' => 'lucie-amani.jpg',
-                'is_collaborator' => true,
-                'specializations' => [
-                    ['name' => 'SM systém', 'icon' => 'move'],
-                    ['name' => 'Terapie pánevního dna', 'icon' => 'heart'],
-                    ['name' => 'Bylinná napářka', 'icon' => 'leaf'],
-                ],
-            ],
-            // Jakub Trepáč is an external collaborator listed only for reference,
-            // not a team member — kept off /o-nas (a static brick presents him
-            // below the team). Intentionally absent from the seeded staff.
+            // Lucie Amani and Jakub Trepáč are external third parties who only
+            // rent rooms — not team members, with no account and no panel access.
+            // Both are kept off the seeded staff and off /o-nas' data-driven team
+            // grid; a static "Externí spolupráce" brick presents them below the
+            // team (see PageSeeder). Amani's own courses are her rentals, so
+            // CoursesImport skips them rather than importing/attributing her.
         ];
     }
 }

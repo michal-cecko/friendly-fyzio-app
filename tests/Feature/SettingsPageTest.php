@@ -47,6 +47,22 @@ class SettingsPageTest extends TestCase
         }
     }
 
+    public function test_non_admin_staff_cannot_render_settings_pages(): void
+    {
+        $this->actingAs(User::factory()->therapist()->create());
+
+        foreach ([
+            FakturaceSettings::class,
+            PlatbySettings::class,
+            NewsletterSettings::class,
+            RecenzeSettings::class,
+            RezervaceSettings::class,
+            WebSettings::class,
+        ] as $page) {
+            Livewire::test($page)->assertForbidden();
+        }
+    }
+
     public function test_saving_updates_value_and_refreshes_helper(): void
     {
         $this->actingAs(User::factory()->admin()->create());

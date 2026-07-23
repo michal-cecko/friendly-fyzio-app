@@ -66,7 +66,7 @@ class ProductionSeederTest extends TestCase
     {
         $this->seedProduction();
 
-        $this->assertSame(11, StaffProfile::query()->count());
+        $this->assertSame(10, StaffProfile::query()->count());
         $this->assertNotNull(User::query()->where('email', 'lucie.fickerova@friendlyfyzio.cz')->first());
 
         $building = Building::query()->where('name', 'Hlavní budova')->firstOrFail();

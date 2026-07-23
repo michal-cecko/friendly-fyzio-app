@@ -88,9 +88,20 @@ class CoursesImport extends Command
     protected const array EXISTING_STAFF = [
         'Denisa Nováková' => 'denisa.novakova@friendlyfyzio.cz',
         'Lucie Fickerová' => 'lucie.fickerova@friendlyfyzio.cz',
-        'Lucie Amani' => 'lucie.amani@friendlyfyzio.cz',
         'Kristýna Černá' => 'kristyna.cerna@friendlyfyzio.cz',
         'Ema Murčová' => 'ema.murcova@friendlyfyzio.cz',
+    ];
+
+    /**
+     * External room-renters: they rent space for their own courses and are not
+     * part of the practice. Their catalogue rows are skipped entirely — never
+     * imported as courses/workshops and never given an account. All their rows
+     * in the export are solo-taught, so matching the primary lecturer is safe.
+     *
+     * @var list<string>
+     */
+    protected const array EXTERNAL_RENTAL_LECTURERS = [
+        'Lucie Amani',
     ];
 
     /**
@@ -291,6 +302,12 @@ class CoursesImport extends Command
             return null;
         }
 
+        if ($this->isExternalRentalLecturer($this->cell($cells, 8))) {
+            $this->bump('rows_skipped_rental');
+
+            return null;
+        }
+
         return [
             'name' => $name,
             'category' => $section,
@@ -313,6 +330,12 @@ class CoursesImport extends Command
         $name = $this->cleanName($this->cell($cells, 1));
 
         if ($name === '') {
+            return null;
+        }
+
+        if ($this->isExternalRentalLecturer($this->cell($cells, 8))) {
+            $this->bump('rows_skipped_rental');
+
             return null;
         }
 
@@ -1118,6 +1141,24 @@ class CoursesImport extends Command
             array_map(fn (string $name): array => $this->splitTitle($name), $this->splitList($value)),
             fn (array $l): bool => $l['name'] !== '',
         ));
+    }
+
+    /**
+     * Whether a catalogue row's lecturer cell belongs to an external room-renter
+     * ({@see EXTERNAL_RENTAL_LECTURERS}): such rows are skipped entirely. Matches
+     * on the primary (first) lecturer — every rental row is solo-taught.
+     */
+    protected function isExternalRentalLecturer(string $lecturerCell): bool
+    {
+        $primary = $this->splitLecturers($lecturerCell)[0]['name'] ?? '';
+
+        if ($primary === '') {
+            return false;
+        }
+
+        $rentals = array_map(fn (string $name): string => $this->normalizeName($name), self::EXTERNAL_RENTAL_LECTURERS);
+
+        return in_array($this->normalizeName($primary), $rentals, true);
     }
 
     /**

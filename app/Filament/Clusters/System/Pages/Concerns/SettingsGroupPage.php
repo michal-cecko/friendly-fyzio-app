@@ -4,6 +4,7 @@ namespace App\Filament\Clusters\System\Pages\Concerns;
 
 use App\Filament\Clusters\System\SystemCluster;
 use App\Models\Setting;
+use App\Models\User;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\TextInput;
@@ -38,6 +39,16 @@ abstract class SettingsGroupPage extends Page
 
     /** The Setting `group` this page manages. */
     abstract protected static function group(): string;
+
+    /**
+     * Viewing and updating settings is restricted to admins (and super-admins,
+     * which {@see User::isAdmin()} folds in) — a plain therapist or
+     * lecturer must not reach or save any settings group.
+     */
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->isAdmin() ?? false;
+    }
 
     /**
      * A save button in the page header so long forms don't need scrolling to save.

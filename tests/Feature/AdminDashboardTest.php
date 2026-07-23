@@ -125,6 +125,18 @@ class AdminDashboardTest extends TestCase
         $this->get('/admin')->assertOk();
     }
 
+    public function test_dashboard_has_no_quick_actions(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+
+        // The quick-action buttons were removed from the dashboard header.
+        $this->get('/admin')
+            ->assertOk()
+            ->assertDontSee('Nová rezervace')
+            ->assertDontSee('Přidat klienta')
+            ->assertDontSee('Další akce');
+    }
+
     public function test_problems_page_is_admin_only(): void
     {
         $this->actingAs(User::factory()->admin()->create());

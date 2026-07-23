@@ -40,10 +40,6 @@ class CoursesImportTest extends TestCase
             'name' => 'Denisa Nováková',
             'email' => 'denisa.novakova@friendlyfyzio.cz',
         ]);
-        User::factory()->therapist()->create([
-            'name' => 'Lucie Amani',
-            'email' => 'lucie.amani@friendlyfyzio.cz',
-        ]);
 
         // A client-lecturer already exists as a customer, uniquely named.
         User::factory()->customer()->create([
@@ -158,6 +154,17 @@ class CoursesImportTest extends TestCase
         $this->assertStringContainsString('za 1 blok / 2 bloky', (string) $event->description);
         $this->assertSame('2025-09-28', $event->event_date->toDateString());
         $this->assertTrue($event->isPast());
+    }
+
+    public function test_external_rental_lecturer_rows_are_skipped(): void
+    {
+        $this->runImport();
+
+        // Lucie Amani only rents a room for her own courses: her rows must not
+        // be imported, and she must never be given an account.
+        $this->assertSame(0, OneOffEvent::query()->where('name', 'Pánevní dno – emoční rovina')->count());
+        $this->assertSame(0, User::query()->where('email', 'lucie.amani@friendlyfyzio.cz')->count());
+        $this->assertSame(0, User::query()->where('name', 'Lucie Amani')->count());
     }
 
     public function test_multi_lecturer_workshop_uses_primary_and_notes_the_rest(): void
