@@ -111,6 +111,13 @@ class LastMinuteBrickTest extends TestCase
         $this->assertSame([], $this->availability()->compute());
     }
 
+    public function test_brick_renders_nothing_on_the_public_site_when_there_are_no_openings(): void
+    {
+        // No therapists, no work blocks -> the section is hidden entirely
+        // instead of showing the "nothing available" placeholder.
+        $this->assertSame('', LastMinuteBrick::toHtml(['title' => 'Last-minute termíny']));
+    }
+
     public function test_renders_initials_fallback_and_links_slots_to_the_wizard(): void
     {
         $user = User::factory()->therapist()->create(['name' => 'Xandra Ypsilonová']);

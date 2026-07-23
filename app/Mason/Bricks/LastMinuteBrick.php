@@ -29,9 +29,18 @@ class LastMinuteBrick extends Brick
 
     public static function toHtml(array $config, ?array $data = null): ?string
     {
+        $openings = LastMinuteAvailability::cached();
+
+        // Without any openings the section would only say "nothing available",
+        // so it is hidden from the public site entirely. The editor preview
+        // keeps rendering the empty state so admins can still see the brick.
+        if ($openings === [] && ! request()->routeIs('mason.preview', 'mason.entry')) {
+            return '';
+        }
+
         return view('bricks.last-minute', [
             'config' => $config,
-            'openings' => LastMinuteAvailability::cached(),
+            'openings' => $openings,
         ])->render();
     }
 
