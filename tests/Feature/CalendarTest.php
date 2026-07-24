@@ -357,6 +357,40 @@ class CalendarTest extends TestCase
         $this->assertContains($reservation->getKey(), array_column($events, 'id'));
     }
 
+    public function test_therapist_list_shows_only_current_published_therapists_and_lecturers(): void
+    {
+        $publishedTherapist = StaffProfile::create([
+            'user_id' => User::factory()->therapist()->create()->getKey(),
+            'published_at' => now(),
+        ]);
+        $publishedLecturer = StaffProfile::create([
+            'user_id' => User::factory()->lecturer()->create()->getKey(),
+            'published_at' => now(),
+        ]);
+
+        // Excluded: unpublished (historical import), deactivated ex-staff, and an
+        // admin/assistant profile that neither treats nor teaches.
+        $unpublishedLecturer = StaffProfile::create([
+            'user_id' => User::factory()->lecturer()->create()->getKey(),
+        ]);
+        $deactivatedTherapist = StaffProfile::create([
+            'user_id' => User::factory()->therapist()->create(['deactivated_at' => now()])->getKey(),
+            'published_at' => now(),
+        ]);
+        $adminOnly = StaffProfile::create([
+            'user_id' => User::factory()->admin()->create()->getKey(),
+            'published_at' => now(),
+        ]);
+
+        $ids = (new ReservationCalendar)->therapists()->pluck('id')->all();
+
+        $this->assertContains($publishedTherapist->getKey(), $ids);
+        $this->assertContains($publishedLecturer->getKey(), $ids);
+        $this->assertNotContains($unpublishedLecturer->getKey(), $ids);
+        $this->assertNotContains($deactivatedTherapist->getKey(), $ids);
+        $this->assertNotContains($adminOnly->getKey(), $ids);
+    }
+
     public function test_therapist_filter_limits_events(): void
     {
         $monday = Carbon::now()->startOfWeek(Carbon::MONDAY);
@@ -560,7 +594,7 @@ class CalendarTest extends TestCase
     public function test_therapist_chip_filters_lessons_and_events_by_instructor_user(): void
     {
         $instructor = User::factory()->therapist()->create();
-        $profile = StaffProfile::create(['user_id' => $instructor->getKey()]);
+        $profile = StaffProfile::create(['user_id' => $instructor->getKey(), 'published_at' => now()]);
         $matchingLesson = $this->makeLesson(['instructor_id' => $instructor->getKey()]);
         $otherLesson = $this->makeLesson();
         $matchingEvent = $this->makeOneOffEvent(['instructor_id' => $instructor->getKey()]);

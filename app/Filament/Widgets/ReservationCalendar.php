@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets;
 
+use App\Enums\Capability;
 use App\Enums\DayOfWeek;
 use App\Enums\EmailTemplateKey;
 use App\Enums\ReservationStatus;
@@ -207,6 +208,14 @@ class ReservationCalendar extends FullCalendarWidget
     }
 
     /**
+     * The staff shown as calendar columns/chips: current team members who treat
+     * or teach. A profile qualifies only when it is published (the same flag the
+     * public team page uses to mean "current staff") and its user is active and
+     * holds the Therapist or Lecturer capability. This deliberately hides staff
+     * that exist purely for historical records — deactivated ex-therapists and
+     * the lecturer-only accounts created by the historical courses import — as
+     * well as admin/assistant profiles that neither treat nor teach.
+     *
      * @return Collection<int, StaffProfile>
      */
     public function therapists(): Collection
@@ -217,6 +226,13 @@ class ReservationCalendar extends FullCalendarWidget
         $pureTherapist = $user instanceof User && $user->isTherapist() && ! $user->isAdmin();
 
         return $this->therapistCache ??= StaffProfile::query()->with('user')
+            ->published()
+            ->whereHas('user', fn (Builder $query): Builder => $query
+                ->whereNull('deactivated_at')
+                ->whereHas('roles', fn (Builder $roles): Builder => $roles->whereIn('name', [
+                    Capability::Therapist->roleName(),
+                    Capability::Lecturer->roleName(),
+                ])))
             ->when($pureTherapist, fn (Builder $query) => $query->where('user_id', $user->getKey()))
             ->get();
     }

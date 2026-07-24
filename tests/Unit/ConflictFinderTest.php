@@ -140,4 +140,29 @@ class ConflictFinderTest extends TestCase
 
         $this->assertSame([], ConflictFinder::forReservation($a));
     }
+
+    public function test_imported_visits_are_excluded_from_conflicts(): void
+    {
+        // Historical imports share a placeholder time (all 08:00) in one room —
+        // they must not register as conflicts anywhere.
+        $room = Room::factory()->create();
+        $a = $this->reservation(['room_id' => $room->id, 'start_time' => '08:00', 'end_time' => '08:30', 'imported_at' => Carbon::now()]);
+        $b = $this->reservation(['room_id' => $room->id, 'start_time' => '08:00', 'end_time' => '08:30', 'imported_at' => Carbon::now()]);
+
+        $this->assertSame([], ConflictFinder::upcoming());
+        $this->assertSame([], ConflictFinder::forReservation($a));
+        $this->assertSame([], ConflictFinder::forReservation($b));
+    }
+
+    public function test_for_reservation_does_not_flag_past_reservations(): void
+    {
+        // Conflict state is rolling: a clash on a past date is never warned about,
+        // even for non-imported rows (historical data we keep but don't police).
+        $room = Room::factory()->create();
+        $yesterday = Carbon::yesterday()->toDateString();
+        $a = $this->reservation(['room_id' => $room->id, 'reservation_date' => $yesterday, 'start_time' => '09:00', 'end_time' => '10:00']);
+        $this->reservation(['room_id' => $room->id, 'reservation_date' => $yesterday, 'start_time' => '09:30', 'end_time' => '10:30']);
+
+        $this->assertSame([], ConflictFinder::forReservation($a));
+    }
 }

@@ -13,6 +13,15 @@ use Illuminate\Support\Collection;
  * date window — the "detekcia konfliktov" the admin panel must surface (same
  * room double-booked, therapist overlap). Touching intervals (one ends exactly
  * when the next starts) are NOT a conflict.
+ *
+ * Visits reconstructed from a historical import are always excluded: their times
+ * are placeholders assigned at import (typically all the same hour), so they
+ * would otherwise register as a wall of same-room "conflicts" that never
+ * happened. This mirrors the calendar, which also hides imported visits.
+ *
+ * Conflict state is likewise "rolling": only present/future bookings are flagged
+ * on the reservation detail page. Past reservations — historical, possibly seeded
+ * with imperfect data — are kept on record but never surface a conflict warning.
  */
 final class ConflictFinder
 {
@@ -22,6 +31,7 @@ final class ConflictFinder
     public static function find(CarbonInterface $from, CarbonInterface $to): array
     {
         $reservations = Reservation::query()
+            ->whereNull('imported_at')
             ->whereBetween('reservation_date', [$from->toDateString(), $to->toDateString()])
             ->whereNot('status', ReservationStatus::Cancelled)
             ->with(['client', 'service', 'therapist.user', 'room'])
@@ -97,10 +107,19 @@ final class ConflictFinder
      */
     public static function forReservation(Reservation $reservation): array
     {
+        // Conflict-checking only makes sense for present/future bookings the
+        // admin can still act on. Imported visits carry placeholder times, and
+        // anything dated before today is historical (possibly seeded) data we
+        // keep on record but never flag — so skip both.
+        if ($reservation->imported_at !== null || $reservation->reservation_date->isBefore(today())) {
+            return [];
+        }
+
         $start = Slot::toMinutes($reservation->start_time);
         $end = Slot::toMinutes($reservation->end_time);
 
         $others = Reservation::query()
+            ->whereNull('imported_at')
             ->whereDate('reservation_date', $reservation->reservation_date->toDateString())
             ->whereNot('status', ReservationStatus::Cancelled)
             ->whereKeyNot($reservation->getKey())
