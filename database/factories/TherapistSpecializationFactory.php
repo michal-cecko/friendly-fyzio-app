@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Specialization;
 use App\Models\StaffProfile;
 use App\Models\TherapistSpecialization;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -20,20 +21,7 @@ class TherapistSpecializationFactory extends Factory
     {
         return [
             'therapist_id' => StaffProfile::factory(),
-            'name' => fake()->randomElement([
-                'Pánevní dno',
-                'Těhotenství & porod',
-                'Dětská fyzioterapie',
-                'Ortopedická rehabilitace',
-                'Sport',
-                'Jóga',
-                'SM systém',
-                'Pilates',
-                'Lymfodrenáž',
-                'Relaxační masáže',
-            ]),
-            'icon' => fake()->randomElement(['heart', 'user', 'star', 'zap', 'activity']),
-            'description' => fake()->sentence(12),
+            'specialization_id' => Specialization::factory(),
             'display_order' => 0,
         ];
     }

@@ -3,13 +3,13 @@
 namespace App\Filament\Clusters\Kurzy\Resources\CourseLessons\Pages;
 
 use App\Filament\Clusters\Kurzy\Resources\CourseLessons\CourseLessonResource;
+use App\Filament\Resources\Pages\BaseEditRecord;
 use App\Filament\Support\Actions\ActivityLogAction;
 use App\Filament\Support\Concerns\NotifiesScheduleChange;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ViewAction;
-use Filament\Resources\Pages\EditRecord;
 
-class EditCourseLesson extends EditRecord
+class EditCourseLesson extends BaseEditRecord
 {
     use NotifiesScheduleChange;
 

@@ -6,6 +6,7 @@ use App\Console\Commands\CoursesImport;
 use App\Enums\Capability;
 use App\Models\Building;
 use App\Models\Room;
+use App\Models\Specialization;
 use App\Models\StaffProfile;
 use App\Models\TherapistSpecialization;
 use App\Models\User;
@@ -219,13 +220,18 @@ class RealDataSeeder extends Seeder
             );
 
             foreach ($member['specializations'] ?? [] as $specOrder => $specialization) {
+                // Resolve (or create) the shared catalog entry, then link the therapist to it.
+                $catalogEntry = Specialization::query()->firstOrCreate(
+                    ['name' => $specialization['name']],
+                    ['icon' => $specialization['icon']],
+                );
+
                 TherapistSpecialization::query()->updateOrCreate(
                     [
                         'therapist_id' => $profile->getKey(),
-                        'name' => $specialization['name'],
+                        'specialization_id' => $catalogEntry->getKey(),
                     ],
                     [
-                        'icon' => $specialization['icon'],
                         'display_order' => $specOrder,
                     ],
                 );

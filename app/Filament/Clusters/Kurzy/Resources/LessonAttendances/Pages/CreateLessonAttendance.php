@@ -3,9 +3,9 @@
 namespace App\Filament\Clusters\Kurzy\Resources\LessonAttendances\Pages;
 
 use App\Filament\Clusters\Kurzy\Resources\LessonAttendances\LessonAttendanceResource;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Resources\Pages\BaseCreateRecord;
 
-class CreateLessonAttendance extends CreateRecord
+class CreateLessonAttendance extends BaseCreateRecord
 {
     protected static string $resource = LessonAttendanceResource::class;
 }

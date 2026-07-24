@@ -1,19 +1,18 @@
 <?php
 
-namespace App\Filament\Clusters\System\Resources\Users;
+namespace App\Filament\Clusters\Provoz\Resources\Users;
 
-use App\Filament\Clusters\System\Resources\Users\Pages\CreateUser;
-use App\Filament\Clusters\System\Resources\Users\Pages\EditUser;
-use App\Filament\Clusters\System\Resources\Users\Pages\ListUsers;
-use App\Filament\Clusters\System\Resources\Users\Pages\ViewUser;
-use App\Filament\Clusters\System\Resources\Users\RelationManagers\InstructedLessonsRelationManager;
-use App\Filament\Clusters\System\Resources\Users\RelationManagers\StaffClientNotesRelationManager;
-use App\Filament\Clusters\System\Resources\Users\RelationManagers\StaffProfileRelationManager;
-use App\Filament\Clusters\System\Resources\Users\RelationManagers\TherapistReservationsRelationManager;
-use App\Filament\Clusters\System\Resources\Users\Schemas\UserForm;
-use App\Filament\Clusters\System\Resources\Users\Schemas\UserInfolist;
-use App\Filament\Clusters\System\Resources\Users\Tables\UsersTable;
-use App\Filament\Clusters\System\SystemCluster;
+use App\Filament\Clusters\Provoz\ProvozCluster;
+use App\Filament\Clusters\Provoz\Resources\Users\Pages\CreateUser;
+use App\Filament\Clusters\Provoz\Resources\Users\Pages\EditUser;
+use App\Filament\Clusters\Provoz\Resources\Users\Pages\ListUsers;
+use App\Filament\Clusters\Provoz\Resources\Users\Pages\ViewUser;
+use App\Filament\Clusters\Provoz\Resources\Users\RelationManagers\InstructedLessonsRelationManager;
+use App\Filament\Clusters\Provoz\Resources\Users\RelationManagers\StaffClientNotesRelationManager;
+use App\Filament\Clusters\Provoz\Resources\Users\RelationManagers\TherapistReservationsRelationManager;
+use App\Filament\Clusters\Provoz\Resources\Users\Schemas\UserForm;
+use App\Filament\Clusters\Provoz\Resources\Users\Schemas\UserInfolist;
+use App\Filament\Clusters\Provoz\Resources\Users\Tables\UsersTable;
 use App\Models\User;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -28,7 +27,7 @@ class UserResource extends Resource
 {
     protected static ?string $model = User::class;
 
-    protected static ?string $cluster = SystemCluster::class;
+    protected static ?string $cluster = ProvozCluster::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUsers;
 
@@ -86,7 +85,7 @@ class UserResource extends Resource
 
     public static function getNavigationLabel(): string
     {
-        return 'Uživatelé';
+        return 'Tým';
     }
 
     /**
@@ -132,7 +131,6 @@ class UserResource extends Resource
     public static function getRelations(): array
     {
         return [
-            StaffProfileRelationManager::class,
             TherapistReservationsRelationManager::class,
             InstructedLessonsRelationManager::class,
             StaffClientNotesRelationManager::class,

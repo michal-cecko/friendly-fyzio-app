@@ -7,6 +7,7 @@ use App\Enums\EmailTemplateKey;
 use App\Enums\ReservationStatus;
 use App\Models\Reservation;
 use App\Notifications\ReservationTemplateNotification;
+use App\Support\ActivityLog\LogActivity;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 
@@ -57,6 +58,16 @@ class ReactivateReservation
         } catch (UniqueConstraintViolationException $exception) {
             throw new SlotTakenException(previous: $exception);
         }
+
+        LogActivity::record(
+            'reservation_reactivated',
+            $reservation,
+            'Rezervace obnovena',
+            [
+                'status' => $reservation->status->value,
+                'notified_client' => $notifyClient,
+            ],
+        );
 
         if ($notifyClient) {
             $reservation->client?->notify(new ReservationTemplateNotification(

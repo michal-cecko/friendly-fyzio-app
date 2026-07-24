@@ -5,6 +5,7 @@ namespace App\Filament\Clusters\Provoz\Resources\Reservations\Pages;
 use App\Enums\EmailTemplateKey;
 use App\Filament\Clusters\Provoz\Resources\Reservations\ReservationResource;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Schemas\ReservationForm;
+use App\Filament\Resources\Pages\BaseEditRecord;
 use App\Filament\Support\Actions\ActivityLogAction;
 use App\Models\Reservation;
 use App\Notifications\ReservationTemplateNotification;
@@ -12,10 +13,9 @@ use App\Notifications\TherapistReservationTemplateNotification;
 use App\Support\ActivityLog\LogActivity;
 use App\Support\Reservations\ReservationChangeSnapshot;
 use Filament\Actions\ViewAction;
-use Filament\Resources\Pages\EditRecord;
 use Filament\Schemas\Schema;
 
-class EditReservation extends EditRecord
+class EditReservation extends BaseEditRecord
 {
     protected static string $resource = ReservationResource::class;
 

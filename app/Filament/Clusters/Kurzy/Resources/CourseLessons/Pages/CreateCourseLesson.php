@@ -3,9 +3,9 @@
 namespace App\Filament\Clusters\Kurzy\Resources\CourseLessons\Pages;
 
 use App\Filament\Clusters\Kurzy\Resources\CourseLessons\CourseLessonResource;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Resources\Pages\BaseCreateRecord;
 
-class CreateCourseLesson extends CreateRecord
+class CreateCourseLesson extends BaseCreateRecord
 {
     protected static string $resource = CourseLessonResource::class;
 }

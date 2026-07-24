@@ -8,6 +8,7 @@ use App\Mason\BrickRegistry;
 use App\Models\Page;
 use App\Models\Service;
 use App\Models\ServiceCategory;
+use App\Models\Specialization;
 use App\Models\StaffProfile;
 use App\Models\TherapistSpecialization;
 use App\Models\User;
@@ -92,7 +93,7 @@ class BricksTest extends TestCase
         ]);
         TherapistSpecialization::factory()->create([
             'therapist_id' => $published->getKey(),
-            'name' => 'Pánevní dno',
+            'specialization_id' => Specialization::factory()->create(['name' => 'Pánevní dno'])->getKey(),
             'display_order' => 0,
         ]);
 

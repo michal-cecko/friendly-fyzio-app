@@ -5,7 +5,7 @@ namespace Tests\Feature;
 use App\Filament\Clusters\Kurzy\Resources\Courses\CourseResource;
 use App\Filament\Clusters\Provoz\Resources\Clients\ClientResource;
 use App\Filament\Clusters\Provoz\Resources\Reservations\ReservationResource;
-use App\Filament\Clusters\System\Resources\Users\UserResource;
+use App\Filament\Clusters\Provoz\Resources\Users\UserResource;
 use App\Models\Course;
 use App\Models\Reservation;
 use App\Models\StaffProfile;

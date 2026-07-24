@@ -13,7 +13,10 @@ use App\Support\Settings;
 use Awcodes\Mason\Mason;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Repeater\TableColumn;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
@@ -173,6 +176,37 @@ class ServiceForm
                                     ->multiple()
                                     ->preload(),
                             ]),
+                    ]),
+                Section::make('Možné specializace')
+                    ->icon(Heroicon::OutlinedSparkles)
+                    ->description('Sdílený číselník specializací pod touto službou. Terapeuti si je vybírají na svém profilu (seskupené podle služby), takže se nepíšou znovu pro každého.')
+                    ->columnSpanFull()
+                    ->schema([
+                        Repeater::make('specializations')
+                            ->relationship()
+                            ->hiddenLabel()
+                            ->table([
+                                TableColumn::make('Název')->markAsRequired(),
+                                TableColumn::make('Ikona'),
+                                TableColumn::make('Popis'),
+                            ])
+                            ->schema([
+                                TextInput::make('name')
+                                    ->label('Název')
+                                    ->required(),
+                                IconPicker::make('icon')
+                                    ->label('Ikona')
+                                    ->sets(['lucide'])
+                                    ->searchable(),
+                                Textarea::make('description')
+                                    ->label('Popis')
+                                    ->rows(1)
+                                    ->autosize(),
+                            ])
+                            ->orderColumn('display_order')
+                            ->reorderable()
+                            ->defaultItems(0)
+                            ->addActionLabel('Přidat specializaci'),
                     ]),
                 Section::make('Vlastní stránka (přepíše výchozí rozvržení)')
                     ->description('Sestavte vlastní vzhled z bloků. Jakmile přidáte obsah, nahradí výchozí rozvržení této služby.')

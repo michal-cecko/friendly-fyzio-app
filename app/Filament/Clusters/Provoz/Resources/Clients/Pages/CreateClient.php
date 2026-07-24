@@ -3,11 +3,11 @@
 namespace App\Filament\Clusters\Provoz\Resources\Clients\Pages;
 
 use App\Filament\Clusters\Provoz\Resources\Clients\ClientResource;
+use App\Filament\Resources\Pages\BaseCreateRecord;
 use App\Models\User;
-use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Str;
 
-class CreateClient extends CreateRecord
+class CreateClient extends BaseCreateRecord
 {
     protected static string $resource = ClientResource::class;
 

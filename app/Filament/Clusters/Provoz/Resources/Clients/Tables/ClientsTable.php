@@ -2,6 +2,7 @@
 
 namespace App\Filament\Clusters\Provoz\Resources\Clients\Tables;
 
+use App\Filament\Support\Actions\DeactivateUserAction;
 use App\Filament\Support\Actions\ReactivateUserAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -135,6 +136,7 @@ class ClientsTable
             ->recordActions([
                 ViewAction::make(),
                 EditAction::make(),
+                DeactivateUserAction::make(),
                 ReactivateUserAction::make(),
                 Impersonate::make(),
                 DeleteAction::make(),

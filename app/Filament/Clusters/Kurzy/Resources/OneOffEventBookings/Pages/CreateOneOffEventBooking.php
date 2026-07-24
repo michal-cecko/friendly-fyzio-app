@@ -3,9 +3,9 @@
 namespace App\Filament\Clusters\Kurzy\Resources\OneOffEventBookings\Pages;
 
 use App\Filament\Clusters\Kurzy\Resources\OneOffEventBookings\OneOffEventBookingResource;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Resources\Pages\BaseCreateRecord;
 
-class CreateOneOffEventBooking extends CreateRecord
+class CreateOneOffEventBooking extends BaseCreateRecord
 {
     protected static string $resource = OneOffEventBookingResource::class;
 }

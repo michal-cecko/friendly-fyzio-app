@@ -7,14 +7,14 @@ use App\Filament\Clusters\Finance\Resources\Invoices\Actions\DownloadInvoicePdfA
 use App\Filament\Clusters\Finance\Resources\Invoices\Actions\MarkInvoicePaidAction;
 use App\Filament\Clusters\Finance\Resources\Invoices\Actions\SendInvoiceAction;
 use App\Filament\Clusters\Finance\Resources\Invoices\InvoiceResource;
+use App\Filament\Resources\Pages\BaseEditRecord;
 use App\Filament\Support\Actions\ActivityLogAction;
 use App\Models\Invoice;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
-use Filament\Resources\Pages\EditRecord;
 use Filament\Support\Icons\Heroicon;
 
-class EditInvoice extends EditRecord
+class EditInvoice extends BaseEditRecord
 {
     protected static string $resource = InvoiceResource::class;
 

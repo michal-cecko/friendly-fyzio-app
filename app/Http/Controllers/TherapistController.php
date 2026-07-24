@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Filament\Clusters\Provoz\Resources\StaffProfiles\StaffProfileResource;
+use App\Filament\Clusters\Provoz\Resources\Users\UserResource;
 use App\Models\StaffProfile;
 use App\Support\Media;
 use Illuminate\Contracts\View\View;
@@ -19,12 +19,15 @@ class TherapistController extends Controller
         $therapist->load([
             'user',
             'specializations' => fn ($query) => $query->orderBy('display_order'),
+            'specializations.specialization',
         ]);
 
         return view('therapists.show', [
             'therapist' => $therapist,
             'isPreview' => $preview,
-            'adminEditUrl' => $this->adminEditUrl($therapist, StaffProfileResource::class),
+            'adminEditUrl' => $therapist->user !== null
+                ? $this->adminEditUrl($therapist->user, UserResource::class)
+                : null,
             'seo' => [
                 'title' => $therapist->user?->name,
                 'description' => $therapist->title,

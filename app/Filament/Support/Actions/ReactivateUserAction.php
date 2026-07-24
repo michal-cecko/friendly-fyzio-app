@@ -34,7 +34,10 @@ class ReactivateUserAction extends Action
             ->modalSubmitActionLabel('Reaktivovat')
             ->visible(fn (User $record): bool => $record->isDeactivated())
             ->action(function (User $record): void {
-                $record->update(['deactivated_at' => null]);
+                $record->update([
+                    'deactivated_at' => null,
+                    'reactivated_at' => now(),
+                ]);
 
                 Notification::make()
                     ->title('Účet byl reaktivován.')

@@ -46,7 +46,12 @@ class CalendarModesTest extends TestCase
 
     protected function makeTherapist(): StaffProfile
     {
-        return StaffProfile::create(['user_id' => User::factory()->therapist()->create()->getKey()]);
+        // Published: the calendar's therapist pickers only list current
+        // (published) therapists, so a draft profile isn't a valid selection.
+        return StaffProfile::create([
+            'user_id' => User::factory()->therapist()->create()->getKey(),
+            'published_at' => now(),
+        ]);
     }
 
     protected function makeWorkBlock(StaffProfile $therapist, Room $room, array $attributes = []): TherapistWorkBlock

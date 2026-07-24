@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -10,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Invitation extends Model
 {
-    use HasFactory, HasUuids;
+    use Auditable, HasFactory, HasUuids;
 
     protected $fillable = [
         'inviteable_type',
@@ -29,6 +30,11 @@ class Invitation extends Model
             'expires_at' => 'datetime',
             'accepted_at' => 'datetime',
         ];
+    }
+
+    public function logTitle(): string
+    {
+        return $this->email ?: 'Pozvánka';
     }
 
     public function inviteable(): MorphTo

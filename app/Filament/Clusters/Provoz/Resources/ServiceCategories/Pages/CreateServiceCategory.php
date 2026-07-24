@@ -3,9 +3,9 @@
 namespace App\Filament\Clusters\Provoz\Resources\ServiceCategories\Pages;
 
 use App\Filament\Clusters\Provoz\Resources\ServiceCategories\ServiceCategoryResource;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Resources\Pages\BaseCreateRecord;
 
-class CreateServiceCategory extends CreateRecord
+class CreateServiceCategory extends BaseCreateRecord
 {
     protected static string $resource = ServiceCategoryResource::class;
 }

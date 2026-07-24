@@ -20,6 +20,11 @@ class ActivityLogInfolist
                 ->icon(Heroicon::OutlinedInformationCircle)
                 ->columnSpanFull()
                 ->schema([
+                    TextEntry::make('summary')
+                        ->label('Log')
+                        ->state(fn (Activity $record): string => ActivityPresenter::summary($record))
+                        ->weight('bold')
+                        ->columnSpanFull(),
                     Grid::make(3)->schema([
                         TextEntry::make('created_at')
                             ->label('Kdy')

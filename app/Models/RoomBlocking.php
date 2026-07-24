@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\DayOfWeek;
 use App\Enums\WeekType;
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class RoomBlocking extends Model
 {
-    use HasFactory, HasUuids;
+    use Auditable, HasFactory, HasUuids;
 
     protected $fillable = [
         'room_id',
@@ -34,6 +35,11 @@ class RoomBlocking extends Model
             'start_at' => 'datetime',
             'end_at' => 'datetime',
         ];
+    }
+
+    public function logTitle(): string
+    {
+        return $this->reason ?: 'Blokace ordinace';
     }
 
     public function room(): BelongsTo

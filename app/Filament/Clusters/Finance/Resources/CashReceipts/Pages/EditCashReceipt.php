@@ -4,13 +4,13 @@ namespace App\Filament\Clusters\Finance\Resources\CashReceipts\Pages;
 
 use App\Filament\Clusters\Finance\Resources\CashReceipts\Actions\DownloadReceiptPdfAction;
 use App\Filament\Clusters\Finance\Resources\CashReceipts\CashReceiptResource;
+use App\Filament\Resources\Pages\BaseEditRecord;
 use App\Models\CashReceipt;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
-use Filament\Resources\Pages\EditRecord;
 use Filament\Support\Icons\Heroicon;
 
-class EditCashReceipt extends EditRecord
+class EditCashReceipt extends BaseEditRecord
 {
     protected static string $resource = CashReceiptResource::class;
 

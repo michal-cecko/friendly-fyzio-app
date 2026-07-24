@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\DayOfWeek;
 use App\Enums\WeekType;
+use App\Models\Concerns\Auditable;
 use Database\Factories\TherapistWorkBlockSeriesFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -22,7 +23,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class TherapistWorkBlockSeries extends Model
 {
     /** @use HasFactory<TherapistWorkBlockSeriesFactory> */
-    use HasFactory, HasUuids;
+    use Auditable, HasFactory, HasUuids;
 
     protected $fillable = [
         'therapist_id',
@@ -59,6 +60,11 @@ class TherapistWorkBlockSeries extends Model
     protected function endTime(): Attribute
     {
         return Attribute::set(fn (?string $value): ?string => TherapistWorkBlock::normalizeTime($value));
+    }
+
+    public function logTitle(): string
+    {
+        return trim(substr((string) $this->start_time, 0, 5).'–'.substr((string) $this->end_time, 0, 5));
     }
 
     public function therapist(): BelongsTo

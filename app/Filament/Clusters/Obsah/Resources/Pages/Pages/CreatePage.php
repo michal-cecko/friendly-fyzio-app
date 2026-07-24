@@ -3,9 +3,9 @@
 namespace App\Filament\Clusters\Obsah\Resources\Pages\Pages;
 
 use App\Filament\Clusters\Obsah\Resources\Pages\PageResource;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Resources\Pages\BaseCreateRecord;
 
-class CreatePage extends CreateRecord
+class CreatePage extends BaseCreateRecord
 {
     protected static string $resource = PageResource::class;
 }

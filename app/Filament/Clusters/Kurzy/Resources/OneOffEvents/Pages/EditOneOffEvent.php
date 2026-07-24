@@ -3,6 +3,7 @@
 namespace App\Filament\Clusters\Kurzy\Resources\OneOffEvents\Pages;
 
 use App\Filament\Clusters\Kurzy\Resources\OneOffEvents\OneOffEventResource;
+use App\Filament\Resources\Pages\BaseEditRecord;
 use App\Filament\Support\Actions\ActivityLogAction;
 use App\Filament\Support\Actions\PresaleLinkAction;
 use App\Filament\Support\Actions\SendOfferInvitationAction;
@@ -11,9 +12,8 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\RestoreAction;
 use Filament\Actions\ViewAction;
-use Filament\Resources\Pages\EditRecord;
 
-class EditOneOffEvent extends EditRecord
+class EditOneOffEvent extends BaseEditRecord
 {
     use NotifiesScheduleChange;
 

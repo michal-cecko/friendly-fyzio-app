@@ -3,13 +3,13 @@
 namespace Tests\Feature;
 
 use App\Enums\Capability;
-use App\Filament\Clusters\System\Resources\Users\Pages\CreateUser;
-use App\Filament\Clusters\System\Resources\Users\Pages\EditUser;
-use App\Filament\Clusters\System\Resources\Users\Pages\ListUsers;
-use App\Filament\Clusters\System\Resources\Users\Pages\ViewUser;
-use App\Filament\Clusters\System\Resources\Users\RelationManagers\InstructedLessonsRelationManager;
-use App\Filament\Clusters\System\Resources\Users\RelationManagers\TherapistReservationsRelationManager;
-use App\Filament\Clusters\System\Resources\Users\UserResource;
+use App\Filament\Clusters\Provoz\Resources\Users\Pages\CreateUser;
+use App\Filament\Clusters\Provoz\Resources\Users\Pages\EditUser;
+use App\Filament\Clusters\Provoz\Resources\Users\Pages\ListUsers;
+use App\Filament\Clusters\Provoz\Resources\Users\Pages\ViewUser;
+use App\Filament\Clusters\Provoz\Resources\Users\RelationManagers\InstructedLessonsRelationManager;
+use App\Filament\Clusters\Provoz\Resources\Users\RelationManagers\TherapistReservationsRelationManager;
+use App\Filament\Clusters\Provoz\Resources\Users\UserResource;
 use App\Models\User;
 use App\Notifications\Auth\ResetPasswordNotification as ResetPassword;
 use Filament\Facades\Filament;
@@ -66,18 +66,108 @@ class UserResourceTest extends TestCase
         $this->assertFalse($admin->canAccessPanel($panel));
     }
 
+    public function test_admin_can_deactivate_a_user_from_the_detail_page(): void
+    {
+        $panel = Filament::getPanel('admin');
+
+        $this->actingAs(User::factory()->admin()->create());
+
+        $therapist = User::factory()->therapist()->create();
+        $this->assertTrue($therapist->canAccessPanel($panel));
+
+        Livewire::test(ViewUser::class, ['record' => $therapist->getKey()])
+            ->callAction('deactivate');
+
+        $this->assertTrue($therapist->fresh()->isDeactivated());
+        $this->assertNotNull($therapist->fresh()->deactivated_at);
+        // End-to-end proof: the enforcement layer now locks them out.
+        $this->assertFalse($therapist->fresh()->canAccessPanel($panel));
+    }
+
+    public function test_deactivate_action_is_hidden_on_your_own_account(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin);
+
+        Livewire::test(ViewUser::class, ['record' => $admin->getKey()])
+            ->assertActionHidden('deactivate');
+    }
+
+    public function test_only_a_super_admin_may_deactivate_an_admin_account(): void
+    {
+        $plainAdmin = User::factory()->admin()->create();
+        $superAdmin = User::factory()->create();
+        $superAdmin->grantCapability(Capability::SuperAdmin);
+
+        // A plain admin cannot deactivate a peer admin.
+        $this->actingAs($plainAdmin);
+        Livewire::test(ViewUser::class, ['record' => User::factory()->admin()->create()->getKey()])
+            ->assertActionHidden('deactivate');
+
+        // A super-admin can.
+        $this->actingAs($superAdmin);
+        Livewire::test(ViewUser::class, ['record' => User::factory()->admin()->create()->getKey()])
+            ->assertActionVisible('deactivate');
+    }
+
+    public function test_reactivate_action_clears_the_deactivation(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+
+        $therapist = User::factory()->therapist()->create(['deactivated_at' => now()]);
+
+        Livewire::test(ViewUser::class, ['record' => $therapist->getKey()])
+            ->callAction('reactivate');
+
+        $this->assertFalse($therapist->fresh()->isDeactivated());
+        // The reactivation date is kept for the record.
+        $this->assertNotNull($therapist->fresh()->reactivated_at);
+    }
+
+    public function test_a_deactivated_user_cannot_be_impersonated(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+
+        $active = User::factory()->therapist()->create();
+        $deactivated = User::factory()->therapist()->create(['deactivated_at' => now()]);
+
+        // Impersonating a deactivated account would sidestep its lockout; it must
+        // be reactivated first.
+        $this->assertTrue($active->canBeImpersonated());
+        $this->assertFalse($deactivated->canBeImpersonated());
+
+        Livewire::test(ViewUser::class, ['record' => $active->getKey()])
+            ->assertActionVisible('impersonate');
+        Livewire::test(ViewUser::class, ['record' => $deactivated->getKey()])
+            ->assertActionHidden('impersonate');
+    }
+
+    public function test_edit_page_exposes_a_header_save_button(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+
+        $target = User::factory()->therapist()->create();
+
+        // Save is reachable from the header as well as below the form; it
+        // submits via the page's `save` method (covered by the create/edit
+        // persistence tests).
+        Livewire::test(EditUser::class, ['record' => $target->getKey()])
+            ->assertActionExists('saveHeader');
+    }
+
     public function test_therapist_without_permission_cannot_view_users_list(): void
     {
         $therapist = User::factory()->therapist()->create();
 
-        $this->actingAs($therapist)->get('/admin/system/users')->assertForbidden();
+        $this->actingAs($therapist)->get('/admin/provoz/users')->assertForbidden();
     }
 
     public function test_admin_can_view_users_list(): void
     {
         $admin = User::factory()->admin()->create();
 
-        $this->actingAs($admin)->get('/admin/system/users')->assertSuccessful();
+        $this->actingAs($admin)->get('/admin/provoz/users')->assertSuccessful();
     }
 
     public function test_users_list_excludes_customers(): void
@@ -98,7 +188,7 @@ class UserResourceTest extends TestCase
 
         $customer = User::factory()->customer()->create();
 
-        $this->get("/admin/system/users/{$customer->getKey()}/edit")->assertNotFound();
+        $this->get("/admin/provoz/users/{$customer->getKey()}/edit")->assertNotFound();
     }
 
     public function test_user_can_be_created_with_account_type_and_direct_permission(): void
@@ -170,7 +260,7 @@ class UserResourceTest extends TestCase
 
         $therapist = User::factory()->therapist()->create();
 
-        $this->get("/admin/system/users/{$therapist->getKey()}")->assertSuccessful();
+        $this->get("/admin/provoz/users/{$therapist->getKey()}")->assertSuccessful();
     }
 
     public function test_therapist_relation_managers_are_visible_only_for_therapists(): void

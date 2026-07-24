@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\SettingValueType;
+use App\Models\Concerns\Auditable;
 use App\Support\Settings;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -12,7 +13,7 @@ use Illuminate\Support\Facades\Cache;
 
 class Setting extends Model
 {
-    use HasFactory, HasUuids;
+    use Auditable, HasFactory, HasUuids;
 
     protected $fillable = ['key', 'value', 'type', 'label', 'group', 'description', 'config', 'sort'];
 
@@ -34,6 +35,11 @@ class Setting extends Model
 
         static::saved($forget);
         static::deleted($forget);
+    }
+
+    public function logTitle(): string
+    {
+        return $this->label ?: $this->key;
     }
 
     /**

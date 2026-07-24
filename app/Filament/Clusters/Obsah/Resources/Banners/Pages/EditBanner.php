@@ -3,13 +3,13 @@
 namespace App\Filament\Clusters\Obsah\Resources\Banners\Pages;
 
 use App\Filament\Clusters\Obsah\Resources\Banners\BannerResource;
+use App\Filament\Resources\Pages\BaseEditRecord;
 use App\Filament\Support\Actions\ActivityLogAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\RestoreAction;
-use Filament\Resources\Pages\EditRecord;
 
-class EditBanner extends EditRecord
+class EditBanner extends BaseEditRecord
 {
     protected static string $resource = BannerResource::class;
 

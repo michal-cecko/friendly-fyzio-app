@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\Capability;
-use App\Filament\Clusters\System\Resources\Users\Pages\EditUser;
+use App\Filament\Clusters\Provoz\Resources\Users\Pages\EditUser;
 use App\Models\User;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;

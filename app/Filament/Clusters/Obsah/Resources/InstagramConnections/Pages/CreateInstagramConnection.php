@@ -3,9 +3,9 @@
 namespace App\Filament\Clusters\Obsah\Resources\InstagramConnections\Pages;
 
 use App\Filament\Clusters\Obsah\Resources\InstagramConnections\InstagramConnectionResource;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Resources\Pages\BaseCreateRecord;
 
-class CreateInstagramConnection extends CreateRecord
+class CreateInstagramConnection extends BaseCreateRecord
 {
     protected static string $resource = InstagramConnectionResource::class;
 }

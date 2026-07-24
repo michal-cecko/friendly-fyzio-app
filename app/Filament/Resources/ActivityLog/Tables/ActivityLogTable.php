@@ -26,25 +26,21 @@ class ActivityLogTable
                     ->label('Kdy')
                     ->dateTime('d.m.Y H:i')
                     ->sortable(),
-                TextColumn::make('event')
-                    ->label('Akce')
-                    ->badge()
-                    ->formatStateUsing(fn (?string $state): string => ActivityPresenter::eventLabel($state))
-                    ->color(fn (?string $state): string => ActivityPresenter::eventColor($state)),
-                TextColumn::make('subject_type')
-                    ->label('Typ')
-                    ->formatStateUsing(fn (?string $state): string => ActivityPresenter::subjectLabel($state)),
-                TextColumn::make('subject_id')
-                    ->label('Záznam')
-                    ->state(fn (Activity $record): string => ActivityPresenter::subjectTitle($record))
-                    ->limit(40)
-                    ->searchable(query: fn (Builder $query, string $search): Builder => $query
-                        ->where(fn (Builder $q): Builder => $q
-                            ->where('description', 'like', "%{$search}%")
-                            ->orWhere('subject_id', 'like', "%{$search}%"))),
                 TextColumn::make('causer')
                     ->label('Kdo')
                     ->state(fn (Activity $record): string => ActivityPresenter::causerLabel($record)),
+                TextColumn::make('summary')
+                    ->label('Log')
+                    ->state(fn (Activity $record): string => ActivityPresenter::summary($record))
+                    ->color(fn (Activity $record): string => ActivityPresenter::eventColor($record->event))
+                    ->wrap()
+                    ->grow()
+                    ->searchable(query: fn (Builder $query, string $search): Builder => $query
+                        ->where(fn (Builder $q): Builder => $q
+                            ->where('description', 'like', "%{$search}%")
+                            ->orWhere('subject_id', 'like', "%{$search}%")
+                            ->orWhere('attribute_changes', 'like', "%{$search}%")
+                            ->orWhere('properties', 'like', "%{$search}%"))),
             ])
             ->filters([
                 SelectFilter::make('event')

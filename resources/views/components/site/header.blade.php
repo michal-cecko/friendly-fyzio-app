@@ -8,6 +8,11 @@
     $logoutUrl = route('logout');
     $bookingUrl = route('reservation.wizard');
 
+    // While a staff member is impersonating a customer, offer a way back out of
+    // the impersonation straight from the account dropdown.
+    $isImpersonating = \STS\FilamentImpersonate\Facades\Impersonation::isImpersonating();
+    $leaveImpersonationUrl = route('filament-impersonate.leave');
+
     // Staff land in the admin panel; customers in the public client zone. The
     // account link reflects that (label + destination), driven by the account type.
     $isStaff = $user?->isStaff() ?? false;
@@ -63,8 +68,10 @@
         'log-in' => '<path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/>',
         'user-plus' => '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/>',
         'user' => '<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+        'user-x' => '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="17" x2="22" y1="8" y2="13"/><line x1="22" x2="17" y1="8" y2="13"/>',
         'calendar' => '<rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/>',
         'menu' => '<line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="18" y2="18"/>',
+        'x' => '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
         'log-out' => '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/>',
         'pencil' => '<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/>',
         'layout-dashboard' => '<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>',
@@ -114,6 +121,12 @@
                                     </a>
                                 @endif
                                 <div class="my-1 h-px bg-line"></div>
+                                @if($isImpersonating)
+                                    <a href="{{ $leaveImpersonationUrl }}" class="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium text-amber-700 transition hover:bg-amber-50">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">{!! $icon['user-x'] !!}</svg>
+                                        Ukončit impersonaci
+                                    </a>
+                                @endif
                                 <form method="POST" action="{{ $logoutUrl }}">
                                     @csrf
                                     <button type="submit" class="flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-left text-sm text-neutral-900 transition hover:bg-primary-light hover:text-primary">
@@ -188,8 +201,9 @@
                 <a href="{{ $bookingUrl }}" class="inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white">
                     Objednat
                 </a>
-                <button type="button" data-mobile-toggle class="inline-flex h-9 w-9 items-center justify-center rounded-md text-neutral-900" aria-label="Otevřít menu" aria-expanded="false">
-                    <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">{!! $icon['menu'] !!}</svg>
+                <button type="button" data-mobile-toggle class="group relative inline-flex h-9 w-9 items-center justify-center rounded-md text-neutral-900" aria-label="Otevřít menu" aria-expanded="false">
+                    <svg class="absolute h-6 w-6 transition-all duration-300 group-aria-expanded:rotate-90 group-aria-expanded:scale-50 group-aria-expanded:opacity-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">{!! $icon['menu'] !!}</svg>
+                    <svg class="absolute h-6 w-6 -rotate-90 scale-50 opacity-0 transition-all duration-300 group-aria-expanded:rotate-0 group-aria-expanded:scale-100 group-aria-expanded:opacity-100" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">{!! $icon['x'] !!}</svg>
                 </button>
             </div>
         </div>
@@ -238,6 +252,12 @@
                         <a href="{{ $adminEditUrl }}" class="inline-flex w-full items-center justify-center gap-2 rounded-full border border-line py-3 text-sm font-semibold text-neutral-900 transition hover:bg-surface-alt">
                             <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">{!! $icon['pencil'] !!}</svg>
                             Upravit tuto stránku
+                        </a>
+                    @endif
+                    @if($isImpersonating)
+                        <a href="{{ $leaveImpersonationUrl }}" class="inline-flex w-full items-center justify-center gap-2 rounded-full border border-amber-300 bg-amber-50 py-3 text-sm font-semibold text-amber-700">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">{!! $icon['user-x'] !!}</svg>
+                            Ukončit impersonaci
                         </a>
                     @endif
                     <button type="submit" class="inline-flex w-full items-center justify-center gap-2 rounded-full bg-surface-alt py-3 text-sm font-semibold text-neutral-900">

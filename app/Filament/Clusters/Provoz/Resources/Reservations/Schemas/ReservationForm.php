@@ -4,7 +4,7 @@ namespace App\Filament\Clusters\Provoz\Resources\Reservations\Schemas;
 
 use App\Filament\Clusters\Provoz\Resources\Clients\ClientResource;
 use App\Filament\Clusters\Provoz\Resources\Services\ServiceResource;
-use App\Filament\Clusters\Provoz\Resources\StaffProfiles\StaffProfileResource;
+use App\Filament\Clusters\Provoz\Resources\Users\UserResource;
 use App\Filament\Support\Schemas\PresenceBanner;
 use App\Filament\Support\Schemas\RecordTimestamps;
 use App\Filament\Support\Schemas\ResponsiveColumns;
@@ -85,7 +85,9 @@ class ReservationForm
                         'openTherapist',
                         'Terapeut',
                         'therapist_id',
-                        fn (string $id): string => StaffProfileResource::getUrl('edit', ['record' => $id]),
+                        // therapist_id is a StaffProfile id; the profile is edited on
+                        // its owning User, so resolve to the user and link there.
+                        fn (string $id): string => UserResource::getUrl('edit', ['record' => StaffProfile::whereKey($id)->value('user_id')]),
                     ),
                 ] : [])
                 ->schema([

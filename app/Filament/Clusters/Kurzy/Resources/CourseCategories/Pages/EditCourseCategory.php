@@ -3,12 +3,12 @@
 namespace App\Filament\Clusters\Kurzy\Resources\CourseCategories\Pages;
 
 use App\Filament\Clusters\Kurzy\Resources\CourseCategories\CourseCategoryResource;
+use App\Filament\Resources\Pages\BaseEditRecord;
 use App\Filament\Support\Actions\ActivityLogAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ViewAction;
-use Filament\Resources\Pages\EditRecord;
 
-class EditCourseCategory extends EditRecord
+class EditCourseCategory extends BaseEditRecord
 {
     protected static string $resource = CourseCategoryResource::class;
 

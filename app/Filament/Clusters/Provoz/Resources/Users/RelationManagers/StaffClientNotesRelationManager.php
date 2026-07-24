@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Clusters\System\Resources\Users\RelationManagers;
+namespace App\Filament\Clusters\Provoz\Resources\Users\RelationManagers;
 
 use App\Filament\Clusters\Provoz\Resources\Clients\RelationManagers\NotesRelationManager;
 use App\Models\User;

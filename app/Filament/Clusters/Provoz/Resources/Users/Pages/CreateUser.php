@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Filament\Clusters\System\Resources\Users\Pages;
+namespace App\Filament\Clusters\Provoz\Resources\Users\Pages;
 
-use App\Filament\Clusters\System\Resources\Users\UserResource;
+use App\Filament\Clusters\Provoz\Resources\Users\UserResource;
+use App\Filament\Resources\Pages\BaseCreateRecord;
 use App\Models\User;
-use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Str;
 
-class CreateUser extends CreateRecord
+class CreateUser extends BaseCreateRecord
 {
     protected static string $resource = UserResource::class;
 

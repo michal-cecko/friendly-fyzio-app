@@ -3,13 +3,13 @@
 namespace App\Filament\Clusters\Obsah\Resources\Pages\Pages;
 
 use App\Filament\Clusters\Obsah\Resources\Pages\PageResource;
+use App\Filament\Resources\Pages\BaseEditRecord;
 use App\Filament\Support\Actions\ActivityLogAction;
 use App\Filament\Support\Actions\OpenPublicPageAction;
 use App\Models\Page;
 use Filament\Actions\DeleteAction;
-use Filament\Resources\Pages\EditRecord;
 
-class EditPage extends EditRecord
+class EditPage extends BaseEditRecord
 {
     protected static string $resource = PageResource::class;
 

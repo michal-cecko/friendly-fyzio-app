@@ -79,6 +79,27 @@ class ActivityLogResourceTest extends TestCase
         $this->assertFalse(ActivityLogResource::canAccess());
     }
 
+    public function test_table_renders_the_log_summary_and_searches_its_content(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+
+        $service = Service::factory()->create(['name' => 'Kineziologie']);
+        $service->update(['name' => 'Kineziologie páteře']);
+
+        $activity = Activity::query()
+            ->where('subject_id', $service->getKey())
+            ->where('event', 'updated')
+            ->latest('id')
+            ->firstOrFail();
+
+        Livewire::test(ListActivityLog::class)
+            ->assertSee('Kineziologie páteře')
+            ->searchTable('Kineziologie')
+            ->assertCanSeeTableRecords([$activity])
+            ->searchTable('naprostý nesmysl bez shody')
+            ->assertCanNotSeeTableRecords([$activity]);
+    }
+
     public function test_admin_sees_all_activities_therapist_only_their_scoped(): void
     {
         $profile = StaffProfile::factory()->create();

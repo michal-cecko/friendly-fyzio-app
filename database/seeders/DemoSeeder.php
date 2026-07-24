@@ -31,6 +31,7 @@ use App\Models\Room;
 use App\Models\RoomBlocking;
 use App\Models\Service;
 use App\Models\ServiceCategory;
+use App\Models\Specialization;
 use App\Models\StaffProfile;
 use App\Models\TherapistSpecialization;
 use App\Models\TherapistWorkBlockSeries;
@@ -212,6 +213,24 @@ class DemoSeeder extends Seeder
             ],
         ];
 
+        // Group each catalog specialization under its most relevant service, so
+        // the therapist picker shows them grouped by service (and the "Ostatní"
+        // fallback stays empty in the demo).
+        $servicesByName = $services->keyBy('name');
+        $specializationService = [
+            'Pánevní dno' => 'Terapie pánevního dna',
+            'Těhotenství a porod' => 'Těhotenská fyzioterapie',
+            'Dětská fyzioterapie' => 'Masáže miminek a dětí',
+            'Pohybový aparát' => 'Vstupní vyšetření pohybového aparátu',
+            'Ortopedická rehabilitace' => 'Vstupní vyšetření pohybového aparátu',
+            'Sport' => 'Vstupní vyšetření pohybového aparátu',
+            'Jóga' => 'Vstupní vyšetření pohybového aparátu',
+            'SM systém' => 'Vstupní vyšetření pohybového aparátu',
+            'Pilates' => 'Vstupní vyšetření pohybového aparátu',
+            'Relaxační masáže' => 'Klasická masáž',
+            'Lymfodrenáž' => 'Lymfatické masáže',
+        ];
+
         $therapists = collect();
         foreach ($therapistDefs as $order => $def) {
             $user = User::factory()->therapist()->create([
@@ -232,11 +251,19 @@ class DemoSeeder extends Seeder
             ]);
 
             foreach ($def['specializations'] as $specOrder => $spec) {
+                // Resolve (or create) the shared catalog entry, then link the therapist to it.
+                $catalogEntry = Specialization::query()->firstOrCreate(
+                    ['name' => $spec['name']],
+                    [
+                        'icon' => $spec['icon'],
+                        'description' => $spec['description'],
+                        'service_id' => $servicesByName->get($specializationService[$spec['name']] ?? '')?->getKey(),
+                    ],
+                );
+
                 TherapistSpecialization::factory()->create([
                     'therapist_id' => $therapist->getKey(),
-                    'name' => $spec['name'],
-                    'icon' => $spec['icon'],
-                    'description' => $spec['description'],
+                    'specialization_id' => $catalogEntry->getKey(),
                     'display_order' => $specOrder,
                 ]);
             }

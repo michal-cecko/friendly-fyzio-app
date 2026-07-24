@@ -1,9 +1,11 @@
 <?php
 
-namespace App\Filament\Clusters\System\Resources\Users\Tables;
+namespace App\Filament\Clusters\Provoz\Resources\Users\Tables;
 
 use App\Enums\Capability;
-use App\Filament\Clusters\System\Resources\Users\UserResource;
+use App\Filament\Clusters\Provoz\Resources\Users\UserResource;
+use App\Filament\Support\Actions\DeactivateUserAction;
+use App\Filament\Support\Actions\ReactivateUserAction;
 use App\Filament\Support\Tables\TimestampColumns;
 use App\Models\User;
 use Filament\Actions\BulkActionGroup;
@@ -18,6 +20,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -47,7 +50,8 @@ class UsersTable
                 IconColumn::make('email_verified_at')
                     ->label('Ověřen email?')
                     ->boolean()
-                    ->toggleable(),
+                    ->toggleable()
+                    ->toggledHiddenByDefault(),
                 ...TimestampColumns::make(),
             ])
             ->filters([
@@ -63,10 +67,22 @@ class UsersTable
                             fn (Builder $roles) => $roles->where('name', Capability::from($value)->roleName()),
                         ),
                     )),
+                TernaryFilter::make('deactivated')
+                    ->label('Deaktivované')
+                    ->placeholder('Vše')
+                    ->trueLabel('Jen deaktivované')
+                    ->falseLabel('Jen aktivní')
+                    ->queries(
+                        true: fn (Builder $query): Builder => $query->whereNotNull('deactivated_at'),
+                        false: fn (Builder $query): Builder => $query->whereNull('deactivated_at'),
+                        blank: fn (Builder $query): Builder => $query,
+                    ),
                 TrashedFilter::make(),
             ])
             ->recordActions([
                 EditAction::make(),
+                DeactivateUserAction::make(),
+                ReactivateUserAction::make(),
                 DeleteAction::make()
                     ->visible(fn (User $record): bool => UserResource::canDeleteUser($record)),
                 RestoreAction::make(),

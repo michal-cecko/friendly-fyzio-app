@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\Clusters\System\Resources\Users\Pages;
+namespace App\Filament\Clusters\Provoz\Resources\Users\Pages;
 
-use App\Filament\Clusters\System\Resources\Users\UserResource;
+use App\Filament\Clusters\Provoz\Resources\Users\UserResource;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 

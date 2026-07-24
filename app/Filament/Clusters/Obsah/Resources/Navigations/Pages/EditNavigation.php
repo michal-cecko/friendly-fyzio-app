@@ -3,11 +3,11 @@
 namespace App\Filament\Clusters\Obsah\Resources\Navigations\Pages;
 
 use App\Filament\Clusters\Obsah\Resources\Navigations\NavigationResource;
+use App\Filament\Resources\Pages\BaseEditRecord;
 use App\Filament\Support\Actions\ActivityLogAction;
 use App\Models\Navigation;
-use Filament\Resources\Pages\EditRecord;
 
-class EditNavigation extends EditRecord
+class EditNavigation extends BaseEditRecord
 {
     protected static string $resource = NavigationResource::class;
 

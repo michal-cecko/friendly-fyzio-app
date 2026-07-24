@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -9,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CashReceipt extends Model
 {
-    use HasFactory, HasUuids;
+    use Auditable, HasFactory, HasUuids;
 
     protected $fillable = [
         'receipt_number',
@@ -30,6 +31,11 @@ class CashReceipt extends Model
             'amount' => 'integer',
             'received_at' => 'date',
         ];
+    }
+
+    public function logTitle(): string
+    {
+        return $this->receipt_number ?: 'Pokladní doklad';
     }
 
     public function invoice(): BelongsTo

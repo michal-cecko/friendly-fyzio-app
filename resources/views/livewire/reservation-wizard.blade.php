@@ -92,8 +92,8 @@
                                 @php($todo = ! $done && ! $active)
                                 <li class="shrink-0">
                                     <button type="button" @disabled(! $done) wire:click="goToStep({{ $index }})" class="flex items-center gap-1.5 {{ $done ? 'cursor-pointer' : 'cursor-default' }}">
-                                        <span class="flex h-7 w-7 items-center justify-center rounded-full font-heading text-xs {{ $todo ? 'border-2 border-line font-semibold text-[#666666]' : 'bg-primary font-bold text-white' }}">{{ $index + 1 }}</span>
-                                        <span class="font-heading text-[13px] {{ $todo ? 'font-medium text-[#666666]' : 'font-semibold text-primary' }}">{{ $stepLabels[$step] }}</span>
+                                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-heading text-xs {{ $todo ? 'border-2 border-line font-semibold text-[#666666]' : 'bg-primary font-bold text-white' }}">{{ $index + 1 }}</span>
+                                        <span class="font-heading text-[13px] {{ $active ? 'inline' : 'hidden sm:inline' }} {{ $todo ? 'font-medium text-[#666666]' : 'font-semibold text-primary' }}">{{ $stepLabels[$step] }}</span>
                                     </button>
                                 </li>
                                 @unless ($loop->last)

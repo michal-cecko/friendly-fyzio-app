@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Specialization;
 use App\Models\StaffProfile;
 use App\Models\TherapistSpecialization;
 use App\Models\User;
@@ -32,11 +33,14 @@ class TherapistPageTest extends TestCase
     public function test_published_profile_renders_all_sections(): void
     {
         $therapist = $this->makeTherapist();
-        TherapistSpecialization::factory()->create([
-            'therapist_id' => $therapist->getKey(),
+        $specialization = Specialization::factory()->create([
             'name' => 'Pánevní dno',
             'icon' => 'heart',
             'description' => 'Terapie dysfunkcí pánevního dna.',
+        ]);
+        TherapistSpecialization::factory()->create([
+            'therapist_id' => $therapist->getKey(),
+            'specialization_id' => $specialization->getKey(),
             'display_order' => 0,
         ]);
 

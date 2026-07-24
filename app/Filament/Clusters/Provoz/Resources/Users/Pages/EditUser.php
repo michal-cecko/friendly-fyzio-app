@@ -1,18 +1,22 @@
 <?php
 
-namespace App\Filament\Clusters\System\Resources\Users\Pages;
+namespace App\Filament\Clusters\Provoz\Resources\Users\Pages;
 
-use App\Filament\Clusters\System\Resources\Users\UserResource;
+use App\Filament\Clusters\Provoz\Resources\Users\UserResource;
+use App\Filament\Resources\Pages\BaseEditRecord;
 use App\Filament\Support\Actions\ActivityLogAction;
+use App\Filament\Support\Actions\DeactivateUserAction;
+use App\Filament\Support\Actions\ReactivateUserAction;
 use App\Filament\Support\Actions\ResetPasswordAction;
 use App\Models\User;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\RestoreAction;
-use Filament\Resources\Pages\EditRecord;
+use Filament\Support\Icons\Heroicon;
 use STS\FilamentImpersonate\Actions\Impersonate;
 
-class EditUser extends EditRecord
+class EditUser extends BaseEditRecord
 {
     protected static string $resource = UserResource::class;
 
@@ -67,13 +71,23 @@ class EditUser extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Impersonate::make()->record($this->getRecord()),
-            ResetPasswordAction::make(),
-            DeleteAction::make()
-                ->visible(fn (User $record): bool => UserResource::canDeleteUser($record)),
-            ForceDeleteAction::make(),
-            RestoreAction::make(),
-            ActivityLogAction::make(),
+            ActionGroup::make([
+                Impersonate::make()->record($this->getRecord()),
+                ResetPasswordAction::make(),
+                DeactivateUserAction::make(),
+                ReactivateUserAction::make(),
+                DeleteAction::make()
+                    ->visible(fn (User $record): bool => UserResource::canDeleteUser($record)),
+                ForceDeleteAction::make(),
+                RestoreAction::make(),
+                ActivityLogAction::make(),
+            ])
+                ->label('Akce')
+                ->icon(Heroicon::OutlinedEllipsisVertical)
+                ->color('gray')
+                ->button(),
+            // Rightmost, primary — the main call to action.
+            $this->getSaveHeaderAction(),
         ];
     }
 }

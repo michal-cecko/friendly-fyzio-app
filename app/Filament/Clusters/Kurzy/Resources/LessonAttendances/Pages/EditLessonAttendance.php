@@ -3,12 +3,12 @@
 namespace App\Filament\Clusters\Kurzy\Resources\LessonAttendances\Pages;
 
 use App\Filament\Clusters\Kurzy\Resources\LessonAttendances\LessonAttendanceResource;
+use App\Filament\Resources\Pages\BaseEditRecord;
 use App\Filament\Support\Actions\ActivityLogAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ViewAction;
-use Filament\Resources\Pages\EditRecord;
 
-class EditLessonAttendance extends EditRecord
+class EditLessonAttendance extends BaseEditRecord
 {
     protected static string $resource = LessonAttendanceResource::class;
 

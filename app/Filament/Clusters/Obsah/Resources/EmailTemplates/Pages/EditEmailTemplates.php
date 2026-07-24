@@ -3,15 +3,15 @@
 namespace App\Filament\Clusters\Obsah\Resources\EmailTemplates\Pages;
 
 use App\Filament\Clusters\Obsah\Resources\EmailTemplates\EmailTemplateResource;
+use App\Filament\Resources\Pages\BaseEditRecord;
 use App\Filament\Support\Actions\ActivityLogAction;
 use App\Support\EmailTemplateRenderer;
 use Filament\Actions\Action;
-use Filament\Resources\Pages\EditRecord;
 use Filament\Support\Enums\Width;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Contracts\View\View;
 
-class EditEmailTemplates extends EditRecord
+class EditEmailTemplates extends BaseEditRecord
 {
     protected static string $resource = EmailTemplateResource::class;
 

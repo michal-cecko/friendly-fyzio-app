@@ -6,7 +6,7 @@ use App\Enums\EmailTemplateKey;
 use App\Enums\ReservationStatus;
 use App\Filament\Clusters\Kurzy\Resources\CourseEnrollments\Pages\ViewCourseEnrollment;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Pages\ListReservations;
-use App\Filament\Clusters\System\Resources\Users\Pages\ViewUser;
+use App\Filament\Clusters\Provoz\Resources\Users\Pages\ViewUser;
 use App\Models\CourseEnrollment;
 use App\Models\Reservation;
 use App\Models\User;

@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Notifications\ReservationTemplateNotification;
 use App\Support\ActivityLog\LogActivity;
 use App\Support\Reservations\ClientReservationActions;
+use App\Support\Reservations\ReactivateReservation;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Activitylog\Models\Activity;
 use Tests\TestCase;
@@ -81,6 +82,26 @@ class SemanticLoggingTest extends TestCase
 
         $this->assertNotNull($activity);
         $this->assertNotEmpty($activity->getProperty('fee'));
+    }
+
+    public function test_reactivating_a_reservation_logs_a_dedicated_event(): void
+    {
+        $reservation = Reservation::factory()->create([
+            'status' => ReservationStatus::Cancelled,
+            'reservation_date' => today()->addDays(3)->toDateString(),
+            'start_time' => '09:00',
+            'end_time' => '10:00',
+        ]);
+
+        (new ReactivateReservation)->handle($reservation->fresh(), notifyClient: false);
+
+        $activity = Activity::query()
+            ->where('event', 'reservation_reactivated')
+            ->where('subject_id', $reservation->getKey())
+            ->latest('id')
+            ->first();
+
+        $this->assertNotNull($activity);
     }
 
     public function test_admin_causer_is_recorded_on_semantic_events(): void

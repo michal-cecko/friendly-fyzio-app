@@ -116,6 +116,11 @@ class Service extends Model implements HasPublicPage
         return $this->belongsToMany(StaffProfile::class, 'service_therapists', 'service_id', 'therapist_id');
     }
 
+    public function specializations(): HasMany
+    {
+        return $this->hasMany(Specialization::class)->orderBy('display_order');
+    }
+
     public function reservations(): HasMany
     {
         return $this->hasMany(Reservation::class);

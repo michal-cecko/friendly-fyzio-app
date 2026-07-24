@@ -3,11 +3,11 @@
 namespace App\Filament\Clusters\Finance\Resources\Invoices\Pages;
 
 use App\Filament\Clusters\Finance\Resources\Invoices\InvoiceResource;
+use App\Filament\Resources\Pages\BaseCreateRecord;
 use App\Models\InvoiceSeries;
 use App\Support\Invoices\DocumentNumberAllocator;
 use App\Support\Invoices\InvoiceGenerator;
 use App\Support\Invoices\SupplierSnapshot;
-use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\DB;
  * after the items persist gives the invoice its payment thread — and thereby
  * its variable symbol (the VS is never derived from the invoice number).
  */
-class CreateInvoice extends CreateRecord
+class CreateInvoice extends BaseCreateRecord
 {
     protected static string $resource = InvoiceResource::class;
 

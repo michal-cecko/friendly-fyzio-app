@@ -5,7 +5,7 @@ namespace App\Filament\Clusters\Provoz\Resources\Reservations\Schemas;
 use App\Filament\Clusters\Provoz\Resources\Clients\ClientResource;
 use App\Filament\Clusters\Provoz\Resources\Rooms\RoomResource;
 use App\Filament\Clusters\Provoz\Resources\Services\ServiceResource;
-use App\Filament\Clusters\Provoz\Resources\StaffProfiles\StaffProfileResource;
+use App\Filament\Clusters\Provoz\Resources\Users\UserResource;
 use App\Filament\Support\Schemas\RecordTimestamps;
 use App\Filament\Support\Schemas\ResponsiveColumns;
 use App\Models\Reservation;
@@ -58,8 +58,8 @@ class ReservationInfolist
                             TextEntry::make('therapist.user.name')
                                 ->label('Terapeut')
                                 ->placeholder('—')
-                                ->url(fn (Reservation $record): ?string => $record->therapist !== null
-                                    ? StaffProfileResource::getUrl('edit', ['record' => $record->therapist])
+                                ->url(fn (Reservation $record): ?string => $record->therapist?->user_id !== null
+                                    ? UserResource::getUrl('edit', ['record' => $record->therapist->user_id])
                                     : null),
                             TextEntry::make('room.name')
                                 ->label('Místnost')

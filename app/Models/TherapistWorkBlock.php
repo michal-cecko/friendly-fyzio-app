@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Database\Factories\TherapistWorkBlockFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -19,7 +20,7 @@ use Illuminate\Support\Carbon;
 class TherapistWorkBlock extends Model
 {
     /** @use HasFactory<TherapistWorkBlockFactory> */
-    use HasFactory, HasUuids;
+    use Auditable, HasFactory, HasUuids;
 
     protected $fillable = [
         'therapist_id',
@@ -71,6 +72,13 @@ class TherapistWorkBlock extends Model
         }
 
         return strlen($time) === 5 ? "{$time}:00" : $time;
+    }
+
+    public function logTitle(): string
+    {
+        return trim(($this->work_date?->format('d.m.Y') ?? '')
+            .' '.substr((string) $this->start_time, 0, 5)
+            .'–'.substr((string) $this->end_time, 0, 5));
     }
 
     public function therapist(): BelongsTo

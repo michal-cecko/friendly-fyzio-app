@@ -38,7 +38,10 @@ class TeamBrick extends Brick
     {
         $therapists = User::query()
             ->whereHas('staffProfile', fn ($query) => $query->published())
-            ->with(['staffProfile.specializations' => fn ($query) => $query->orderBy('display_order')])
+            ->with([
+                'staffProfile.specializations' => fn ($query) => $query->orderBy('display_order'),
+                'staffProfile.specializations.specialization',
+            ])
             ->get()
             ->sortBy(fn (User $user): string => sprintf('%04d-%s', $user->staffProfile?->display_order ?? 999, $user->name))
             ->values();

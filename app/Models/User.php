@@ -45,6 +45,7 @@ class User extends Authenticatable implements Emailable, FilamentUser, HasPasske
         'password',
         'newsletter_opted_in_at',
         'deactivated_at',
+        'reactivated_at',
     ];
 
     protected $hidden = [
@@ -58,6 +59,7 @@ class User extends Authenticatable implements Emailable, FilamentUser, HasPasske
             'email_verified_at' => 'datetime',
             'newsletter_opted_in_at' => 'datetime',
             'deactivated_at' => 'datetime',
+            'reactivated_at' => 'datetime',
             'password' => 'hashed',
         ];
     }
@@ -337,13 +339,18 @@ class User extends Authenticatable implements Emailable, FilamentUser, HasPasske
     }
 
     /**
-     * Guards who may be impersonated: nobody may step into a super-admin, and
-     * only a super-admin may impersonate another admin. Prevents a plain admin
-     * escalating to owner-tier access by impersonating one.
+     * Guards who may be impersonated: a deactivated account must be reactivated
+     * first (impersonating one would sidestep the very lockout that deactivation
+     * enforces); nobody may step into a super-admin; and only a super-admin may
+     * impersonate another admin, so a plain admin can't escalate to owner tier.
      */
     public function canBeImpersonated(): bool
     {
         $actor = auth()->user();
+
+        if ($this->isDeactivated()) {
+            return false;
+        }
 
         if ($this->isSuperAdmin()) {
             return false;

@@ -49,7 +49,7 @@ class RealDataSeederTest extends TestCase
         $this->assertNotNull($lucie->staffProfile?->published_at);
         $this->assertSame(
             ['Urogynekologická fyzioterapie', 'Těhotenská fyzioterapie', 'Terapie jizev', 'Onkologická fyzioterapie – rakovina prsu'],
-            $lucie->staffProfile->specializations()->orderBy('display_order')->pluck('name')->all(),
+            $lucie->staffProfile->specializations()->orderBy('display_order')->with('specialization')->get()->pluck('specialization.name')->all(),
         );
 
         // Adéla is admin-only but still presented on the team page.

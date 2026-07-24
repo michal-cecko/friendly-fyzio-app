@@ -79,6 +79,14 @@ class ReservationWizardTest extends TestCase
             ->assertSee('Rezervace');
     }
 
+    public function test_stepper_hides_inactive_labels_on_mobile(): void
+    {
+        // On mobile the six-step indicator only fits when non-active steps collapse
+        // to their numbered circle; their text label is hidden until the sm breakpoint.
+        Livewire::test(ReservationWizard::class)
+            ->assertSeeHtml('hidden sm:inline');
+    }
+
     public function test_happy_path_creates_a_reservation_and_account(): void
     {
         Notification::fake();

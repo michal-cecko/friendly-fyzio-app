@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Clusters\System\Resources\Users\RelationManagers;
+namespace App\Filament\Clusters\Provoz\Resources\Users\RelationManagers;
 
 use App\Enums\ReservationStatus;
 use App\Models\User;
@@ -15,7 +15,7 @@ class TherapistReservationsRelationManager extends RelationManager
 {
     protected static string $relationship = 'therapistReservations';
 
-    protected static ?string $title = 'Rezervace (jako terapeut)';
+    protected static ?string $title = 'Rezervace terapeuta';
 
     public static function canViewForRecord(Model $ownerRecord, string $pageClass): bool
     {
