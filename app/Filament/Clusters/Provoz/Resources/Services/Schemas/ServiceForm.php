@@ -25,6 +25,7 @@ use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Guava\IconPicker\Forms\Components\IconPicker;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
 
 class ServiceForm
@@ -171,7 +172,13 @@ class ServiceForm
                                     ->searchable(),
                                 Select::make('therapists')
                                     ->label('Terapeuti')
-                                    ->relationship('therapists')
+                                    // Limit the option query to the columns we need: Filament
+                                    // adds DISTINCT for multiple relationship selects, and
+                                    // Postgres cannot DISTINCT staff_profiles' json columns.
+                                    ->relationship(
+                                        'therapists',
+                                        modifyQueryUsing: fn (Builder $query): Builder => $query->select(['staff_profiles.id', 'staff_profiles.user_id']),
+                                    )
                                     ->getOptionLabelFromRecordUsing(fn (StaffProfile $record): ?string => $record->user?->name)
                                     ->multiple()
                                     ->preload(),

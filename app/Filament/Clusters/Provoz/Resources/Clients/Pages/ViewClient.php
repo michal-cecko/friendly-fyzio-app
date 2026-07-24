@@ -10,6 +10,7 @@ use App\Filament\Support\Actions\ActivityLogAction;
 use App\Filament\Support\Actions\ResetPasswordAction;
 use App\Filament\Support\Concerns\RendersRelationManagersAsSections;
 use Filament\Actions\Action;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Support\Icons\Heroicon;
@@ -32,6 +33,7 @@ class ViewClient extends ViewRecord
             AdjustCreditAction::make()->record($this->getRecord()),
             ResetPasswordAction::make(),
             EditAction::make(),
+            DeleteAction::make(),
             ActivityLogAction::make(),
         ];
     }

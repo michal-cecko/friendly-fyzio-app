@@ -16,6 +16,7 @@ use App\Filament\Support\Actions\RecordPaymentAction;
 use App\Filament\Support\Actions\SendEmailAction;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\EditAction;
+use Filament\Actions\ForceDeleteAction;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Support\Icons\Heroicon;
 
@@ -46,6 +47,7 @@ class ViewReservation extends ViewRecord
                 MarkNoShowAction::make(),
                 CancelReservationAction::make(),
                 RestoreReservationAction::make(),
+                ForceDeleteAction::make(),
                 ActivityLogAction::make(),
             ])
                 ->label('Další')

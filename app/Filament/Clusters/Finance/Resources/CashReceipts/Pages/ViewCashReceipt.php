@@ -6,6 +6,7 @@ use App\Filament\Clusters\Finance\Resources\CashReceipts\Actions\DownloadReceipt
 use App\Filament\Clusters\Finance\Resources\CashReceipts\CashReceiptResource;
 use App\Models\CashReceipt;
 use Filament\Actions\Action;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Support\Icons\Heroicon;
@@ -25,6 +26,7 @@ class ViewCashReceipt extends ViewRecord
                 ->url(fn (CashReceipt $record): string => route('cash-receipts.preview', $record))
                 ->openUrlInNewTab(),
             EditAction::make(),
+            DeleteAction::make(),
         ];
     }
 }

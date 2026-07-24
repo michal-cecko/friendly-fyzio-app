@@ -7,6 +7,7 @@ use App\Filament\Clusters\Kurzy\Resources\CourseEnrollments\CourseEnrollmentReso
 use App\Filament\Support\Actions\ActivityLogAction;
 use App\Filament\Support\Actions\RecordPaymentAction;
 use App\Filament\Support\Actions\SendEmailAction;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
 
@@ -21,6 +22,7 @@ class ViewCourseEnrollment extends ViewRecord
             RecordPaymentAction::make(),
             GenerateInvoiceFromPayableAction::make(),
             EditAction::make(),
+            DeleteAction::make(),
             ActivityLogAction::make(),
         ];
     }

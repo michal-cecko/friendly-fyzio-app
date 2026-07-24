@@ -3,14 +3,16 @@
     $image = \App\Support\Media::url($config['image'] ?? null, '800');
     $buttons = $config['buttons'] ?? [];
     $imageRight = ($config['image_position'] ?? 'left') === 'right';
+    $imageMaxHeight = (int) ($config['image_max_height'] ?? 0);
 @endphp
 
 <section class="py-16 lg:py-24">
     <div class="ff-container">
         <div class="grid overflow-hidden rounded-2xl lg:grid-cols-2">
-            <div class="min-h-[280px] bg-primary-light {{ $imageRight ? 'lg:order-2' : '' }}">
+            <div class="bg-primary-light {{ $imageRight ? 'lg:order-2' : '' }} {{ $imageMaxHeight ? 'lg:self-start' : 'min-h-[280px]' }}"
+                @if($imageMaxHeight) style="height: {{ $imageMaxHeight }}px" @endif>
                 @if($image)
-                    <img src="{{ $image }}" alt="{{ strip_tags($config['title'] ?? '') }}" class="h-full min-h-[280px] w-full object-cover">
+                    <img src="{{ $image }}" alt="{{ strip_tags($config['title'] ?? '') }}" class="h-full w-full object-cover {{ $imageMaxHeight ? '' : 'min-h-[280px]' }}">
                 @endif
             </div>
 

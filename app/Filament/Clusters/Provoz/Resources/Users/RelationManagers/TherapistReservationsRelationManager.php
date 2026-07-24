@@ -3,8 +3,11 @@
 namespace App\Filament\Clusters\Provoz\Resources\Users\RelationManagers;
 
 use App\Enums\ReservationStatus;
+use App\Filament\Pages\Calendar;
 use App\Models\User;
+use Filament\Actions\Action;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -54,7 +57,16 @@ class TherapistReservationsRelationManager extends RelationManager
                     ->label('Stav')
                     ->options(ReservationStatus::class),
             ])
-            ->headerActions([])
+            ->headerActions([
+                Action::make('viewInCalendar')
+                    ->label('Otevřít v kalendáři')
+                    ->icon(Heroicon::OutlinedCalendarDays)
+                    ->color('gray')
+                    ->visible(fn (): bool => $this->getOwnerRecord()->staffProfile !== null)
+                    ->url(fn (): string => Calendar::getUrl([
+                        'therapists' => [$this->getOwnerRecord()->staffProfile->getKey()],
+                    ])),
+            ])
             ->recordActions([])
             ->toolbarActions([]);
     }

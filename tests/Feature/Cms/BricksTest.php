@@ -414,6 +414,56 @@ class BricksTest extends TestCase
             ->assertSee('href="/kalendar"', false);
     }
 
+    public function test_photo_text_brick_caps_image_height_when_configured(): void
+    {
+        $brick = fn (string $id, array $config = []): array => [
+            'type' => 'masonBrick',
+            'attrs' => ['id' => $id, 'config' => $config],
+        ];
+
+        Page::factory()->system('home')->create([
+            'slug' => '/',
+            'content' => [
+                $brick('photo-text', [
+                    'title' => 'Mgr. Jakub Trepáč',
+                    'body' => '<p>Externí spolupracovník.</p>',
+                    'image_max_height' => 300,
+                ]),
+            ],
+        ]);
+
+        $html = $this->get('/')
+            ->assertOk()
+            ->assertSee('Mgr. Jakub Trepáč')
+            // The configured cap is applied inline and the column stops stretching.
+            ->assertSee('height: 300px', false)
+            ->assertSee('lg:self-start', false)
+            ->getContent();
+
+        // The forced 280px minimum is dropped once a cap is set.
+        $this->assertStringNotContainsString('min-h-[280px]', $html);
+    }
+
+    public function test_photo_text_brick_keeps_default_min_height_without_cap(): void
+    {
+        Page::factory()->system('home')->create([
+            'slug' => '/',
+            'content' => [[
+                'type' => 'masonBrick',
+                'attrs' => ['id' => 'photo-text', 'config' => [
+                    'title' => 'Lucie Amani',
+                    'body' => '<p>Pohybová specialistka.</p>',
+                ]],
+            ]],
+        ]);
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('Lucie Amani')
+            ->assertSee('min-h-[280px]', false)
+            ->assertDontSee('lg:self-start', false);
+    }
+
     public function test_newsletter_brick_renders_the_livewire_subscribe_form(): void
     {
         Page::factory()->system('home')->create([

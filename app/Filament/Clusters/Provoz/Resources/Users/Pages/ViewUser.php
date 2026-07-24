@@ -8,7 +8,9 @@ use App\Filament\Support\Actions\DeactivateUserAction;
 use App\Filament\Support\Actions\ReactivateUserAction;
 use App\Filament\Support\Actions\ResetPasswordAction;
 use App\Filament\Support\Actions\SendEmailAction;
+use App\Models\User;
 use Filament\Actions\ActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Support\Icons\Heroicon;
@@ -28,6 +30,8 @@ class ViewUser extends ViewRecord
                 ResetPasswordAction::make(),
                 DeactivateUserAction::make(),
                 ReactivateUserAction::make(),
+                DeleteAction::make()
+                    ->visible(fn (User $record): bool => UserResource::canDeleteUser($record)),
                 ActivityLogAction::make(),
             ])
                 ->label('Akce')

@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Filament\Clusters\Provoz\Resources\Services\Pages\CreateService;
+use App\Filament\Clusters\Provoz\Resources\Services\Pages\EditService;
+use App\Filament\Clusters\Provoz\Resources\Services\ServiceResource;
 use App\Models\Building;
 use App\Models\Room;
 use App\Models\Service;
@@ -38,6 +40,33 @@ class ServiceResourceTest extends TestCase
     public function test_admin_can_view_services_list(): void
     {
         $this->actingAs($this->superAdmin())->get('/admin/provoz/services')->assertSuccessful();
+    }
+
+    public function test_service_detail_page_renders_all_sections(): void
+    {
+        $service = Service::factory()->create();
+
+        $this->actingAs($this->superAdmin())
+            ->get(ServiceResource::getUrl('view', ['record' => $service]))
+            ->assertSuccessful()
+            ->assertSee('Základní údaje')
+            ->assertSee('Délka a cena')
+            ->assertSee('Storno podmínky')
+            ->assertSee('Viditelnost a publikování')
+            ->assertSee('Místnosti a terapeuti');
+    }
+
+    public function test_edit_page_loads_with_attached_therapists(): void
+    {
+        $service = Service::factory()->create();
+        $profile = User::factory()->therapist()->create()->staffProfile;
+        $service->therapists()->attach($profile);
+
+        $this->actingAs($this->superAdmin());
+
+        Livewire::test(EditService::class, ['record' => $service->getKey()])
+            ->assertSuccessful()
+            ->assertFormSet(['therapists' => [$profile->getKey()]]);
     }
 
     public function test_service_creation_validates_required_fields(): void

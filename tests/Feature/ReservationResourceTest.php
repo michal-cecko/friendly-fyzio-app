@@ -100,6 +100,39 @@ class ReservationResourceTest extends TestCase
             ->assertSuccessful();
     }
 
+    public function test_date_and_time_are_merged_into_one_column_and_secondary_columns_are_hidden(): void
+    {
+        $deps = $this->dependencies();
+        $this->actingAs(User::factory()->admin()->create());
+
+        $reservation = $this->makeReservation($deps, [
+            'reservation_date' => '2026-08-15',
+            'start_time' => '09:30:00',
+        ]);
+
+        Livewire::test(ListReservations::class)
+            ->assertCanSeeTableRecords([$reservation])
+            ->assertSee('15.08.2026 09:30')
+            ->assertCanRenderTableColumn('reservation_date')
+            // These stay off until toggled on via the column toggle menu.
+            ->assertCanNotRenderTableColumn('payment_status')
+            ->assertCanNotRenderTableColumn('confirmed_by')
+            ->assertCanNotRenderTableColumn('doctor_note_requested_at');
+    }
+
+    public function test_reservations_can_be_sorted_by_the_merged_date_and_time_column(): void
+    {
+        $deps = $this->dependencies();
+        $this->actingAs(User::factory()->admin()->create());
+
+        $earlier = $this->makeReservation($deps, ['reservation_date' => '2026-08-15', 'start_time' => '08:00:00', 'end_time' => '09:00:00']);
+        $later = $this->makeReservation($deps, ['reservation_date' => '2026-08-15', 'start_time' => '10:00:00', 'end_time' => '11:00:00']);
+
+        Livewire::test(ListReservations::class)
+            ->sortTable('reservation_date')
+            ->assertCanSeeTableRecords([$earlier, $later], inOrder: true);
+    }
+
     public function test_edit_page_saves_changes(): void
     {
         $deps = $this->dependencies();

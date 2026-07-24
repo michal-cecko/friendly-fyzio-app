@@ -10,8 +10,11 @@ use App\Filament\Clusters\Provoz\Resources\Users\Pages\ViewUser;
 use App\Filament\Clusters\Provoz\Resources\Users\RelationManagers\InstructedLessonsRelationManager;
 use App\Filament\Clusters\Provoz\Resources\Users\RelationManagers\TherapistReservationsRelationManager;
 use App\Filament\Clusters\Provoz\Resources\Users\UserResource;
+use App\Filament\Pages\Calendar;
+use App\Filament\Widgets\ReservationCalendar;
 use App\Models\User;
 use App\Notifications\Auth\ResetPasswordNotification as ResetPassword;
+use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -272,6 +275,34 @@ class UserResourceTest extends TestCase
         $this->assertTrue(InstructedLessonsRelationManager::canViewForRecord($therapist, ViewUser::class));
         $this->assertFalse(TherapistReservationsRelationManager::canViewForRecord($admin, ViewUser::class));
         $this->assertFalse(InstructedLessonsRelationManager::canViewForRecord($admin, ViewUser::class));
+    }
+
+    public function test_therapist_reservations_link_to_the_calendar_filtered_to_that_therapist(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+
+        $therapist = User::factory()->therapist()->create();
+
+        Livewire::test(TherapistReservationsRelationManager::class, [
+            'ownerRecord' => $therapist,
+            'pageClass' => ViewUser::class,
+        ])
+            ->assertActionExists(TestAction::make('viewInCalendar')->table())
+            ->assertActionHasUrl(
+                TestAction::make('viewInCalendar')->table(),
+                Calendar::getUrl(['therapists' => [$therapist->staffProfile->getKey()]]),
+            );
+    }
+
+    public function test_calendar_preselects_the_therapist_from_the_url_filter(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+
+        $profileId = User::factory()->therapist()->create()->staffProfile->getKey();
+
+        Livewire::withQueryParams(['therapists' => [$profileId]])
+            ->test(ReservationCalendar::class)
+            ->assertSet('therapistIds', [$profileId]);
     }
 
     public function test_edit_page_can_send_password_reset_email(): void

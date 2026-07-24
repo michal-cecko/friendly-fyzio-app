@@ -45,11 +45,9 @@ class ReservationsTable
             ->defaultSort('reservation_date', 'desc')
             ->columns([
                 TextColumn::make('reservation_date')
-                    ->label('Datum')
-                    ->date('d.m.Y')
-                    ->sortable(),
-                TextColumn::make('start_time')
-                    ->label('Od'),
+                    ->label('Datum a čas')
+                    ->state(fn (Reservation $record): string => $record->reservation_date->format('d.m.Y').' '.substr((string) $record->start_time, 0, 5))
+                    ->sortable(['reservation_date', 'start_time']),
                 TextColumn::make('client.name')
                     ->label('Klient')
                     ->searchable()
@@ -68,22 +66,23 @@ class ReservationsTable
                 TextColumn::make('payment_status')
                     ->label('Platba')
                     ->badge()
-                    ->toggleable(),
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('confirmed_by')
                     ->label('Potvrdil')
                     ->badge()
-                    ->toggleable(),
+                    ->toggleable(isToggledHiddenByDefault: true),
                 IconColumn::make('doctor_note_requested_at')
                     ->label('Lékař. potvrzení')
                     ->tooltip('Klient přislíbil potvrzení od lékaře (storno poplatek pozastaven)')
                     ->icon(fn ($state): string|BackedEnum|null => $state !== null ? Heroicon::OutlinedDocumentText : null)
                     ->color('warning')
-                    ->toggleable(),
+                    ->toggleable(isToggledHiddenByDefault: true),
                 IconColumn::make('settled_at')
-                    ->label('Vybaveno')
+                    ->label('Vybaveno dne')
                     ->tooltip('Vyřízeno – proběhlo a uhrazeno (nebo storno vyřešeno)')
                     ->icon(fn ($state): string|BackedEnum|null => $state !== null ? Heroicon::CheckCircle : null)
-                    ->color('success'),
+                    ->color('success')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 ...TimestampColumns::make(),
             ])
             ->filters([

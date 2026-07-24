@@ -6,6 +6,7 @@ use App\Filament\Clusters\Kurzy\Resources\CourseSeries\CourseSeriesResource;
 use App\Filament\Support\Actions\ActivityLogAction;
 use App\Filament\Support\Actions\PresaleLinkAction;
 use App\Filament\Support\Concerns\RendersRelationManagersAsSections;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
 
@@ -20,6 +21,7 @@ class ViewCourseSeries extends ViewRecord
         return [
             PresaleLinkAction::make(),
             EditAction::make(),
+            DeleteAction::make(),
             ActivityLogAction::make(),
         ];
     }

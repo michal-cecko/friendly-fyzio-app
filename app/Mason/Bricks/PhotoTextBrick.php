@@ -9,6 +9,7 @@ use Awcodes\Mason\Brick;
 use Filament\Actions\Action;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Contracts\Support\Htmlable;
 use RalphJSmit\Filament\MediaLibrary\Filament\Forms\Components\MediaPicker;
@@ -47,6 +48,13 @@ class PhotoTextBrick extends Brick
                     ->label('Pozice obrázku')
                     ->options(['left' => 'Vlevo', 'right' => 'Vpravo'])
                     ->default('left'),
+                TextInput::make('image_max_height')
+                    ->label('Maximální výška obrázku (px)')
+                    ->helperText('Prázdné = obrázek vyplní výšku textu vedle sebe.')
+                    ->numeric()
+                    ->minValue(100)
+                    ->maxValue(800)
+                    ->suffix('px'),
                 Fields::richText('title', 'Nadpis', required: true),
                 RichEditor::make('body')
                     ->label('Text')
