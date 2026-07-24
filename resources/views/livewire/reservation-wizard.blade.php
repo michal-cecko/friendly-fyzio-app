@@ -25,7 +25,10 @@
     $timePill = 'inline-block rounded-xl border-2 border-line px-5 py-2.5 font-heading text-sm font-medium text-neutral-700 transition hover:border-primary peer-checked:border-primary peer-checked:bg-primary peer-checked:text-white';
 @endphp
 
-<div>
+<div
+    x-data
+    @wizard-step-changed.window="$nextTick(() => { if (window.innerWidth < 1024) document.getElementById('wizard-top')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) })"
+>
     @if ($this->confirmationId)
         {{-- ─── Success ─────────────────────────────────────────────────── --}}
         <div class="bg-surface-alt">
@@ -85,7 +88,7 @@
                     {{-- Left column: stepper + step content --}}
                     <div class="flex flex-col gap-6">
                         {{-- Stepper --}}
-                        <ol class="flex items-center">
+                        <ol id="wizard-top" class="flex scroll-mt-24 items-center">
                             @foreach ($order as $index => $step)
                                 @php($done = $index < $this->stepIndex)
                                 @php($active = $index === $this->stepIndex)

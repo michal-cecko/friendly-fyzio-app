@@ -87,6 +87,20 @@ class ReservationWizardTest extends TestCase
             ->assertSeeHtml('hidden sm:inline');
     }
 
+    public function test_advancing_a_step_dispatches_scroll_to_top(): void
+    {
+        // Step content height varies, so navigating fires a browser event the view
+        // listens for to scroll back to the top on mobile.
+        StaffProfile::factory()->create(['published_at' => now()]);
+
+        Livewire::test(ReservationWizard::class)
+            ->call('selectTherapist', $this->therapist->id)
+            ->call('next')
+            ->assertDispatched('wizard-step-changed')
+            ->call('back')
+            ->assertDispatched('wizard-step-changed');
+    }
+
     public function test_happy_path_creates_a_reservation_and_account(): void
     {
         Notification::fake();

@@ -726,6 +726,7 @@ class ReservationWizard extends Component
     {
         if ($index >= 0 && $index < $this->stepIndex) {
             $this->stepIndex = $index;
+            $this->scrollToTop();
         }
     }
 
@@ -734,6 +735,16 @@ class ReservationWizard extends Component
         $this->stepIndex = max(0, $this->stepIndex - 1);
         $this->preselectSingleTherapist();
         $this->submitError = null;
+        $this->scrollToTop();
+    }
+
+    /**
+     * Step content height varies a lot between steps, so on mobile the viewport can
+     * be left scrolled past the new step. Signal the view to scroll back to the top.
+     */
+    protected function scrollToTop(): void
+    {
+        $this->dispatch('wizard-step-changed');
     }
 
     public function next(): void
@@ -760,6 +771,7 @@ class ReservationWizard extends Component
     {
         $this->stepIndex = min($this->stepIndex + 1, count($this->stepOrder()) - 1);
         $this->preselectSingleTherapist();
+        $this->scrollToTop();
     }
 
     protected function stepPrompt(string $step): string
@@ -824,6 +836,7 @@ class ReservationWizard extends Component
             $this->submitError = $exception->getMessage();
             $this->startTime = null;
             $this->stepIndex = array_search('time', $this->stepOrder(), true);
+            $this->scrollToTop();
         }
     }
 
