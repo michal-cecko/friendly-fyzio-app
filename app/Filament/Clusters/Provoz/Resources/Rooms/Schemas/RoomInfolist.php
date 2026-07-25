@@ -2,9 +2,12 @@
 
 namespace App\Filament\Clusters\Provoz\Resources\Rooms\Schemas;
 
+use App\Filament\Clusters\Provoz\Resources\Services\ServiceResource;
 use App\Filament\Support\Schemas\RecordTimestamps;
 use App\Filament\Support\Schemas\ResponsiveColumns;
 use App\Models\Room;
+use App\Models\Service;
+use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -15,6 +18,7 @@ class RoomInfolist
     public static function configure(Schema $schema): Schema
     {
         return $schema
+            ->columns(1)
             ->components([
                 Section::make('Místnost')
                     ->icon(Heroicon::OutlinedRectangleGroup)
@@ -28,15 +32,15 @@ class RoomInfolist
                             ->label('Rezervace')
                             ->state(fn (Room $record): int => $record->reservations()->count())
                             ->badge(),
-                        TextEntry::make('blockings_count')
-                            ->label('Blokace')
-                            ->state(fn (Room $record): int => $record->blockings()->count())
-                            ->badge(),
-                        TextEntry::make('services.name')
+                        RepeatableEntry::make('services')
                             ->label('Služby')
-                            ->badge()
-                            ->placeholder('—')
-                            ->columnSpanFull(),
+                            ->columnSpanFull()
+                            ->schema([
+                                TextEntry::make('name')
+                                    ->hiddenLabel()
+                                    ->badge()
+                                    ->url(fn (Service $record): string => ServiceResource::getUrl('view', ['record' => $record])),
+                            ]),
                         RecordTimestamps::entries(),
                     ]),
             ]);

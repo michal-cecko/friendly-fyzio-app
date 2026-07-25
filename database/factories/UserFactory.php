@@ -57,6 +57,11 @@ class UserFactory extends Factory
         return $this->grant(Capability::Lecturer);
     }
 
+    public function revenue(): static
+    {
+        return $this->grant(Capability::Revenue);
+    }
+
     public function customer(): static
     {
         return $this->afterCreating(fn (User $user) => $user->markAsCustomer());

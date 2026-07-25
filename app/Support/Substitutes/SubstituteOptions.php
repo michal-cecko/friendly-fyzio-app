@@ -2,7 +2,6 @@
 
 namespace App\Support\Substitutes;
 
-use App\Enums\CourseEnrollmentStatus;
 use App\Models\CourseLesson;
 use App\Models\LessonAttendance;
 use App\Models\SubstituteRule;
@@ -49,6 +48,7 @@ class SubstituteOptions
             ->whereNotIn('id', $alreadyBookedLessonIds)
             ->whereDate('lesson_date', '>=', today())
             ->with(['series.course', 'room'])
+            ->withOccupancyCounts()
             ->orderBy('lesson_date')
             ->orderBy('start_time')
             ->get()
@@ -61,36 +61,12 @@ class SubstituteOptions
     }
 
     /**
-     * Free places on a single lesson: the series capacity, minus its active
-     * enrollments, plus anyone excused from this particular lesson, minus the
-     * substitutes already booked in.
-     *
-     * Substitutes are counted from the attendance rows themselves — non-cancelled
-     * attendances whose enrollment belongs to a *different* series than the lesson.
-     * That captures both client-zone token redemptions and manual staff overrides
-     * ({@see MoveClientToLesson}), which place a substitute without minting a token.
+     * Free places on a single lesson. The accounting lives on the model
+     * ({@see CourseLesson::takenSpots()}) so the admin occupancy bar and the
+     * substitute engine can never disagree about how full a lesson is.
      */
     public function freeSpots(CourseLesson $lesson): int
     {
-        $series = $lesson->series;
-
-        if ($series === null) {
-            return 0;
-        }
-
-        $enrolled = $series->enrollments()->where('status', CourseEnrollmentStatus::Active)->count();
-
-        $excused = LessonAttendance::query()
-            ->where('lesson_id', $lesson->getKey())
-            ->whereNotNull('cancelled_at')
-            ->count();
-
-        $substitutesIn = LessonAttendance::query()
-            ->where('lesson_id', $lesson->getKey())
-            ->whereNull('cancelled_at')
-            ->whereHas('enrollment', fn ($query) => $query->where('series_id', '!=', $lesson->series_id))
-            ->count();
-
-        return max(0, (int) $series->capacity - $enrolled + $excused - $substitutesIn);
+        return $lesson->series === null ? 0 : $lesson->spotsLeft();
     }
 }

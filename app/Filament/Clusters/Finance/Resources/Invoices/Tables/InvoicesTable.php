@@ -10,11 +10,13 @@ use App\Filament\Clusters\Finance\Resources\Invoices\Actions\MarkInvoicePaidActi
 use App\Filament\Clusters\Finance\Resources\Invoices\Actions\SendInvoiceAction;
 use App\Filament\Exports\InvoiceExporter;
 use App\Models\Invoice;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ExportBulkAction;
 use Filament\Actions\ViewAction;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -80,17 +82,24 @@ class InvoicesTable
                     ->relationship('series', 'name'),
             ])
             ->recordActions([
-                ViewAction::make(),
-                DownloadInvoicePdfAction::make(),
-                SendInvoiceAction::make(),
-                MarkInvoicePaidAction::make(),
                 EditAction::make(),
+                ActionGroup::make([
+                    ViewAction::make(),
+                    DownloadInvoicePdfAction::make(),
+                    SendInvoiceAction::make(),
+                    MarkInvoicePaidAction::make(),
+                ])
+                    ->label('Akce')
+                    ->icon(Heroicon::OutlinedEllipsisVertical)
+                    ->link()
+                    ->color('gray'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
                     ExportBulkAction::make()
                         ->exporter(InvoiceExporter::class)
-                        ->label('Export pro účetní'),
+                        ->label('Export pro účetní')
+                        ->modalHeading('Exportovat faktury'),
                     DownloadInvoicesZipBulkAction::make(),
                     DeleteBulkAction::make(),
                 ]),

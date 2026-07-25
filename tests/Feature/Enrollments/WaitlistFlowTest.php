@@ -6,7 +6,9 @@ use App\Enums\CourseEnrollmentStatus;
 use App\Enums\CourseSeriesStatus;
 use App\Enums\CourseSeriesVisibility;
 use App\Enums\EmailTemplateKey;
+use App\Enums\OfferState;
 use App\Enums\PaymentStatus;
+use App\Enums\WaitlistPromotionMode;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
 use App\Models\CourseSeries;
@@ -14,6 +16,7 @@ use App\Models\User;
 use App\Notifications\EnrollmentTemplateNotification;
 use App\Support\Enrollments\JoinWaitlist;
 use App\Support\Enrollments\PromoteFromWaitlist;
+use App\Support\Settings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Facades\Notification;
@@ -125,20 +128,20 @@ class WaitlistFlowTest extends TestCase
         Notification::assertSentTo($promoted, EnrollmentTemplateNotification::class, fn (EnrollmentTemplateNotification $notification): bool => $notification->key === EmailTemplateKey::WaitlistSpotAvailable);
     }
 
-    public function test_cancellation_does_not_promote_when_auto_promote_is_off(): void
+    public function test_cancellation_does_not_promote_in_manual_mode(): void
     {
         $series = $this->fullSeries();
-        $series->update(['auto_promote_waitlist' => false]);
+        $series->update(['waitlist_promotion_mode' => WaitlistPromotionMode::Manual]);
 
         JoinWaitlist::handle($series, 'První V Řadě', 'prvni@example.cz');
 
-        // A freed spot must NOT auto-fill when the offer opted out of automation.
+        // A freed spot must NOT auto-fill when the offer is left to staff.
         $series->enrollments()->sole()->update(['status' => CourseEnrollmentStatus::Cancelled]);
 
         $this->assertNull($series->waitlistEntries()->where('email', 'prvni@example.cz')->sole()->notified_at);
         $this->assertFalse(User::query()->where('email', 'prvni@example.cz')->exists());
 
-        // The manual "promote from waitlist" action ignores the flag and fills the spot.
+        // The manual "promote from waitlist" action ignores the mode and fills the spot.
         PromoteFromWaitlist::handle($series);
 
         $promoted = User::query()->where('email', 'prvni@example.cz')->sole();
@@ -150,6 +153,115 @@ class WaitlistFlowTest extends TestCase
             ->exists());
 
         Notification::assertSentTo($promoted, EnrollmentTemplateNotification::class, fn (EnrollmentTemplateNotification $notification): bool => $notification->key === EmailTemplateKey::WaitlistSpotAvailable);
+    }
+
+    public function test_invite_mode_races_every_waiter_without_booking_anything(): void
+    {
+        $series = $this->fullSeries();
+        $series->update(['waitlist_promotion_mode' => WaitlistPromotionMode::AutomaticInvite]);
+
+        JoinWaitlist::handle($series, 'První V Řadě', 'prvni@example.cz');
+        JoinWaitlist::handle($series, 'Druhá V Řadě', 'druha@example.cz');
+
+        $series->enrollments()->sole()->update(['status' => CourseEnrollmentStatus::Cancelled]);
+
+        // Nobody is signed up or given an account — the round only sends e-mails.
+        $this->assertSame(0, $series->refresh()->takenSpots());
+        $this->assertFalse(User::query()->whereIn('email', ['prvni@example.cz', 'druha@example.cz'])->exists());
+        $this->assertDatabaseCount('payments', 0);
+
+        // Everyone is invited at once and consumed, so the queue drains in one go.
+        $this->assertNull($series->waitlistEntries()->pending()->first());
+
+        foreach (['prvni@example.cz', 'druha@example.cz'] as $email) {
+            Notification::assertSentOnDemand(
+                EnrollmentTemplateNotification::class,
+                fn (EnrollmentTemplateNotification $notification, array $channels, object $notifiable): bool => $notification->key === EmailTemplateKey::WaitlistSpotOffered
+                    && ($notifiable->routes['mail'] ?? null) === $email
+                    && $notification->tokens['odkaz'] === $series->presaleUrl(),
+            );
+        }
+    }
+
+    public function test_invite_window_reserves_the_spot_for_the_waitlist_then_releases_it(): void
+    {
+        $series = $this->fullSeries();
+        $series->update(['waitlist_promotion_mode' => WaitlistPromotionMode::AutomaticInvite]);
+
+        JoinWaitlist::handle($series, 'První V Řadě', 'prvni@example.cz');
+
+        $series->enrollments()->sole()->update(['status' => CourseEnrollmentStatus::Cancelled]);
+        $series->refresh();
+
+        // The spot is free, yet the public form keeps showing the series as full…
+        $this->assertSame(1, $series->spotsLeft());
+        $this->assertTrue($series->waitlistInviteActive());
+        $this->assertSame(OfferState::Full, $series->offerState());
+
+        // …while an invited waiter gets through on the hidden link from the e-mail.
+        $this->assertSame(OfferState::Open, $series->offerStateForPresale());
+
+        // Once the window closes the spot belongs to everyone, with no cron involved.
+        $this->travel(Settings::waitlistInviteHours() + 1)->hours();
+
+        $this->assertFalse($series->waitlistInviteActive());
+        $this->assertSame(OfferState::Open, $series->offerState());
+    }
+
+    public function test_availability_filter_hides_a_series_whose_spot_is_reserved_for_the_waitlist(): void
+    {
+        $series = $this->fullSeries();
+        $series->update(['waitlist_promotion_mode' => WaitlistPromotionMode::AutomaticInvite]);
+
+        JoinWaitlist::handle($series, 'První V Řadě', 'prvni@example.cz');
+        $series->enrollments()->sole()->update(['status' => CourseEnrollmentStatus::Cancelled]);
+
+        // Capacity alone says "free", so the public "jen volná místa" filter would
+        // list a série the detail page shows as Obsazeno — the scope must drop it.
+        $this->assertTrue(CourseSeries::query()->whereKey($series->getKey())->hasSpotsLeft()->exists());
+        $this->assertFalse(CourseSeries::query()->whereKey($series->getKey())
+            ->hasSpotsLeft()
+            ->withoutActiveWaitlistInvite()
+            ->exists());
+
+        $this->travel(Settings::waitlistInviteHours() + 1)->hours();
+
+        $this->assertTrue(CourseSeries::query()->whereKey($series->getKey())
+            ->hasSpotsLeft()
+            ->withoutActiveWaitlistInvite()
+            ->exists());
+    }
+
+    public function test_invite_round_is_not_restarted_while_one_is_still_running(): void
+    {
+        $series = CourseSeries::factory()->create([
+            'start_date' => today()->addWeeks(2)->toDateString(),
+            'end_date' => today()->addWeeks(14)->toDateString(),
+            'capacity' => 2,
+            'price' => 2000,
+            'status' => CourseSeriesStatus::Open,
+            'waitlist_promotion_mode' => WaitlistPromotionMode::AutomaticInvite,
+        ]);
+
+        CourseEnrollment::factory()->count(2)->for($series, 'series')->create([
+            'status' => CourseEnrollmentStatus::Active,
+            'payment_status' => PaymentStatus::Paid,
+        ]);
+
+        JoinWaitlist::handle($series, 'První V Řadě', 'prvni@example.cz');
+
+        $series->enrollments()->first()->update(['status' => CourseEnrollmentStatus::Cancelled]);
+        $deadline = $series->refresh()->waitlist_invited_until;
+
+        // A second spot freeing inside the window just widens the same race.
+        JoinWaitlist::handle($series, 'Pozdní Zájemce', 'pozdni@example.cz');
+        $series->enrollments()->where('status', CourseEnrollmentStatus::Active)->first()
+            ->update(['status' => CourseEnrollmentStatus::Cancelled]);
+
+        $this->assertEquals($deadline, $series->refresh()->waitlist_invited_until);
+
+        // The late joiner is left pending — they were not part of the running round.
+        $this->assertNull($series->waitlistEntries()->where('email', 'pozdni@example.cz')->sole()->notified_at);
     }
 
     public function test_interest_list_is_notified_when_series_opens(): void

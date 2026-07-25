@@ -2,7 +2,10 @@
 
 namespace App\Filament\Clusters\Kurzy\Resources\Courses\Schemas;
 
+use App\Filament\Clusters\Kurzy\Resources\CourseCategories\CourseCategoryResource;
+use App\Filament\Clusters\Provoz\Resources\Users\UserResource;
 use App\Filament\Support\Schemas\RecordTimestamps;
+use App\Models\Course;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -12,6 +15,7 @@ class CourseInfolist
     public static function configure(Schema $schema): Schema
     {
         return $schema
+            ->columns(1)
             ->components([
                 Section::make('Detaily')
                     ->columns(2)
@@ -22,10 +26,16 @@ class CourseInfolist
                             ->label('Slug'),
                         TextEntry::make('category.name')
                             ->label('Kategorie')
-                            ->placeholder('—'),
+                            ->placeholder('—')
+                            ->url(fn (Course $record): ?string => $record->category !== null
+                                ? CourseCategoryResource::getUrl('view', ['record' => $record->category])
+                                : null),
                         TextEntry::make('instructor.name')
                             ->label('Lektor')
-                            ->placeholder('—'),
+                            ->placeholder('—')
+                            ->url(fn (Course $record): ?string => $record->instructor !== null
+                                ? UserResource::getUrl('view', ['record' => $record->instructor])
+                                : null),
                         TextEntry::make('description')
                             ->label('Popis')
                             ->placeholder('—')

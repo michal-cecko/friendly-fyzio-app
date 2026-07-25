@@ -59,6 +59,8 @@ class SubstituteRulesRelationManager extends RelationManager
         return $table
             ->heading('')
             ->description('Série, ve kterých si klienti mohou nahradit zmeškanou lekci této série.')
+            ->modelLabel('náhradní sérii')
+            ->pluralModelLabel('náhradní série')
             ->modifyQueryUsing(fn (Builder $query) => $query->with('targetSeries.course'))
             ->columns([
                 TextColumn::make('targetSeries.course.name')

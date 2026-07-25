@@ -28,18 +28,34 @@ class ProductionSeederTest extends TestCase
     /** A throwaway value, not a real credential — the seeder reads it from the env. */
     private const string OWNER_TEST_PASSWORD = 'test-owner-initial-pw';
 
+    /** The developer's own .env value, restored after the test. */
+    private ?string $originalOwnerPassword = null;
+
     protected function setUp(): void
     {
         parent::setUp();
 
+        // A real .env may already define this. Laravel's env() resolves $_SERVER
+        // ahead of $_ENV, so overriding only putenv/$_ENV would leave the seeder
+        // reading the developer's value and the password assertion would fail on
+        // their machine while passing on a clean checkout.
+        $this->originalOwnerPassword = $_SERVER['OWNER_INITIAL_PASSWORD'] ?? null;
+
         putenv('OWNER_INITIAL_PASSWORD='.self::OWNER_TEST_PASSWORD);
         $_ENV['OWNER_INITIAL_PASSWORD'] = self::OWNER_TEST_PASSWORD;
+        $_SERVER['OWNER_INITIAL_PASSWORD'] = self::OWNER_TEST_PASSWORD;
     }
 
     protected function tearDown(): void
     {
         putenv('OWNER_INITIAL_PASSWORD');
         unset($_ENV['OWNER_INITIAL_PASSWORD']);
+
+        if ($this->originalOwnerPassword === null) {
+            unset($_SERVER['OWNER_INITIAL_PASSWORD']);
+        } else {
+            $_SERVER['OWNER_INITIAL_PASSWORD'] = $this->originalOwnerPassword;
+        }
 
         parent::tearDown();
     }

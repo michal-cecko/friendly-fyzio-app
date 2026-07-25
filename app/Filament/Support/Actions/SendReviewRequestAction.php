@@ -4,11 +4,14 @@ namespace App\Filament\Support\Actions;
 
 use App\Enums\ReservationStatus;
 use App\Enums\ReviewRequestChannel;
+use App\Filament\Support\Schemas\CopyRecipientsFields;
 use App\Models\OneOffEventBooking;
 use App\Models\Reservation;
 use App\Models\ReviewRequest;
 use App\Models\User;
 use App\Notifications\ReviewRequestNotification;
+use App\Support\Emails\CopyRecipients;
+use App\Support\Emails\SentEmailReceipt;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
@@ -47,6 +50,7 @@ class SendReviewRequestAction extends Action
                     ->label('Vlastní zpráva (nepovinné)')
                     ->rows(3)
                     ->helperText('Nahradí výchozí úvodní text e-mailu.'),
+                ...CopyRecipientsFields::make(),
             ])
             ->action(function (Model $record, array $data): void {
                 $client = self::resolveClient($record);
@@ -73,7 +77,10 @@ class SendReviewRequestAction extends Action
                 $client->notify(new ReviewRequestNotification(
                     $request,
                     filled($data['message'] ?? null) ? $data['message'] : null,
+                    CopyRecipients::fromFormData($data),
                 ));
+
+                SentEmailReceipt::forCurrentUser('Žádost o recenzi');
 
                 Notification::make()
                     ->title('Žádost o recenzi byla odeslána.')

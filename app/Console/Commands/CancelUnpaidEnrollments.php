@@ -8,11 +8,9 @@ use App\Enums\EmailTemplateKey;
 use App\Enums\PaymentStatus;
 use App\Models\CourseEnrollment;
 use App\Models\OneOffEventBooking;
-use App\Notifications\EnrollmentTemplateNotification;
-use App\Support\Enrollments\EnrollmentEmailContext;
+use App\Support\Enrollments\CancelSignup;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\DB;
 
 /**
  * The enrollment hold-window sweep (docs §4.1: "automatické storno pri
@@ -39,7 +37,7 @@ class CancelUnpaidEnrollments extends Command
             ->tap(fn (Builder $query) => $this->withExpiredHold($query))
             ->with(['series.course', 'client'])
             ->each(function (CourseEnrollment $enrollment) use (&$cancelled): void {
-                $this->cancel($enrollment, CourseEnrollmentStatus::Cancelled, EnrollmentEmailContext::offerTokens($enrollment->series));
+                $this->cancel($enrollment);
                 $cancelled++;
             });
 
@@ -50,7 +48,7 @@ class CancelUnpaidEnrollments extends Command
             ->tap(fn (Builder $query) => $this->withExpiredHold($query))
             ->with(['event', 'client'])
             ->each(function (OneOffEventBooking $booking) use (&$cancelled): void {
-                $this->cancel($booking, BookingStatus::Cancelled, EnrollmentEmailContext::offerTokens($booking->event));
+                $this->cancel($booking);
                 $cancelled++;
             });
 
@@ -69,30 +67,12 @@ class CancelUnpaidEnrollments extends Command
             ->whereDate('due_at', '<', today()));
     }
 
-    /**
-     * @param  array<string, string>  $offerTokens
-     */
-    protected function cancel(CourseEnrollment|OneOffEventBooking $signup, CourseEnrollmentStatus|BookingStatus $cancelledStatus, array $offerTokens): void
+    protected function cancel(CourseEnrollment|OneOffEventBooking $signup): void
     {
-        DB::transaction(function () use ($signup, $cancelledStatus): void {
-            // Withdraw the expired payment request so the overdue reminder sweep
-            // never chases money for a cancelled spot.
-            $signup->payments()
-                ->whereIn('status', [PaymentStatus::Unpaid->value, PaymentStatus::Overdue->value])
-                ->delete();
-
-            // Fires the model observer, which promotes the waitlist.
-            $signup->update(['status' => $cancelledStatus]);
-        });
-
-        $client = $signup->client;
-
-        if ($client !== null && filled($client->email)) {
-            $client->notify(new EnrollmentTemplateNotification(EmailTemplateKey::EnrollmentAutoCancelled, [
-                'jmeno' => EnrollmentEmailContext::firstName($client),
-                ...$offerTokens,
-                'duvod' => 'Platba nebyla připsána v rezervační lhůtě',
-            ]));
-        }
+        app(CancelSignup::class)(
+            $signup,
+            emailKey: EmailTemplateKey::EnrollmentAutoCancelled,
+            reason: 'Platba nebyla připsána v rezervační lhůtě',
+        );
     }
 }

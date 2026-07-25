@@ -4,8 +4,8 @@ namespace App\Filament\Clusters\Kurzy\Resources\CourseSeries\Tables;
 
 use App\Enums\CourseSeriesStatus;
 use App\Enums\CourseSeriesVisibility;
+use App\Filament\Support\Tables\OccupancyColumn;
 use App\Filament\Support\Tables\TimestampColumns;
-use App\Models\CourseSeries;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -34,11 +34,7 @@ class CourseSeriesTable
                 TextColumn::make('end_date')
                     ->label('Konec')
                     ->date('d.m.Y'),
-                TextColumn::make('active_takers_count')
-                    ->label('Obsazenost')
-                    ->counts('activeTakers')
-                    ->state(fn (CourseSeries $record): string => $record->takenSpots().' / '.$record->capacity)
-                    ->description(fn (CourseSeries $record): ?string => $record->isFull() ? 'Plně obsazeno' : null),
+                OccupancyColumn::make(),
                 TextColumn::make('price')
                     ->label('Cena')
                     ->suffix(' Kč'),

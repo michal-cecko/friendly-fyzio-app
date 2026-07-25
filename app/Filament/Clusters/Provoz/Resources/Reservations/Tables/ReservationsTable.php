@@ -20,8 +20,10 @@ use App\Filament\Support\Actions\SendEmailAction;
 use App\Filament\Support\Actions\SendReviewRequestAction;
 use App\Filament\Support\Tables\TimestampColumns;
 use App\Models\Reservation;
+use App\Support\Reservations\ReservationMetrics;
 use App\Support\Reservations\ReservationSummary;
 use BackedEnum;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteAction;
@@ -97,12 +99,19 @@ class ReservationsTable
                     ->options(ConfirmationSource::class),
                 Filter::make('doctor_note_pending')
                     ->label('Čeká na potvrzení od lékaře')
-                    ->query(fn (Builder $query): Builder => $query->whereNotNull('doctor_note_requested_at')
-                        ->whereNull('doctor_note_resolved_at'))
+                    ->query(fn (Builder $query): Builder => ReservationMetrics::scopeDoctorNotePending($query))
                     ->toggle(),
                 Filter::make('settled')
                     ->label('Vybaveno')
                     ->query(fn (Builder $query): Builder => $query->whereNotNull('settled_at'))
+                    ->toggle(),
+                Filter::make('outstanding')
+                    ->label('Nezaplaceno')
+                    ->query(fn (Builder $query): Builder => ReservationMetrics::scopeOutstanding($query))
+                    ->toggle(),
+                Filter::make('unsettled_past')
+                    ->label('Nevybaveno (proběhlé)')
+                    ->query(fn (Builder $query): Builder => ReservationMetrics::scopeUnsettledPast($query))
                     ->toggle(),
                 TrashedFilter::make(),
             ])
@@ -110,20 +119,26 @@ class ReservationsTable
                 ViewAction::make(),
                 EditAction::make()
                     ->schema(ReservationForm::components()),
-                ConfirmReservationAction::make(),
-                UnconfirmReservationAction::make(),
-                SendEmailAction::make(),
-                RecordPaymentAction::make(),
-                RequestPaymentAction::make(),
-                ResolveDoctorNoteAction::make(),
-                MarkNoShowAction::make(),
-                SendReviewRequestAction::make(),
-                CancelReservationAction::make(),
-                RestoreReservationAction::make(),
-                ForceDeleteAction::make()
-                    ->modalHeading('Trvale smazat rezervaci?')
-                    ->modalDescription(fn (Reservation $record): HtmlString => ReservationSummary::description($record))
-                    ->modalSubmitActionLabel('Trvale smazat'),
+                ActionGroup::make([
+                    ConfirmReservationAction::make(),
+                    UnconfirmReservationAction::make(),
+                    SendEmailAction::make(),
+                    RecordPaymentAction::make(),
+                    RequestPaymentAction::make(),
+                    ResolveDoctorNoteAction::make(),
+                    MarkNoShowAction::make(),
+                    SendReviewRequestAction::make(),
+                    CancelReservationAction::make(),
+                    RestoreReservationAction::make(),
+                    ForceDeleteAction::make()
+                        ->modalHeading('Trvale smazat rezervaci?')
+                        ->modalDescription(fn (Reservation $record): HtmlString => ReservationSummary::description($record))
+                        ->modalSubmitActionLabel('Trvale smazat'),
+                ])
+                    ->label('Další akce')
+                    ->icon(Heroicon::OutlinedEllipsisHorizontal)
+                    ->link()
+                    ->color('gray'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

@@ -36,7 +36,7 @@ return [
 
         'modal' => [
 
-            'heading' => 'Trvale smazat vybrané :label',
+            'heading' => 'Trvale smazat vybrané záznamy',
 
             'actions' => [
 

@@ -6,8 +6,10 @@ use App\Filament\Clusters\Kurzy\Resources\OneOffEvents\OneOffEventResource;
 use App\Filament\Resources\Pages\BaseEditRecord;
 use App\Filament\Support\Actions\ActivityLogAction;
 use App\Filament\Support\Actions\PresaleLinkAction;
+use App\Filament\Support\Actions\SendBulkParticipantEmailAction;
 use App\Filament\Support\Actions\SendOfferInvitationAction;
 use App\Filament\Support\Concerns\NotifiesScheduleChange;
+use App\Models\OneOffEvent;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\RestoreAction;
@@ -19,9 +21,18 @@ class EditOneOffEvent extends BaseEditRecord
 
     protected static string $resource = OneOffEventResource::class;
 
+    public function getTitle(): string
+    {
+        /** @var OneOffEvent $record */
+        $record = $this->getRecord();
+
+        return 'Upravit jednorázovou akci '.$record->name;
+    }
+
     protected function getHeaderActions(): array
     {
         return [
+            SendBulkParticipantEmailAction::make(),
             PresaleLinkAction::make(),
             SendOfferInvitationAction::make(),
             ViewAction::make(),

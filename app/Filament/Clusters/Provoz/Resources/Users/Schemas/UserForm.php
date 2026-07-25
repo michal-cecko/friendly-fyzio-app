@@ -106,6 +106,7 @@ class UserForm
                                         Capability::Admin->value => 'Správa celé administrace.',
                                         Capability::Therapist->value => 'Rezervovatelný na terapie, kalendář a pracovní doba.',
                                         Capability::Lecturer->value => 'Může být lektorem kurzů, lekcí a workshopů.',
+                                        Capability::Revenue->value => 'Vidí souhrny tržeb a dlužných částek; jen super administrátor může přidělit.',
                                     ])
                                     // Not a model column — the Create/Edit pages read it out of the
                                     // form data and apply it via User::applyCapabilitySelection().

@@ -5,7 +5,9 @@ namespace App\Notifications;
 use App\Enums\EmailTemplateKey;
 use App\Models\EmailTemplate;
 use App\Models\ReviewRequest;
+use App\Notifications\Concerns\HasCopyRecipients;
 use App\Support\CmsMail;
+use App\Support\Emails\CopyRecipients;
 use App\Support\Settings;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -20,11 +22,12 @@ use Illuminate\Support\Str;
  */
 class ReviewRequestNotification extends Notification
 {
-    use Queueable;
+    use HasCopyRecipients, Queueable;
 
     public function __construct(
         public ReviewRequest $reviewRequest,
         public ?string $customIntro = null,
+        public ?CopyRecipients $copies = null,
     ) {}
 
     /**
@@ -44,22 +47,22 @@ class ReviewRequestNotification extends Notification
         $template = EmailTemplate::forKey(EmailTemplateKey::ReviewRequest);
 
         if ($template === null) {
-            return (new MailMessage)
+            return $this->applyCopies((new MailMessage)
                 ->subject(Settings::get('reviews.email_subject', 'Jak jste byli spokojeni?'))
                 ->greeting('Dobrý den,')
                 ->line('rádi bychom vás poprosili o recenzi na '.$this->reviewRequest->targetLabel().'.')
                 ->line($intro)
                 ->action('Napsat recenzi', $this->reviewRequest->formUrl())
-                ->line('Zabere to jen chvilku, děkujeme!');
+                ->line('Zabere to jen chvilku, děkujeme!'));
         }
 
         $name = (string) ($notifiable->name ?? '');
 
-        return CmsMail::render($template, [
+        return $this->applyCopies(CmsMail::render($template, [
             'jmeno' => Str::of($name)->before(' ')->toString() ?: $name,
             'cil' => $this->reviewRequest->targetLabel(),
             'intro' => $intro,
             'odkaz' => $this->reviewRequest->formUrl(),
-        ])->subject(Settings::get('reviews.email_subject', $template->subject));
+        ])->subject(Settings::get('reviews.email_subject', $template->subject)));
     }
 }

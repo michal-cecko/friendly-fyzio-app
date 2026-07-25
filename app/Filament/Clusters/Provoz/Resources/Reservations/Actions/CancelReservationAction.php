@@ -7,6 +7,7 @@ use App\Enums\ReservationStatus;
 use App\Models\Reservation;
 use App\Notifications\ReservationTemplateNotification;
 use App\Support\ActivityLog\LogActivity;
+use App\Support\Emails\SentEmailReceipt;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
@@ -65,6 +66,8 @@ class CancelReservationAction extends Action
 
                 if ($notifyClient) {
                     $record->client?->notify(new ReservationTemplateNotification($record, EmailTemplateKey::ReservationCancelled));
+
+                    SentEmailReceipt::forCurrentUser('Zrušení rezervace');
                 }
 
                 $erased = (bool) ($data['force_delete'] ?? false);

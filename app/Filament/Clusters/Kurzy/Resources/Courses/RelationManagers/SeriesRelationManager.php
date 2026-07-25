@@ -4,6 +4,7 @@ namespace App\Filament\Clusters\Kurzy\Resources\Courses\RelationManagers;
 
 use App\Filament\Clusters\Kurzy\Resources\CourseSeries\CourseSeriesResource;
 use App\Filament\Clusters\Kurzy\Resources\CourseSeries\Schemas\CourseSeriesForm;
+use App\Filament\Support\Tables\OccupancyColumn;
 use App\Models\CourseSeries;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -46,6 +47,12 @@ class SeriesRelationManager extends RelationManager
     {
         return $table
             ->defaultSort('start_date', 'desc')
+            ->recordTitleAttribute('name')
+            ->modelLabel('sérii')
+            ->pluralModelLabel('série')
+            // Clicking a row opens the série's own page (its lessons and
+            // enrollments live there); editing stays behind the row action.
+            ->recordUrl(fn (CourseSeries $record): string => CourseSeriesResource::getUrl('view', ['record' => $record]))
             ->columns([
                 TextColumn::make('name')
                     ->label('Název')
@@ -57,11 +64,7 @@ class SeriesRelationManager extends RelationManager
                 TextColumn::make('end_date')
                     ->label('Konec')
                     ->date('d.m.Y'),
-                TextColumn::make('active_takers_count')
-                    ->label('Obsazenost')
-                    ->counts('activeTakers')
-                    ->state(fn (CourseSeries $record): string => $record->takenSpots().' / '.$record->capacity)
-                    ->description(fn (CourseSeries $record): ?string => $record->isFull() ? 'Plně obsazeno' : null),
+                OccupancyColumn::make(),
                 TextColumn::make('price')
                     ->label('Cena')
                     ->suffix(' Kč'),

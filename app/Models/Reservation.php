@@ -13,6 +13,7 @@ use App\Models\Concerns\Auditable;
 use App\Models\Concerns\IsPayable;
 use App\Observers\ReservationObserver;
 use App\Support\ActivityLog\LogActivity;
+use App\Support\Emails\CopyRecipients;
 use App\Support\Emails\ReservationEmailer;
 use App\Support\Payments\ReservationPaymentStatus;
 use App\Support\Settings;
@@ -213,9 +214,9 @@ class Reservation extends Model implements Emailable, Payable
         return ReservationEmailer::templateGroups($this);
     }
 
-    public function sendTemplateEmail(EmailTemplateKey $key): void
+    public function sendTemplateEmail(EmailTemplateKey $key, ?CopyRecipients $copies = null): void
     {
-        ReservationEmailer::send($this, $key);
+        ReservationEmailer::send($this, $key, $copies);
     }
 
     /**

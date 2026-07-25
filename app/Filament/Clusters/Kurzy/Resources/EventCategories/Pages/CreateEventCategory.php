@@ -8,4 +8,6 @@ use App\Filament\Resources\Pages\BaseCreateRecord;
 class CreateEventCategory extends BaseCreateRecord
 {
     protected static string $resource = EventCategoryResource::class;
+
+    protected static ?string $title = 'Nová kategorie akcí';
 }

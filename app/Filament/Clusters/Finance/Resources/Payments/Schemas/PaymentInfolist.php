@@ -5,6 +5,7 @@ namespace App\Filament\Clusters\Finance\Resources\Payments\Schemas;
 use App\Contracts\Payable;
 use App\Filament\Clusters\Finance\Resources\CashReceipts\CashReceiptResource;
 use App\Filament\Clusters\Finance\Resources\Invoices\InvoiceResource;
+use App\Filament\Clusters\Provoz\Resources\Clients\ClientResource;
 use App\Filament\Support\PayableLinks;
 use App\Models\Payment;
 use App\Support\Invoices\PayableTitle;
@@ -41,7 +42,10 @@ class PaymentInfolist
                             ->badge(),
                         TextEntry::make('client.name')
                             ->label('Klient')
-                            ->placeholder('—'),
+                            ->placeholder('—')
+                            ->url(fn (Payment $record): ?string => $record->client !== null
+                                ? ClientResource::getUrl('view', ['record' => $record->client])
+                                : null),
                         TextEntry::make('due_at')
                             ->label('Splatnost')
                             ->date('d.m.Y')

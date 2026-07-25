@@ -139,7 +139,7 @@ class RealDataSeeder extends Seeder
         $user->email_verified_at ??= now();
         $user->save();
 
-        $user->syncCapabilities([Capability::SuperAdmin]);
+        $user->syncCapabilities([Capability::SuperAdmin, Capability::Revenue]);
     }
 
     /**
@@ -296,8 +296,8 @@ class RealDataSeeder extends Seeder
                 'title_before' => 'Mgr.',
                 'email' => 'lucie.fickerova@friendlyfyzio.cz',
                 // The clinic's owner: a super-administrator (may manage admins),
-                // who also practises as a physiotherapist.
-                'capabilities' => [Capability::SuperAdmin, Capability::Therapist],
+                // who also practises as a physiotherapist and sees the takings.
+                'capabilities' => [Capability::SuperAdmin, Capability::Therapist, Capability::Revenue],
                 'title' => 'Fyzioterapeut',
                 'photo' => 'lucie-fickerova.jpg',
                 'specializations' => [

@@ -46,6 +46,16 @@ class CashReceiptResource extends Resource
     }
 
     /**
+     * Record titles are the object of modal headings ("Smazat pokladní doklad P-0001"),
+     * so they are written in the accusative.
+     */
+    public static function getRecordTitle(?Model $record): string|Htmlable|null
+    {
+        /** @var ?CashReceipt $record */
+        return trim('pokladní doklad '.$record?->receipt_number);
+    }
+
+    /**
      * @return array<int, string>
      */
     public static function getGloballySearchableAttributes(): array

@@ -23,6 +23,8 @@ class CreateInvoice extends BaseCreateRecord
 {
     protected static string $resource = InvoiceResource::class;
 
+    protected static ?string $title = 'Nová faktura';
+
     protected function handleRecordCreation(array $data): Model
     {
         return DB::transaction(function () use ($data): Model {

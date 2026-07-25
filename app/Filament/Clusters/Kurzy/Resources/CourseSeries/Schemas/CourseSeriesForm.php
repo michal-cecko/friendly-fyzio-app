@@ -4,11 +4,12 @@ namespace App\Filament\Clusters\Kurzy\Resources\CourseSeries\Schemas;
 
 use App\Enums\CourseSeriesStatus;
 use App\Enums\CourseSeriesVisibility;
+use App\Enums\WaitlistPromotionMode;
 use App\Filament\Support\Schemas\PresenceBanner;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
@@ -52,10 +53,12 @@ class CourseSeriesForm
                     ->integer()
                     ->minValue(1)
                     ->required(),
-                Toggle::make('auto_promote_waitlist')
-                    ->label('Automaticky přidávat z čekací listiny')
-                    ->helperText('Když se uvolní místo, systém sám osloví dalšího v pořadí. Vypněte, chcete-li přidávat z čekací listiny ručně.')
-                    ->default(true)
+                Radio::make('waitlist_promotion_mode')
+                    ->label('Když se uvolní místo')
+                    ->options(WaitlistPromotionMode::class)
+                    ->descriptions(WaitlistPromotionMode::descriptions())
+                    ->default(WaitlistPromotionMode::AutomaticAdd)
+                    ->required()
                     ->columnSpanFull(),
                 TextInput::make('price')
                     ->label('Cena')
@@ -75,7 +78,7 @@ class CourseSeriesForm
                     ->default(CourseSeriesVisibility::Public)
                     ->inline()
                     ->required()
-                    ->helperText('Soukromá série se na webu nikde nezobrazuje — přihlásit se lze jen přes přihlašovací odkaz.'),
+                    ->helperText('Soukromá série se na webu nikde nezobrazuje — přihlásit se lze jen přes přihlašovací odkaz. Ten (i pozvánky) je proto dostupný jen u soukromé série; u veřejné se tlačítko nezobrazuje.'),
             ]);
     }
 }

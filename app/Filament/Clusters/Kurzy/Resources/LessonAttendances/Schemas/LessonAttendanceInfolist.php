@@ -2,7 +2,10 @@
 
 namespace App\Filament\Clusters\Kurzy\Resources\LessonAttendances\Schemas;
 
+use App\Filament\Clusters\Kurzy\Resources\Courses\CourseResource;
+use App\Filament\Clusters\Provoz\Resources\Clients\ClientResource;
 use App\Filament\Support\Schemas\RecordTimestamps;
+use App\Models\LessonAttendance;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
@@ -13,16 +16,23 @@ class LessonAttendanceInfolist
     public static function configure(Schema $schema): Schema
     {
         return $schema
+            ->columns(1)
             ->components([
                 Section::make('Detaily')
                     ->columns(2)
                     ->schema([
                         TextEntry::make('lesson.series.course.name')
                             ->label('Kurz')
-                            ->placeholder('—'),
+                            ->placeholder('—')
+                            ->url(fn (LessonAttendance $record): ?string => $record->lesson?->series?->course !== null
+                                ? CourseResource::getUrl('view', ['record' => $record->lesson->series->course])
+                                : null),
                         TextEntry::make('enrollment.client.name')
                             ->label('Klient')
-                            ->placeholder('—'),
+                            ->placeholder('—')
+                            ->url(fn (LessonAttendance $record): ?string => $record->enrollment?->client !== null
+                                ? ClientResource::getUrl('view', ['record' => $record->enrollment->client])
+                                : null),
                         TextEntry::make('lesson.lesson_date')
                             ->label('Datum')
                             ->date('d.m.Y')

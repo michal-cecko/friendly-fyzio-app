@@ -3,6 +3,8 @@
 namespace App\Notifications;
 
 use App\Listeners\LogSentEmail;
+use App\Notifications\Concerns\HasCopyRecipients;
+use App\Support\Emails\CopyRecipients;
 use App\Support\EmailTemplateRenderer;
 use Illuminate\Bus\Queueable;
 use Illuminate\Database\Eloquent\Model;
@@ -18,18 +20,13 @@ use Illuminate\Notifications\Notification;
  */
 class CustomEmailNotification extends Notification
 {
-    use Queueable;
+    use HasCopyRecipients, Queueable;
 
-    /**
-     * @param  array<int, string>  $cc
-     * @param  array<int, string>  $bcc
-     */
     public function __construct(
         public ?Model $record,
         public string $emailSubject,
         public string $bodyHtml,
-        public array $cc = [],
-        public array $bcc = [],
+        public ?CopyRecipients $copies = null,
         public ?string $replyToAddress = null,
         public ?string $replyToName = null,
     ) {}
@@ -48,20 +45,12 @@ class CustomEmailNotification extends Notification
             ->subject($this->emailSubject)
             ->view('emails.rendered', ['html' => EmailTemplateRenderer::renderHtml($this->bodyHtml, $this->emailSubject)]);
 
-        if ($this->cc !== []) {
-            $mail->cc($this->cc);
-        }
-
-        if ($this->bcc !== []) {
-            $mail->bcc($this->bcc);
-        }
-
         // Route replies to the staff member who composed the e-mail; falls back to the
         // default From address when the sender has no e-mail.
         if ($this->replyToAddress !== null) {
             $mail->replyTo($this->replyToAddress, $this->replyToName);
         }
 
-        return $mail;
+        return $this->applyCopies($mail);
     }
 }

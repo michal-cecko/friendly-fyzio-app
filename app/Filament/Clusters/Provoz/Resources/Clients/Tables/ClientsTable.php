@@ -145,9 +145,12 @@ class ClientsTable
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                    ForceDeleteBulkAction::make(),
-                    RestoreBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->modalHeading('Smazat vybrané klienty'),
+                    ForceDeleteBulkAction::make()
+                        ->modalHeading('Trvale smazat vybrané klienty'),
+                    RestoreBulkAction::make()
+                        ->modalHeading('Obnovit vybrané klienty'),
                 ]),
             ]);
     }

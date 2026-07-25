@@ -52,6 +52,10 @@ class NotesRelationManager extends RelationManager
     {
         return $table
             ->heading('')
+            ->modelLabel('poznámku')
+            ->pluralModelLabel('poznámky')
+            ->emptyStateHeading('Zatím žádné poznámky')
+            ->emptyStateDescription('Přidejte první poznámku z terapie.')
             ->columns([
                 TextColumn::make('content')
                     ->label('Poznámka')
@@ -70,6 +74,7 @@ class NotesRelationManager extends RelationManager
             ->defaultSort('created_at', 'desc')
             ->toolbarActions([
                 CreateAction::make()
+                    ->modalHeading('Nová poznámka')
                     ->mutateFormDataUsing(function (array $data): array {
                         /** @var Reservation $reservation */
                         $reservation = $this->getOwnerRecord();

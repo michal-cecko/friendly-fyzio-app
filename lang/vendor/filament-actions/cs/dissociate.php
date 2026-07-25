@@ -36,7 +36,7 @@ return [
 
         'modal' => [
 
-            'heading' => 'Odpojit zvolené :label',
+            'heading' => 'Odpojit zvolené záznamy',
 
             'actions' => [
 

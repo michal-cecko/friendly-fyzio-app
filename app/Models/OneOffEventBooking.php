@@ -11,6 +11,7 @@ use App\Enums\PaymentStatus;
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\IsPayable;
 use App\Observers\OneOffEventBookingObserver;
+use App\Support\Emails\CopyRecipients;
 use App\Support\Emails\EnrollmentEmailer;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -70,9 +71,9 @@ class OneOffEventBooking extends Model implements Emailable, Payable
         return EnrollmentEmailer::templateGroups($this);
     }
 
-    public function sendTemplateEmail(EmailTemplateKey $key): void
+    public function sendTemplateEmail(EmailTemplateKey $key, ?CopyRecipients $copies = null): void
     {
-        EnrollmentEmailer::send($this, $key);
+        EnrollmentEmailer::send($this, $key, $copies);
     }
 
     public function event(): BelongsTo

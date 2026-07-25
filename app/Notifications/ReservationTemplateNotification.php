@@ -5,6 +5,8 @@ namespace App\Notifications;
 use App\Enums\EmailTemplateKey;
 use App\Models\EmailTemplate;
 use App\Models\Reservation;
+use App\Notifications\Concerns\HasCopyRecipients;
+use App\Support\Emails\CopyRecipients;
 use App\Support\EmailTemplateRenderer;
 use App\Support\Reservations\ReservationEmailContext;
 use Illuminate\Bus\Queueable;
@@ -19,7 +21,7 @@ use Illuminate\Notifications\Notification;
  */
 class ReservationTemplateNotification extends Notification
 {
-    use Queueable;
+    use HasCopyRecipients, Queueable;
 
     /**
      * @param  array<string, string>  $extraTokens  Trigger-specific tokens merged over the
@@ -29,6 +31,7 @@ class ReservationTemplateNotification extends Notification
         public Reservation $reservation,
         public EmailTemplateKey $key,
         public array $extraTokens = [],
+        public ?CopyRecipients $copies = null,
     ) {}
 
     /**
@@ -74,6 +77,6 @@ class ReservationTemplateNotification extends Notification
             $mail->replyTo($therapist->email, $therapist->name);
         }
 
-        return $mail;
+        return $this->applyCopies($mail);
     }
 }

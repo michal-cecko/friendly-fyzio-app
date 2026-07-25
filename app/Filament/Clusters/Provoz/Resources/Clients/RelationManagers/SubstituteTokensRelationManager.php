@@ -34,6 +34,7 @@ class SubstituteTokensRelationManager extends RelationManager
             ->columns([
                 TextColumn::make('sourceLesson.series.course.name')
                     ->label('Kurz')
+                    ->searchable()
                     ->description(fn (SubstituteToken $record): ?string => $record->sourceLesson?->lesson_date?->format('d.m.Y'))
                     ->placeholder('—'),
                 TextColumn::make('expires_at')

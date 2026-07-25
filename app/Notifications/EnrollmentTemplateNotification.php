@@ -4,7 +4,9 @@ namespace App\Notifications;
 
 use App\Enums\EmailTemplateKey;
 use App\Models\EmailTemplate;
+use App\Notifications\Concerns\HasCopyRecipients;
 use App\Support\CmsMail;
+use App\Support\Emails\CopyRecipients;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -18,7 +20,7 @@ use Illuminate\Notifications\Notification;
  */
 class EnrollmentTemplateNotification extends Notification
 {
-    use Queueable;
+    use HasCopyRecipients, Queueable;
 
     /**
      * @param  array<string, string>  $tokens
@@ -26,6 +28,7 @@ class EnrollmentTemplateNotification extends Notification
     public function __construct(
         public EmailTemplateKey $key,
         public array $tokens = [],
+        public ?CopyRecipients $copies = null,
     ) {}
 
     /**
@@ -42,11 +45,13 @@ class EnrollmentTemplateNotification extends Notification
 
         if ($template === null) {
             // The template row should always be seeded; fall back to a plain line rather than fail.
-            return (new MailMessage)
-                ->subject($this->key->defaultSubject())
-                ->line($this->key->label());
+            return $this->applyCopies(
+                (new MailMessage)
+                    ->subject($this->key->defaultSubject())
+                    ->line($this->key->label())
+            );
         }
 
-        return CmsMail::render($template, $this->tokens);
+        return $this->applyCopies(CmsMail::render($template, $this->tokens));
     }
 }

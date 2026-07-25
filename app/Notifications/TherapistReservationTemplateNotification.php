@@ -5,7 +5,9 @@ namespace App\Notifications;
 use App\Enums\EmailTemplateKey;
 use App\Models\EmailTemplate;
 use App\Models\Reservation;
+use App\Notifications\Concerns\HasCopyRecipients;
 use App\Support\CmsMail;
+use App\Support\Emails\CopyRecipients;
 use App\Support\Reservations\TherapistReservationEmailContext;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -19,7 +21,7 @@ use Illuminate\Notifications\Notification;
  */
 class TherapistReservationTemplateNotification extends Notification
 {
-    use Queueable;
+    use HasCopyRecipients, Queueable;
 
     /**
      * @param  array<string, string>  $extraTokens  Trigger-specific tokens merged over the
@@ -29,6 +31,7 @@ class TherapistReservationTemplateNotification extends Notification
         public Reservation $reservation,
         public EmailTemplateKey $key,
         public array $extraTokens = [],
+        public ?CopyRecipients $copies = null,
     ) {}
 
     /**
@@ -44,11 +47,15 @@ class TherapistReservationTemplateNotification extends Notification
         $template = EmailTemplate::forKey($this->key);
 
         if ($template === null) {
-            return (new MailMessage)
-                ->subject($this->key->defaultSubject())
-                ->line($this->key->label());
+            return $this->applyCopies(
+                (new MailMessage)
+                    ->subject($this->key->defaultSubject())
+                    ->line($this->key->label())
+            );
         }
 
-        return CmsMail::render($template, TherapistReservationEmailContext::for($this->reservation, $this->extraTokens));
+        return $this->applyCopies(
+            CmsMail::render($template, TherapistReservationEmailContext::for($this->reservation, $this->extraTokens))
+        );
     }
 }

@@ -30,9 +30,11 @@ class PaymentsRelationManager extends RelationManager
             ->columns([
                 TextColumn::make('number')
                     ->label('Č. platby')
+                    ->searchable()
                     ->formatStateUsing(fn ($state): string => 'č. '.$state),
                 TextColumn::make('variable_symbol')
-                    ->label('VS'),
+                    ->label('VS')
+                    ->searchable(),
                 TextColumn::make('amount')
                     ->label('Částka')
                     ->formatStateUsing(fn (int $state): string => number_format($state, 0, ',', ' ').' Kč'),

@@ -9,6 +9,7 @@ use App\Models\CourseLesson;
 use App\Models\LessonAttendance;
 use App\Models\User;
 use App\Notifications\SubstituteTokenNotification;
+use App\Support\Emails\SentEmailReceipt;
 use App\Support\Substitutes\MoveClientToLesson;
 use App\Support\Substitutes\SubstituteException;
 use App\Support\Substitutes\SubstituteOptions;
@@ -111,6 +112,8 @@ class MoveClientIntoLessonAction extends Action
                             'misto' => (string) ($target->room?->name ?? ''),
                         ],
                     ));
+
+                    SentEmailReceipt::forCurrentUser('Přesun do lekce');
                 }
 
                 Notification::make()->title('Klient byl přesunut do lekce.')->success()->send();

@@ -50,7 +50,7 @@ class ClientStatsOverview extends StatsOverviewWidget
             ->count();
         $totalEnrollments = $client->courseEnrollments()->count();
 
-        return [
+        return array_values(array_filter([
             Stat::make('Rezervace', $totalReservations)
                 ->description("{$cancelledReservations} zrušených")
                 ->color('primary'),
@@ -63,9 +63,12 @@ class ClientStatsOverview extends StatsOverviewWidget
                 ->descriptionIcon('heroicon-m-calendar-days'),
             Stat::make('Kredit', number_format($creditBalance, 0, ',', ' ').' Kč')
                 ->color('success'),
-            Stat::make('Utraceno', number_format($totalSpent, 0, ',', ' ').' Kč'),
+            // A money total: only for holders of the Revenue capability.
+            auth()->user()?->canViewRevenue()
+                ? Stat::make('Utraceno', number_format($totalSpent, 0, ',', ' ').' Kč')
+                : null,
             Stat::make('Kurzy', "{$activeEnrollments} aktivních")
                 ->description("{$totalEnrollments} celkem"),
-        ];
+        ]));
     }
 }

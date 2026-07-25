@@ -67,17 +67,17 @@ class ReservationEmailer
         return $groups;
     }
 
-    public static function send(Reservation $reservation, EmailTemplateKey $key): void
+    public static function send(Reservation $reservation, EmailTemplateKey $key, ?CopyRecipients $copies = null): void
     {
         $extra = self::extraTokens($reservation, $key);
 
         if ($key->isTherapistFacing()) {
-            $reservation->therapist?->user?->notify(new TherapistReservationTemplateNotification($reservation, $key, $extra));
+            $reservation->therapist?->user?->notify(new TherapistReservationTemplateNotification($reservation, $key, $extra, $copies));
 
             return;
         }
 
-        $reservation->client?->notify(new ReservationTemplateNotification($reservation, $key, $extra));
+        $reservation->client?->notify(new ReservationTemplateNotification($reservation, $key, $extra, $copies));
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Clusters\Kurzy\Resources\CourseLessons\Tables;
 
+use App\Filament\Support\Tables\OccupancyColumn;
 use App\Filament\Support\Tables\TimestampColumns;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -31,6 +32,7 @@ class CourseLessonsTable
                     ->label('Od'),
                 TextColumn::make('end_time')
                     ->label('Do'),
+                OccupancyColumn::make('occupancy', countsRelationship: null),
                 TextColumn::make('instructor.name')
                     ->label('Lektor')
                     ->toggleable(),

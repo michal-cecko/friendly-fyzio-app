@@ -13,6 +13,14 @@ class EditPage extends BaseEditRecord
 {
     protected static string $resource = PageResource::class;
 
+    public function getTitle(): string
+    {
+        /** @var Page $record */
+        $record = $this->getRecord();
+
+        return 'Upravit stránku '.$record->title;
+    }
+
     protected function getHeaderActions(): array
     {
         return [

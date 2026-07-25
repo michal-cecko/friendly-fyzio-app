@@ -2,6 +2,7 @@
 
 namespace App\Filament\Clusters\Obsah\Resources\Pages\Schemas;
 
+use App\Filament\Support\Schemas\DerivedSlug;
 use App\Filament\Support\Schemas\PresenceBanner;
 use App\Mason\BrickRegistry;
 use App\Models\Page;
@@ -14,9 +15,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
-use Illuminate\Support\Str;
 use RalphJSmit\Filament\MediaLibrary\Filament\Forms\Components\MediaPicker;
 
 class PageForm
@@ -36,17 +35,9 @@ class PageForm
                                     ->label('Název')
                                     ->required()
                                     ->live(onBlur: true)
-                                    ->afterStateUpdated(function (Set $set, ?string $state, ?Page $record): void {
-                                        if (! $record && filled($state)) {
-                                            $set('slug', Str::slug($state));
-                                        }
-                                    }),
-                                TextInput::make('slug')
-                                    ->label('URL slug')
-                                    ->required()
-                                    ->disabled(fn (?Page $record): bool => (bool) $record?->is_system)
-                                    ->dehydrated()
-                                    ->unique(ignoreRecord: true),
+                                    ->afterStateUpdated(DerivedSlug::syncFrom(Page::class, 'stranka')),
+                                DerivedSlug::field('Adresa stránky na webu. Doplní se sama z názvu.')
+                                    ->label('URL slug'),
                                 Mason::make('content')
                                     ->label('Obsah stránky')
                                     ->bricks(BrickRegistry::all())

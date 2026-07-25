@@ -37,6 +37,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use RalphJSmit\Filament\Explore\Filament\Forms\Components\FilePicker;
 use RalphJSmit\Filament\MediaLibrary\Models\MediaLibraryItem;
 
 class AppServiceProvider extends ServiceProvider
@@ -155,6 +156,13 @@ class AppServiceProvider extends ServiceProvider
                 ['table'],
                 ['undo', 'redo'],
             ]));
+
+        // The file/media picker's "clear" button gets its label from the action
+        // name, so it stays English no matter the locale. Configuring the parent
+        // FilePicker covers the MediaPicker subclass used across the app.
+        FilePicker::configureUsing(fn (FilePicker $picker) => $picker->modifyClearActionUsing(
+            fn (Action $action) => $action->label(__('filament-explore::filament/forms/components/file-picker.clear_action.label')),
+        ));
 
         // Inject the public navigation menus into the site header and footer.
         View::composer('components.site.header', fn (\Illuminate\View\View $view) => $view->with('headerNav', $this->navigation(NavigationLocation::Header)));

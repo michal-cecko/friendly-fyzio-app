@@ -2,8 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Clusters\Kurzy\Resources\Courses\Pages\EditCourse;
 use App\Filament\Clusters\Kurzy\Resources\Courses\Pages\ViewCourse;
 use App\Filament\Clusters\Kurzy\Resources\Courses\RelationManagers\SeriesRelationManager;
+use App\Filament\Clusters\Kurzy\Resources\CourseSeries\CourseSeriesResource;
+use App\Filament\Clusters\Kurzy\Resources\CourseSeries\Pages\EditCourseSeries;
 use App\Filament\Clusters\Kurzy\Resources\CourseSeries\Pages\ViewCourseSeries;
 use App\Filament\Clusters\Kurzy\Resources\CourseSeries\RelationManagers\LessonsRelationManager;
 use App\Filament\Clusters\Kurzy\Resources\CourseSeries\RelationManagers\SubstituteRulesRelationManager;
@@ -16,8 +19,11 @@ use App\Models\SubstituteRule;
 use App\Models\User;
 use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
+use Filament\Resources\Pages\Page;
+use Filament\Schemas\Components\Tabs;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class CourseRelationManagersTest extends TestCase
@@ -45,6 +51,23 @@ class CourseRelationManagersTest extends TestCase
         ])
             ->assertCanSeeTableRecords($series)
             ->assertCanNotSeeTableRecords([$otherSeries]);
+    }
+
+    /**
+     * A row click belongs on the série's own page — its lessons and enrollments
+     * live there — rather than dropping straight into the edit form.
+     */
+    public function test_clicking_a_series_row_opens_its_detail_page(): void
+    {
+        $course = Course::factory()->create();
+        $series = CourseSeries::factory()->create(['course_id' => $course->id]);
+
+        Livewire::test(SeriesRelationManager::class, [
+            'ownerRecord' => $course,
+            'pageClass' => ViewCourse::class,
+        ])
+            ->assertSee(CourseSeriesResource::getUrl('view', ['record' => $series]), false)
+            ->assertDontSee(CourseSeriesResource::getUrl('edit', ['record' => $series]), false);
     }
 
     public function test_series_can_be_created_inline_for_the_owning_course(): void
@@ -128,6 +151,38 @@ class CourseRelationManagersTest extends TestCase
             'source_series_id' => $series->id,
             'target_series_id' => $target->id,
         ]);
+    }
+
+    /**
+     * Kurzy and their série carry several relation managers each, so their detail
+     * and edit pages keep them behind Filament's tab strip rather than stacking
+     * them as sections down the page.
+     *
+     * @return array<string, array{class-string<Page>, bool}>
+     */
+    public static function relationManagerPagesProvider(): array
+    {
+        return [
+            'course detail' => [ViewCourse::class, false],
+            'course edit' => [EditCourse::class, false],
+            'series detail' => [ViewCourseSeries::class, true],
+            'series edit' => [EditCourseSeries::class, true],
+        ];
+    }
+
+    #[DataProvider('relationManagerPagesProvider')]
+    public function test_relation_managers_render_as_tabs(string $page, bool $onSeries): void
+    {
+        $course = Course::factory()->create();
+        $series = CourseSeries::factory()->create(['course_id' => $course->id]);
+
+        $record = $onSeries ? $series : $course;
+
+        $content = Livewire::test($page, ['record' => $record->getKey()])
+            ->instance()
+            ->getRelationManagersContentComponent();
+
+        $this->assertInstanceOf(Tabs::class, $content);
     }
 
     public function test_waitlist_tab_is_relabelled_on_a_course_but_not_on_a_series(): void

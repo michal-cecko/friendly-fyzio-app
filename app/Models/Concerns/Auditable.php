@@ -20,13 +20,32 @@ trait Auditable
 {
     use LogsActivity;
 
+    /**
+     * Never audited: secrets, and per-user UI state that would otherwise file a
+     * log entry every time somebody collapses a panel. Models add their own with
+     * {@see auditExcept()}.
+     *
+     * @var list<string>
+     */
+    private const NEVER_AUDITED = ['password', 'remember_token', 'preferences'];
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
             ->logAll()
-            ->logExcept(['password', 'remember_token'])
+            ->logExcept([...self::NEVER_AUDITED, ...$this->auditExcept()])
             ->logOnlyDirty()
             ->dontLogEmptyChanges();
+    }
+
+    /**
+     * Extra attributes this model keeps out of the activity log.
+     *
+     * @return list<string>
+     */
+    protected function auditExcept(): array
+    {
+        return [];
     }
 
     public function getDescriptionForEvent(string $eventName): string

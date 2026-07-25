@@ -38,6 +38,10 @@ class RoomsRelationManager extends RelationManager
     {
         return $table
             ->recordTitleAttribute('name')
+            ->modelLabel('místnost')
+            ->pluralModelLabel('místnosti')
+            ->emptyStateHeading('Zatím žádné místnosti')
+            ->emptyStateDescription('Přidejte první místnost této budovy.')
             ->columns([
                 TextColumn::make('name')
                     ->label('Název')
@@ -48,13 +52,10 @@ class RoomsRelationManager extends RelationManager
                     ->badge()
                     ->placeholder('—')
                     ->sortable(),
-                TextColumn::make('blockings_count')
-                    ->label('Blokace')
-                    ->counts('blockings')
-                    ->sortable(),
             ])
             ->headerActions([
-                CreateAction::make(),
+                CreateAction::make()
+                    ->modalHeading('Nová místnost'),
             ])
             ->recordActions([
                 EditAction::make(),

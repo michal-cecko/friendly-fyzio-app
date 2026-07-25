@@ -3,6 +3,7 @@
 namespace App\Filament\Clusters\Provoz\Resources\ServiceCategories\Schemas;
 
 use App\Enums\ServiceType;
+use App\Filament\Support\Schemas\DerivedSlug;
 use App\Filament\Support\Schemas\PresenceBanner;
 use App\Filament\Support\Schemas\RecordTimestamps;
 use App\Filament\Support\Schemas\ResponsiveColumns;
@@ -14,7 +15,6 @@ use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Guava\IconPicker\Forms\Components\IconPicker;
 use Illuminate\Support\Str;
@@ -37,12 +37,8 @@ class ServiceCategoryForm
                             ->required()
                             ->maxLength(255)
                             ->live(onBlur: true)
-                            ->afterStateUpdated(fn (Set $set, ?string $state) => $set('slug', Str::slug($state ?? ''))),
-                        TextInput::make('slug')
-                            ->label('Slug')
-                            ->required()
-                            ->maxLength(255)
-                            ->unique(ignoreRecord: true),
+                            ->afterStateUpdated(DerivedSlug::syncFrom(ServiceCategory::class)),
+                        DerivedSlug::field('Adresa stránky kategorie na webu. Doplní se sama z názvu.'),
                         ToggleButtons::make('type')
                             ->label('Typ')
                             ->options(ServiceType::class)

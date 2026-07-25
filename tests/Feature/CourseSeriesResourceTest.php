@@ -7,6 +7,7 @@ use App\Enums\CourseSeriesVisibility;
 use App\Filament\Clusters\Kurzy\Resources\CourseSeries\Pages\CreateCourseSeries;
 use App\Filament\Clusters\Kurzy\Resources\CourseSeries\Pages\EditCourseSeries;
 use App\Filament\Clusters\Kurzy\Resources\CourseSeries\Pages\ListCourseSeries;
+use App\Filament\Clusters\Kurzy\Resources\CourseSeries\Pages\ViewCourseSeries;
 use App\Models\Course;
 use App\Models\CourseSeries;
 use App\Models\User;
@@ -89,5 +90,31 @@ class CourseSeriesResourceTest extends TestCase
             'id' => $record->id,
             'name' => 'Aktualizovaný běh',
         ]);
+    }
+
+    /**
+     * Only Upravit stays a standalone button on the série detail; everything
+     * else collapses into the "Další akce" dropdown but must still resolve.
+     */
+    public function test_detail_groups_every_action_except_edit(): void
+    {
+        // Private, so the sign-up link action is actually available here.
+        $record = CourseSeries::factory()->create(['visibility' => CourseSeriesVisibility::Private]);
+
+        Livewire::test(ViewCourseSeries::class, ['record' => $record->getKey()])
+            ->assertActionExists('edit')
+            ->assertActionVisible('presaleLink')
+            ->assertActionExists('delete')
+            ->assertActionExists('activityLog');
+    }
+
+    public function test_grouped_delete_still_removes_the_series(): void
+    {
+        $record = CourseSeries::factory()->create();
+
+        Livewire::test(ViewCourseSeries::class, ['record' => $record->getKey()])
+            ->callAction('delete');
+
+        $this->assertDatabaseMissing(CourseSeries::class, ['id' => $record->id]);
     }
 }

@@ -15,5 +15,8 @@ return [
             ],
         ],
     ],
+    'clear_action' => [
+        'label' => 'Zrušit výběr',
+    ],
     'empty_state_heading' => 'Zatím nebyl vybrán žádný soubor',
 ];

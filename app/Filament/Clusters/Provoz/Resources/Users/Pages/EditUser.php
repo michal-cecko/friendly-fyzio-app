@@ -20,6 +20,14 @@ class EditUser extends BaseEditRecord
 {
     protected static string $resource = UserResource::class;
 
+    public function getTitle(): string
+    {
+        /** @var User $record */
+        $record = $this->getRecord();
+
+        return 'Upravit uživatele '.$record->name;
+    }
+
     /** @var list<string> */
     protected array $selectedCapabilities = [];
 

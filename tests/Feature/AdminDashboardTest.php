@@ -36,7 +36,6 @@ class AdminDashboardTest extends TestCase
             [AdminStatsOverview::class],
             [UpcomingReservationsWidget::class],
             [ProblemsWidget::class],
-            [RevenueChartWidget::class],
         ];
     }
 
@@ -54,6 +53,16 @@ class AdminDashboardTest extends TestCase
 
         $this->actingAs(User::factory()->customer()->create());
         $this->assertFalse($widget::canView());
+    }
+
+    public function test_revenue_chart_requires_the_revenue_capability_not_merely_admin(): void
+    {
+        // Being an admin — even a super-admin — is not enough on its own.
+        $this->actingAs(User::factory()->admin()->create());
+        $this->assertFalse(RevenueChartWidget::canView());
+
+        $this->actingAs(User::factory()->admin()->revenue()->create());
+        $this->assertTrue(RevenueChartWidget::canView());
     }
 
     public function test_stats_show_pending_and_utilization(): void

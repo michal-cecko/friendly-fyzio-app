@@ -6,20 +6,8 @@
     $changes = $record->attribute_changes?->toArray() ?? [];
     $new = $changes['attributes'] ?? [];
     $old = $changes['old'] ?? [];
-
-    $format = function ($value): string {
-        if ($value === null) {
-            return '—';
-        }
-        if (is_bool($value)) {
-            return $value ? 'ano' : 'ne';
-        }
-        if (is_array($value)) {
-            return json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        }
-
-        return (string) $value;
-    };
+    $subject = $record->subject;
+    $scope = ActivityPresenter::attributeScope($record);
 
     // Update = before/after diff; create/delete = the full record snapshot.
     $isUpdate = $record->event === 'updated';
@@ -45,9 +33,13 @@
                 @foreach ($rows as $key)
                     @php $changed = ($old[$key] ?? null) !== ($new[$key] ?? null); @endphp
                     <tr @class(['bg-warning-50/40 dark:bg-warning-400/5' => $changed])>
-                        <td class="py-2 pe-4 align-top font-medium text-gray-700 dark:text-gray-200">{{ ActivityPresenter::attributeLabel($key) }}</td>
-                        <td class="py-2 pe-4 align-top text-gray-500 line-through decoration-danger-400/60 dark:text-gray-400">{{ $format($old[$key] ?? null) }}</td>
-                        <td class="py-2 align-top font-medium text-gray-800 dark:text-gray-100">{{ $format($new[$key] ?? null) }}</td>
+                        <td class="py-2 pe-4 align-top font-medium text-gray-700 dark:text-gray-200">{{ ActivityPresenter::attributeLabel($key, $scope) }}</td>
+                        <td class="py-2 pe-4 align-top text-gray-500 dark:text-gray-400">
+                            <x-activity.value :value="$old[$key] ?? null" :attribute="$key" :subject="$subject" :scope="$scope" struck />
+                        </td>
+                        <td class="py-2 align-top font-medium text-gray-800 dark:text-gray-100">
+                            <x-activity.value :value="$new[$key] ?? null" :attribute="$key" :subject="$subject" :scope="$scope" />
+                        </td>
                     </tr>
                 @endforeach
             </tbody>
@@ -62,8 +54,10 @@
             <tbody class="divide-y divide-gray-100 dark:divide-white/5">
                 @foreach ($rows as $key)
                     <tr>
-                        <td class="w-1/3 py-2 pe-4 align-top font-medium text-gray-700 dark:text-gray-200">{{ ActivityPresenter::attributeLabel($key) }}</td>
-                        <td class="py-2 align-top text-gray-800 dark:text-gray-100 break-all">{{ $format($snapshot[$key] ?? null) }}</td>
+                        <td class="w-1/3 py-2 pe-4 align-top font-medium text-gray-700 dark:text-gray-200">{{ ActivityPresenter::attributeLabel($key, $scope) }}</td>
+                        <td class="py-2 align-top text-gray-800 dark:text-gray-100">
+                            <x-activity.value :value="$snapshot[$key] ?? null" :attribute="$key" :subject="$subject" :scope="$scope" />
+                        </td>
                     </tr>
                 @endforeach
             </tbody>

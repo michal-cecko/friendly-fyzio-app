@@ -2,7 +2,7 @@
 
 namespace App\Filament\Widgets;
 
-use App\Filament\Widgets\Concerns\AdminOnly;
+use App\Filament\Widgets\Concerns\RevenueOnly;
 use App\Models\Payment;
 use Carbon\CarbonPeriod;
 use Illuminate\Support\Carbon;
@@ -10,7 +10,7 @@ use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
 class RevenueChartWidget extends ApexChartWidget
 {
-    use AdminOnly;
+    use RevenueOnly;
 
     protected static ?string $chartId = 'revenueChart';
 

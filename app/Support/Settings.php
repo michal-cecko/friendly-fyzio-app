@@ -142,6 +142,17 @@ class Settings
     }
 
     /**
+     * How long (hours) a freed spot stays reserved for the waitlist during an
+     * invite round (docs §6.4: "ak nikto nereaguje, miesto sa uvoľní pre
+     * verejnosť"). Deliberately separate from the payment hold window — this
+     * one only bounds how long the public form keeps the offer closed.
+     */
+    public static function waitlistInviteHours(): int
+    {
+        return (int) self::get('enrollments.waitlist_invite_hours', 24);
+    }
+
+    /**
      * How many days before the series start a client can still cancel their
      * course enrollment themselves in the client zone.
      */

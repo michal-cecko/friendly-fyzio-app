@@ -30,10 +30,6 @@ class RoomsTable
                 TextColumn::make('building.name')
                     ->label('Budova')
                     ->sortable(),
-                TextColumn::make('blockings_count')
-                    ->label('Blokace')
-                    ->counts('blockings')
-                    ->sortable(),
                 ...TimestampColumns::make(),
             ])
             ->filters([

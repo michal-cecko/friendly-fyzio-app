@@ -8,4 +8,6 @@ use App\Filament\Resources\Pages\BaseCreateRecord;
 class CreateRoom extends BaseCreateRecord
 {
     protected static string $resource = RoomResource::class;
+
+    protected static ?string $title = 'Nová místnost';
 }

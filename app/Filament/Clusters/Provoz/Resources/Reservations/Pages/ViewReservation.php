@@ -14,6 +14,7 @@ use App\Filament\Clusters\Provoz\Resources\Reservations\ReservationResource;
 use App\Filament\Support\Actions\ActivityLogAction;
 use App\Filament\Support\Actions\RecordPaymentAction;
 use App\Filament\Support\Actions\SendEmailAction;
+use App\Models\Reservation;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteAction;
@@ -23,6 +24,14 @@ use Filament\Support\Icons\Heroicon;
 class ViewReservation extends ViewRecord
 {
     protected static string $resource = ReservationResource::class;
+
+    public function getTitle(): string
+    {
+        /** @var Reservation $record */
+        $record = $this->getRecord();
+
+        return 'Rezervace '.($record->client?->name ?? 'bez klienta');
+    }
 
     protected function getHeaderActions(): array
     {

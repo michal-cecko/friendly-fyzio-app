@@ -24,6 +24,9 @@ trait HasPresaleAccess
      * Hidden-link state: the offer keeps taking registrations through its secret
      * link even while Private (invite-only). Past or full offers stay closed
      * even with the token.
+     *
+     * It also carries waitlist invite rounds: ignoring the reserved-for-waitlist
+     * window is what lets an invited waiter take the spot before the public can.
      */
     public function offerStateForPresale(): OfferState
     {

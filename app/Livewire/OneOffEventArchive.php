@@ -57,7 +57,9 @@ class OneOffEventArchive extends Component
         $upcoming = $this->baseQuery()
             ->upcoming()
             ->when(filled($this->search), fn (Builder $query) => $this->applySearch($query))
-            ->when($this->availableOnly, fn (Builder $query) => $query->hasSpotsLeft())
+            ->when($this->availableOnly, fn (Builder $query) => $query
+                ->hasSpotsLeft()
+                ->withoutActiveWaitlistInvite())
             ->orderBy('event_date')
             ->orderBy('start_time')
             ->paginate(6, pageName: 'strana');

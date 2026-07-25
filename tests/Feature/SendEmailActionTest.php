@@ -62,8 +62,8 @@ class SendEmailActionTest extends TestCase
             function (CustomEmailNotification $notification, array $channels, AnonymousNotifiable $notifiable) use ($reservation): bool {
                 return $notifiable->routes['mail'] === 'someone@example.com'
                     && $notification->emailSubject === 'Ahoj'
-                    && $notification->cc === ['cc@example.com']
-                    && $notification->bcc === ['bcc@example.com']
+                    && $notification->copies?->cc === ['cc@example.com']
+                    && $notification->copies?->bcc === ['bcc@example.com']
                     && $notification->replyToAddress === $this->sender->email
                     && $notification->replyToName === $this->sender->name
                     && $notification->record?->is($reservation);

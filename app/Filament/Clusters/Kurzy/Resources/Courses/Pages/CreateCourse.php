@@ -8,4 +8,6 @@ use App\Filament\Resources\Pages\BaseCreateRecord;
 class CreateCourse extends BaseCreateRecord
 {
     protected static string $resource = CourseResource::class;
+
+    protected static ?string $title = 'Nový kurz';
 }

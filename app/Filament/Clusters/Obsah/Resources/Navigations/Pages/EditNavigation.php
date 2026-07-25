@@ -18,11 +18,11 @@ class EditNavigation extends BaseEditRecord
         ];
     }
 
-    public function getHeading(): string
+    public function getTitle(): string
     {
         /** @var Navigation $record */
         $record = $this->getRecord();
 
-        return parent::getHeading().' - '.$record->location->getLabel();
+        return 'Upravit menu — '.$record->location->getLabel();
     }
 }

@@ -3,9 +3,11 @@
 namespace App\Filament\Clusters\Finance\Resources\CashReceipts\Tables;
 
 use App\Filament\Clusters\Finance\Resources\CashReceipts\Actions\DownloadReceiptPdfAction;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -42,10 +44,16 @@ class CashReceiptsTable
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->recordActions([
-                ViewAction::make(),
-                DownloadReceiptPdfAction::make(),
                 EditAction::make(),
-                DeleteAction::make(),
+                ActionGroup::make([
+                    ViewAction::make(),
+                    DownloadReceiptPdfAction::make(),
+                    DeleteAction::make(),
+                ])
+                    ->label('Akce')
+                    ->icon(Heroicon::OutlinedEllipsisVertical)
+                    ->link()
+                    ->color('gray'),
             ]);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Livewire\DatabaseNotifications;
 use App\Filament\Pages\Auth\Login;
 use App\Filament\Pages\Dashboard;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
@@ -52,6 +53,14 @@ class AdminPanelProvider extends PanelProvider
             ->unsavedChangesAlerts()
             ->databaseTransactions()
             ->databaseNotifications()
+            // Receipts for queued sends (e.g. writing to a whole série) are filed
+            // by a worker, with no session to toast into — they only appear when
+            // the bell polls. Filament's 30s default leaves the admin watching
+            // an empty bell for too long after they pressed send.
+            ->databaseNotificationsPolling('10s')
+            // Our subclass reuses that poll to announce new notifications as
+            // toasts, and stops a dismissed toast from deleting its row.
+            ->databaseNotificationsLivewireComponent(DatabaseNotifications::class)
             ->sidebarCollapsibleOnDesktop()
             ->collapsibleNavigationGroups()
             ->maxContentWidth(Width::Full)

@@ -3,7 +3,6 @@
 namespace App\Support\ActivityLog;
 
 use Filament\Facades\Filament;
-use Filament\Support\Contracts\HasLabel;
 use Illuminate\Support\Str;
 use Spatie\Activitylog\Models\Activity;
 use Throwable;
@@ -278,6 +277,103 @@ class ActivityPresenter
         'notified_therapist' => 'Terapeut upozorněn',
         'reason' => 'Důvod',
         'template_key' => 'Šablona',
+        // Structured values unpacked by ActivityValue: billing snapshots, settings
+        // config, therapist profile columns. Keys that a Filament schema already
+        // names (brick config, repeater rows) are deliberately absent — they are
+        // resolved from that schema instead, see FieldLabels.
+        'bio' => 'Medailonek',
+        'client_snapshot' => 'Odběratel',
+        'supplier_snapshot' => 'Dodavatel',
+        'config' => 'Konfigurace',
+        'format' => 'Formát',
+        'preferences' => 'Předvolby',
+        'ico' => 'IČO',
+        'dic' => 'DIČ',
+        'iban' => 'IBAN',
+        'bank_account' => 'Číslo účtu',
+        'vat_payer' => 'Plátce DPH',
+        'registration' => 'Registrace',
+        'heading' => 'Nadpis',
+        'badge_text' => 'Text odznaku',
+        'cta_text' => 'Text tlačítka',
+        'cta_url' => 'Odkaz tlačítka',
+        'background' => 'Pozadí',
+        'icon' => 'Ikona',
+        'items' => 'Položky',
+        'buttons' => 'Tlačítka',
+        'min' => 'Minimum',
+        'max' => 'Maximum',
+        'step' => 'Krok',
+        'suffix' => 'Přípona',
+        'type' => 'Typ',
+        // System columns no form declares: lifecycle timestamps, morph keys,
+        // internal flags. Everything a Filament form does name is resolved from
+        // that form instead (see FieldLabels).
+        'id' => 'ID',
+        'group' => 'Skupina',
+        'birth_number' => 'Rodné číslo',
+        'waitlist_promotion_mode' => 'Uvolněné místo z pořadníku',
+        'waitlist_invited_until' => 'Místo drženo čekajícím do',
+        'reservations' => 'Rezervace',
+        'show_stats' => 'Zobrazovat statistiky',
+        'sort' => 'Pořadí',
+        'total' => 'Celkem',
+        'gender' => 'Pohlaví',
+        'day_of_week' => 'Den v týdnu',
+        'week_type' => 'Typ týdne',
+        'is_recurring' => 'Opakující se',
+        'system_key' => 'Systémový klíč',
+        'last_reset_year' => 'Poslední reset (rok)',
+        'title_before' => 'Titul před jménem',
+        'title_after' => 'Titul za jménem',
+        'created_by' => 'Vytvořil',
+        'featured_image' => 'Hlavní obrázek',
+        'footer_note' => 'Poznámka v patičce',
+        'vat_note' => 'Poznámka k DPH',
+        'invoice_title' => 'Název pro fakturaci',
+        'text_before_items' => 'Text nad položkami',
+        'text_after_items' => 'Text pod položkami',
+        'variable_symbol' => 'Variabilní symbol',
+        'payment_method' => 'Způsob platby',
+        'payment_status' => 'Stav platby',
+        'payable_label' => 'Předmět platby',
+        'payment_id' => 'Platba',
+        'invoice_id' => 'Faktura',
+        'presale_token' => 'Token předprodeje',
+        'cancellation_reason' => 'Důvod zrušení',
+        'source_lesson_id' => 'Zdrojová lekce',
+        'used_for_lesson_id' => 'Použito na lekci',
+        'target_series_id' => 'Cílový běh kurzu',
+        'related_transaction_id' => 'Související transakce',
+        'invoiceable_id' => 'Předmět faktury',
+        'invoiceable_type' => 'Typ předmětu faktury',
+        'pageable_id' => 'Navázaný záznam',
+        'pageable_type' => 'Typ navázaného záznamu',
+        'waitlistable_id' => 'Předmět pořadníku',
+        'waitlistable_type' => 'Typ předmětu pořadníku',
+        'event_date' => 'Datum akce',
+        'start_at' => 'Začátek',
+        'end_at' => 'Konec',
+        'starts_on' => 'Platí od',
+        'ends_on' => 'Platí do',
+        'issued_at' => 'Vystaveno',
+        'imported_at' => 'Importováno',
+        'used_at' => 'Použito',
+        'settled_at' => 'Vybaveno dne',
+        'confirmed_at' => 'Potvrzeno dne',
+        'confirmed_by' => 'Potvrzeno kým',
+        'confirmed_by_id' => 'Potvrdil',
+        'confirmation_sent_at' => 'Potvrzení odesláno',
+        'reactivated_at' => 'Obnoveno dne',
+        'deactivated_at' => 'Deaktivováno',
+        'generated_until' => 'Vygenerováno do',
+        'notified_at' => 'Upozorněno',
+        'reminder_sent_at' => 'Připomínka odeslána',
+        'overdue_notified_at' => 'Upomínka odeslána',
+        'expiry_notified_at' => 'Upozornění na expiraci',
+        'newsletter_opted_in_at' => 'Přihlášení k newsletteru',
+        'doctor_note_requested_at' => 'Potvrzení od lékaře vyžádáno',
+        'doctor_note_resolved_at' => 'Potvrzení od lékaře vyřešeno',
         'count' => 'Počet záznamů',
         'ids' => 'Dotčené záznamy',
         'records' => 'Dotčené záznamy',
@@ -287,16 +383,32 @@ class ActivityPresenter
         'due_at' => 'Splatnost',
     ];
 
-    /** A human-readable Czech label for a changed attribute key. */
-    public static function attributeLabel(string $key): string
+    /**
+     * A human-readable Czech label for a changed attribute key. Model columns
+     * come from the table above; nested keys inside a Mason brick, repeater or
+     * builder are named by the schema that declares them ({@see FieldLabels}),
+     * with an optional scope to disambiguate same-named fields across bricks.
+     *
+     * @param  array<string, string>  $scope  Field → label for the structure the key belongs to.
+     */
+    public static function attributeLabel(string $key, array $scope = []): string
     {
-        if (isset(self::ATTRIBUTE_LABELS[$key])) {
-            return self::ATTRIBUTE_LABELS[$key];
-        }
+        return $scope[$key]
+            ?? self::ATTRIBUTE_LABELS[$key]
+            ?? FieldLabels::all()[$key]
+            ?? ucfirst(str_replace('_', ' ', preg_replace('/_id$/', '', $key) ?? $key));
+    }
 
-        $normalized = preg_replace('/_id$/', '', $key) ?? $key;
-
-        return ucfirst(str_replace('_', ' ', $normalized));
+    /**
+     * The label scope for an entry's own record — the Czech names its Filament
+     * resource form gives its columns. Pass this into {@see attributeLabel()}
+     * and {@see ActivityValue} when rendering that entry.
+     *
+     * @return array<string, string>
+     */
+    public static function attributeScope(Activity $activity): array
+    {
+        return FieldLabels::forModel($activity->subject_type);
     }
 
     public static function eventLabel(?string $event): string
@@ -443,6 +555,7 @@ class ActivityPresenter
     private static function updatedSummary(Activity $activity, string $label, string $labelLower, string $title, string $gender): string
     {
         $fields = self::changedFields($activity);
+        $scope = self::attributeScope($activity);
 
         if ($fields === []) {
             return self::normalize(self::verb('updated', $gender).' '.$labelLower.' '.$title);
@@ -451,12 +564,19 @@ class ActivityPresenter
         if (count($fields) === 1) {
             $key = array_key_first($fields);
             [$old, $new] = $fields[$key];
+            $before = self::formatValue($activity, $key, $old);
+            $after = self::formatValue($activity, $key, $new);
+            $prefix = self::normalize($label.' '.$title).': '.self::attributeLabel($key, $scope);
 
-            return self::normalize($label.' '.$title).': '.self::attributeLabel($key)
-                .' „'.self::formatValue($activity, $key, $old).'" → „'.self::formatValue($activity, $key, $new).'"';
+            // Structures (page content, snapshots) can summarise identically even
+            // though something inside them moved — point at the diff instead of
+            // showing the same text twice.
+            return $before === $after
+                ? $prefix.' – změněno'
+                : $prefix.' „'.$before.'" → „'.$after.'"';
         }
 
-        $labels = array_map(fn (string $key): string => self::attributeLabel($key), array_keys($fields));
+        $labels = array_map(fn (string $key): string => self::attributeLabel($key, $scope), array_keys($fields));
         $shown = array_slice($labels, 0, 4);
         $rest = count($labels) - count($shown);
         $list = implode(', ', $shown).($rest > 0 ? ' +'.$rest.' dalších' : '');
@@ -510,45 +630,12 @@ class ActivityPresenter
     }
 
     /**
-     * A short, human-readable rendering of a stored attribute value: booleans as
-     * Ano/Ne, labelled enums resolved to their Czech label, empties as „prázdné".
+     * A short, human-readable rendering of a stored attribute value — see
+     * {@see ActivityValue} for how structures and rich text are unpacked.
      */
     private static function formatValue(Activity $activity, string $key, mixed $value): string
     {
-        if ($value === null || $value === '') {
-            return 'prázdné';
-        }
-
-        if (is_bool($value)) {
-            return $value ? 'Ano' : 'Ne';
-        }
-
-        // Best-effort: render a backed enum via its label ("confirmed" → "Potvrzeno").
-        $subject = $activity->subject;
-
-        if ($subject !== null) {
-            $cast = $subject->getCasts()[$key] ?? null;
-
-            if (is_string($cast) && enum_exists($cast) && method_exists($cast, 'tryFrom')) {
-                try {
-                    $enum = $cast::tryFrom($value);
-
-                    if ($enum instanceof HasLabel) {
-                        return (string) $enum->getLabel();
-                    }
-
-                    if ($enum !== null && method_exists($enum, 'label')) {
-                        return (string) $enum->label();
-                    }
-                } catch (Throwable) {
-                    // Fall through to the raw string rendering.
-                }
-            }
-        }
-
-        $string = is_scalar($value) ? (string) $value : (string) json_encode($value, JSON_UNESCAPED_UNICODE);
-
-        return Str::limit($string, 40);
+        return ActivityValue::inline($value, $key, $activity->subject, limit: 60);
     }
 
     /** The display name of a recipient, dropping the `<email>` part when a name is present. */

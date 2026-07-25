@@ -4,6 +4,7 @@ namespace App\Contracts;
 
 use App\Enums\EmailTemplateKey;
 use App\Filament\Support\Actions\SendEmailAction;
+use App\Support\Emails\CopyRecipients;
 
 /**
  * A record an admin can e-mail about from its detail page via the shared
@@ -34,7 +35,8 @@ interface Emailable
 
     /**
      * Dispatch the chosen template e-mail, resolving the recipient, token context and
-     * notification for this record type.
+     * notification for this record type. The optional {@see CopyRecipients} carry the
+     * CC/BCC a staff member added in the send action.
      */
-    public function sendTemplateEmail(EmailTemplateKey $key): void;
+    public function sendTemplateEmail(EmailTemplateKey $key, ?CopyRecipients $copies = null): void;
 }

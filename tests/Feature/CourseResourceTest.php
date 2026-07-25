@@ -83,4 +83,19 @@ class CourseResourceTest extends TestCase
             'name' => 'Aktualizovaný název',
         ]);
     }
+
+    /**
+     * The instructor picker restricts its options to lecturers, but a course
+     * may already be assigned to someone who isn't one (e.g. a therapist from
+     * a historical import). The selected label must still resolve to the name
+     * rather than falling back to the raw UUID.
+     */
+    public function test_edit_shows_instructor_name_even_when_not_a_lecturer(): void
+    {
+        $therapist = User::factory()->therapist()->create(['name' => 'Mgr. Anna Kovaříková']);
+        $record = Course::factory()->create(['instructor_id' => $therapist->id]);
+
+        Livewire::test(EditCourse::class, ['record' => $record->getKey()])
+            ->assertSee('Mgr. Anna Kovaříková');
+    }
 }

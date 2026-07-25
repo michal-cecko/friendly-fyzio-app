@@ -14,6 +14,8 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Database\Eloquent\Model;
 
 class InvoiceSeriesResource extends Resource
 {
@@ -38,6 +40,16 @@ class InvoiceSeriesResource extends Resource
     public static function getNavigationLabel(): string
     {
         return 'Číselné řady';
+    }
+
+    /**
+     * Record titles are the object of modal headings ("Smazat číselnou řadu Faktury"),
+     * so they are written in the accusative.
+     */
+    public static function getRecordTitle(?Model $record): string|Htmlable|null
+    {
+        /** @var ?InvoiceSeries $record */
+        return trim('číselnou řadu '.$record?->name);
     }
 
     public static function form(Schema $schema): Schema

@@ -8,4 +8,6 @@ use App\Filament\Resources\Pages\BaseCreateRecord;
 class CreateOneOffEventBooking extends BaseCreateRecord
 {
     protected static string $resource = OneOffEventBookingResource::class;
+
+    protected static ?string $title = 'Nová přihláška na akci';
 }

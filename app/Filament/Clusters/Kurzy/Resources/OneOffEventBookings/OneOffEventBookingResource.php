@@ -51,6 +51,16 @@ class OneOffEventBookingResource extends Resource
     }
 
     /**
+     * Record titles are the object of modal headings ("Smazat přihlášku Jana Nováka"),
+     * so they are written in the accusative.
+     */
+    public static function getRecordTitle(?Model $record): string|Htmlable|null
+    {
+        /** @var ?OneOffEventBooking $record */
+        return trim('přihlášku '.($record?->client?->name ?? ''));
+    }
+
+    /**
      * @return array<int, string>
      */
     public static function getGloballySearchableAttributes(): array

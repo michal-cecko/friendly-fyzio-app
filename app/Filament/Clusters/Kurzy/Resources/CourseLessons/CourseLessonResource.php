@@ -97,7 +97,7 @@ class CourseLessonResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with(['series.course', 'instructor', 'room'])
+        return parent::getEloquentQuery()->with(['series.course', 'instructor', 'room'])->withOccupancyCounts()
             ->when(static::therapistUserScopeId(), fn (Builder $query, string $id) => $query->where('instructor_id', $id));
     }
 

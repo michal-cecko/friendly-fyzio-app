@@ -9,6 +9,7 @@ use App\Enums\ReservationStatus;
 use App\Models\Reservation;
 use App\Notifications\ReservationTemplateNotification;
 use App\Support\ActivityLog\LogActivity;
+use App\Support\Emails\SentEmailReceipt;
 use App\Support\Payments\PaymentEmailTokens;
 use App\Support\Settings;
 use Filament\Actions\Action;
@@ -93,6 +94,8 @@ class MarkNoShowAction extends Action
                         EmailTemplateKey::ReservationNoShow,
                         PaymentEmailTokens::for($payment),
                     ));
+
+                    SentEmailReceipt::forCurrentUser('Oznámení o nedostavení');
                 }
 
                 LogActivity::record('reservation_no_show', $record, 'Nedostavení na termín', [

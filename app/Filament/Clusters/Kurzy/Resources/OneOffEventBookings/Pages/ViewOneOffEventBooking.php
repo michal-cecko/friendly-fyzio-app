@@ -7,6 +7,7 @@ use App\Filament\Clusters\Kurzy\Resources\OneOffEventBookings\OneOffEventBooking
 use App\Filament\Support\Actions\ActivityLogAction;
 use App\Filament\Support\Actions\RecordPaymentAction;
 use App\Filament\Support\Actions\SendEmailAction;
+use App\Models\OneOffEventBooking;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
@@ -14,6 +15,14 @@ use Filament\Resources\Pages\ViewRecord;
 class ViewOneOffEventBooking extends ViewRecord
 {
     protected static string $resource = OneOffEventBookingResource::class;
+
+    public function getTitle(): string
+    {
+        /** @var OneOffEventBooking $record */
+        $record = $this->getRecord();
+
+        return 'Přihláška na akci '.($record->client?->name ?? 'bez klienta');
+    }
 
     protected function getHeaderActions(): array
     {

@@ -8,4 +8,6 @@ use App\Filament\Resources\Pages\BaseCreateRecord;
 class CreateInstagramConnection extends BaseCreateRecord
 {
     protected static string $resource = InstagramConnectionResource::class;
+
+    protected static ?string $title = 'Nový Instagram účet';
 }

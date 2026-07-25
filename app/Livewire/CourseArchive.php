@@ -123,7 +123,8 @@ class CourseArchive extends Component
                 ->whereHas('course', fn (Builder $course) => $this->applySearch($course, ['name', 'description'])))
             ->when($this->availableOnly, fn (Builder $query) => $query
                 ->where('status', CourseSeriesStatus::Open)
-                ->hasSpotsLeft())
+                ->hasSpotsLeft()
+                ->withoutActiveWaitlistInvite())
             ->orderBy('start_date')
             ->orderBy('id')
             ->paginate(6, pageName: 'strana');

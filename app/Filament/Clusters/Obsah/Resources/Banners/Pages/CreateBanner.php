@@ -8,4 +8,6 @@ use App\Filament\Resources\Pages\BaseCreateRecord;
 class CreateBanner extends BaseCreateRecord
 {
     protected static string $resource = BannerResource::class;
+
+    protected static ?string $title = 'Nový banner';
 }

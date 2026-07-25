@@ -48,6 +48,16 @@ class InvoiceResource extends Resource
     }
 
     /**
+     * Record titles are the object of modal headings ("Smazat fakturu 2026-0001"),
+     * so they are written in the accusative.
+     */
+    public static function getRecordTitle(?Model $record): string|Htmlable|null
+    {
+        /** @var ?Invoice $record */
+        return trim('fakturu '.$record?->invoice_number);
+    }
+
+    /**
      * @return array<int, string>
      */
     public static function getGloballySearchableAttributes(): array

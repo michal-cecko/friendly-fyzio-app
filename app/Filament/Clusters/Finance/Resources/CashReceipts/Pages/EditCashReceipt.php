@@ -14,6 +14,14 @@ class EditCashReceipt extends BaseEditRecord
 {
     protected static string $resource = CashReceiptResource::class;
 
+    public function getTitle(): string
+    {
+        /** @var CashReceipt $record */
+        $record = $this->getRecord();
+
+        return 'Upravit pokladní doklad '.$record->receipt_number;
+    }
+
     protected function getHeaderActions(): array
     {
         return [

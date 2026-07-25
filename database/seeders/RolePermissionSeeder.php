@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\Capability;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Artisan;
@@ -38,6 +39,9 @@ class RolePermissionSeeder extends Seeder
         $admin = Role::firstOrCreate(['name' => 'admin']);
         $therapist = Role::firstOrCreate(['name' => 'therapist']);
         $lecturer = Role::firstOrCreate(['name' => 'lecturer']);
+        // Carries no permissions of its own — it only unlocks the aggregate
+        // money figures (see User::canViewRevenue()).
+        Role::firstOrCreate(['name' => Capability::Revenue->roleName()]);
         // The `customer` role is an identity marker, not a panel role — it carries
         // no permissions (customers never reach the admin panel).
         Role::firstOrCreate(['name' => User::CUSTOMER_ROLE]);

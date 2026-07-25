@@ -32,6 +32,7 @@ use App\Notifications\TherapistReservationTemplateNotification;
 use App\Support\ActivityLog\LogActivity;
 use App\Support\Avatar;
 use App\Support\CalendarAvailability;
+use App\Support\Emails\SentEmailReceipt;
 use App\Support\Reservations\ReactivateReservation;
 use App\Support\Reservations\ReservationChangeSnapshot;
 use App\Support\Reservations\SlotTakenException;
@@ -472,6 +473,8 @@ class ReservationCalendar extends FullCalendarWidget
 
                     if ($data['notify_client'] ?? false) {
                         $reservation->client?->notify(new ReservationTemplateNotification($reservation, EmailTemplateKey::ReservationCancelled));
+
+                        SentEmailReceipt::forCurrentUser('Zrušení rezervace');
                     }
 
                     if ($data['force_delete'] ?? false) {
@@ -1867,6 +1870,8 @@ class ReservationCalendar extends FullCalendarWidget
                 ->after(function (FullCalendarWidget $livewire, ?Model $record, array $data): void {
                     if ($record instanceof Reservation && ($data['notify_client'] ?? false)) {
                         $record->client?->notify(new ReservationNotification($record, 'created'));
+
+                        SentEmailReceipt::forCurrentUser('Nová rezervace');
                     }
 
                     $livewire->refreshRecords();
@@ -1945,6 +1950,13 @@ class ReservationCalendar extends FullCalendarWidget
                             'notified_client' => $notifiedClient,
                             'notified_therapist' => $notifiedTherapist,
                         ]);
+
+                        if ($notifiedClient || $notifiedTherapist) {
+                            SentEmailReceipt::forCurrentUser(
+                                'Změna rezervace',
+                                (int) $notifiedClient + (int) $notifiedTherapist,
+                            );
+                        }
                     }
 
                     $livewire->refreshRecords();

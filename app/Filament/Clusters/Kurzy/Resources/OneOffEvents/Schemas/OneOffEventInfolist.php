@@ -2,9 +2,13 @@
 
 namespace App\Filament\Clusters\Kurzy\Resources\OneOffEvents\Schemas;
 
+use App\Filament\Clusters\Kurzy\Resources\Courses\CourseResource;
+use App\Filament\Clusters\Kurzy\Resources\EventCategories\EventCategoryResource;
+use App\Filament\Clusters\Provoz\Resources\Rooms\RoomResource;
+use App\Filament\Clusters\Provoz\Resources\Users\UserResource;
+use App\Filament\Support\Schemas\OccupancyEntry;
 use App\Filament\Support\Schemas\RecordTimestamps;
 use App\Models\OneOffEvent;
-use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -25,16 +29,28 @@ class OneOffEventInfolist
                         TextEntry::make('category.name')
                             ->label('Kategorie')
                             ->badge()
-                            ->placeholder('—'),
+                            ->placeholder('—')
+                            ->url(fn (OneOffEvent $record): ?string => $record->category !== null
+                                ? EventCategoryResource::getUrl('view', ['record' => $record->category])
+                                : null),
                         TextEntry::make('course.name')
                             ->label('Kurz')
-                            ->placeholder('—'),
+                            ->placeholder('—')
+                            ->url(fn (OneOffEvent $record): ?string => $record->course !== null
+                                ? CourseResource::getUrl('view', ['record' => $record->course])
+                                : null),
                         TextEntry::make('instructor.name')
                             ->label('Lektor')
-                            ->placeholder('—'),
+                            ->placeholder('—')
+                            ->url(fn (OneOffEvent $record): ?string => $record->instructor !== null
+                                ? UserResource::getUrl('view', ['record' => $record->instructor])
+                                : null),
                         TextEntry::make('room.name')
                             ->label('Místnost')
-                            ->placeholder('—'),
+                            ->placeholder('—')
+                            ->url(fn (OneOffEvent $record): ?string => $record->room !== null
+                                ? RoomResource::getUrl('view', ['record' => $record->room])
+                                : null),
                         TextEntry::make('description')
                             ->label('Popis')
                             ->placeholder('—')
@@ -52,9 +68,14 @@ class OneOffEventInfolist
                         TextEntry::make('capacity')
                             ->label('Kapacita')
                             ->placeholder('—'),
-                        IconEntry::make('auto_promote_waitlist')
-                            ->label('Automatické přidávání z čekací listiny')
-                            ->boolean(),
+                        TextEntry::make('waitlist_promotion_mode')
+                            ->label('Uvolněné místo')
+                            ->badge(),
+                        TextEntry::make('waitlist_invited_until')
+                            ->label('Místo drženo čekajícím do')
+                            ->dateTime('d.m.Y H:i')
+                            ->placeholder('—')
+                            ->visible(fn (OneOffEvent $record): bool => $record->waitlistInviteActive()),
                         TextEntry::make('price')
                             ->label('Cena')
                             ->suffix(' Kč')
@@ -68,12 +89,7 @@ class OneOffEventInfolist
                 Section::make('Obsazenost')
                     ->columns(3)
                     ->schema([
-                        TextEntry::make('taken')
-                            ->label('Obsazeno')
-                            ->state(fn (OneOffEvent $record): string => $record->takenSpots().' / '.$record->capacity),
-                        TextEntry::make('spots_left')
-                            ->label('Volná místa')
-                            ->state(fn (OneOffEvent $record): int => $record->spotsLeft()),
+                        OccupancyEntry::make(),
                         TextEntry::make('waitlist')
                             ->label('Čekací listina')
                             ->state(fn (OneOffEvent $record): int => $record->waitlistEntries()->whereNull('notified_at')->count()),

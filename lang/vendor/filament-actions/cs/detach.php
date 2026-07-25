@@ -36,7 +36,7 @@ return [
 
         'modal' => [
 
-            'heading' => 'Odebrat zvolené :label',
+            'heading' => 'Odebrat zvolené záznamy',
 
             'actions' => [
 

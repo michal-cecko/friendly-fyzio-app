@@ -2,6 +2,7 @@
 
 namespace App\Support\Enrollments;
 
+use App\Models\Course;
 use App\Models\CourseEnrollment;
 use App\Models\CourseSeries;
 use App\Models\OneOffEvent;
@@ -57,11 +58,12 @@ class EnrollmentEmailContext
 
     /**
      * The generic {{ nazev }} / {{ termin }} pair describing an offer, used by
-     * the shared auto-cancel and waitlist e-mails.
+     * the shared auto-cancel and waitlist e-mails. A bare Course (the "chci vědět
+     * první" interest list) has no single run, so {{ termin }} is left empty.
      *
      * @return array<string, string>
      */
-    public static function offerTokens(CourseSeries|OneOffEvent $offer): array
+    public static function offerTokens(CourseSeries|OneOffEvent|Course $offer): array
     {
         return match (true) {
             $offer instanceof CourseSeries => [
@@ -71,6 +73,10 @@ class EnrollmentEmailContext
             $offer instanceof OneOffEvent => [
                 'nazev' => $offer->name,
                 'termin' => self::dateTimeLabel($offer->startsAt()),
+            ],
+            $offer instanceof Course => [
+                'nazev' => (string) $offer->name,
+                'termin' => '',
             ],
         };
     }

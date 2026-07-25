@@ -71,6 +71,11 @@ class RealDataSeederTest extends TestCase
         $this->assertTrue($owner->isSuperAdmin());
         $this->assertNull($owner->staffProfile);
 
+        // The revenue overview is granted explicitly, to the owner and Lucie only.
+        $this->assertTrue($owner->canViewRevenue());
+        $this->assertTrue($lucie->canViewRevenue());
+        $this->assertFalse($adela->canViewRevenue(), 'Being an admin does not reveal the takings.');
+
         $this->assertSame(10, StaffProfile::query()->count());
         // 8 pure therapists plus Lucie Fickerová, who is a super-admin and a therapist.
         $this->assertSame(9, User::query()->therapists()->count());

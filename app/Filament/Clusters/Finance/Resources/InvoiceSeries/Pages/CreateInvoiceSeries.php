@@ -8,4 +8,6 @@ use App\Filament\Resources\Pages\BaseCreateRecord;
 class CreateInvoiceSeries extends BaseCreateRecord
 {
     protected static string $resource = InvoiceSeriesResource::class;
+
+    protected static ?string $title = 'Nová číselná řada';
 }

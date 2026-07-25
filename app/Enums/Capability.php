@@ -23,6 +23,10 @@ use Filament\Support\Contracts\HasLabel;
  *                 the booking wizard; owns work blocks.
  *  - Lecturer   → assignable as the instructor of a course, series, lesson or
  *                 one-off event.
+ *  - Revenue    → may see aggregate money figures (revenue totals, outstanding
+ *                 sums, per-client spend). Deliberately explicit: not even a
+ *                 super-admin sees them without holding it, so the clinic's
+ *                 financial overview stays with the people who need it.
  *
  * "Customer" is deliberately NOT a capability — it is an independent client
  * identity (see User::isCustomer()) that can coexist with any of these.
@@ -33,6 +37,7 @@ enum Capability: string implements HasColor, HasLabel
     case Admin = 'admin';
     case Therapist = 'therapist';
     case Lecturer = 'lecturer';
+    case Revenue = 'revenue';
 
     public function getLabel(): string
     {
@@ -41,6 +46,7 @@ enum Capability: string implements HasColor, HasLabel
             self::Admin => 'Administrátor',
             self::Therapist => 'Terapeut',
             self::Lecturer => 'Lektor',
+            self::Revenue => 'Přehled tržeb',
         };
     }
 
@@ -51,6 +57,7 @@ enum Capability: string implements HasColor, HasLabel
             self::Admin => 'warning',
             self::Therapist => 'info',
             self::Lecturer => 'success',
+            self::Revenue => 'primary',
         };
     }
 
@@ -89,7 +96,7 @@ enum Capability: string implements HasColor, HasLabel
      */
     public static function superAdminOnly(): array
     {
-        return [self::SuperAdmin, self::Admin];
+        return [self::SuperAdmin, self::Admin, self::Revenue];
     }
 
     public function requiresSuperAdmin(): bool

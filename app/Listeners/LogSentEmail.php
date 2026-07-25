@@ -47,13 +47,30 @@ class LogSentEmail
             event: 'email_sent',
             subject: $this->resolveSubject($notification),
             description: $subjectLine,
-            properties: [
+            properties: array_filter([
                 'notification' => class_basename($notification),
                 'recipients' => $this->recipients($event->notifiable),
+                'cc' => $this->copies($mail->cc),
+                'bcc' => $this->copies($mail->bcc),
                 'subject' => $subjectLine,
                 'body_html' => MailBodyRenderer::render($mail),
-            ],
+            ], fn (mixed $value): bool => $value !== []),
         );
+    }
+
+    /**
+     * Copies a staff member added by hand. MailMessage keeps them as
+     * [address, name] pairs; only the address is worth logging.
+     *
+     * @param  array<int, array{0: string, 1: string|null}|string>  $addresses
+     * @return array<int, string>
+     */
+    private function copies(array $addresses): array
+    {
+        return array_values(array_map(
+            fn (array|string $address): string => is_array($address) ? (string) $address[0] : $address,
+            $addresses,
+        ));
     }
 
     /**

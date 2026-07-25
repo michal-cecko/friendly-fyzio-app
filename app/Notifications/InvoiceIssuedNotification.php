@@ -5,6 +5,8 @@ namespace App\Notifications;
 use App\Enums\EmailTemplateKey;
 use App\Models\EmailTemplate;
 use App\Models\Invoice;
+use App\Notifications\Concerns\HasCopyRecipients;
+use App\Support\Emails\CopyRecipients;
 use App\Support\EmailTemplateRenderer;
 use App\Support\Pdf\InvoicePdfData;
 use App\Support\Pdf\InvoicePdfRenderer;
@@ -20,9 +22,12 @@ use Illuminate\Support\Str;
  */
 class InvoiceIssuedNotification extends Notification
 {
-    use Queueable;
+    use HasCopyRecipients, Queueable;
 
-    public function __construct(public Invoice $invoice) {}
+    public function __construct(
+        public Invoice $invoice,
+        public ?CopyRecipients $copies = null,
+    ) {}
 
     /**
      * @return array<int, string>
@@ -41,10 +46,10 @@ class InvoiceIssuedNotification extends Notification
         $filename = "{$this->invoice->invoice_number}.pdf";
 
         if ($template === null) {
-            return (new MailMessage)
+            return $this->applyCopies((new MailMessage)
                 ->subject($key->defaultSubject())
                 ->line($key->label())
-                ->attachData($pdf, $filename, ['mime' => 'application/pdf']);
+                ->attachData($pdf, $filename, ['mime' => 'application/pdf']));
         }
 
         $clientName = (string) ($this->invoice->client_snapshot['name'] ?? $this->invoice->client?->name ?? '');
@@ -61,9 +66,9 @@ class InvoiceIssuedNotification extends Notification
             ),
         ];
 
-        return (new MailMessage)
+        return $this->applyCopies((new MailMessage)
             ->subject($template->subject)
             ->view('emails.rendered', ['html' => EmailTemplateRenderer::render($template, $context)])
-            ->attachData($pdf, $filename, ['mime' => 'application/pdf']);
+            ->attachData($pdf, $filename, ['mime' => 'application/pdf']));
     }
 }

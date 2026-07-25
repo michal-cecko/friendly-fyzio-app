@@ -59,7 +59,7 @@ class ReservationInfolist
                                 ->label('Terapeut')
                                 ->placeholder('—')
                                 ->url(fn (Reservation $record): ?string => $record->therapist?->user_id !== null
-                                    ? UserResource::getUrl('edit', ['record' => $record->therapist->user_id])
+                                    ? UserResource::getUrl('view', ['record' => $record->therapist->user_id])
                                     : null),
                             TextEntry::make('room.name')
                                 ->label('Místnost')
@@ -80,7 +80,12 @@ class ReservationInfolist
                         TextEntry::make('payment_status')->label('Platba')->badge(),
                         TextEntry::make('settled_at')->label('Vybaveno v')->dateTime('d.m.Y H:i')->badge()->color('success')->placeholder('—'),
                         TextEntry::make('confirmed_by')->label('Potvrdil')->badge()->placeholder('—'),
-                        TextEntry::make('confirmedBy.name')->label('Potvrdil (osoba)')->placeholder('—'),
+                        TextEntry::make('confirmedBy.name')
+                            ->label('Potvrdil (osoba)')
+                            ->placeholder('—')
+                            ->url(fn (Reservation $record): ?string => $record->confirmedBy !== null
+                                ? UserResource::getUrl('view', ['record' => $record->confirmedBy])
+                                : null),
                         TextEntry::make('confirmed_at')->label('Potvrzeno v')->dateTime('d.m.Y H:i')->placeholder('—'),
                         IconEntry::make('is_control_therapy')->label('Kontrolní terapie')->boolean(),
                         TextEntry::make('cancellation_reason')

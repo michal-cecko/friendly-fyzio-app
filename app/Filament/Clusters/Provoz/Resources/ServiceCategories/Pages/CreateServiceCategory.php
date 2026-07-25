@@ -8,4 +8,6 @@ use App\Filament\Resources\Pages\BaseCreateRecord;
 class CreateServiceCategory extends BaseCreateRecord
 {
     protected static string $resource = ServiceCategoryResource::class;
+
+    protected static ?string $title = 'Nová kategorie služby';
 }

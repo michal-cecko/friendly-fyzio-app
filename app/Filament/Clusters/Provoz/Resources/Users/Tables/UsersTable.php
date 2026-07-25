@@ -90,9 +90,12 @@ class UsersTable
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                    ForceDeleteBulkAction::make(),
-                    RestoreBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->modalHeading('Smazat vybrané uživatele'),
+                    ForceDeleteBulkAction::make()
+                        ->modalHeading('Trvale smazat vybrané uživatele'),
+                    RestoreBulkAction::make()
+                        ->modalHeading('Obnovit vybrané uživatele'),
                 ]),
             ]);
     }

@@ -2,8 +2,8 @@
 
 namespace App\Filament\Clusters\Kurzy\Resources\OneOffEvents\Tables;
 
+use App\Filament\Support\Tables\OccupancyColumn;
 use App\Filament\Support\Tables\TimestampColumns;
-use App\Models\OneOffEvent;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -46,11 +46,7 @@ class OneOffEventsTable
                 TextColumn::make('room.name')
                     ->label('Místnost')
                     ->toggleable(),
-                TextColumn::make('active_takers_count')
-                    ->label('Obsazenost')
-                    ->counts('activeTakers')
-                    ->state(fn (OneOffEvent $record): string => $record->takenSpots().' / '.$record->capacity)
-                    ->description(fn (OneOffEvent $record): ?string => $record->isFull() ? 'Plně obsazeno' : null),
+                OccupancyColumn::make(),
                 TextColumn::make('price')
                     ->label('Cena')
                     ->suffix(' Kč'),

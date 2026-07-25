@@ -36,6 +36,7 @@ enum EmailTemplateKey: string
     case EnrollmentAutoCancelled = 'enrollment_auto_cancelled';
     case WaitlistJoined = 'waitlist_joined';
     case WaitlistSpotAvailable = 'waitlist_spot_available';
+    case WaitlistSpotOffered = 'waitlist_spot_offered';
     case ReservationDayWaitlistJoined = 'reservation_day_waitlist_joined';
     case ReservationDayWaitlistSpotAvailable = 'reservation_day_waitlist_spot_available';
     case CourseRegistrationOpened = 'course_registration_opened';
@@ -91,6 +92,7 @@ enum EmailTemplateKey: string
             self::EnrollmentAutoCancelled => 'Automatické zrušení přihlášky (nezaplaceno)',
             self::WaitlistJoined => 'Zařazení na čekací listinu',
             self::WaitlistSpotAvailable => 'Uvolněné místo z čekací listiny',
+            self::WaitlistSpotOffered => 'Nabídka uvolněného místa (kdo dřív přijde)',
             self::ReservationDayWaitlistJoined => 'Pořadník na den — potvrzení',
             self::ReservationDayWaitlistSpotAvailable => 'Pořadník na den — uvolněné místo',
             self::CourseRegistrationOpened => 'Otevření přihlašování na kurz',
@@ -161,6 +163,7 @@ enum EmailTemplateKey: string
             self::EnrollmentAutoCancelled => 'Vaše přihláška byla automaticky zrušena',
             self::WaitlistJoined => 'Jste na čekací listině',
             self::WaitlistSpotAvailable => 'Uvolnilo se místo — dokončete přihlášení',
+            self::WaitlistSpotOffered => 'Uvolnilo se místo — kdo dřív přijde',
             self::ReservationDayWaitlistJoined => 'Jste v pořadníku na uvolněné termíny',
             self::ReservationDayWaitlistSpotAvailable => 'Uvolnilo se místo — rezervujte termín',
             self::CourseRegistrationOpened => 'Otevřeli jsme přihlašování na kurz',
@@ -335,6 +338,13 @@ enum EmailTemplateKey: string
                 'terapeut' => 'Terapeut, u kterého se místo uvolnilo',
                 'datum' => 'Datum uvolněného místa',
                 'odkaz' => 'Odkaz na rezervaci (předvyplněný terapeut + den)',
+            ],
+            self::WaitlistSpotOffered => [
+                'jmeno' => 'Jméno klienta',
+                'nazev' => 'Název kurzu / lekce / workshopu',
+                'termin' => 'Termín / období',
+                'lhuta_hodin' => 'Do kolika hodin je místo drženo pro čekající',
+                'odkaz' => 'Přihlašovací odkaz na uvolněné místo',
             ],
             self::WaitlistSpotAvailable => [
                 'jmeno' => 'Jméno klienta',
@@ -588,6 +598,13 @@ enum EmailTemplateKey: string
                 'jmeno' => 'Jana',
                 'terapeut' => 'Mgr. Petra Nováková',
                 'datum' => '15. dubna 2026',
+                'odkaz' => '#',
+            ],
+            self::WaitlistSpotOffered => [
+                'jmeno' => 'Jana',
+                'nazev' => 'Hormonální jóga (leden–duben 2026)',
+                'termin' => '12. 01. 2026 – 27. 04. 2026',
+                'lhuta_hodin' => '24',
                 'odkaz' => '#',
             ],
             self::WaitlistSpotAvailable => [

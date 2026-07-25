@@ -8,4 +8,6 @@ use App\Filament\Resources\Pages\BaseCreateRecord;
 class CreatePage extends BaseCreateRecord
 {
     protected static string $resource = PageResource::class;
+
+    protected static ?string $title = 'Nová stránka';
 }

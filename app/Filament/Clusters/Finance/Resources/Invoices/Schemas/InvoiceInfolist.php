@@ -2,10 +2,13 @@
 
 namespace App\Filament\Clusters\Finance\Resources\Invoices\Schemas;
 
+use App\Filament\Clusters\Finance\Resources\CashReceipts\CashReceiptResource;
 use App\Filament\Clusters\Finance\Resources\Payments\PaymentResource;
 use App\Models\Invoice;
+use App\Models\Payment;
 use App\Support\Pdf\InvoicePdfData;
 use Filament\Infolists\Components\RepeatableEntry;
+use Filament\Infolists\Components\RepeatableEntry\TableColumn;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -69,19 +72,22 @@ class InvoiceInfolist
                     ->columnSpanFull()
                     ->schema([
                         RepeatableEntry::make('items')
-                            ->label('')
-                            ->columns(['default' => 2, 'lg' => 6])
+                            ->hiddenLabel()
+                            ->table([
+                                TableColumn::make('Položka'),
+                                TableColumn::make('Počet')->alignEnd(),
+                                TableColumn::make('Cena/ks')->alignEnd(),
+                                TableColumn::make('Celkem')->alignEnd(),
+                            ])
                             ->schema([
-                                TextEntry::make('title')
-                                    ->label('Položka')
-                                    ->columnSpan(['default' => 2, 'lg' => 3]),
+                                TextEntry::make('title'),
                                 TextEntry::make('quantity')
-                                    ->label('Počet'),
+                                    ->alignEnd(),
                                 TextEntry::make('unit_price')
-                                    ->label('Cena/ks')
+                                    ->alignEnd()
                                     ->formatStateUsing(fn (int $state): string => InvoicePdfData::money($state)),
                                 TextEntry::make('total')
-                                    ->label('Celkem')
+                                    ->alignEnd()
                                     ->formatStateUsing(fn (int $state): string => InvoicePdfData::money($state)),
                             ]),
                     ]),
@@ -90,16 +96,21 @@ class InvoiceInfolist
                     ->columnSpanFull()
                     ->columns(['default' => 1, 'lg' => 3])
                     ->schema([
-                        TextEntry::make('payments.number')
+                        RepeatableEntry::make('payments')
                             ->label('Platby')
-                            ->formatStateUsing(fn ($state): string => 'Platba č. '.$state)
-                            ->url(fn (Invoice $record): ?string => $record->payments()->exists()
-                                ? PaymentResource::getUrl('view', ['record' => $record->payments()->latest()->first()])
-                                : null)
-                            ->placeholder('Žádné platby'),
+                            ->placeholder('Žádné platby')
+                            ->schema([
+                                TextEntry::make('number')
+                                    ->hiddenLabel()
+                                    ->formatStateUsing(fn ($state): string => 'Platba č. '.$state)
+                                    ->url(fn (Payment $record): string => PaymentResource::getUrl('view', ['record' => $record])),
+                            ]),
                         TextEntry::make('cashReceipt.receipt_number')
                             ->label('Pokladní doklad')
-                            ->placeholder('—'),
+                            ->placeholder('—')
+                            ->url(fn (Invoice $record): ?string => $record->cashReceipt !== null
+                                ? CashReceiptResource::getUrl('view', ['record' => $record->cashReceipt])
+                                : null),
                         TextEntry::make('invoiceable_type')
                             ->label('Vystaveno k')
                             ->formatStateUsing(fn (?string $state): string => $state ?? '—')

@@ -20,17 +20,25 @@ use Illuminate\Support\Facades\DB;
  * limit — mints a substitute token they can redeem in an allowed parallel course.
  * A late (or over-limit) excuse is still recorded, but generates no token: the
  * rules are the same ones the docs describe (FSS §6.4).
+ *
+ * Staff excusing somebody from the lesson's Docházka tab go through the same
+ * rules, but may waive the token or keep the client in the dark. The defaults
+ * keep the client-zone flow unchanged.
  */
 class ExcuseFromLesson
 {
-    public function __invoke(CourseEnrollment $enrollment, CourseLesson $lesson): ?SubstituteToken
-    {
+    public function __invoke(
+        CourseEnrollment $enrollment,
+        CourseLesson $lesson,
+        bool $allowToken = true,
+        bool $notifyClient = true,
+    ): ?SubstituteToken {
         $this->guard($enrollment, $lesson);
 
         $course = $enrollment->series?->course;
         $timely = $this->isTimely($lesson, (int) ($course?->early_cancel_hours ?? 0));
         $underLimit = $this->tokensUsedSoFar($enrollment) < (int) ($course?->max_substitutions ?? 0);
-        $generatesToken = $timely && $underLimit;
+        $generatesToken = $allowToken && $timely && $underLimit;
 
         $token = DB::transaction(function () use ($enrollment, $lesson, $generatesToken): ?SubstituteToken {
             LessonAttendance::updateOrCreate(
@@ -49,7 +57,7 @@ class ExcuseFromLesson
             ]);
         });
 
-        if ($token !== null) {
+        if ($token !== null && $notifyClient) {
             $enrollment->client?->notify(new SubstituteTokenNotification(
                 EmailTemplateKey::SubstituteTokenGenerated,
                 [

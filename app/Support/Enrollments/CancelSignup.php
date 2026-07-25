@@ -24,6 +24,7 @@ class CancelSignup
         CourseEnrollment|OneOffEventBooking $signup,
         bool $notify = true,
         EmailTemplateKey $emailKey = EmailTemplateKey::EnrollmentCancelledByClient,
+        ?string $reason = null,
     ): void {
         DB::transaction(function () use ($signup): void {
             $signup->payments()
@@ -44,6 +45,8 @@ class CancelSignup
             $client->notify(new EnrollmentTemplateNotification($emailKey, [
                 'jmeno' => EnrollmentEmailContext::firstName($client),
                 ...EnrollmentEmailContext::offerTokens($this->offer($signup)),
+                // The auto-cancel templates carry a {{ duvod }}; other keys ignore it.
+                ...($reason !== null ? ['duvod' => $reason] : []),
             ]));
         }
     }

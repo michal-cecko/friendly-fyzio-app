@@ -4,7 +4,9 @@ namespace App\Notifications;
 
 use App\Enums\EmailTemplateKey;
 use App\Models\EmailTemplate;
+use App\Notifications\Concerns\HasCopyRecipients;
 use App\Support\CmsMail;
+use App\Support\Emails\CopyRecipients;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -19,7 +21,9 @@ use Illuminate\Support\Str;
  */
 class ClientAccountCreatedNotification extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use HasCopyRecipients, Queueable;
+
+    public function __construct(public ?CopyRecipients $copies = null) {}
 
     /**
      * @return array<int, string>
@@ -34,20 +38,20 @@ class ClientAccountCreatedNotification extends Notification implements ShouldQue
         $template = EmailTemplate::forKey(EmailTemplateKey::AccountCreated);
 
         if ($template === null) {
-            return (new MailMessage)
+            return $this->applyCopies((new MailMessage)
                 ->subject(EmailTemplateKey::AccountCreated->defaultSubject())
                 ->greeting('Dobrý den,')
                 ->line('na základě vaší rezervace jsme pro vás vytvořili účet, kde si můžete spravovat své rezervace.')
                 ->line('Heslo si nastavíte přes odkaz „Zapomenuté heslo“ na přihlašovací stránce.')
                 ->action('Přihlásit se', url('/prihlaseni'))
-                ->line('Účet využívat nemusíte — na termín se můžete dostavit i bez přihlášení.');
+                ->line('Účet využívat nemusíte — na termín se můžete dostavit i bez přihlášení.'));
         }
 
         $name = (string) ($notifiable->name ?? '');
 
-        return CmsMail::render($template, [
+        return $this->applyCopies(CmsMail::render($template, [
             'jmeno' => Str::of($name)->before(' ')->toString() ?: $name,
             'odkaz' => url('/prihlaseni'),
-        ]);
+        ]));
     }
 }

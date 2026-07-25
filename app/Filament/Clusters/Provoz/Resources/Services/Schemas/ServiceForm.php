@@ -4,6 +4,7 @@ namespace App\Filament\Clusters\Provoz\Resources\Services\Schemas;
 
 use App\Enums\ExamType;
 use App\Enums\ServiceVisibility;
+use App\Filament\Support\Schemas\DerivedSlug;
 use App\Filament\Support\Schemas\PresenceBanner;
 use App\Filament\Support\Schemas\ResponsiveColumns;
 use App\Mason\BrickRegistry;
@@ -47,16 +48,9 @@ class ServiceForm
                             ->required()
                             ->maxLength(255)
                             ->live(onBlur: true)
-                            ->afterStateUpdated(fn (Set $set, ?string $state) => $set('slug', Str::slug($state ?? '')))
+                            ->afterStateUpdated(DerivedSlug::syncFrom(Service::class, 'sluzba'))
                             ->columnSpan(['default' => 1, 'lg' => 5]),
-                        TextInput::make('slug')
-                            ->label('Slug')
-                            ->required()
-                            ->maxLength(255)
-                            ->unique(ignoreRecord: true)
-                            ->disabled()
-                            ->dehydrated()
-                            ->helperText('Automaticky z názvu, používá se v URL.')
+                        DerivedSlug::field('Automaticky z názvu, používá se v URL.')
                             ->columnSpan(['default' => 1, 'lg' => 3]),
                         Select::make('category_id')
                             ->label('Kategorie')

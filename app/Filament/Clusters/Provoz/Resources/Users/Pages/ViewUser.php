@@ -20,6 +20,14 @@ class ViewUser extends ViewRecord
 {
     protected static string $resource = UserResource::class;
 
+    public function getTitle(): string
+    {
+        /** @var User $record */
+        $record = $this->getRecord();
+
+        return 'Uživatel '.$record->name;
+    }
+
     protected function getHeaderActions(): array
     {
         return [

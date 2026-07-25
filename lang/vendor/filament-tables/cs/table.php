@@ -136,7 +136,10 @@ return [
 
         'heading' => 'Žádné záznamy nenalezeny',
 
-        'description' => 'Začněte vytvořením :modelu.',
+        // The upstream Czech string glued a case ending onto :model ("Začněte
+        // vytvořením :modelu"), which mangles every model label. Model-agnostic
+        // wording keeps it grammatical for tables without a custom description.
+        'description' => 'Začněte vytvořením prvního záznamu.',
 
     ],
 

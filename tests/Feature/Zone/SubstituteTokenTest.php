@@ -304,13 +304,10 @@ class SubstituteTokenTest extends TestCase
         $this->assertCount(0, app(SubstituteOptions::class)->forToken($token));
 
         // …until its own participant excuses themselves from that lesson.
-        LessonAttendance::create([
-            'enrollment_id' => $regular->getKey(),
-            'lesson_id' => $target->getKey(),
-            'attended' => false,
-            'cancelled_at' => now(),
-            'token_generated' => true,
-        ]);
+        LessonAttendance::updateOrCreate(
+            ['enrollment_id' => $regular->getKey(), 'lesson_id' => $target->getKey()],
+            ['attended' => false, 'cancelled_at' => now(), 'token_generated' => true],
+        );
 
         $this->assertCount(1, app(SubstituteOptions::class)->forToken($token));
     }

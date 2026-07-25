@@ -8,6 +8,7 @@ use App\Enums\ReservationStatus;
 use App\Models\Reservation;
 use App\Notifications\ReservationTemplateNotification;
 use App\Support\ActivityLog\LogActivity;
+use App\Support\Emails\SentEmailReceipt;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
@@ -55,6 +56,8 @@ class ConfirmReservationAction extends Action
 
                 if ($notifyClient) {
                     $record->client?->notify(new ReservationTemplateNotification($record, EmailTemplateKey::ReservationConfirmed));
+
+                    SentEmailReceipt::forCurrentUser('Potvrzení rezervace');
                 }
 
                 LogActivity::record('reservation_confirmed', $record, 'Rezervace potvrzena', [

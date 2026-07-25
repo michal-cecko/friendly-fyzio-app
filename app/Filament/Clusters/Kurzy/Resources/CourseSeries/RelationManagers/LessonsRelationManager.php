@@ -5,6 +5,7 @@ namespace App\Filament\Clusters\Kurzy\Resources\CourseSeries\RelationManagers;
 use App\Filament\Clusters\Kurzy\Resources\CourseLessons\CourseLessonResource;
 use App\Filament\Clusters\Kurzy\Resources\CourseLessons\Schemas\CourseLessonForm;
 use App\Filament\Support\Concerns\NotifiesScheduleChange;
+use App\Filament\Support\Tables\OccupancyColumn;
 use App\Models\CourseLesson;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -47,7 +48,9 @@ class LessonsRelationManager extends RelationManager
     {
         return $table
             ->defaultSort('lesson_date')
-            ->modifyQueryUsing(fn ($query) => $query->with(['instructor', 'room']))
+            ->modelLabel('lekci')
+            ->pluralModelLabel('lekce')
+            ->modifyQueryUsing(fn ($query) => $query->with(['instructor', 'room'])->withOccupancyCounts())
             ->columns([
                 TextColumn::make('lesson_date')
                     ->label('Datum')
@@ -57,6 +60,7 @@ class LessonsRelationManager extends RelationManager
                     ->label('Od'),
                 TextColumn::make('end_time')
                     ->label('Do'),
+                OccupancyColumn::make('occupancy', countsRelationship: null),
                 TextColumn::make('instructor.name')
                     ->label('Lektor')
                     ->placeholder('—'),

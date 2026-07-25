@@ -36,7 +36,7 @@ return [
 
         'modal' => [
 
-            'heading' => 'Obnovit vybrané :label',
+            'heading' => 'Obnovit vybrané záznamy',
 
             'actions' => [
 

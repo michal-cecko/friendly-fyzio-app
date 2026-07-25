@@ -9,10 +9,12 @@ use App\Filament\Clusters\Provoz\Resources\Clients\Pages\EditClient;
 use App\Filament\Clusters\Provoz\Resources\Clients\Pages\ListClients;
 use App\Filament\Clusters\Provoz\Resources\Clients\Pages\ViewClient;
 use App\Filament\Clusters\Provoz\Resources\Clients\Widgets\ClientStatsOverview;
-use App\Filament\Pages\Calendar;
 use App\Models\ClientProfile;
 use App\Models\Reservation;
 use App\Models\User;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Facades\Filament;
 use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Tabs;
@@ -207,7 +209,7 @@ class ClientResourceTest extends TestCase
             ->assertSee('Chronické bolesti bederní páteře po úrazu.');
     }
 
-    public function test_client_detail_has_create_reservation_cta_linking_to_calendar(): void
+    public function test_client_detail_has_create_reservation_cta_opening_the_booking_modal(): void
     {
         $this->actingAs(User::factory()->admin()->create());
 
@@ -215,12 +217,61 @@ class ClientResourceTest extends TestCase
 
         Livewire::test(ViewClient::class, ['record' => $client->getKey()])
             ->assertActionExists('createReservation')
-            ->assertActionHasUrl('createReservation', Calendar::getUrl());
+            ->mountAction('createReservation')
+            ->assertActionMounted('createReservation')
+            ->assertActionDataSet(['client_id' => $client->getKey()]);
+    }
+
+    public function test_client_detail_keeps_only_edit_outside_the_actions_dropdown(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+
+        $client = User::factory()->customer()->create();
+
+        $page = Livewire::test(ViewClient::class, ['record' => $client->getKey()])->instance();
+        $headerActions = (fn (): array => $this->getHeaderActions())->call($page);
+
+        $this->assertCount(2, $headerActions);
+        $this->assertInstanceOf(EditAction::class, $headerActions[0]);
+
+        $group = $headerActions[1];
+        $this->assertInstanceOf(ActionGroup::class, $group);
+        $this->assertSame('Další akce', $group->getLabel());
+        $this->assertSame(
+            ['createReservation', 'adjustCredit', 'impersonate', 'resetPassword', 'delete', 'activityLog'],
+            array_map(fn ($action): string => $action->getName(), $group->getActions()),
+        );
+    }
+
+    public function test_client_edit_page_offers_the_same_actions_as_the_detail_page(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+
+        $client = User::factory()->customer()->create();
+
+        $page = Livewire::test(EditClient::class, ['record' => $client->getKey()])->instance();
+        $headerActions = (fn (): array => $this->getHeaderActions())->call($page);
+
+        $this->assertCount(2, $headerActions);
+        $this->assertInstanceOf(ViewAction::class, $headerActions[0]);
+
+        $group = $headerActions[1];
+        $this->assertInstanceOf(ActionGroup::class, $group);
+        $this->assertSame('Další akce', $group->getLabel());
+        $this->assertSame(
+            ['createReservation', 'adjustCredit', 'impersonate', 'resetPassword', 'delete', 'forceDelete', 'restore', 'activityLog'],
+            array_map(fn ($action): string => $action->getName(), $group->getActions()),
+        );
+
+        Livewire::test(EditClient::class, ['record' => $client->getKey()])
+            ->mountAction('createReservation')
+            ->assertActionMounted('createReservation')
+            ->assertActionDataSet(['client_id' => $client->getKey()]);
     }
 
     public function test_client_stats_overview_renders_metrics(): void
     {
-        $this->actingAs(User::factory()->admin()->create());
+        $this->actingAs(User::factory()->admin()->revenue()->create());
 
         $client = User::factory()->customer()->create();
         Reservation::factory()->create([
@@ -236,6 +287,19 @@ class ClientResourceTest extends TestCase
             ->assertSee('Utraceno')
             ->assertSee('Kurzy')
             ->assertSee(now()->subDay()->format('d.m.Y'));
+    }
+
+    public function test_client_spend_total_is_hidden_without_the_revenue_capability(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+
+        $client = User::factory()->customer()->create();
+
+        Livewire::test(ClientStatsOverview::class, ['record' => $client])
+            ->assertDontSee('Utraceno')
+            // The non-money metrics stay visible.
+            ->assertSee('Rezervace')
+            ->assertSee('Kurzy');
     }
 
     public function test_clients_list_shows_date_of_last_reservation(): void

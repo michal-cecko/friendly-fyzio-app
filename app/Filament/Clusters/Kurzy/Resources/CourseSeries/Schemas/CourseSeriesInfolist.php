@@ -2,9 +2,10 @@
 
 namespace App\Filament\Clusters\Kurzy\Resources\CourseSeries\Schemas;
 
+use App\Filament\Clusters\Kurzy\Resources\Courses\CourseResource;
+use App\Filament\Support\Schemas\OccupancyEntry;
 use App\Filament\Support\Schemas\RecordTimestamps;
 use App\Models\CourseSeries;
-use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -20,7 +21,10 @@ class CourseSeriesInfolist
                     ->schema([
                         TextEntry::make('course.name')
                             ->label('Kurz')
-                            ->placeholder('—'),
+                            ->placeholder('—')
+                            ->url(fn (CourseSeries $record): ?string => $record->course !== null
+                                ? CourseResource::getUrl('view', ['record' => $record->course])
+                                : null),
                         TextEntry::make('name')
                             ->label('Název'),
                         TextEntry::make('start_date')
@@ -34,9 +38,14 @@ class CourseSeriesInfolist
                         TextEntry::make('capacity')
                             ->label('Kapacita')
                             ->placeholder('—'),
-                        IconEntry::make('auto_promote_waitlist')
-                            ->label('Automatické přidávání z čekací listiny')
-                            ->boolean(),
+                        TextEntry::make('waitlist_promotion_mode')
+                            ->label('Uvolněné místo')
+                            ->badge(),
+                        TextEntry::make('waitlist_invited_until')
+                            ->label('Místo drženo čekajícím do')
+                            ->dateTime('d.m.Y H:i')
+                            ->placeholder('—')
+                            ->visible(fn (CourseSeries $record): bool => $record->waitlistInviteActive()),
                         TextEntry::make('price')
                             ->label('Cena')
                             ->suffix(' Kč')
@@ -52,12 +61,7 @@ class CourseSeriesInfolist
                 Section::make('Obsazenost')
                     ->columns(3)
                     ->schema([
-                        TextEntry::make('taken')
-                            ->label('Obsazeno')
-                            ->state(fn (CourseSeries $record): string => $record->takenSpots().' / '.$record->capacity),
-                        TextEntry::make('spots_left')
-                            ->label('Volná místa')
-                            ->state(fn (CourseSeries $record): int => $record->spotsLeft()),
+                        OccupancyEntry::make(),
                         TextEntry::make('waitlist')
                             ->label('Čekací listina')
                             ->state(fn (CourseSeries $record): int => $record->waitlistEntries()->whereNull('notified_at')->count()),

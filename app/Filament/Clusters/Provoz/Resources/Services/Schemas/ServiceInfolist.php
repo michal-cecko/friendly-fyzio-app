@@ -2,8 +2,15 @@
 
 namespace App\Filament\Clusters\Provoz\Resources\Services\Schemas;
 
+use App\Filament\Clusters\Provoz\Resources\Rooms\RoomResource;
+use App\Filament\Clusters\Provoz\Resources\ServiceCategories\ServiceCategoryResource;
+use App\Filament\Clusters\Provoz\Resources\Users\UserResource;
 use App\Filament\Support\Schemas\RecordTimestamps;
 use App\Filament\Support\Schemas\ResponsiveColumns;
+use App\Models\Room;
+use App\Models\Service;
+use App\Models\StaffProfile;
+use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
@@ -35,7 +42,10 @@ class ServiceInfolist
                                         TextEntry::make('category.name')
                                             ->label('Kategorie')
                                             ->placeholder('—')
-                                            ->columnSpan(['default' => 1, 'lg' => 5]),
+                                            ->columnSpan(['default' => 1, 'lg' => 5])
+                                            ->url(fn (Service $record): ?string => $record->category !== null
+                                                ? ServiceCategoryResource::getUrl('view', ['record' => $record->category])
+                                                : null),
                                         TextEntry::make('category.type')
                                             ->label('Typ')
                                             ->badge()
@@ -48,8 +58,25 @@ class ServiceInfolist
                                     ->gridContainer()
                                     ->columns(ResponsiveColumns::PAIR)
                                     ->schema([
-                                        TextEntry::make('rooms.name')->label('Místnosti')->badge()->placeholder('—'),
-                                        TextEntry::make('therapists.user.name')->label('Terapeuti')->badge()->placeholder('—'),
+                                        RepeatableEntry::make('rooms')
+                                            ->label('Místnosti')
+                                            ->schema([
+                                                TextEntry::make('name')
+                                                    ->hiddenLabel()
+                                                    ->badge()
+                                                    ->url(fn (Room $record): string => RoomResource::getUrl('view', ['record' => $record])),
+                                            ]),
+                                        RepeatableEntry::make('therapists')
+                                            ->label('Terapeuti')
+                                            ->schema([
+                                                TextEntry::make('user.name')
+                                                    ->hiddenLabel()
+                                                    ->badge()
+                                                    ->placeholder('—')
+                                                    ->url(fn (StaffProfile $record): ?string => $record->user_id !== null
+                                                        ? UserResource::getUrl('view', ['record' => $record->user_id])
+                                                        : null),
+                                            ]),
                                     ]),
                             ]),
                         // Right column: the detail sections stacked as a grid inside the grid.

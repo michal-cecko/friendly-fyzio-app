@@ -45,6 +45,16 @@ class PaymentResource extends Resource
     }
 
     /**
+     * Record titles are the object of modal headings ("Smazat platbu č. 12"),
+     * so they are written in the accusative.
+     */
+    public static function getRecordTitle(?Model $record): string|Htmlable|null
+    {
+        /** @var ?Payment $record */
+        return trim('platbu č. '.$record?->number);
+    }
+
+    /**
      * @return array<int, string>
      */
     public static function getGloballySearchableAttributes(): array

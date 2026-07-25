@@ -65,8 +65,19 @@
     text-decoration: none;
 }
 
-.fi-main a[href]:not([class])::after,
-.fi-main a.fi-in-entry-content[href]::after {
+/* The colour above sets only the anchor's own colour, which never reaches the text:
+   Filament paints the inner `.fi-in-text-item` explicitly (`text-gray-950 dark:text-white`),
+   and an explicit colour on a descendant beats inheritance. Hand the link colour down —
+   except to entries that asked for their own colour (`TextEntry->color()` adds `.fi-color`
+   / `.fi-color-gray`) and to badges, which carry their own palette. */
+.fi-main a.fi-in-entry-content[href] .fi-in-text-item:not(.fi-color):not(.fi-color-gray) {
+    color: inherit;
+}
+
+/* Trailing external-link glyph is only for plain rich-text anchors — linked infolist
+   entries (`.fi-in-entry-content`) read clearly as links in context, so they keep the
+   bold primary treatment without the (visually noisy) hover icon. */
+.fi-main a[href]:not([class])::after {
     content: '';
     display: inline-block;
     width: 0.85em;
@@ -79,8 +90,7 @@
     transition: opacity 150ms ease, transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.fi-main a[href]:not([class]):hover::after,
-.fi-main a.fi-in-entry-content[href]:hover::after {
+.fi-main a[href]:not([class]):hover::after {
     opacity: 1;
     transform: translateX(0) scale(1);
 }
@@ -97,6 +107,47 @@
 .fi-ta-header-toolbar > :nth-child(2) {
     order: 1;
     margin-inline-start: 0;
+}
+
+/* Compact stat cards (opted into per-stat via ->extraAttributes(['class' => …])).
+   Filament stacks label, value and description vertically, which makes a tall
+   card. For a summary strip above a table we want the opposite shape — wide and
+   low — so the label and description stack in a left column while the value sits
+   in its own right-hand column spanning both rows. Type sizes are left at
+   Filament's defaults on purpose; the height comes from the layout, not from
+   shrinking the text. */
+.fi-wi-stats-overview-stat.fyz-stat-compact {
+    padding: 0.75rem 1rem;
+}
+
+.fyz-stat-compact .fi-wi-stats-overview-stat-content {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 0.75rem;
+    row-gap: 0.125rem;
+}
+
+.fyz-stat-compact .fi-wi-stats-overview-stat-label-ctn {
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
+}
+
+.fyz-stat-compact .fi-wi-stats-overview-stat-description {
+    grid-column: 1;
+    grid-row: 2;
+}
+
+/* The value spans both rows, so its type can grow to the full height of the
+   label + description stack instead of sitting on the label's line. */
+.fyz-stat-compact .fi-wi-stats-overview-stat-value {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    align-self: center;
+    justify-self: end;
+    font-size: 2.25rem;
+    line-height: 1;
 }
 
 /* Modal footers that opt into Alignment::Between (e.g. the reservation edit modal)

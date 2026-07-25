@@ -39,7 +39,7 @@ class RoomBlocking extends Model
 
     public function logTitle(): string
     {
-        return $this->reason ?: 'Blokace ordinace';
+        return $this->reason ?: 'Blokace místnosti';
     }
 
     public function room(): BelongsTo

@@ -57,9 +57,12 @@ class ReservationForm
      *                                    shared row with its own "Upozornit zákazníka" toggle.
      * @param  bool  $withHeaderLinks  When false the "open detail" header link actions are
      *                                 omitted (redundant when editing from the detail page).
+     * @param  bool  $lockClient  When true the client select is locked even on create — used
+     *                            when booking from a client's own page, where the owner
+     *                            record already decides who the reservation belongs to.
      * @return array<int, Component>
      */
-    public static function components(bool $withControlTherapy = true, bool $withHeaderLinks = true): array
+    public static function components(bool $withControlTherapy = true, bool $withHeaderLinks = true, bool $lockClient = false): array
     {
         return [
             // Termín + účastníci in ONE uncontained group (date/time row above the
@@ -116,10 +119,12 @@ class ReservationForm
                             ->live()
                             // Reassigning the client would make it a different reservation, so
                             // the client is locked once the reservation exists.
-                            ->disabled(fn (string $operation): bool => $operation === 'edit')
-                            ->helperText(fn (string $operation): ?string => $operation === 'edit'
-                                ? 'Klienta nelze u existující rezervace změnit — vážou se na něj platby, doklady a e-mailová komunikace. Potřebujete-li rezervaci převést, zrušte ji a založte novou.'
-                                : null)
+                            ->disabled(fn (string $operation): bool => $lockClient || $operation === 'edit')
+                            ->helperText(fn (string $operation): ?string => match (true) {
+                                $lockClient => 'Rezervace se založí tomuto klientovi.',
+                                $operation === 'edit' => 'Klienta nelze u existující rezervace změnit — vážou se na něj platby, doklady a e-mailová komunikace. Potřebujete-li rezervaci převést, zrušte ji a založte novou.',
+                                default => null,
+                            })
                             ->createOptionForm(self::newClientForm())
                             ->createOptionUsing(fn (array $data): string => self::createClient($data))
                             ->createOptionModalHeading('Nový klient')

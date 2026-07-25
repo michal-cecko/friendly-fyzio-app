@@ -11,6 +11,7 @@ use App\Models\Reservation;
 use App\Notifications\ReservationTemplateNotification;
 use App\Notifications\TherapistReservationTemplateNotification;
 use App\Support\ActivityLog\LogActivity;
+use App\Support\Emails\SentEmailReceipt;
 use App\Support\Reservations\ReservationChangeSnapshot;
 use Filament\Actions\ViewAction;
 use Filament\Schemas\Schema;
@@ -18,6 +19,14 @@ use Filament\Schemas\Schema;
 class EditReservation extends BaseEditRecord
 {
     protected static string $resource = ReservationResource::class;
+
+    public function getTitle(): string
+    {
+        /** @var Reservation $record */
+        $record = $this->getRecord();
+
+        return 'Upravit rezervaci '.($record->client?->name ?? 'bez klienta');
+    }
 
     /**
      * Whether to e-mail the client + therapist about the change (the
@@ -101,5 +110,12 @@ class EditReservation extends BaseEditRecord
             'notified_client' => $notifiedClient,
             'notified_therapist' => $notifiedTherapist,
         ]);
+
+        if ($notifiedClient || $notifiedTherapist) {
+            SentEmailReceipt::forCurrentUser(
+                'Změna rezervace',
+                (int) $notifiedClient + (int) $notifiedTherapist,
+            );
+        }
     }
 }

@@ -5,14 +5,19 @@ namespace Tests\Feature\Cms;
 use App\Enums\ServiceType;
 use App\Enums\ServiceVisibility;
 use App\Mason\BrickRegistry;
+use App\Mason\Bricks\LastMinuteBrick;
 use App\Models\Page;
+use App\Models\Room;
 use App\Models\Service;
 use App\Models\ServiceCategory;
 use App\Models\Specialization;
 use App\Models\StaffProfile;
 use App\Models\TherapistSpecialization;
+use App\Models\TherapistWorkBlock;
 use App\Models\User;
+use App\Support\Reservations\LastMinuteAvailability;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
 class BricksTest extends TestCase
@@ -31,8 +36,41 @@ class BricksTest extends TestCase
         $this->addToAssertionCount(1);
     }
 
+    /**
+     * The last-minute brick hides itself on the public site when nothing is free
+     * ({@see LastMinuteBrick::toHtml()}), so a page asserting on
+     * it needs a real opening in the booking system behind it.
+     */
+    private function seedLastMinuteOpening(): void
+    {
+        $room = Room::factory()->create();
+        $category = ServiceCategory::factory()->create(['published_at' => now()]);
+        $service = Service::factory()->create([
+            'category_id' => $category->id,
+            'duration_minutes' => 60,
+            'break_minutes' => 15,
+            'visibility' => ServiceVisibility::Public,
+            'published_at' => now(),
+        ]);
+
+        $therapist = StaffProfile::factory()->published()->create();
+        $service->therapists()->attach($therapist);
+
+        TherapistWorkBlock::factory()->create([
+            'therapist_id' => $therapist->id,
+            'room_id' => $room->id,
+            'work_date' => Carbon::tomorrow()->toDateString(),
+            'start_time' => '08:00',
+            'end_time' => '16:00',
+        ]);
+
+        LastMinuteAvailability::forget();
+    }
+
     public function test_homepage_renders_every_brick_type(): void
     {
+        $this->seedLastMinuteOpening();
+
         $brick = fn (string $id, array $config = []): array => [
             'type' => 'masonBrick',
             'attrs' => ['id' => $id, 'config' => $config],
@@ -385,6 +423,8 @@ class BricksTest extends TestCase
 
     public function test_bricks_still_render_legacy_button_fields(): void
     {
+        $this->seedLastMinuteOpening();
+
         $brick = fn (string $id, array $config = []): array => [
             'type' => 'masonBrick',
             'attrs' => ['id' => $id, 'config' => $config],

@@ -10,6 +10,7 @@ use App\Filament\Clusters\Provoz\Resources\Reservations\RelationManagers\NotesRe
 use App\Filament\Clusters\Provoz\Resources\Reservations\Schemas\ReservationForm;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Schemas\ReservationInfolist;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Tables\ReservationsTable;
+use App\Filament\Clusters\Provoz\Resources\Reservations\Widgets\ReservationStatsOverview;
 use App\Filament\Support\Concerns\ScopedToTherapist;
 use App\Filament\Support\RelationManagers\PaymentsRelationManager;
 use App\Models\Reservation;
@@ -50,6 +51,16 @@ class ReservationResource extends Resource
     public static function getNavigationLabel(): string
     {
         return 'Rezervace';
+    }
+
+    /**
+     * Record titles are the object of modal headings ("Trvale smazat rezervaci Jana Nováka"),
+     * so they are written in the accusative.
+     */
+    public static function getRecordTitle(?Model $record): string|Htmlable|null
+    {
+        /** @var ?Reservation $record */
+        return trim('rezervaci '.($record?->client?->name ?? ''));
     }
 
     /**
@@ -99,6 +110,13 @@ class ReservationResource extends Resource
         return parent::getEloquentQuery()
             ->with(['client', 'service', 'therapist.user', 'room'])
             ->when(static::staffProfileScopeId(), fn (Builder $query, string $id) => $query->where('therapist_id', $id));
+    }
+
+    public static function getWidgets(): array
+    {
+        return [
+            ReservationStatsOverview::class,
+        ];
     }
 
     public static function getRelations(): array

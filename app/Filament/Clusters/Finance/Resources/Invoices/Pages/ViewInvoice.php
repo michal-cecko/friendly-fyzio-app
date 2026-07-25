@@ -10,6 +10,7 @@ use App\Filament\Clusters\Finance\Resources\Invoices\InvoiceResource;
 use App\Filament\Support\Actions\ActivityLogAction;
 use App\Models\Invoice;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
@@ -19,22 +20,36 @@ class ViewInvoice extends ViewRecord
 {
     protected static string $resource = InvoiceResource::class;
 
+    public function getTitle(): string
+    {
+        /** @var Invoice $record */
+        $record = $this->getRecord();
+
+        return 'Faktura '.$record->invoice_number;
+    }
+
     protected function getHeaderActions(): array
     {
         return [
-            DownloadInvoicePdfAction::make(),
+            EditAction::make(),
             Action::make('preview')
                 ->label('Náhled')
                 ->icon(Heroicon::OutlinedEye)
                 ->color('gray')
                 ->url(fn (Invoice $record): string => route('invoices.preview', $record))
                 ->openUrlInNewTab(),
-            SendInvoiceAction::make(),
-            MarkInvoicePaidAction::make(),
-            GenerateCashReceiptAction::make(),
-            EditAction::make(),
-            DeleteAction::make(),
-            ActivityLogAction::make(),
+            ActionGroup::make([
+                DownloadInvoicePdfAction::make(),
+                SendInvoiceAction::make(),
+                MarkInvoicePaidAction::make(),
+                GenerateCashReceiptAction::make(),
+                DeleteAction::make(),
+                ActivityLogAction::make(),
+            ])
+                ->label('Další akce')
+                ->icon(Heroicon::OutlinedEllipsisHorizontal)
+                ->button()
+                ->color('gray'),
         ];
     }
 }

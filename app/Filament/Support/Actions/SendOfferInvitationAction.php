@@ -3,15 +3,17 @@
 namespace App\Filament\Support\Actions;
 
 use App\Enums\EmailTemplateKey;
+use App\Filament\Support\Schemas\CopyRecipientsFields;
 use App\Models\CourseSeries;
 use App\Models\OneOffEvent;
 use App\Models\User;
 use App\Notifications\EnrollmentTemplateNotification;
+use App\Support\Emails\CopyRecipients;
+use App\Support\Emails\SentEmailReceipt;
 use App\Support\Enrollments\EnrollmentEmailContext;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
-use Filament\Notifications\Notification;
 use Filament\Support\Icons\Heroicon;
 
 /**
@@ -64,11 +66,13 @@ class SendOfferInvitationAction extends Action
                 Textarea::make('zprava')
                     ->label('Osobní zpráva (nepovinné)')
                     ->rows(3),
+                ...CopyRecipientsFields::make('Kopie se přidá ke každé odeslané pozvánce.'),
             ])
             ->action(function (CourseSeries|OneOffEvent $record, array $data): void {
                 $url = $record->presaleUrl();
                 $offerTokens = EnrollmentEmailContext::offerTokens($record);
                 $message = (string) ($data['zprava'] ?? '');
+                $copies = CopyRecipients::fromFormData($data);
 
                 $sent = 0;
 
@@ -82,15 +86,12 @@ class SendOfferInvitationAction extends Action
                         ...$offerTokens,
                         'odkaz' => $url,
                         'zprava' => $message,
-                    ]));
+                    ], $copies));
 
                     $sent++;
                 }
 
-                $notification = Notification::make()
-                    ->title($sent > 0 ? "Pozvánka odeslána ({$sent})" : 'Nebyl vybrán žádný platný příjemce');
-
-                ($sent > 0 ? $notification->success() : $notification->warning())->send();
+                SentEmailReceipt::report($sent, 'Pozvánka');
             });
     }
 }

@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\BookingStatus;
 use App\Enums\OfferState;
 use App\Enums\OfferVisibility;
+use App\Enums\WaitlistPromotionMode;
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\HasCapacity;
 use App\Models\Concerns\HasPresaleAccess;
@@ -49,7 +50,8 @@ class OneOffEvent extends Model
         'start_time',
         'end_time',
         'capacity',
-        'auto_promote_waitlist',
+        'waitlist_promotion_mode',
+        'waitlist_invited_until',
         'price',
         'published_at',
     ];
@@ -60,7 +62,8 @@ class OneOffEvent extends Model
             'event_date' => 'date',
             'visibility' => OfferVisibility::class,
             'capacity' => 'integer',
-            'auto_promote_waitlist' => 'boolean',
+            'waitlist_promotion_mode' => WaitlistPromotionMode::class,
+            'waitlist_invited_until' => 'datetime',
             'price' => 'integer',
             'featured_image' => 'integer',
             'published_at' => 'datetime',
@@ -166,6 +169,7 @@ class OneOffEvent extends Model
             $this->isPrivate() => OfferState::Preparing,
             $this->isPast() => OfferState::Inactive,
             $this->isFull() => OfferState::Full,
+            $this->waitlistInviteActive() => OfferState::Full,
             default => OfferState::Open,
         };
     }

@@ -7,6 +7,7 @@ use App\Filament\Clusters\Kurzy\Resources\CourseEnrollments\CourseEnrollmentReso
 use App\Filament\Support\Actions\ActivityLogAction;
 use App\Filament\Support\Actions\RecordPaymentAction;
 use App\Filament\Support\Actions\SendEmailAction;
+use App\Models\CourseEnrollment;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
@@ -14,6 +15,14 @@ use Filament\Resources\Pages\ViewRecord;
 class ViewCourseEnrollment extends ViewRecord
 {
     protected static string $resource = CourseEnrollmentResource::class;
+
+    public function getTitle(): string
+    {
+        /** @var CourseEnrollment $record */
+        $record = $this->getRecord();
+
+        return 'Přihláška '.($record->client?->name ?? 'bez klienta');
+    }
 
     protected function getHeaderActions(): array
     {

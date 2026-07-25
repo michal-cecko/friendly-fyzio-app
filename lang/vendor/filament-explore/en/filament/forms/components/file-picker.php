@@ -15,5 +15,8 @@ return [
             ],
         ],
     ],
+    'clear_action' => [
+        'label' => 'Clear',
+    ],
     'empty_state_heading' => 'No file selected yet',
 ];

@@ -10,6 +10,8 @@ class CreateReview extends BaseCreateRecord
 {
     protected static string $resource = ReviewResource::class;
 
+    protected static ?string $title = 'Nová recenze';
+
     public function getMaxContentWidth(): Width
     {
         return Width::Full;

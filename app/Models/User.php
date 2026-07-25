@@ -9,6 +9,7 @@ use App\Models\Concerns\Auditable;
 use App\Notifications\Auth\ResetPasswordNotification;
 use App\Notifications\Auth\VerifyEmailNotification;
 use App\Notifications\ClientAccountCreatedNotification;
+use App\Support\Emails\CopyRecipients;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -46,6 +47,7 @@ class User extends Authenticatable implements Emailable, FilamentUser, HasPasske
         'newsletter_opted_in_at',
         'deactivated_at',
         'reactivated_at',
+        'preferences',
     ];
 
     protected $hidden = [
@@ -61,7 +63,28 @@ class User extends Authenticatable implements Emailable, FilamentUser, HasPasske
             'deactivated_at' => 'datetime',
             'reactivated_at' => 'datetime',
             'password' => 'hashed',
+            'preferences' => 'array',
         ];
+    }
+
+    /**
+     * Read a per-user UI preference. Supports dotted keys
+     * (e.g. `reservations.show_stats`) so a single JSON column
+     * backs any number of preferences.
+     */
+    public function getPreference(string $key, mixed $default = null): mixed
+    {
+        return data_get($this->preferences ?? [], $key, $default);
+    }
+
+    /**
+     * Persist a per-user UI preference to the database.
+     */
+    public function setPreference(string $key, mixed $value): void
+    {
+        $preferences = $this->preferences ?? [];
+        data_set($preferences, $key, $value);
+        $this->update(['preferences' => $preferences]);
     }
 
     /**
@@ -104,10 +127,10 @@ class User extends Authenticatable implements Emailable, FilamentUser, HasPasske
         ];
     }
 
-    public function sendTemplateEmail(EmailTemplateKey $key): void
+    public function sendTemplateEmail(EmailTemplateKey $key, ?CopyRecipients $copies = null): void
     {
         match ($key) {
-            EmailTemplateKey::AccountCreated => $this->notify(new ClientAccountCreatedNotification),
+            EmailTemplateKey::AccountCreated => $this->notify(new ClientAccountCreatedNotification($copies)),
             default => null,
         };
     }
@@ -259,6 +282,19 @@ class User extends Authenticatable implements Emailable, FilamentUser, HasPasske
     public function isLecturer(): bool
     {
         return $this->hasCapability(Capability::Lecturer);
+    }
+
+    /**
+     * Whether this user may see aggregate money figures (revenue totals,
+     * outstanding sums, per-client spend).
+     *
+     * Intentionally a plain capability check with no admin/super-admin
+     * shortcut: the financial overview is granted explicitly, so holding the
+     * keys to the panel does not by itself reveal the clinic's takings.
+     */
+    public function canViewRevenue(): bool
+    {
+        return $this->hasCapability(Capability::Revenue);
     }
 
     /**

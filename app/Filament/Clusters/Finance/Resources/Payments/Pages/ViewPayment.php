@@ -19,6 +19,14 @@ class ViewPayment extends ViewRecord
 {
     protected static string $resource = PaymentResource::class;
 
+    public function getTitle(): string
+    {
+        /** @var Payment $record */
+        $record = $this->getRecord();
+
+        return 'Platba č. '.$record->number.' — '.($record->client?->name ?? 'Neznámý klient');
+    }
+
     protected function getHeaderActions(): array
     {
         return [

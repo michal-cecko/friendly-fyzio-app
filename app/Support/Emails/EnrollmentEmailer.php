@@ -57,11 +57,11 @@ class EnrollmentEmailer
         return $groups;
     }
 
-    public static function send(CourseEnrollment|OneOffEventBooking $signup, EmailTemplateKey $key): void
+    public static function send(CourseEnrollment|OneOffEventBooking $signup, EmailTemplateKey $key, ?CopyRecipients $copies = null): void
     {
         $extra = self::extraTokens($signup, $key);
 
-        $signup->client?->notify(new EnrollmentTemplateNotification($key, self::context($signup, $extra)));
+        $signup->client?->notify(new EnrollmentTemplateNotification($key, self::context($signup, $extra), $copies));
     }
 
     private static function receivedKey(CourseEnrollment|OneOffEventBooking $signup): EmailTemplateKey

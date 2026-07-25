@@ -2,11 +2,13 @@
 
 namespace App\Filament\Clusters\Provoz\Resources\Clients\RelationManagers;
 
+use App\Filament\Clusters\Provoz\Resources\Clients\Actions\AdjustCreditAction;
 use App\Models\CreditTransaction;
 use App\Support\Credits\CreditLedger;
 use BackedEnum;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Columns\Summarizers\Summarizer;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -36,6 +38,7 @@ class CreditTransactionsRelationManager extends RelationManager
                     ->badge(),
                 TextColumn::make('description')
                     ->label('Popis')
+                    ->searchable()
                     ->placeholder('—')
                     ->wrap(),
                 TextColumn::make('expires_at')
@@ -46,12 +49,24 @@ class CreditTransactionsRelationManager extends RelationManager
                     ->label('Částka')
                     ->formatStateUsing(fn (int $state): string => ($state > 0 ? '+' : '').number_format($state, 0, ',', ' ').' Kč')
                     ->color(fn (CreditTransaction $record): string => $record->amount > 0 ? 'success' : 'danger')
-                    ->weight('semibold'),
+                    ->weight('semibold')
+                    // The ledger balance, not a sum of the listed rows: expired
+                    // and spent credit is already netted out in the account.
+                    ->summarize(
+                        Summarizer::make()
+                            ->label('Aktivní kredit')
+                            ->using(fn (): int => CreditLedger::balanceFor($this->getOwnerRecord()))
+                            ->formatStateUsing(fn (int $state): string => number_format($state, 0, ',', ' ').' Kč')
+                    ),
             ])
             ->defaultSort('created_at', 'desc')
             ->emptyStateHeading('Žádné pohyby kreditu')
             ->emptyStateDescription('Kredit klientovi připíšete akcí „Upravit kredit" v hlavičce.')
-            ->headerActions([])
+            ->headerActions([
+                AdjustCreditAction::make()
+                    ->record($this->getOwnerRecord())
+                    ->color('primary'),
+            ])
             ->recordActions([])
             ->toolbarActions([]);
     }

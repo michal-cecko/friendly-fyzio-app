@@ -4,12 +4,14 @@ namespace App\Filament\Support\Actions;
 
 use App\Contracts\Emailable;
 use App\Enums\EmailTemplateKey;
+use App\Filament\Support\Schemas\CopyRecipientsFields;
 use App\Listeners\LogSentEmail;
 use App\Mason\Support\EmailFields;
 use App\Notifications\CustomEmailNotification;
+use App\Support\Emails\CopyRecipients;
+use App\Support\Emails\SentEmailReceipt;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Notifications\Notification as FilamentNotification;
@@ -73,24 +75,18 @@ class SendEmailAction extends Action
                         ->email()
                         ->required()
                         ->default(fn (Model $record): ?string => self::recipient($record)),
-                    TagsInput::make('cc')
-                        ->label('Kopie (CC)')
-                        ->placeholder('E-mail a Enter')
-                        ->splitKeys([',', ' '])
-                        ->nestedRecursiveRules(['email']),
-                    TagsInput::make('bcc')
-                        ->label('Skrytá kopie (BCC)')
-                        ->placeholder('E-mail a Enter')
-                        ->splitKeys([',', ' '])
-                        ->nestedRecursiveRules(['email']),
                     TextInput::make('subject')
                         ->label('Předmět')
                         ->required(),
                     EmailFields::richText('body', 'Text e-mailu', required: true),
                 ])
                     ->visible(fn (Get $get): bool => $get('mode') === 'custom'),
+                // Copies apply to both modes: a resent template is worth archiving too.
+                ...CopyRecipientsFields::make(),
             ])
             ->action(function (Model $record, array $data): void {
+                $copies = CopyRecipients::fromFormData($data);
+
                 if (($data['mode'] ?? 'template') === 'custom') {
                     $sender = auth()->user();
 
@@ -99,14 +95,13 @@ class SendEmailAction extends Action
                             record: $record,
                             emailSubject: $data['subject'],
                             bodyHtml: $data['body'],
-                            cc: $data['cc'] ?? [],
-                            bcc: $data['bcc'] ?? [],
+                            copies: $copies,
                             replyToAddress: $sender?->email,
                             replyToName: $sender?->name,
                         ));
                 } else {
                     /** @var Emailable $record */
-                    $record->sendTemplateEmail(EmailTemplateKey::from($data['template_key']));
+                    $record->sendTemplateEmail(EmailTemplateKey::from($data['template_key']), $copies);
                 }
 
                 // Before launch only administrators actually receive mail, so
@@ -126,6 +121,8 @@ class SendEmailAction extends Action
                     ->title('E-mail byl odeslán.')
                     ->success()
                     ->send();
+
+                SentEmailReceipt::forCurrentUser($data['subject'] ?? 'E-mail');
             });
     }
 

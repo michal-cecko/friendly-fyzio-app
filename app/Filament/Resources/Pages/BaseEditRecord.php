@@ -9,12 +9,64 @@ use Filament\Support\Enums\Alignment;
 
 /**
  * App-wide base for resource edit pages. Drops the "Zrušit" (Cancel) action —
- * it only navigates away and adds noise — and right-aligns the remaining form
- * actions (Save). All edit pages should extend this instead of Filament's
- * {@see EditRecord} directly.
+ * it only navigates away and adds noise — right-aligns the remaining form
+ * actions (Save), and mirrors a Save button into the page header so it is
+ * reachable above a long form as well as below it. All edit pages should extend
+ * this instead of Filament's {@see EditRecord} directly.
  */
 abstract class BaseEditRecord extends EditRecord
 {
+    /**
+     * Prepend a header-placed Save button to whatever header actions the
+     * concrete page defines, so every edit page exposes Save at the top too,
+     * and clarify the default "Zobrazit" (view) action label to "Zobrazit
+     * detail". Done here (after the parent has cached the page's own actions)
+     * so no concrete page needs to opt in via its {@see getHeaderActions()}.
+     */
+    public function cacheInteractsWithHeaderActions(): void
+    {
+        parent::cacheInteractsWithHeaderActions();
+
+        $hasSaveHeaderAction = false;
+
+        foreach ($this->cachedHeaderActions as $action) {
+            if ($action instanceof Action) {
+                if ($action->getName() === 'saveHeader') {
+                    $hasSaveHeaderAction = true;
+                }
+
+                $this->relabelViewAction($action);
+
+                continue;
+            }
+
+            // ViewAction may live inside a "Další akce" dropdown group.
+            foreach ($action->getFlatActions() as $groupedAction) {
+                $this->relabelViewAction($groupedAction);
+            }
+        }
+
+        // Pages that already place a header Save button (e.g. the category
+        // resources with their custom layout) keep their own; every other page
+        // gets one prepended so Save is reachable above a long form as well.
+        if (! $hasSaveHeaderAction) {
+            $saveHeaderAction = $this->getSaveHeaderAction();
+            $this->cacheAction($saveHeaderAction);
+
+            array_unshift($this->cachedHeaderActions, $saveHeaderAction);
+        }
+    }
+
+    /**
+     * Rename the record "view" action to the clearer "Zobrazit detail".
+     */
+    protected function relabelViewAction(Action $action): void
+    {
+        if ($action->getName() === 'view') {
+            $action->label('Zobrazit detail');
+        }
+    }
+
     /**
      * @return array<Action | ActionGroup>
      */

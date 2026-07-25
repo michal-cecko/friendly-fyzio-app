@@ -3,20 +3,21 @@
 namespace App\Filament\Clusters\Kurzy\Resources\OneOffEvents\Schemas;
 
 use App\Enums\OfferVisibility;
+use App\Enums\WaitlistPromotionMode;
+use App\Filament\Support\Schemas\DerivedSlug;
 use App\Filament\Support\Schemas\NotifyParticipantsToggle;
 use App\Filament\Support\Schemas\PresenceBanner;
+use App\Models\OneOffEvent;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\TimePicker;
-use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\ToggleButtons;
-use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Str;
 use RalphJSmit\Filament\MediaLibrary\Filament\Forms\Components\MediaPicker;
 
 class OneOffEventForm
@@ -46,12 +47,8 @@ class OneOffEventForm
                     ->required()
                     ->maxLength(255)
                     ->live(onBlur: true)
-                    ->afterStateUpdated(fn (Set $set, ?string $state) => $set('slug', Str::slug($state ?? ''))),
-                TextInput::make('slug')
-                    ->label('Slug')
-                    ->required()
-                    ->maxLength(255)
-                    ->unique(ignoreRecord: true),
+                    ->afterStateUpdated(DerivedSlug::syncFrom(OneOffEvent::class, 'akce')),
+                DerivedSlug::field('Adresa akce na webu. Doplní se sama z názvu.'),
                 TextInput::make('invoice_title')
                     ->label('Název pro fakturaci')
                     ->maxLength(255)
@@ -99,10 +96,12 @@ class OneOffEventForm
                     ->integer()
                     ->minValue(1)
                     ->required(),
-                Toggle::make('auto_promote_waitlist')
-                    ->label('Automaticky přidávat z čekací listiny')
-                    ->helperText('Když se uvolní místo, systém sám osloví dalšího v pořadí. Vypněte, chcete-li přidávat z čekací listiny ručně.')
-                    ->default(true)
+                Radio::make('waitlist_promotion_mode')
+                    ->label('Když se uvolní místo')
+                    ->options(WaitlistPromotionMode::class)
+                    ->descriptions(WaitlistPromotionMode::descriptions())
+                    ->default(WaitlistPromotionMode::AutomaticAdd)
+                    ->required()
                     ->columnSpanFull(),
                 TextInput::make('price')
                     ->label('Cena')
@@ -119,7 +118,7 @@ class OneOffEventForm
                     ->default(OfferVisibility::Public)
                     ->inline()
                     ->required()
-                    ->helperText('Soukromá akce se ve veřejném archivu nezobrazuje — vidí ji jen přihlášení zákazníci a lze na ni pozvat přes přihlašovací odkaz.'),
+                    ->helperText('Soukromá akce se ve veřejném archivu nezobrazuje — vidí ji jen přihlášení zákazníci a lze na ni pozvat přes přihlašovací odkaz. Ten (i pozvánky) je proto dostupný jen u soukromé akce; u veřejné se tlačítko nezobrazuje.'),
                 NotifyParticipantsToggle::make(),
             ]);
     }

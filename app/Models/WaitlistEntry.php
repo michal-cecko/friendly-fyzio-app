@@ -2,7 +2,11 @@
 
 namespace App\Models;
 
+use App\Contracts\Emailable;
+use App\Enums\EmailTemplateKey;
 use App\Models\Concerns\Auditable;
+use App\Support\Emails\CopyRecipients;
+use App\Support\Emails\WaitlistEntryEmailer;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,7 +21,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  * the client link is filled when a matching account exists or gets created
  * during promotion.
  */
-class WaitlistEntry extends Model
+class WaitlistEntry extends Model implements Emailable
 {
     use Auditable, HasFactory, HasUuids;
 
@@ -80,5 +84,36 @@ class WaitlistEntry extends Model
         $phone = $this->client?->phone ?? $this->phone;
 
         return filled($phone) ? (string) $phone : null;
+    }
+
+    /**
+     * Whether this entry is still waiting (not yet offered a spot / consumed).
+     */
+    public function isPending(): bool
+    {
+        return $this->notified_at === null;
+    }
+
+    public function emailRecipientAddress(): ?string
+    {
+        return $this->displayEmail();
+    }
+
+    public function emailRecipientName(): ?string
+    {
+        return $this->displayName() ?: null;
+    }
+
+    /**
+     * @return array<string, array<string, string>>
+     */
+    public function emailTemplateGroups(): array
+    {
+        return WaitlistEntryEmailer::templateGroups($this);
+    }
+
+    public function sendTemplateEmail(EmailTemplateKey $key, ?CopyRecipients $copies = null): void
+    {
+        WaitlistEntryEmailer::send($this, $key, $copies);
     }
 }

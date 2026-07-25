@@ -5,11 +5,12 @@ namespace App\Filament\Clusters\Provoz\Resources\Clients\Pages;
 use App\Filament\Clusters\Provoz\Resources\Clients\Actions\AdjustCreditAction;
 use App\Filament\Clusters\Provoz\Resources\Clients\ClientResource;
 use App\Filament\Clusters\Provoz\Resources\Clients\Widgets\ClientStatsOverview;
-use App\Filament\Pages\Calendar;
+use App\Filament\Clusters\Provoz\Resources\Reservations\Actions\CreateReservationAction;
 use App\Filament\Support\Actions\ActivityLogAction;
 use App\Filament\Support\Actions\ResetPasswordAction;
 use App\Filament\Support\Concerns\RendersRelationManagersAsSections;
-use Filament\Actions\Action;
+use App\Models\User;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
@@ -22,19 +23,30 @@ class ViewClient extends ViewRecord
 
     protected static string $resource = ClientResource::class;
 
+    public function getTitle(): string
+    {
+        /** @var User $record */
+        $record = $this->getRecord();
+
+        return 'Klient '.$record->name;
+    }
+
     protected function getHeaderActions(): array
     {
         return [
-            Impersonate::make()->record($this->getRecord()),
-            Action::make('createReservation')
-                ->label('Vytvořit rezervaci')
-                ->icon(Heroicon::OutlinedCalendarDays)
-                ->url(Calendar::getUrl()),
-            AdjustCreditAction::make()->record($this->getRecord()),
-            ResetPasswordAction::make(),
             EditAction::make(),
-            DeleteAction::make(),
-            ActivityLogAction::make(),
+            ActionGroup::make([
+                CreateReservationAction::make()->client($this->getRecord()),
+                AdjustCreditAction::make()->record($this->getRecord()),
+                Impersonate::make()->record($this->getRecord()),
+                ResetPasswordAction::make(),
+                DeleteAction::make(),
+                ActivityLogAction::make(),
+            ])
+                ->label('Další akce')
+                ->icon(Heroicon::OutlinedEllipsisHorizontal)
+                ->button()
+                ->color('gray'),
         ];
     }
 

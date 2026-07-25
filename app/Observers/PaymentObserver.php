@@ -8,9 +8,11 @@ use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Models\Payment;
 use App\Models\Reservation;
+use App\Support\Enrollments\CloseOverInvitedLosers;
 use App\Support\Invoices\CashReceiptGenerator;
 use App\Support\Invoices\DocumentNumberAllocator;
 use App\Support\Payments\PayableSettlement;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Payment automation: any payment that becomes Paid settles its payable when the
@@ -94,6 +96,12 @@ class PaymentObserver
     private function handlePaid(Payment $payment): void
     {
         PayableSettlement::settle($payment);
+
+        // If this payment just filled a course/event that was over-invited from
+        // the waitlist ("kdo dřív zaplatí"), close out the slower unpaid holders.
+        // Deferred past commit so the cancel → waitlist-promote cascade never
+        // nests inside the settlement transaction.
+        DB::afterCommit(fn () => app(CloseOverInvitedLosers::class)->afterPayment($payment));
 
         if (
             $payment->method === PaymentMethod::Cash

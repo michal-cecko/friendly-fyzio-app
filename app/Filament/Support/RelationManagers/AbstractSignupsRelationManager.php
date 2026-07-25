@@ -2,6 +2,7 @@
 
 namespace App\Filament\Support\RelationManagers;
 
+use App\Contracts\Emailable;
 use App\Enums\PaymentStatus;
 use App\Filament\Clusters\Finance\Resources\Invoices\Actions\GenerateInvoiceFromPayableAction;
 use App\Filament\Clusters\Finance\Resources\Invoices\Actions\GenerateInvoicesBulkAction;
@@ -10,15 +11,26 @@ use App\Filament\Support\Actions\CancelSignupAction;
 use App\Filament\Support\Actions\CancelSignupBulkAction;
 use App\Filament\Support\Actions\MarkSignupsPaidBulkAction;
 use App\Filament\Support\Actions\RecordPaymentAction;
+use App\Filament\Support\Actions\SendBulkParticipantEmailAction;
+use App\Filament\Support\Actions\SendEmailAction;
 use App\Filament\Support\Tables\TimestampColumns;
+use App\Jobs\SendBulkParticipantEmailJob;
+use App\Mason\Support\EmailFields;
 use Filament\Actions\Action;
+use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\ToggleButtons;
+use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 
 /**
  * Shared "who is signed up" tab for the three enrollable offers, rendered on the
@@ -96,6 +108,7 @@ abstract class AbstractSignupsRelationManager extends RelationManager
             ->recordActions([
                 RecordPaymentAction::make(),
                 GenerateInvoiceFromPayableAction::make(),
+                SendEmailAction::make(),
                 CancelSignupAction::make(),
                 ...$this->extraRecordActions(),
                 Action::make('detail')
@@ -108,8 +121,77 @@ abstract class AbstractSignupsRelationManager extends RelationManager
                 BulkActionGroup::make([
                     MarkSignupsPaidBulkAction::make(),
                     GenerateInvoicesBulkAction::make(),
+                    $this->sendEmailBulkAction(),
                     CancelSignupBulkAction::make(),
                 ]),
             ]);
+    }
+
+    /**
+     * Table-selection "Odeslat e-mail" for the checked participants — the
+     * checkbox-driven counterpart of the header {@see SendBulkParticipantEmailAction}
+     * (which mails everyone). Reuses the queued participant fan-out job.
+     */
+    protected function sendEmailBulkAction(): BulkAction
+    {
+        return BulkAction::make('sendParticipantEmail')
+            ->label('Odeslat e-mail')
+            ->icon(Heroicon::OutlinedPaperAirplane)
+            ->color('gray')
+            ->modalHeading('Odeslat e-mail vybraným')
+            ->modalSubmitActionLabel('Odeslat')
+            ->schema([
+                ToggleButtons::make('mode')
+                    ->label('Režim')
+                    ->options(['custom' => 'Vlastní e-mail', 'template' => 'Šablona'])
+                    ->default('custom')
+                    ->inline()
+                    ->live()
+                    ->required(),
+                Select::make('template_key')
+                    ->label('Šablona e-mailu')
+                    ->required()
+                    ->options(SendBulkParticipantEmailAction::broadcastTemplateOptions())
+                    ->helperText('Nabízené jsou jen šablony, které dávají smysl hromadně.')
+                    ->visible(fn (Get $get): bool => $get('mode') === 'template'),
+                TextInput::make('subject')
+                    ->label('Předmět')
+                    ->required()
+                    ->visible(fn (Get $get): bool => $get('mode') === 'custom'),
+                EmailFields::richText('body', 'Text e-mailu', required: true)
+                    ->visible(fn (Get $get): bool => $get('mode') === 'custom'),
+            ])
+            ->action(function (Collection $records, array $data): void {
+                $recipients = $records->filter(
+                    fn (Model $record): bool => $record instanceof Emailable && filled($record->emailRecipientAddress())
+                );
+
+                if ($recipients->isEmpty()) {
+                    Notification::make()
+                        ->warning()
+                        ->title('Nebyl vybrán žádný platný příjemce.')
+                        ->send();
+
+                    return;
+                }
+
+                $isTemplate = ($data['mode'] ?? 'custom') === 'template';
+
+                SendBulkParticipantEmailJob::dispatch(
+                    signupClass: $recipients->first()::class,
+                    signupIds: $recipients->pluck('id')->all(),
+                    templateKey: $isTemplate ? $data['template_key'] : null,
+                    subject: $isTemplate ? null : $data['subject'],
+                    bodyHtml: $isTemplate ? null : $data['body'],
+                    senderId: auth()->id(),
+                );
+
+                Notification::make()
+                    ->success()
+                    ->title('Odesílání spuštěno')
+                    ->body('Zpráva míří na '.$recipients->count().' příjemců. Až budou odeslány, dáme vám vědět.')
+                    ->send();
+            })
+            ->deselectRecordsAfterCompletion();
     }
 }

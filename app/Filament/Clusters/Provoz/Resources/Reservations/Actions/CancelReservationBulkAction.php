@@ -7,6 +7,7 @@ use App\Enums\ReservationStatus;
 use App\Models\Reservation;
 use App\Notifications\ReservationTemplateNotification;
 use App\Support\ActivityLog\LogActivity;
+use App\Support\Emails\SentEmailReceipt;
 use Filament\Actions\BulkAction;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
@@ -55,8 +56,9 @@ class CancelReservationBulkAction extends BulkAction
                 $erased = (bool) ($data['force_delete'] ?? false);
                 $notifyClients = (bool) ($data['notify_client'] ?? false);
                 $affected = 0;
+                $notified = 0;
 
-                $records->each(function (Reservation $record) use ($data, $erased, $notifyClients, &$affected): void {
+                $records->each(function (Reservation $record) use ($data, $erased, $notifyClients, &$affected, &$notified): void {
                     if ($record->trashed()) {
                         return;
                     }
@@ -66,8 +68,10 @@ class CancelReservationBulkAction extends BulkAction
                         'cancellation_reason' => $data['cancellation_reason'],
                     ]);
 
-                    if ($notifyClients) {
+                    if ($notifyClients && filled($record->client?->email)) {
                         $record->client?->notify(new ReservationTemplateNotification($record, EmailTemplateKey::ReservationCancelled));
+
+                        $notified++;
                     }
 
                     if ($erased) {
@@ -88,6 +92,10 @@ class CancelReservationBulkAction extends BulkAction
                         'erased' => $erased,
                     ],
                 );
+
+                if ($notified > 0) {
+                    SentEmailReceipt::forCurrentUser('Zrušení rezervace', $notified);
+                }
 
                 Notification::make()
                     ->title('Vybrané rezervace byly zrušeny.')

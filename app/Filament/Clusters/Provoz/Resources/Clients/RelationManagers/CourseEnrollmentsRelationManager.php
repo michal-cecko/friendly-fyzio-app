@@ -2,6 +2,8 @@
 
 namespace App\Filament\Clusters\Provoz\Resources\Clients\RelationManagers;
 
+use App\Filament\Clusters\Kurzy\Resources\CourseEnrollments\CourseEnrollmentResource;
+use App\Models\CourseEnrollment;
 use BackedEnum;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Support\Icons\Heroicon;
@@ -24,9 +26,11 @@ class CourseEnrollmentsRelationManager extends RelationManager
             ->modifyQueryUsing(fn (Builder $query) => $query->with(['series.course']))
             ->columns([
                 TextColumn::make('series.course.name')
-                    ->label('Kurz'),
+                    ->label('Kurz')
+                    ->searchable(),
                 TextColumn::make('series.name')
-                    ->label('Série'),
+                    ->label('Série')
+                    ->searchable(),
                 TextColumn::make('series.start_date')
                     ->label('Od')
                     ->date('d.m.Y'),
@@ -44,6 +48,7 @@ class CourseEnrollmentsRelationManager extends RelationManager
                     ->counts('attendances'),
             ])
             ->defaultSort('created_at', 'desc')
+            ->recordUrl(fn (CourseEnrollment $record): string => CourseEnrollmentResource::getUrl('view', ['record' => $record]))
             ->headerActions([])
             ->recordActions([])
             ->toolbarActions([]);

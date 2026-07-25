@@ -15,6 +15,14 @@ class ViewCashReceipt extends ViewRecord
 {
     protected static string $resource = CashReceiptResource::class;
 
+    public function getTitle(): string
+    {
+        /** @var CashReceipt $record */
+        $record = $this->getRecord();
+
+        return 'Pokladní doklad '.$record->receipt_number;
+    }
+
     protected function getHeaderActions(): array
     {
         return [

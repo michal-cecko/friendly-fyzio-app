@@ -6,6 +6,7 @@ use App\Enums\CourseEnrollmentStatus;
 use App\Enums\CourseSeriesStatus;
 use App\Enums\CourseSeriesVisibility;
 use App\Enums\OfferState;
+use App\Enums\WaitlistPromotionMode;
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\HasCapacity;
 use App\Observers\CourseSeriesObserver;
@@ -29,7 +30,8 @@ class CourseSeries extends Model
         'start_date',
         'end_date',
         'capacity',
-        'auto_promote_waitlist',
+        'waitlist_promotion_mode',
+        'waitlist_invited_until',
         'price',
         'status',
         'visibility',
@@ -42,7 +44,8 @@ class CourseSeries extends Model
             'start_date' => 'date',
             'end_date' => 'date',
             'capacity' => 'integer',
-            'auto_promote_waitlist' => 'boolean',
+            'waitlist_promotion_mode' => WaitlistPromotionMode::class,
+            'waitlist_invited_until' => 'datetime',
             'price' => 'integer',
             'status' => CourseSeriesStatus::class,
             'visibility' => CourseSeriesVisibility::class,
@@ -155,6 +158,7 @@ class CourseSeries extends Model
             $this->visibility === CourseSeriesVisibility::Private => OfferState::Preparing,
             $this->status === CourseSeriesStatus::Inactive => OfferState::Preparing,
             $this->status === CourseSeriesStatus::Full, $this->isFull() => OfferState::Full,
+            $this->waitlistInviteActive() => OfferState::Full,
             default => OfferState::Open,
         };
     }
@@ -164,6 +168,10 @@ class CourseSeries extends Model
      * secret link even while still Inactive (docs: "predpredaj pre stálych
      * klientov") or Private (invite-only run). Ended or full series stay
      * closed even with the token.
+     *
+     * The link is also what lets a waitlist invite round work: it ignores
+     * {@see waitlistInviteActive()}, so a waiter holding the link can take the
+     * reserved spot while the public form still shows the series as full.
      */
     public function offerStateForPresale(): OfferState
     {

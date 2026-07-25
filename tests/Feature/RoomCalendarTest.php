@@ -272,16 +272,17 @@ class RoomCalendarTest extends TestCase
         $this->assertSame([], $calendar->waitlistWeekSummary());
     }
 
-    public function test_view_page_shows_room_details_without_relation_tables(): void
+    public function test_view_page_shows_only_the_room_details(): void
     {
         $room = $this->makeRoom('Sál Zeta');
         $this->actingAs(User::factory()->admin()->create());
 
-        // Details infolist renders; the calendar replaces the schedule/blocking tables.
+        // Details infolist only — no schedule/blocking tables and no calendar.
         $this->get(RoomResource::getUrl('view', ['record' => $room]))
             ->assertSuccessful()
             ->assertSee('Sál Zeta')
-            ->assertDontSee('Rozvrh terapeutů');
+            ->assertDontSee('Rozvrh terapeutů')
+            ->assertDontSeeHtml('ff-cal');
     }
 
     public function test_edit_page_is_form_only(): void

@@ -11,6 +11,8 @@ class CreateUser extends BaseCreateRecord
 {
     protected static string $resource = UserResource::class;
 
+    protected static ?string $title = 'Nový uživatel';
+
     /** @var list<string> */
     protected array $selectedCapabilities = [];
 

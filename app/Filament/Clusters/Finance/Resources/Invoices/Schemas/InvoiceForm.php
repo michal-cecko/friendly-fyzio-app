@@ -16,6 +16,7 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Repeater\TableColumn;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -137,52 +138,54 @@ class InvoiceForm
                     ->columnSpanFull()
                     ->schema([
                         Repeater::make('items')
+                            ->hiddenLabel()
                             ->relationship()
                             ->orderColumn('sort')
                             ->reorderable()
                             ->defaultItems(1)
                             ->minItems(1)
                             ->addActionLabel('Přidat položku')
-                            ->columns(['default' => 1, 'lg' => 12])
+                            ->table(array_values(array_filter([
+                                TableColumn::make('Název')->markAsRequired(),
+                                TableColumn::make('Popis'),
+                                TableColumn::make('Počet')->markAsRequired(),
+                                TableColumn::make('Cena/ks')->markAsRequired(),
+                                Settings::vatPayer() ? TableColumn::make('DPH') : null,
+                                TableColumn::make('Celkem'),
+                            ])))
                             ->schema([
                                 TextInput::make('title')
                                     ->label('Název')
-                                    ->required()
-                                    ->columnSpan(['default' => 1, 'lg' => 4]),
+                                    ->required(),
                                 TextInput::make('description')
-                                    ->label('Popis')
-                                    ->columnSpan(['default' => 1, 'lg' => 3]),
+                                    ->label('Popis'),
                                 TextInput::make('quantity')
                                     ->label('Počet')
                                     ->integer()
                                     ->default(1)
                                     ->minValue(1)
                                     ->required()
-                                    ->live(onBlur: true)
-                                    ->columnSpan(['default' => 1, 'lg' => 1]),
+                                    ->live(onBlur: true),
                                 TextInput::make('unit_price')
                                     ->label('Cena/ks')
                                     ->integer()
                                     ->required()
                                     ->suffix('Kč')
-                                    ->live(onBlur: true)
-                                    ->columnSpan(['default' => 1, 'lg' => 2]),
+                                    ->live(onBlur: true),
                                 Select::make('vat_rate')
                                     ->label('DPH')
                                     ->options([21 => '21 %', 12 => '12 %', 0 => '0 %'])
                                     ->default(fn (): ?int => Settings::vatPayer() ? Settings::defaultVatRate() : null)
                                     ->visible(fn (): bool => Settings::vatPayer())
-                                    ->native(false)
-                                    ->columnSpan(['default' => 1, 'lg' => 1]),
+                                    ->native(false),
                                 Placeholder::make('row_total')
                                     ->label('Celkem')
                                     ->content(fn (Get $get): string => InvoicePdfData::money(
                                         (int) $get('quantity') * (int) $get('unit_price'),
-                                    ))
-                                    ->columnSpan(['default' => 1, 'lg' => 1]),
+                                    )),
                             ]),
                         Placeholder::make('grand_total')
-                            ->label('')
+                            ->hiddenLabel()
                             ->content(function (Get $get): HtmlString {
                                 $total = collect($get('items') ?? [])->sum(
                                     fn (array $item): int => (int) ($item['quantity'] ?? 0) * (int) ($item['unit_price'] ?? 0),

@@ -8,6 +8,7 @@ use App\Models\Payment;
 use App\Models\Reservation;
 use App\Notifications\ReservationStornoPaymentNotification;
 use App\Support\ActivityLog\LogActivity;
+use App\Support\Emails\SentEmailReceipt;
 use App\Support\Settings;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
@@ -130,6 +131,8 @@ class ResolveDoctorNoteAction extends Action
 
         if ($notifyClient) {
             $record->client?->notify(new ReservationStornoPaymentNotification($record, $payment));
+
+            SentEmailReceipt::forCurrentUser('Storno poplatek');
         }
 
         LogActivity::record('reservation_storno_charged', $record, 'Storno poplatek vyžádán', [

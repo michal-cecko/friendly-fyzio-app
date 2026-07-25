@@ -2,18 +2,25 @@
 
 namespace App\Filament\Clusters\Provoz\Resources\Clients\RelationManagers;
 
+use App\Filament\Clusters\Finance\Resources\CashReceipts\Actions\GenerateCashReceiptAction;
+use App\Filament\Clusters\Finance\Resources\Invoices\Actions\DownloadInvoicePdfAction;
+use App\Filament\Clusters\Finance\Resources\Invoices\Actions\MarkInvoicePaidAction;
+use App\Filament\Clusters\Finance\Resources\Invoices\Actions\SendInvoiceAction;
 use App\Filament\Clusters\Finance\Resources\Invoices\InvoiceResource;
 use App\Models\Invoice;
 use BackedEnum;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\ViewAction;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
 /**
- * Read-only list of the client's invoices — rows deep-link into the Finance
- * cluster's invoice detail. Invoices are issued by the invoicing pipeline,
- * never edited from the client page.
+ * The client's invoices — rows deep-link into the Finance cluster's invoice
+ * detail, and the row action group carries the same servicing actions as the
+ * Finance table (PDF, e-mail, mark paid, cash receipt). Invoices are issued by
+ * the invoicing pipeline and edited in Finance, never from the client page.
  */
 class InvoicesRelationManager extends RelationManager
 {
@@ -30,6 +37,7 @@ class InvoicesRelationManager extends RelationManager
             ->columns([
                 TextColumn::make('invoice_number')
                     ->label('Číslo')
+                    ->searchable()
                     ->weight('semibold'),
                 TextColumn::make('issued_at')
                     ->label('Vystaveno')
@@ -56,7 +64,20 @@ class InvoicesRelationManager extends RelationManager
             ->emptyStateHeading('Žádné faktury')
             ->recordUrl(fn (Invoice $record): string => InvoiceResource::getUrl('view', ['record' => $record]))
             ->headerActions([])
-            ->recordActions([])
+            ->recordActions([
+                ActionGroup::make([
+                    ViewAction::make()
+                        ->url(fn (Invoice $record): string => InvoiceResource::getUrl('view', ['record' => $record])),
+                    DownloadInvoicePdfAction::make(),
+                    SendInvoiceAction::make(),
+                    MarkInvoicePaidAction::make(),
+                    GenerateCashReceiptAction::make(),
+                ])
+                    ->label('Akce')
+                    ->icon(Heroicon::OutlinedEllipsisVertical)
+                    ->link()
+                    ->color('gray'),
+            ])
             ->toolbarActions([]);
     }
 }

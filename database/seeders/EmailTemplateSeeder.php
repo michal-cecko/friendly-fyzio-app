@@ -380,6 +380,22 @@ class EmailTemplateSeeder extends Seeder
                 $this->brick('email-note', ['text' => '<p>Pokud už o místo nemáte zájem, nemusíte nic dělat — po uplynutí lhůty se přihláška sama zruší.</p>']),
                 $this->replyCallout(),
             ],
+            EmailTemplateKey::WaitlistSpotOffered => [
+                $this->brick('email-greeting', ['text' => '<p>Dobrá zpráva, {{ jmeno }}!</p>']),
+                $this->brick('email-callout', ['variant' => 'success', 'icon' => 'circle-check', 'text' => '<p>Uvolnilo se místo.</p>']),
+                $this->brick('email-paragraph', ['text' => '<p>Píšeme všem na čekací listině najednou — platí „kdo dřív přijde“. Místo držíme čekajícím {{ lhuta_hodin }} hodin, potom ho nabídneme veřejnosti.</p>']),
+                $this->detailsBrick('default', 'Detail termínu', [
+                    ['Název:', '{{ nazev }}'],
+                    ['Termín:', '{{ termin }}'],
+                ]),
+                $this->brick('email-buttons', [
+                    'buttons' => [
+                        ['text' => 'Přihlásit se na uvolněné místo', 'style' => 'primary', 'link_type' => 'custom', 'url' => '{{ odkaz }}'],
+                    ],
+                ]),
+                $this->brick('email-note', ['text' => '<p>Přihlášení dokončíte až úhradou — platební údaje vám pošleme hned po odeslání přihlášky. Pokud už o místo nemáte zájem, nemusíte dělat nic.</p>']),
+                $this->replyCallout(),
+            ],
             EmailTemplateKey::CourseRegistrationOpened => [
                 $this->brick('email-greeting', ['text' => '<p>Dobrý den, {{ jmeno }},</p>']),
                 $this->brick('email-callout', ['variant' => 'success', 'icon' => 'bell', 'text' => '<p>Otevřeli jsme přihlašování na kurz, o který jste projevili zájem.</p>']),

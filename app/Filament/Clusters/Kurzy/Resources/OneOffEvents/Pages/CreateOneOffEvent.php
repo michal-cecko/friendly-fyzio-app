@@ -8,4 +8,6 @@ use App\Filament\Resources\Pages\BaseCreateRecord;
 class CreateOneOffEvent extends BaseCreateRecord
 {
     protected static string $resource = OneOffEventResource::class;
+
+    protected static ?string $title = 'Nová jednorázová akce';
 }

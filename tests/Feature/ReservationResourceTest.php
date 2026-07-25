@@ -7,6 +7,7 @@ use App\Enums\PaymentStatus;
 use App\Enums\ReservationStatus;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Pages\EditReservation;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Pages\ListReservations;
+use App\Filament\Clusters\Provoz\Resources\Reservations\Widgets\ReservationStatsOverview;
 use App\Filament\Widgets\ReservationCalendar;
 use App\Models\Building;
 use App\Models\Reservation;
@@ -349,5 +350,90 @@ class ReservationResourceTest extends TestCase
                     && ($notification->extraTokens['puvodni_sluzba'] ?? null) === $originalServiceName;
             },
         );
+    }
+
+    public function test_metrics_bar_is_shown_by_default_and_toggle_persists_per_user(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $this->actingAs($admin);
+
+        // Shown by default.
+        Livewire::test(ListReservations::class)
+            ->assertSeeLivewire(ReservationStatsOverview::class)
+            ->callAction('toggleStats')
+            ->assertDontSeeLivewire(ReservationStatsOverview::class);
+
+        // Preference persisted to the database.
+        $this->assertFalse((bool) $admin->fresh()->getPreference('reservations.show_stats'));
+
+        // A fresh mount for the same user starts hidden (cross-session persistence).
+        Livewire::test(ListReservations::class)
+            ->assertDontSeeLivewire(ReservationStatsOverview::class);
+    }
+
+    public function test_revenue_total_is_hidden_without_the_revenue_capability(): void
+    {
+        $deps = $this->dependencies();
+        $this->makeReservation($deps);
+
+        $this->actingAs(User::factory()->admin()->create());
+        Livewire::test(ReservationStatsOverview::class)
+            ->assertDontSee('Tržby')
+            // Non-money metrics stay visible to everyone.
+            ->assertSee('Nepotvrzeno');
+    }
+
+    public function test_revenue_total_is_shown_with_the_revenue_capability(): void
+    {
+        $deps = $this->dependencies();
+        $this->makeReservation($deps);
+
+        $this->actingAs(User::factory()->admin()->revenue()->create());
+        Livewire::test(ReservationStatsOverview::class)
+            ->assertSee('Tržby');
+    }
+
+    public function test_metric_cards_link_to_the_matching_table_filter(): void
+    {
+        $deps = $this->dependencies();
+        $this->makeReservation($deps);
+        $this->actingAs(User::factory()->admin()->create());
+
+        Livewire::test(ReservationStatsOverview::class)
+            ->assertSee('Zobrazit')
+            ->assertSee('filters%5Bstatus%5D%5Bvalue%5D=pending', escape: false)
+            ->assertSee('filters%5Boutstanding%5D%5BisActive%5D=1', escape: false);
+    }
+
+    public function test_outstanding_and_unsettled_filters_narrow_the_table(): void
+    {
+        $deps = $this->dependencies();
+        $this->actingAs(User::factory()->admin()->create());
+
+        $unpaid = $this->makeReservation($deps, [
+            'payment_status' => PaymentStatus::Unpaid,
+            'start_time' => '09:00',
+            'end_time' => '10:00',
+        ]);
+        $paid = $this->makeReservation($deps, [
+            'payment_status' => PaymentStatus::Paid,
+            'start_time' => '11:00',
+            'end_time' => '12:00',
+        ]);
+
+        Livewire::test(ListReservations::class)
+            ->filterTable('outstanding')
+            ->assertCanSeeTableRecords([$unpaid])
+            ->assertCanNotSeeTableRecords([$paid]);
+
+        $pastUnsettled = $this->makeReservation($deps, [
+            'reservation_date' => now()->subDay()->toDateString(),
+            'status' => ReservationStatus::Confirmed,
+        ]);
+
+        Livewire::test(ListReservations::class)
+            ->filterTable('unsettled_past')
+            ->assertCanSeeTableRecords([$pastUnsettled])
+            ->assertCanNotSeeTableRecords([$unpaid, $paid]);
     }
 }

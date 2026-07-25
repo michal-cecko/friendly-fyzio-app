@@ -7,6 +7,7 @@ use App\Filament\Clusters\Kurzy\Resources\CourseEnrollments\CourseEnrollmentReso
 use BackedEnum;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 class CourseSeriesEnrollmentsRelationManager extends AbstractSignupsRelationManager
@@ -22,12 +23,18 @@ class CourseSeriesEnrollmentsRelationManager extends AbstractSignupsRelationMana
         return CourseEnrollmentStatus::class;
     }
 
+    /**
+     * Lessons the client actually turned up for — the presence list holds a row
+     * per lesson, so an unscoped count would just repeat the série's length.
+     */
     protected function extraColumns(): array
     {
         return [
-            TextColumn::make('attendances_count')
+            TextColumn::make('attended_count')
                 ->label('Účast')
-                ->counts('attendances'),
+                ->counts([
+                    'attendances as attended_count' => fn (Builder $query) => $query->where('attended', true),
+                ]),
         ];
     }
 
