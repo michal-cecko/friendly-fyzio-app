@@ -100,6 +100,10 @@ class ReservationCalendar extends FullCalendarWidget
     #[Url(as: 'terapie')]
     public bool $showReservations = true;
 
+    /** Both modes: show room blockings ("Blokace" legend toggle). */
+    #[Url(as: 'blokace')]
+    public bool $showBlockings = true;
+
     /** Reservations mode: overlay scheduled course lessons (read-only). */
     #[Url(as: 'kurzy')]
     public bool $showCourses = true;
@@ -450,7 +454,7 @@ class ReservationCalendar extends FullCalendarWidget
             $this->selectedIds = [];
         }
 
-        if (in_array($property, ['search', 'mode', 'templateRoomId', 'showReservations', 'showCourses', 'showLessons'], true)) {
+        if (in_array($property, ['search', 'mode', 'templateRoomId', 'showReservations', 'showBlockings', 'showCourses', 'showLessons'], true)) {
             $this->dispatch('filament-fullcalendar--refresh');
         }
     }
@@ -460,6 +464,7 @@ class ReservationCalendar extends FullCalendarWidget
         $this->therapistIds = [];
         $this->search = '';
         $this->showReservations = true;
+        $this->showBlockings = true;
         $this->showCourses = true;
         $this->showLessons = true;
         $this->showWaitlist = true;
@@ -585,8 +590,8 @@ class ReservationCalendar extends FullCalendarWidget
     protected function hiddenLayers(): array
     {
         $layers = $this->isTemplateMode()
-            ? ['showCourses' => 'Kurzy', 'showLessons' => 'Akce']
-            : ['showReservations' => 'Terapie', 'showCourses' => 'Kurzy', 'showLessons' => 'Akce'];
+            ? ['showBlockings' => 'Blokace', 'showCourses' => 'Kurzy', 'showLessons' => 'Akce']
+            : ['showReservations' => 'Terapie', 'showBlockings' => 'Blokace', 'showCourses' => 'Kurzy', 'showLessons' => 'Akce'];
 
         if (! $this->isTemplateMode() && ! $this->room && Settings::dayWaitlistEnabled()) {
             $layers['showWaitlist'] = 'Pořadník';
@@ -1761,6 +1766,10 @@ class ReservationCalendar extends FullCalendarWidget
      */
     protected function fetchOneTimeBlockingEvents(array $info): array
     {
+        if (! $this->showBlockings) {
+            return [];
+        }
+
         $roomIds = $this->scopedRoomIds();
         $start = substr((string) $info['start'], 0, 10);
         $end = substr((string) $info['end'], 0, 10);
@@ -1846,12 +1855,12 @@ class ReservationCalendar extends FullCalendarWidget
                 ->toArray();
         }
 
-        $blockings = RoomBlocking::query()
+        $blockings = $this->showBlockings ? RoomBlocking::query()
             ->with('room')
             ->where('is_recurring', true)
             ->when($this->templateRoomId, fn (Builder $query) => $query->where('room_id', $this->templateRoomId))
             ->when($this->room, fn (Builder $query) => $query->where('room_id', $this->room->getKey()))
-            ->get();
+            ->get() : new Collection;
 
         [$blockAccent, $blockTint] = self::BLOCKING_COLORS;
 
