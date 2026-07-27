@@ -1300,6 +1300,10 @@ class ReservationCalendar extends FullCalendarWidget
 
     public function filtersForm(Schema $schema): Schema
     {
+        // The column counts below are only a fallback: the widget's own stylesheet
+        // lays this grid out with auto-fit against the filter bar's actual width
+        // (see .ff-filament-filters), because Filament's breakpoints are measured
+        // against the viewport and say nothing about how wide the bar is.
         return $schema
             ->statePath('filterData')
             ->columns(['default' => 1, 'sm' => 2, 'lg' => 3])

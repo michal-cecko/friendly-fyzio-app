@@ -88,6 +88,20 @@ class CalendarTest extends TestCase
             ->assertSee('Smazané');
     }
 
+    public function test_filter_selects_lay_out_against_the_bars_own_width(): void
+    {
+        // Two rules keep the five selects on one or two rows. Without the block
+        // display the schema grid is a flex item and shrink-to-fits to a single
+        // narrow column; without the auto-fit override the column count follows
+        // the viewport rather than the bar, which is what left the row half empty.
+        $this->actingAs(User::factory()->admin()->create());
+
+        $html = Livewire::test(ReservationCalendar::class)->html();
+
+        $this->assertStringContainsString('.ff-filament-filters { display: block; width: 100%; }', $html);
+        $this->assertStringContainsString('repeat(auto-fit, minmax(180px, 1fr)) !important', $html);
+    }
+
     public function test_therapist_chips_are_labelled_with_the_given_name_only(): void
     {
         $this->actingAs(User::factory()->admin()->create());

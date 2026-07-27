@@ -515,7 +515,18 @@
         .ff-search input { border: none; background: transparent; outline: none; font-size: 14px; color: var(--ff-text); width: 100%; }
         .ff-search input::placeholder { color: var(--ff-faint); }
 
-        .ff-filament-filters { width: 100%; }
+        /* Block, not the row's flex: as a flex item the schema grid was sized
+           shrink-to-fit, so it never used more than a fraction of the bar and the
+           selects stacked with the rest of the row left empty. */
+        .ff-filament-filters { display: block; width: 100%; }
+        /* Filament's sm:/lg: column counts are viewport media queries, which say
+           nothing about how wide this bar actually is. auto-fit measures the
+           container: the five short selects sit on one row when they fit and wrap
+           to two when they do not, with no dead column. */
+        .ff-filament-filters .fi-grid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important; gap: 8px 12px !important; }
+        .ff-filament-filters .fi-fo-field { row-gap: 4px; }
+        .ff-filament-filters .fi-fo-field-label-col { padding-top: 0; }
+        .ff-filament-filters .fi-fo-field-label-content { font-size: 13px; color: var(--ff-muted); }
         .ff-filters-toggle { display: inline-flex; align-items: center; gap: 7px; flex-shrink: 0; font-size: 14px; font-weight: 500; color: var(--ff-text); background: var(--ff-panel); border: 1px solid var(--ff-border); border-radius: 10px; padding: 8px 12px; cursor: pointer; }
         .ff-filters-toggle:hover { background: var(--ff-hover); }
         .ff-filters-toggle svg { width: 16px; height: 16px; color: var(--ff-muted); }
