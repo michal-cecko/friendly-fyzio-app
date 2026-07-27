@@ -5,6 +5,7 @@ namespace App\Providers\Filament;
 use App\Filament\Livewire\DatabaseNotifications;
 use App\Filament\Pages\Auth\Login;
 use App\Filament\Pages\Dashboard;
+use App\Filament\Support\Search\PanelGlobalSearchProvider;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use DiscoveryDesign\FilamentGaze\FilamentGazePlugin;
 use Filament\Http\Middleware\Authenticate;
@@ -65,6 +66,9 @@ class AdminPanelProvider extends PanelProvider
             ->collapsibleNavigationGroups()
             ->maxContentWidth(Width::Full)
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
+            // The topbar search searches settings and the manual too, matching what
+            // the standalone search page returns.
+            ->globalSearch(PanelGlobalSearchProvider::class)
             ->renderHook(
                 PanelsRenderHook::GLOBAL_SEARCH_AFTER,
                 fn (): string => view('filament.topbar.global-search-page-link')->render(),

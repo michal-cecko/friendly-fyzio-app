@@ -95,7 +95,7 @@ class AdminSearchService
      *
      * @return Collection<int, AdminSearchResult>
      */
-    protected function searchHelp(string $search): Collection
+    public function searchHelp(string $search): Collection
     {
         return app(HelpSearch::class)->search($search)
             ->take(self::RESULTS_PER_RESOURCE)
@@ -117,9 +117,15 @@ class AdminSearchService
      *
      * @return Collection<int, AdminSearchResult>
      */
-    protected function searchSettings(string $search): Collection
+    public function searchSettings(string $search): Collection
     {
         if (! (auth()->user()?->isAdmin() ?? false)) {
+            return collect();
+        }
+
+        $search = trim($search);
+
+        if (mb_strlen($search) < self::MINIMUM_QUERY_LENGTH) {
             return collect();
         }
 
