@@ -125,17 +125,6 @@
                     </button>
                 </div>
 
-                <div class="ff-sep"></div>
-                <button type="button" class="ff-btn-today" @click="today()">Dnes</button>
-                <div class="ff-nav">
-                    <button type="button" class="ff-nav-btn" @click="prev()" aria-label="Předchozí">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                    </button>
-                    <button type="button" class="ff-nav-btn" @click="next()" aria-label="Další">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                    </button>
-                </div>
-                <h2 class="ff-title" x-text="title">&nbsp;</h2>
                 @if ($isTemplate)
                     @unless ($this->room ?? null)
                         <label class="ff-tsel">
@@ -404,6 +393,23 @@
             </aside>
 
             <div class="ff-cal-wrap">
+                {{-- Dnes / ‹ › / the date they move sit inside the calendar column
+                     rather than up in the toolbar: on a phone the toolbar wraps over
+                     several rows and the filter bar follows it, which left the date
+                     navigation a long way from the grid it drives. --}}
+                <div class="ff-datebar">
+                    <button type="button" class="ff-btn-today" @click="today()">Dnes</button>
+                    <div class="ff-nav">
+                        <button type="button" class="ff-nav-btn" @click="prev()" aria-label="Předchozí">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                        </button>
+                        <button type="button" class="ff-nav-btn" @click="next()" aria-label="Další">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        </button>
+                    </div>
+                    <h2 class="ff-title" x-text="title">&nbsp;</h2>
+                </div>
+
                 <div x-ref="wlData" data-badges="{{ json_encode($this->waitlistHeaderBadges()) }}" hidden></div>
                 <div
                     wire:ignore
@@ -437,7 +443,7 @@
         .ff-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
         .ff-toolbar-left { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
         .ff-toolbar-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-        .ff-sep { width: 1px; height: 24px; background: var(--ff-border); }
+        .ff-datebar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
 
         /* Mode toggle (Rezervace / Šablona týdne) */
         .ff-mode { display: inline-flex; align-items: center; gap: 2px; background: var(--ff-panel); border: 1px solid var(--ff-border); border-radius: 10px; padding: 3px; }

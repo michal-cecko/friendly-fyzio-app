@@ -88,6 +88,24 @@ class CalendarTest extends TestCase
             ->assertSee('Smazané');
     }
 
+    public function test_date_navigation_sits_in_the_calendar_column(): void
+    {
+        // Dnes / ‹ › / the date belong directly above the grid: in the toolbar they
+        // ended up separated from it by the wrapped action buttons and filter bar.
+        $this->actingAs(User::factory()->admin()->create());
+
+        $html = Livewire::test(ReservationCalendar::class)->html();
+
+        $calendarColumn = mb_substr($html, mb_strpos($html, 'ff-cal-wrap'));
+
+        $this->assertStringContainsString('ff-datebar', $calendarColumn);
+        $this->assertStringContainsString('ff-btn-today', $calendarColumn);
+        $this->assertStringContainsString('ff-title', $calendarColumn);
+        // ...and nowhere else: the toolbar must not keep a second copy.
+        $this->assertSame(1, mb_substr_count($html, 'class="ff-btn-today"'));
+        $this->assertSame(1, mb_substr_count($html, 'class="ff-title"'));
+    }
+
     public function test_filter_selects_lay_out_against_the_bars_own_width(): void
     {
         // Two rules keep the five selects on one or two rows. Without the block
