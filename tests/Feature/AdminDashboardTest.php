@@ -96,6 +96,10 @@ class AdminDashboardTest extends TestCase
         $this->actingAs(User::factory()->therapist()->create());
         $this->assertTrue($widget::canView());
 
+        // Lecturers have their own clashes and their own backlog.
+        $this->actingAs(User::factory()->lecturer()->create());
+        $this->assertTrue($widget::canView());
+
         $this->actingAs(User::factory()->customer()->create());
         $this->assertFalse($widget::canView());
     }
@@ -322,6 +326,10 @@ class AdminDashboardTest extends TestCase
         $this->assertTrue(Suggestions::canAccess());
 
         $this->actingAs(User::factory()->therapist()->create());
+        $this->assertTrue(Problems::canAccess());
+        $this->assertTrue(Suggestions::canAccess());
+
+        $this->actingAs(User::factory()->lecturer()->create());
         $this->assertTrue(Problems::canAccess());
         $this->assertTrue(Suggestions::canAccess());
 

@@ -328,6 +328,19 @@ class Lesson extends Model
         SQL);
     }
 
+    /**
+     * Lessons the given user leads: the ones they teach themselves plus every
+     * lesson of a série they lead (see {@see CourseSeries::scopeLedBy()}), so a
+     * lecturer keeps the sessions of their own série even when a colleague
+     * stands in for one of them.
+     */
+    public function scopeLedBy(Builder $query, string $userId): Builder
+    {
+        return $query->where(fn (Builder $nested) => $nested
+            ->where($this->qualifyColumn('instructor_id'), $userId)
+            ->orWhereHas('series', fn (Builder $series) => $series->ledBy($userId)));
+    }
+
     public function scopeUpcoming(Builder $query): Builder
     {
         return $query->whereDate('lesson_date', '>=', today());

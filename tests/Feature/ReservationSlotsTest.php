@@ -276,8 +276,9 @@ class ReservationSlotsTest extends TestCase
     {
         // A different therapist (who doesn't offer our service) has a booking in the
         // SAME room 09:15–10:15 — the room is occupied, so our therapist's slots must
-        // reshape exactly as if the room were busy then.
-        $other = StaffProfile::factory()->create(['published_at' => now()]);
+        // reshape exactly as if the room were busy then. Her one-block break is set
+        // here rather than inherited: nobody takes a break by default.
+        $other = StaffProfile::factory()->create(['published_at' => now(), 'break_blocks' => 1]);
         Reservation::factory()->create([
             'therapist_id' => $other->id,
             'room_id' => $this->room->id,
@@ -489,8 +490,10 @@ class ReservationSlotsTest extends TestCase
         // identical expectation proves lessons are busy time and not cuts: a cut
         // would restart the cadence at 10:15 and offer that minute. The 10:30
         // anchor is the lecturer's own break — every lecturer is staff, so a
-        // class leaves the same rest behind it as a visit does.
-        $this->lesson();
+        // class leaves the same rest behind it as a visit does. She has to be
+        // given that break explicitly; the default is none.
+        $lecturer = StaffProfile::factory()->create(['break_blocks' => 1]);
+        $this->lesson(['instructor_id' => $lecturer->user_id]);
 
         $slots = $this->slots()->availableTimes($this->service, $this->date);
 

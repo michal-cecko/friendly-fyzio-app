@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Room;
+use App\Models\RoomBlocking;
 use App\Models\StaffProfile;
 use App\Models\TherapistWorkBlock;
 use Illuminate\Console\Command;
@@ -31,10 +32,13 @@ use Illuminate\Support\Str;
  *    is just "AV" reversed. Trailing notes ("- od 1.9") are ignored.
  *  - Therapists appear by nickname ({@see NICKNAMES}); a nickname that maps to
  *    nobody is reported, never guessed onto a therapist.
- *  - **Rentals / blocking entries are skipped** (owner): "Kuba" and "Lucka A."
- *    (Lucie Amani, now a lecturer) only rent a room — they are not bookable
- *    therapists, so their blocks are not availability. Anything marked
- *    "pronájem" is a rental too.
+ *  - **Rentals become room blockings, not availability** (owner): "Kuba" and
+ *    "Lucka A." (Lucie Amani, now a lecturer) only rent a room, and anything
+ *    marked "pronájem" is a rental too. They are not bookable therapists, so
+ *    their time is no one's availability — but the room really is occupied, so
+ *    each instance is written as a one-off {@see RoomBlocking}. Skipping them
+ *    outright (as this command first did) left the room reading as free, which
+ *    is how a client could be booked on top of a paying tenant.
  *  - **laser/kryo-tagged blocks are skipped**: that is device time (přístrojová
  *    terapie, phone-booked), not bookable physiotherapy availability. The
  *    Laser+Kryo calendar is imported separately as reservations.
@@ -165,6 +169,12 @@ class WorkBlockImport extends Command
             return;
         }
 
+        if (isset($parsed['rental'])) {
+            $this->importRental($summary, $this->room($parsed['room']), $start, $end);
+
+            return;
+        }
+
         if (isset($parsed['unknown'])) {
             $this->unknownTitles[$parsed['unknown']] = ($this->unknownTitles[$parsed['unknown']] ?? 0) + 1;
             $this->bump('unknown_therapist');
@@ -214,40 +224,114 @@ class WorkBlockImport extends Command
     }
 
     /**
-     * Resolve one calendar title to a therapist + room. Order-agnostic: the room
-     * token (AV/VA/AM) can sit anywhere, and the therapist is matched against the
-     * known-nickname dictionary. Rentals and device time are skipped; an
-     * unrecognised name is surfaced for review, never guessed onto a therapist.
+     * Resolve one calendar title to a therapist + room, or to a rental of that
+     * room. Order-agnostic: the room token (AV/VA/AM) can sit anywhere, and the
+     * therapist is matched against the known-nickname dictionary. Device time is
+     * skipped; an unrecognised name is surfaced for review, never guessed onto a
+     * therapist.
      *
-     * @return array{email: string, room: string}|array{skip: string}|array{unknown: string}
+     * A rental still has to name a room — there is nothing to block otherwise —
+     * so it is reported separately rather than folded into the plain `no_room`
+     * count, where a tenant left unblocked would go unnoticed.
+     *
+     * @return array{email: string, room: string}|array{rental: true, room: string}|array{skip: string}|array{unknown: string}
      */
     protected function parseTitle(string $summary): array
     {
         $ascii = mb_strtolower(Str::ascii($this->normalizeWhitespace($summary)));
 
-        if (str_contains($ascii, 'pronajem')) {
-            return ['skip' => 'rental'];
-        }
+        // Rental wins over the device tag, as it always has: a rented room is
+        // occupied whatever the tenant wheels into it.
+        $isRental = str_contains($ascii, 'pronajem');
 
-        if (str_contains($ascii, 'laser') || str_contains($ascii, 'kryo')) {
+        if (! $isRental && (str_contains($ascii, 'laser') || str_contains($ascii, 'kryo'))) {
             return ['skip' => 'device'];
         }
 
         if (! preg_match('/\b(av|va|am|ma)\b/', $ascii, $match)) {
-            return ['skip' => 'no_room'];
+            return ['skip' => $isRental ? 'rental_no_room' : 'no_room'];
         }
 
         $room = in_array($match[1], ['av', 'va'], true) ? 'velka' : 'mala';
 
+        if ($isRental) {
+            return ['rental' => true, 'room' => $room];
+        }
+
         foreach (self::NICKNAME_PATTERNS as $pattern => $resolution) {
             if (preg_match('/\b'.preg_quote($pattern, '/').'\b/u', $ascii) === 1) {
                 return $resolution === self::RENTAL
-                    ? ['skip' => 'rental']
+                    ? ['rental' => true, 'room' => $room]
                     : ['email' => $resolution, 'room' => $room];
             }
         }
 
         return ['unknown' => $ascii];
+    }
+
+    /**
+     * Record a rented stretch as a one-off room blocking, which is what keeps
+     * the slot engine and the conflict finder from handing the room to a client.
+     *
+     * Idempotent on (room, start), the same shape the work blocks use.
+     */
+    protected function importRental(string $summary, Room $room, Carbon $start, Carbon $end): void
+    {
+        $startAt = $this->wallClock($start);
+        $endAt = $this->wallClock($end);
+
+        $existing = RoomBlocking::query()
+            ->where('room_id', $room->getKey())
+            ->where('is_recurring', false)
+            ->where('start_at', $startAt)
+            ->exists();
+
+        if ($existing) {
+            $this->bump('rentals_existing');
+
+            return;
+        }
+
+        $this->bump('rentals_created');
+
+        if ($this->dryRun) {
+            return;
+        }
+
+        RoomBlocking::query()->create([
+            'room_id' => $room->getKey(),
+            'reason' => $this->rentalReason($summary),
+            'is_recurring' => false,
+            'start_at' => $startAt,
+            'end_at' => $endAt,
+        ]);
+    }
+
+    /**
+     * The blocking's label in the calendar. Most titles already say "pronájem"
+     * and name the tenant, so they are kept verbatim; the ones that only carry a
+     * name ("Lucka A. - AM") are prefixed, or staff would read them as somebody's
+     * shift.
+     */
+    protected function rentalReason(string $summary): string
+    {
+        $summary = $this->normalizeWhitespace($summary);
+
+        return str_contains(mb_strtolower(Str::ascii($summary)), 'pronajem')
+            ? $summary
+            : 'Pronájem – '.$summary;
+    }
+
+    /**
+     * Room blockings are stored as naive wall-clock datetimes — that is how the
+     * calendar writes them and how {@see RoomBlockingIntervals} reads them back
+     * (it takes the hour and minute verbatim). The app timezone is UTC, so the
+     * Prague instant has to be re-read as local digits rather than converted, or
+     * every imported rental would land two hours off.
+     */
+    protected function wallClock(Carbon $instant): Carbon
+    {
+        return Carbon::parse($instant->format('Y-m-d H:i:s'));
     }
 
     protected function normalizeWhitespace(string $value): string

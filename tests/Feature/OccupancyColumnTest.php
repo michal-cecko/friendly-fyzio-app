@@ -2,8 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Enums\CourseEnrollmentStatus;
 use App\Filament\Clusters\Kurzy\Resources\CourseSeries\Pages\ListCourseSeries;
 use App\Filament\Support\Tables\OccupancyColumn;
+use App\Models\CourseEnrollment;
 use App\Models\CourseSeries;
 use App\Models\User;
 use Filament\Facades\Filament;
@@ -77,5 +79,31 @@ class OccupancyColumnTest extends TestCase
         Livewire::test(ListCourseSeries::class)
             ->assertCanSeeTableRecords([$series])
             ->assertSee('20/20');
+    }
+
+    /**
+     * The bar has to read as a bar at both ends of the scale: an untouched offer
+     * still shows the whole track, and a full one still shows where it ends. The
+     * outlined, fixed-width track is what carries that, so it must render even
+     * when the fill is invisible (0 %) or covers everything (100 %).
+     */
+    public function test_the_track_is_drawn_at_full_width_when_empty_and_when_full(): void
+    {
+        $empty = CourseSeries::factory()->create(['capacity' => 20]);
+        $full = CourseSeries::factory()->create(['capacity' => 20]);
+        CourseEnrollment::factory()->count(20)->create([
+            'series_id' => $full->id,
+            'status' => CourseEnrollmentStatus::Active,
+        ]);
+
+        $html = Livewire::test(ListCourseSeries::class)
+            ->assertCanSeeTableRecords([$empty, $full])
+            ->html();
+
+        $this->assertSame(2, substr_count($html, 'w-20 shrink-0 overflow-hidden rounded-full'),
+            'Both the empty and the full bar must draw the full-width track.');
+        $this->assertStringContainsString('ring-1 ring-inset', $html);
+        $this->assertStringContainsString('width: 0%', $html);
+        $this->assertStringContainsString('width: 100%', $html);
     }
 }

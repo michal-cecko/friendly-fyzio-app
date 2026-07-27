@@ -9,6 +9,7 @@ use App\Models\User;
 use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -127,5 +128,104 @@ class ClientNoteTest extends TestCase
         $therapist = User::factory()->therapist()->create();
 
         $this->assertFalse($therapist->can('create', ClientNote::class));
+    }
+
+    public function test_long_note_is_truncated_in_the_table(): void
+    {
+        $client = User::factory()->customer()->create();
+        $longText = str_repeat('Klient reaguje dobře na cvičení. ', 10);
+
+        ClientNote::factory()->create([
+            'client_id' => $client->getKey(),
+            'content' => '<p>'.$longText.'</p>',
+        ]);
+
+        $this->actingAs(User::factory()->admin()->create());
+
+        Livewire::test(NotesRelationManager::class, [
+            'ownerRecord' => $client,
+            'pageClass' => ViewClient::class,
+        ])
+            ->assertSee(Str::limit(trim($longText), 80))
+            ->assertDontSee(trim($longText));
+    }
+
+    public function test_note_can_be_viewed_in_a_modal_with_its_formatting(): void
+    {
+        $client = User::factory()->customer()->create();
+
+        $note = ClientNote::factory()->create([
+            'client_id' => $client->getKey(),
+            'content' => '<p>Klient reaguje <strong>velmi dobře</strong> na cvičení.</p>',
+        ]);
+
+        $this->actingAs(User::factory()->admin()->create());
+
+        Livewire::test(NotesRelationManager::class, [
+            'ownerRecord' => $client,
+            'pageClass' => ViewClient::class,
+        ])
+            ->mountAction(TestAction::make('view')->table($note))
+            // The modal body is rendered by the parent page, so assert the action
+            // itself; mounting resolves the infolist schema against the record.
+            ->assertActionMounted(TestAction::make('view')->table($note));
+    }
+
+    public function test_therapist_can_read_but_not_change_a_note_written_by_someone_else(): void
+    {
+        $therapist = $this->makeTherapistWithNotePermissions();
+        $client = User::factory()->customer()->create();
+
+        $ownNote = ClientNote::factory()->create([
+            'client_id' => $client->getKey(),
+            'author_id' => $therapist->getKey(),
+        ]);
+        $foreignNote = ClientNote::factory()->create([
+            'client_id' => $client->getKey(),
+            'author_id' => User::factory()->therapist()->create()->getKey(),
+        ]);
+
+        $this->actingAs($therapist);
+
+        Livewire::test(NotesRelationManager::class, [
+            'ownerRecord' => $client,
+            'pageClass' => ViewClient::class,
+        ])
+            ->assertCanSeeTableRecords([$ownNote, $foreignNote])
+            ->assertActionVisible(TestAction::make('view')->table($foreignNote))
+            ->assertActionHidden(TestAction::make('edit')->table($foreignNote))
+            ->assertActionHidden(TestAction::make('delete')->table($foreignNote))
+            ->assertActionVisible(TestAction::make('view')->table($ownNote))
+            ->assertActionVisible(TestAction::make('edit')->table($ownNote))
+            ->assertActionVisible(TestAction::make('delete')->table($ownNote));
+    }
+
+    public function test_notes_can_be_filtered_by_author(): void
+    {
+        $client = User::factory()->customer()->create();
+        $author = User::factory()->therapist()->create();
+        $otherAuthor = User::factory()->therapist()->create();
+
+        $ownNote = ClientNote::factory()->create([
+            'client_id' => $client->getKey(),
+            'author_id' => $author->getKey(),
+            'content' => '<p>Poznámka od prvního terapeuta.</p>',
+        ]);
+        $foreignNote = ClientNote::factory()->create([
+            'client_id' => $client->getKey(),
+            'author_id' => $otherAuthor->getKey(),
+            'content' => '<p>Poznámka od druhého terapeuta.</p>',
+        ]);
+
+        $this->actingAs(User::factory()->admin()->create());
+
+        Livewire::test(NotesRelationManager::class, [
+            'ownerRecord' => $client,
+            'pageClass' => ViewClient::class,
+        ])
+            ->assertCanSeeTableRecords([$ownNote, $foreignNote])
+            ->filterTable('author_id', $author->getKey())
+            ->assertCanSeeTableRecords([$ownNote])
+            ->assertCanNotSeeTableRecords([$foreignNote]);
     }
 }

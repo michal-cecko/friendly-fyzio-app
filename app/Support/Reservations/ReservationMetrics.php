@@ -99,6 +99,22 @@ class ReservationMetrics
     }
 
     /**
+     * Constrain to visits that happened but have no note written about them.
+     * Cancelled visits are excluded — there was nothing to write up. Shared with
+     * the `missing_note` filter and the `missing_visit_note` suggestion.
+     *
+     * @param  Builder<Reservation>  $query
+     * @return Builder<Reservation>
+     */
+    public static function scopeMissingVisitNote(Builder $query): Builder
+    {
+        return $query
+            ->whereDate('reservation_date', '<', today())
+            ->whereNot('status', ReservationStatus::Cancelled)
+            ->whereDoesntHave('clientNotes');
+    }
+
+    /**
      * Outstanding obligations across the filtered set: how many reservations are
      * unpaid/overdue and the approximate amount owed.
      *

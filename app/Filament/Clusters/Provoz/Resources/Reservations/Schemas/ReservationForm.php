@@ -5,6 +5,7 @@ namespace App\Filament\Clusters\Provoz\Resources\Reservations\Schemas;
 use App\Filament\Clusters\Provoz\Resources\Clients\ClientResource;
 use App\Filament\Clusters\Provoz\Resources\Services\ServiceResource;
 use App\Filament\Clusters\Provoz\Resources\Users\UserResource;
+use App\Filament\Support\RecordLinks;
 use App\Filament\Support\Schemas\PresenceBanner;
 use App\Filament\Support\Schemas\RecordTimestamps;
 use App\Filament\Support\Schemas\ResponsiveColumns;
@@ -13,6 +14,7 @@ use App\Models\User;
 use App\Support\Clients\PlaceholderEmail;
 use App\Support\Clients\ResolveCustomerAccount;
 use App\Support\Mentions\StaffMentions;
+use App\Support\StaffScope;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\DatePicker;
@@ -28,6 +30,7 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Enums\Width;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Database\Eloquent\Builder;
 
 class ReservationForm
 {
@@ -76,9 +79,9 @@ class ReservationForm
                         'openTherapist',
                         'Terapeut',
                         'therapist_id',
-                        // therapist_id is a StaffProfile id; the profile is edited on
-                        // its owning User, so resolve to the user and link there.
-                        fn (string $id): string => UserResource::getUrl('edit', ['record' => StaffProfile::whereKey($id)->value('user_id')]),
+                        // therapist_id is a StaffProfile id; the profile hangs off its
+                        // owning User, so resolve to the user and link there.
+                        fn (string $id): ?string => self::userDetailUrl($id),
                     ),
                 ] : [])
                 ->schema([
@@ -127,10 +130,14 @@ class ReservationForm
                             ->preload()
                             ->required()
                             ->live(),
+                        // Staff scoped to their own work book for themselves only: the
+                        // picker offers nobody else and defaults to them.
                         Select::make('therapist_id')
                             ->label('Terapeut')
-                            ->relationship('therapist')
+                            ->relationship('therapist', modifyQueryUsing: fn (Builder $query): Builder => $query
+                                ->when(StaffScope::current()->staffProfileId, fn (Builder $scoped, string $id) => $scoped->whereKey($id)))
                             ->getOptionLabelFromRecordUsing(fn (StaffProfile $record): ?string => $record->user?->name)
+                            ->default(fn (): ?string => StaffScope::current()->staffProfileId)
                             ->searchable()
                             ->preload()
                             ->required()
@@ -179,17 +186,32 @@ class ReservationForm
      * once a value is picked. Lets the admin jump straight to the chosen client / service
      * / therapist from the reservation form.
      *
-     * @param  callable(string): string  $url  Builds the target URL from the selected id.
+     * @param  callable(string): ?string  $url  Builds the target URL from the selected id.
      */
     private static function openRecordAction(string $name, string $label, string $field, callable $url): Action
     {
+        // A viewer who may not open the target gets no link at all, rather than
+        // one that dead-ends in a 403.
         return Action::make($name)
             ->label($label)
             ->icon(Heroicon::OutlinedArrowTopRightOnSquare)
             ->color('gray')
             ->link()
-            ->visible(fn (Get $get): bool => filled($get($field)))
+            ->visible(fn (Get $get): bool => filled($get($field)) && $url($get($field)) !== null)
             ->url(fn (Get $get): ?string => filled($get($field)) ? $url($get($field)) : null, shouldOpenInNewTab: true);
+    }
+
+    /**
+     * The team page of the user owning a staff profile — the detail page, since
+     * editing a colleague is administrators-only.
+     */
+    private static function userDetailUrl(string $staffProfileId): ?string
+    {
+        $user = User::whereKey(StaffProfile::whereKey($staffProfileId)->value('user_id'))->first();
+
+        return $user === null
+            ? null
+            : RecordLinks::detailUrl(UserResource::class, $user);
     }
 
     /**

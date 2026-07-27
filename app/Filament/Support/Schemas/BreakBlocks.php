@@ -31,7 +31,7 @@ class BreakBlocks
         return Select::make($name)
             ->label('Pauza po termínu')
             ->options(self::options())
-            ->default(1)
+            ->default(0)
             ->required()
             ->native(false)
             ->helperText('Kolik času si terapeut nechává po každém termínu. Jednotlivé služby mohou mít vlastní hodnotu.');

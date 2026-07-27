@@ -4,7 +4,7 @@ icon: heroicon-o-arrows-right-left
 keywords: [přesun, přeobjednat, změna termínu, posunout, e-mail o změně]
 ---
 
-Termín přesunete přetažením v kalendáři nebo úpravou data a času na kartě rezervace.
+Termín přesunete úpravou data a času — buď v okně, které se otevře po kliknutí na rezervaci v kalendáři, nebo na kartě rezervace. Tažením myší se v kalendáři nepřesouvá; každá změna termínu jde přes formulář, aby se ověřila dostupnost.
 
 ## E-mail o změně
 

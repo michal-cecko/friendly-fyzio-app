@@ -55,7 +55,10 @@ class RescheduleReservationTest extends TestCase
             'published_at' => now(),
         ]);
 
-        $this->therapist = StaffProfile::factory()->create(['published_at' => now()]);
+        // The 10:30 anchor these tests move to only exists because this therapist
+        // rests a block between visits (08:00 → 09:15 → 10:30). Nobody takes a
+        // break by default, so hers is set here rather than inherited.
+        $this->therapist = StaffProfile::factory()->create(['published_at' => now(), 'break_blocks' => 1]);
         $this->service->therapists()->attach($this->therapist);
 
         TherapistWorkBlock::factory()->create([

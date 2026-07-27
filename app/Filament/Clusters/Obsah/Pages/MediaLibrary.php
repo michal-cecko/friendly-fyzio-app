@@ -28,6 +28,16 @@ class MediaLibrary extends BaseMediaLibrary
         return true;
     }
 
+    /**
+     * The one Obsah page a therapist or lecturer holds a permission for, so it
+     * is what kept the cluster in their sidebar. It follows the cluster's rule
+     * instead — closing the page as well as the navigation entry.
+     */
+    public static function canAccess(): bool
+    {
+        return ObsahCluster::canAccess() && parent::canAccess();
+    }
+
     public static function getNavigationLabel(): string
     {
         return 'Knihovna médií';

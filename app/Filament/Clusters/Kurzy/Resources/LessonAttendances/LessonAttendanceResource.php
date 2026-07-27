@@ -10,6 +10,7 @@ use App\Filament\Clusters\Kurzy\Resources\LessonAttendances\Tables\LessonAttenda
 use App\Filament\Support\Actions\EditExcuseAction;
 use App\Filament\Support\Actions\ToggleLessonAttendanceAction;
 use App\Filament\Support\AttendancePresenter;
+use App\Filament\Support\Concerns\RestrictedToLecturers;
 use App\Filament\Support\Concerns\ScopedToTherapist;
 use App\Models\LessonAttendance;
 use BackedEnum;
@@ -33,6 +34,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class LessonAttendanceResource extends Resource
 {
+    use RestrictedToLecturers;
     use ScopedToTherapist;
 
     protected static ?string $model = LessonAttendance::class;
@@ -113,7 +115,7 @@ class LessonAttendanceResource extends Resource
     {
         return parent::getEloquentQuery()->with(['client', 'enrollment.series', 'booking', 'lesson.series.course'])
             ->when(static::therapistUserScopeId(), fn (Builder $query, string $id) => $query
-                ->whereHas('lesson.series.course', fn (Builder $course) => $course->where('instructor_id', $id)));
+                ->whereHas('lesson', fn (Builder $lesson) => $lesson->ledBy($id)));
     }
 
     public static function getRelations(): array

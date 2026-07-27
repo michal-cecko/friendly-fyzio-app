@@ -6,6 +6,7 @@ use App\Enums\CourseSeriesStatus;
 use App\Enums\CourseSeriesVisibility;
 use App\Filament\Support\Tables\OccupancyColumn;
 use App\Filament\Support\Tables\TimestampColumns;
+use App\Models\CourseSeries;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -27,6 +28,13 @@ class CourseSeriesTable
                 TextColumn::make('name')
                     ->label('Název')
                     ->searchable(),
+                TextColumn::make('instructor.name')
+                    ->label('Lektor')
+                    // An empty column means the course's own instructor teaches the série.
+                    ->state(fn (CourseSeries $record): ?string => $record->leadInstructor()?->name)
+                    ->description(fn (CourseSeries $record): ?string => $record->instructor_id === null ? 'z kurzu' : null)
+                    ->placeholder('—')
+                    ->toggleable(),
                 TextColumn::make('start_date')
                     ->label('Začátek')
                     ->date('d.m.Y')

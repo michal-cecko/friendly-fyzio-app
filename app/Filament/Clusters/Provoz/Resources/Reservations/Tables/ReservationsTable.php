@@ -120,6 +120,10 @@ class ReservationsTable
                     ->label('Nevybaveno (proběhlé)')
                     ->query(fn (Builder $query): Builder => ReservationMetrics::scopeUnsettledPast($query))
                     ->toggle(),
+                Filter::make('missing_note')
+                    ->label('Bez poznámky z terapie')
+                    ->query(fn (Builder $query): Builder => ReservationMetrics::scopeMissingVisitNote($query))
+                    ->toggle(),
                 TrashedFilter::make(),
             ])
             ->recordActions([

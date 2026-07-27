@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Console\Commands\CoursesImport;
+use App\Console\Commands\VoucherImport;
 use App\Enums\Capability;
 use App\Models\Building;
 use App\Models\Room;
@@ -62,6 +63,7 @@ class RealDataSeeder extends Seeder
         $this->seedBuildingAndRooms();
         $this->importErgobodyExport();
         $this->importCoursesExport();
+        $this->importVouchersExport();
         $this->importWorkBlocksExport();
     }
 
@@ -186,6 +188,35 @@ class RealDataSeeder extends Seeder
 
         $this->command?->info('Importing historical courses, workshops and enrollments…');
         $this->command?->call('courses:import', ['path' => self::GOOGLESHEETS_PATH]);
+    }
+
+    /**
+     * Turns the outstanding gift vouchers into client credit — one standalone
+     * top-up per live voucher, its code kept in the description.
+     *
+     * Runs last of the three client imports on purpose: holders are matched by
+     * name ({@see VoucherImport::findClient}), so every client the Ergobody and
+     * course imports create must already exist, or a known holder would get a
+     * second, placeholder account carrying their credit.
+     */
+    protected function importVouchersExport(): void
+    {
+        if (app()->runningUnitTests()) {
+            return;
+        }
+
+        $directory = base_path(self::GOOGLESHEETS_PATH);
+
+        // Case-trimmed on purpose, the way ErgobodyImport matches 'ehled':
+        // the sheet is exported as "Dárkové poukazy — …", capitalisation varies.
+        if (! glob($directory.'/*oukaz*.csv')) {
+            $this->command?->warn("Voucher export not found in {$directory} — skipping gift vouchers.");
+
+            return;
+        }
+
+        $this->command?->info('Importing outstanding gift vouchers as client credit…');
+        $this->command?->call('vouchers:import', ['path' => self::GOOGLESHEETS_PATH]);
     }
 
     protected function seedStaff(): void

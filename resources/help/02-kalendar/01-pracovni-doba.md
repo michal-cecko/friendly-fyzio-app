@@ -27,3 +27,7 @@ Pokud jsou na smazaný den už rezervace, zůstanou — musíte je přesunout ne
 Místnost se dá zablokovat nezávisle na lidech — údržba, malování, pronájem. Blokace **rozřízne** pracovní blok na části: to, co zbyde před ní a za ní, se plánuje jako dva samostatné úseky.
 
 > **Rozdíl oproti rezervaci:** rezervace je obsazený čas uvnitř směny. Blokace místnosti směnu rozdělí. Proto se po blokaci nabídka termínů „restartuje" od jejího konce.
+
+### Kdo blokaci upraví
+
+Blokace nemá svého terapeuta, takže patří tomu, **kdo ji založil**. Terapeutka smí upravit a smazat jen vlastní blokace; cizí, importované a ty od administrátora vidí zesvětlené a jen ke čtení — pronájem sálu jí tak nezmizí pod rukama. Administrátor spravuje všechny.

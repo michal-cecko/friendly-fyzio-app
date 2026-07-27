@@ -9,6 +9,7 @@ use App\Filament\Clusters\Kurzy\Resources\CourseEnrollments\Pages\ViewCourseEnro
 use App\Filament\Clusters\Kurzy\Resources\CourseEnrollments\Schemas\CourseEnrollmentForm;
 use App\Filament\Clusters\Kurzy\Resources\CourseEnrollments\Schemas\CourseEnrollmentInfolist;
 use App\Filament\Clusters\Kurzy\Resources\CourseEnrollments\Tables\CourseEnrollmentsTable;
+use App\Filament\Support\Concerns\RestrictedToLecturers;
 use App\Filament\Support\Concerns\ScopedToTherapist;
 use App\Filament\Support\RelationManagers\PaymentsRelationManager;
 use App\Models\CourseEnrollment;
@@ -23,6 +24,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class CourseEnrollmentResource extends Resource
 {
+    use RestrictedToLecturers;
     use ScopedToTherapist;
 
     protected static ?string $model = CourseEnrollment::class;
@@ -108,7 +110,7 @@ class CourseEnrollmentResource extends Resource
     {
         return parent::getEloquentQuery()->with(['client', 'series.course'])
             ->when(static::therapistUserScopeId(), fn (Builder $query, string $id) => $query
-                ->whereHas('series.course', fn (Builder $course) => $course->where('instructor_id', $id)));
+                ->whereHas('series', fn (Builder $series) => $series->ledBy($id)));
     }
 
     public static function getRelations(): array

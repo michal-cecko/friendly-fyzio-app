@@ -34,13 +34,15 @@ class ViewClient extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            EditAction::make(),
+            EditAction::make()
+                ->visible(fn (User $record): bool => ClientResource::canManageClient($record)),
             ActionGroup::make([
                 CreateReservationAction::make()->client($this->getRecord()),
                 AdjustCreditAction::make()->record($this->getRecord()),
                 Impersonate::make()->record($this->getRecord()),
                 ResetPasswordAction::make(),
-                DeleteAction::make(),
+                DeleteAction::make()
+                    ->visible(fn (User $record): bool => ClientResource::canManageClient($record)),
                 ActivityLogAction::make(),
             ])
                 ->label('Další akce')

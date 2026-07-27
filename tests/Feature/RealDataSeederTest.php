@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\Capability;
 use App\Models\Building;
+use App\Models\CreditTransaction;
 use App\Models\Room;
 use App\Models\StaffProfile;
 use App\Models\User;
@@ -96,6 +97,23 @@ class RealDataSeederTest extends TestCase
             'Tělocvična velká' => 'TV',
             'Tělocvična malá' => 'TM',
         ], $rooms->all());
+    }
+
+    public function test_does_not_pull_the_real_exports_into_the_test_database(): void
+    {
+        // The exports live in the working tree, so base_path() resolves them
+        // during tests too — only the runningUnitTests() guard on each import
+        // keeps real clients, their history and their voucher credit out of
+        // here. Losing that guard would be silent, hence this test.
+        $this->seedRealData();
+
+        $this->assertSame(0, CreditTransaction::query()->count());
+        $this->assertSame(0, User::query()->customers()->count());
+        $this->assertSame(
+            0,
+            User::query()->where('email', 'like', 'poukaz+%')->count(),
+            'Voucher holders must not be created by a test-run seed.',
+        );
     }
 
     public function test_is_idempotent(): void

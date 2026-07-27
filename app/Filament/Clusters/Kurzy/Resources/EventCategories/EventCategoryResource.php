@@ -10,6 +10,7 @@ use App\Filament\Clusters\Kurzy\Resources\EventCategories\Pages\ViewEventCategor
 use App\Filament\Clusters\Kurzy\Resources\EventCategories\Schemas\EventCategoryForm;
 use App\Filament\Clusters\Kurzy\Resources\EventCategories\Schemas\EventCategoryInfolist;
 use App\Filament\Clusters\Kurzy\Resources\EventCategories\Tables\EventCategoriesTable;
+use App\Filament\Support\Concerns\RestrictedToLecturers;
 use App\Models\EventCategory;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -19,6 +20,8 @@ use Filament\Tables\Table;
 
 class EventCategoryResource extends Resource
 {
+    use RestrictedToLecturers;
+
     protected static ?string $model = EventCategory::class;
 
     protected static ?string $cluster = KurzyCluster::class;
@@ -42,6 +45,15 @@ class EventCategoryResource extends Resource
     public static function getNavigationLabel(): string
     {
         return 'Kategorie akcí';
+    }
+
+    /**
+     * Admins only in the sidebar — same reasoning as the course categories, and
+     * likewise no change to who may open the pages themselves.
+     */
+    public static function shouldRegisterNavigation(): bool
+    {
+        return auth()->user()?->isAdmin() ?? false;
     }
 
     /**

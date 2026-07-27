@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Enums\NavigationLocation;
+use App\Filament\Support\RecordLinks;
 use App\Listeners\LogSentEmail;
 use App\Listeners\SuppressNonAdminMail;
 use App\Models\Course;
@@ -29,8 +30,11 @@ use Filament\Auth\Notifications\ResetPassword as FilamentResetPassword;
 use Filament\Auth\Notifications\VerifyEmailChange as FilamentVerifyEmailChange;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\RichEditor\TextColor;
+use Filament\Resources\Pages\ListRecords;
 use Filament\Support\Facades\FilamentIcon;
 use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Notifications\Events\NotificationSending;
 use Illuminate\Notifications\Events\NotificationSent;
@@ -161,6 +165,29 @@ class AppServiceProvider extends ServiceProvider
                 ['table'],
                 ['undo', 'redo'],
             ]));
+
+        // Clicking a row opens the record's detail page, never its edit form.
+        // Filament's own default consults the table's actions first, so a list
+        // whose row actions are Edit-only (most of them) links straight into the
+        // form — and for staff who may read but not write, into a 403. Resources
+        // without a detail page keep Filament's default; a table that sets its own
+        // ->recordUrl() still wins, since the resource configures the table after
+        // this hook has run.
+        Table::configureUsing(function (Table $table): void {
+            $livewire = $table->getLivewire();
+
+            if (! $livewire instanceof ListRecords) {
+                return;
+            }
+
+            $resource = $livewire::getResource();
+
+            if (! $resource::hasPage('view')) {
+                return;
+            }
+
+            $table->recordUrl(fn (Model $record): ?string => RecordLinks::detailUrl($resource, $record));
+        });
 
         // The file/media picker's "clear" button gets its label from the action
         // name, so it stays English no matter the locale. Configuring the parent

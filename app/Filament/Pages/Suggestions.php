@@ -31,11 +31,15 @@ class Suggestions extends Page
 
     protected string $view = 'filament.pages.suggestions';
 
+    /**
+     * Staff only. Anyone who treats or teaches gets the same page narrowed to
+     * their own work; administrators see the whole clinic.
+     */
     public static function canAccess(): bool
     {
         $user = auth()->user();
 
-        return (bool) ($user?->isAdmin() || $user?->isTherapist());
+        return (bool) ($user?->isAdmin() || $user?->isTherapist() || $user?->isLecturer());
     }
 
     /** The way in is the topbar icon, not a sidebar entry. */

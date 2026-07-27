@@ -8,6 +8,7 @@ use App\Filament\Clusters\Finance\Resources\Payments\Pages\ViewPayment;
 use App\Filament\Clusters\Finance\Resources\Payments\Schemas\PaymentForm;
 use App\Filament\Clusters\Finance\Resources\Payments\Schemas\PaymentInfolist;
 use App\Filament\Clusters\Finance\Resources\Payments\Tables\PaymentsTable;
+use App\Filament\Support\Concerns\EscapesClusterNavigation;
 use App\Models\Payment;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -20,6 +21,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class PaymentResource extends Resource
 {
+    use EscapesClusterNavigation;
+
     protected static ?string $model = Payment::class;
 
     protected static ?string $cluster = FinanceCluster::class;

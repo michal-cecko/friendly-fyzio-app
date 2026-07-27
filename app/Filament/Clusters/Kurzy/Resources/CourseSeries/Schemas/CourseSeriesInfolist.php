@@ -27,6 +27,14 @@ class CourseSeriesInfolist
                                 : null),
                         TextEntry::make('name')
                             ->label('Název'),
+                        TextEntry::make('instructor.name')
+                            ->label('Lektor')
+                            // An empty column means the course's own instructor teaches the série.
+                            ->state(fn (CourseSeries $record): ?string => $record->leadInstructor()?->name)
+                            ->helperText(fn (CourseSeries $record): ?string => $record->instructor_id === null
+                                ? 'Převzato z kurzu'
+                                : null)
+                            ->placeholder('—'),
                         TextEntry::make('start_date')
                             ->label('Začátek')
                             ->date('d.m.Y')

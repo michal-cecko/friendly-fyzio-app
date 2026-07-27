@@ -80,13 +80,19 @@ class UsersTable
                 TrashedFilter::make(),
             ])
             ->recordActions([
-                EditAction::make(),
+                // Non-admin staff read the team roster and nothing more, and
+                // Filament does not authorize action buttons against the
+                // resource on its own — every write is gated explicitly.
+                EditAction::make()
+                    ->visible(fn (): bool => UserResource::canManageStaff()),
                 DeactivateUserAction::make(),
                 ReactivateUserAction::make(),
                 DeleteAction::make()
                     ->visible(fn (User $record): bool => UserResource::canDeleteUser($record)),
-                RestoreAction::make(),
-                ForceDeleteAction::make(),
+                RestoreAction::make()
+                    ->visible(fn (): bool => UserResource::canManageStaff()),
+                ForceDeleteAction::make()
+                    ->visible(fn (): bool => UserResource::canManageStaff()),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
@@ -96,7 +102,8 @@ class UsersTable
                         ->modalHeading('Trvale smazat vybrané uživatele'),
                     RestoreBulkAction::make()
                         ->modalHeading('Obnovit vybrané uživatele'),
-                ]),
+                ])
+                    ->visible(fn (): bool => UserResource::canManageStaff()),
             ]);
     }
 }

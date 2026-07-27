@@ -12,7 +12,7 @@ use Filament\Support\Icons\Heroicon;
  * Fully deactivates an account (see User::deactivated_at): the person loses
  * admin-panel access, client-zone login and online booking, while the account
  * and its history stay on record. The mirror of {@see ReactivateUserAction};
- * only shown for active accounts the current admin is allowed to deactivate.
+ * only shown for active accounts the current user is allowed to manage.
  */
 class DeactivateUserAction extends Action
 {
@@ -50,23 +50,20 @@ class DeactivateUserAction extends Action
             ->visible(function (User $record): bool {
                 $actor = auth()->user();
 
-                if (! $actor instanceof User || ! $actor->isAdmin()) {
-                    return false;
-                }
-
                 // Already deactivated → only Reactivate applies.
                 if ($record->isDeactivated()) {
                     return false;
                 }
 
-                // Never let an admin lock themselves out.
-                if ($record->is($actor)) {
+                // Never let someone lock themselves out.
+                if ($actor instanceof User && $record->is($actor)) {
                     return false;
                 }
 
-                // A peer admin/super-admin may only be deactivated by a
-                // super-admin (mirrors UserResource::canDeleteUser).
-                return $record->isAdmin() ? $actor->isSuperAdmin() : true;
+                // Customers are any staff member's to deactivate; a colleague's
+                // account is admins-only, and a peer admin/super-admin needs a
+                // super-admin. See User::isManageableBy().
+                return $record->isManageableBy($actor);
             })
             ->action(function (User $record): void {
                 $released = app(DeactivateAccount::class)($record);

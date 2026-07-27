@@ -59,6 +59,19 @@ class Course extends Model
     }
 
     /**
+     * Courses the given user leads: the ones they instruct, plus the ones where
+     * they were put in charge of a single série. Without the second half a
+     * lecturer handed one série would have no way to reach it — the série is
+     * only ever opened from its course.
+     */
+    public function scopeLedBy(Builder $query, string $userId): Builder
+    {
+        return $query->where(fn (Builder $nested) => $nested
+            ->where($this->qualifyColumn('instructor_id'), $userId)
+            ->orWhereHas('series', fn (Builder $series) => $series->where('instructor_id', $userId)));
+    }
+
+    /**
      * Standalone lessons pinned to this course by the optional `course_id` link
      * — the hand-made "ochutnávka" offers.
      */

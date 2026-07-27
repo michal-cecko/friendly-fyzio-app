@@ -5,6 +5,10 @@
     $plugin = \Saade\FilamentFullCalendar\FilamentFullCalendarPlugin::get();
     $hasSelection = filled($therapistIds);
     $isTemplate = $this->isTemplateMode();
+    // Scoped staff (therapist/lecturer without admin rights) see the whole team's
+    // grid, but only their own entries are theirs to open.
+    $isScoped = $this->isScopedStaff();
+    $currentUserId = auth()->id();
 @endphp
 
 <x-filament-widgets::widget>
@@ -185,15 +189,17 @@
                         $inFilter = in_array($id, $therapistIds, true);
                         $isOn = ! $hasSelection || $inFilter;
                         $accent = $this->therapistColor($id);
+                        $isMe = $therapist->user_id === $currentUserId;
                     @endphp
                     <button
                         type="button"
                         wire:click="toggleTherapist('{{ $id }}')"
-                        @class(['ff-chip', 'is-muted' => ! $isOn])
+                        @class(['ff-chip', 'is-muted' => ! $isOn, 'is-me' => $isMe])
                         @style(["border-color: {$accent}" => $isOn])
+                        @if ($isMe) title="{{ $therapist->user?->name }}" @endif
                     >
                         <span class="ff-chip-avatar" style="background: {{ $accent }}">{{ $this->therapistInitials($therapist->user?->name) }}</span>
-                        <span>{{ $therapist->user?->name }}</span>
+                        <span>{{ $isMe ? 'Já' : $therapist->user?->name }}</span>
                         @if ($inFilter)
                             <svg class="ff-chip-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                         @endif
@@ -201,6 +207,13 @@
                 @endforeach
 
                 <button type="button" class="ff-all" wire:click="clearTherapists">Všichni</button>
+
+                @if ($isScoped)
+                    <span class="ff-readonly-hint" title="Kalendář ukazuje celý tým. Otevřít a upravit můžete jen své vlastní termíny a svou pracovní dobu.">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        <span>Termíny kolegů jsou jen pro čtení</span>
+                    </span>
+                @endif
 
                 <span class="ff-legend">
                     <span class="ff-leg"><span class="ff-leg-sw" style="background:#EEF2FF;border-color:#6366F1"></span>Blokace</span>
@@ -417,6 +430,9 @@
         .ff-chip.is-muted { border-color: transparent; color: var(--ff-faint); }
         .ff-chip.is-muted .ff-chip-avatar { opacity: .5; }
         .ff-chip.is-muted:hover { color: var(--ff-muted); }
+        .ff-chip.is-me { font-weight: 700; }
+        .ff-readonly-hint { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ff-faint); cursor: default; }
+        .ff-readonly-hint svg { width: 13px; height: 13px; }
         .ff-all { font-size: 14px; color: var(--ff-muted); background: transparent; border: none; cursor: pointer; padding: 4px 8px; }
         .ff-all:hover { color: var(--ff-text); }
         .ff-legend { margin-left: auto; display: inline-flex; align-items: center; gap: 12px; }
@@ -522,6 +538,12 @@
         .ff-cal .fc-event.ff-selected { outline: 2px solid var(--ff-brand); outline-offset: 1px; box-shadow: 0 0 0 4px rgba(237, 134, 163, .18); }
         /* Courses and one-off events cannot be bulk-selected, so they read as inert while selecting. */
         .ff-cal-selecting .fc-event.ff-course, .ff-cal-selecting .fc-event.ff-oneoff { cursor: not-allowed; }
+        /* A colleague's work: on the grid for context, not to be touched. Faded so
+           the viewer's own cards read first, and inert to clicks. Declared after the
+           cancelled/trashed rules so its opacity wins on a colleague's storno. */
+        .ff-cal .fc-event.ff-foreign { opacity: .32; cursor: default; }
+        .ff-cal .fc-event.ff-foreign:hover { opacity: .62; }
+        .ff-cal-selecting .fc-event.ff-foreign { cursor: not-allowed; }
 
         .ff-event { display: flex; flex-direction: column; gap: 2px; height: 100%; padding: 7px 9px; overflow: hidden; }
         .ff-event-block .ff-event-time { color: #6366F1; }

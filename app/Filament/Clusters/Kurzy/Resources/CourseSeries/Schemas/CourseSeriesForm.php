@@ -6,6 +6,8 @@ use App\Enums\CourseSeriesStatus;
 use App\Enums\CourseSeriesVisibility;
 use App\Enums\WaitlistPromotionMode;
 use App\Filament\Support\Schemas\PresenceBanner;
+use App\Models\Course;
+use App\Models\User;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Select;
@@ -13,8 +15,10 @@ use Filament\Forms\Components\TextInput;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Database\Eloquent\Builder;
 
 class CourseSeriesForm
 {
@@ -50,12 +54,26 @@ class CourseSeriesForm
                                     ->preload()
                                     ->native(false)
                                     ->required()
+                                    ->live()
                                     ->hidden(fn ($livewire): bool => $livewire instanceof RelationManager)
                                     ->columnSpan(['default' => 1, '@xl' => 6, '@3xl' => 4]),
                                 TextInput::make('name')
                                     ->label('Název')
                                     ->required()
                                     ->maxLength(255)
+                                    ->columnSpan(['default' => 1, '@xl' => 6, '@3xl' => 4]),
+                                Select::make('instructor_id')
+                                    ->label('Lektor')
+                                    ->relationship('instructor', 'name', fn (Builder $query): Builder => $query->lecturers())
+                                    // The lecturers() scope also filters the label lookup, so a série
+                                    // assigned to a non-lecturer would show the raw UUID. Resolve the
+                                    // selected value's label unscoped so the name always renders.
+                                    ->getOptionLabelUsing(fn ($value): ?string => User::find($value)?->name)
+                                    ->searchable()
+                                    ->preload()
+                                    ->native(false)
+                                    ->placeholder(fn (Get $get, $livewire): string => self::courseInstructorName($get, $livewire) ?? 'Lektor kurzu')
+                                    ->helperText('Prázdné = sérii vede lektor kurzu. Vyplněním sérii převezme někdo jiný — a uvidí ji ve svém přehledu.')
                                     ->columnSpan(['default' => 1, '@xl' => 6, '@3xl' => 4]),
                                 TextInput::make('invoice_title')
                                     ->label('Název pro fakturaci')
@@ -119,5 +137,19 @@ class CourseSeriesForm
                             ]),
                     ]),
             ]);
+    }
+
+    /**
+     * The instructor a série falls back to when it names none of its own. Read
+     * from the owner record when the form is opened from a course's Série tab,
+     * where the kurz picker is hidden and the field therefore stays empty.
+     */
+    private static function courseInstructorName(Get $get, mixed $livewire = null): ?string
+    {
+        $course = $livewire instanceof RelationManager && $livewire->getOwnerRecord() instanceof Course
+            ? $livewire->getOwnerRecord()
+            : Course::find($get('course_id'));
+
+        return $course?->instructor?->name;
     }
 }

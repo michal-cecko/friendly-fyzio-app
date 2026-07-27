@@ -526,7 +526,7 @@ class DemoSeeder extends Seeder
         ];
 
         foreach ($therapists as $therapist) {
-            $therapist->update(['break_blocks' => $blocksByEmail[$therapist->user->email] ?? 1]);
+            $therapist->update(['break_blocks' => $blocksByEmail[$therapist->user->email] ?? 0]);
         }
 
         $lucie = $therapists->first(

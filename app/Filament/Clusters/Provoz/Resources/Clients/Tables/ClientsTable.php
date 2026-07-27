@@ -2,8 +2,10 @@
 
 namespace App\Filament\Clusters\Provoz\Resources\Clients\Tables;
 
+use App\Filament\Clusters\Provoz\Resources\Clients\ClientResource;
 use App\Filament\Support\Actions\DeactivateUserAction;
 use App\Filament\Support\Actions\ReactivateUserAction;
+use App\Models\User;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -135,13 +137,21 @@ class ClientsTable
             ])
             ->recordActions([
                 ViewAction::make(),
-                EditAction::make(),
+                // Filament does not authorize action buttons against the resource
+                // on its own. Customers are every staff member's to manage; the
+                // guard only bites on an account that is also staff, whose record
+                // belongs in Tým under admin-only rules.
+                EditAction::make()
+                    ->visible(fn (User $record): bool => ClientResource::canManageClient($record)),
                 DeactivateUserAction::make(),
                 ReactivateUserAction::make(),
                 Impersonate::make(),
-                DeleteAction::make(),
-                RestoreAction::make(),
-                ForceDeleteAction::make(),
+                DeleteAction::make()
+                    ->visible(fn (User $record): bool => ClientResource::canManageClient($record)),
+                RestoreAction::make()
+                    ->visible(fn (User $record): bool => ClientResource::canManageClient($record)),
+                ForceDeleteAction::make()
+                    ->visible(fn (User $record): bool => ClientResource::canManageClient($record)),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

@@ -30,14 +30,14 @@ class Problems extends Page
     private const HORIZON_DAYS = 30;
 
     /**
-     * Staff only. A pure therapist gets the same page narrowed to clashes they
-     * are a party to; administrators see the whole clinic.
+     * Staff only. Anyone who treats or teaches gets the same page narrowed to
+     * clashes they are a party to; administrators see the whole clinic.
      */
     public static function canAccess(): bool
     {
         $user = auth()->user();
 
-        return (bool) ($user?->isAdmin() || $user?->isTherapist());
+        return (bool) ($user?->isAdmin() || $user?->isTherapist() || $user?->isLecturer());
     }
 
     /** The way in is the topbar icon, not a sidebar entry. */

@@ -5,11 +5,13 @@ namespace App\Models;
 use App\Contracts\Emailable;
 use App\Enums\Capability;
 use App\Enums\EmailTemplateKey;
+use App\Filament\Support\Concerns\ScopedToTherapist;
 use App\Models\Concerns\Auditable;
 use App\Notifications\Auth\ResetPasswordNotification;
 use App\Notifications\Auth\VerifyEmailNotification;
 use App\Notifications\ClientAccountCreatedNotification;
 use App\Support\Emails\CopyRecipients;
+use App\Support\StaffScope;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -285,6 +287,20 @@ class User extends Authenticatable implements Emailable, FilamentUser, HasPasske
     }
 
     /**
+     * Whether the panel is narrowed to this user's own work: they treat or
+     * teach and are not administrators, so they see and manage their own
+     * reservations, working hours, courses and lessons — never a colleague's.
+     *
+     * Administrators — including an admin who also practises — are never
+     * scoped. This is the single definition every row-level scope builds on
+     * ({@see StaffScope}, {@see ScopedToTherapist}).
+     */
+    public function isScopedToOwnWork(): bool
+    {
+        return ! $this->isAdmin() && ($this->isTherapist() || $this->isLecturer());
+    }
+
+    /**
      * Whether this user may see aggregate money figures (revenue totals,
      * outstanding sums, per-client spend).
      *
@@ -327,6 +343,18 @@ class User extends Authenticatable implements Emailable, FilamentUser, HasPasske
     public function scopeTherapists(Builder $query): Builder
     {
         return $query->whereHas('roles', fn (Builder $q): Builder => $q->where('name', Capability::Therapist->roleName()));
+    }
+
+    /**
+     * Users with admin-level access (see isAdmin()) — the office, and the
+     * audience for in-app notices about what staff changed.
+     */
+    public function scopeAdmins(Builder $query): Builder
+    {
+        return $query->whereHas('roles', fn (Builder $q): Builder => $q->whereIn('name', [
+            Capability::Admin->roleName(),
+            Capability::SuperAdmin->roleName(),
+        ]));
     }
 
     public function scopeLecturers(Builder $query): Builder
@@ -399,6 +427,35 @@ class User extends Authenticatable implements Emailable, FilamentUser, HasPasske
         return true;
     }
 
+    /**
+     * Whether $actor may change this account rather than merely look at it.
+     *
+     * Customer accounts belong to whoever runs the practice day to day, so any
+     * staff member — therapists and lecturers included — may create, edit and
+     * delete them. Staff accounts are administrators' business: everyone on
+     * staff may read a colleague's record, but only an admin may touch it, and
+     * an admin/super-admin peer needs a super-admin.
+     *
+     * An account that is both staff and customer counts as staff — the stricter
+     * side wins.
+     */
+    public function isManageableBy(?object $actor): bool
+    {
+        if (! $actor instanceof self || ! $actor->isStaff()) {
+            return false;
+        }
+
+        if (! $this->isStaff()) {
+            return true;
+        }
+
+        if (! $actor->isAdmin()) {
+            return false;
+        }
+
+        return $this->isAdmin() ? $actor->isSuperAdmin() : true;
+    }
+
     public function clientProfile(): HasOne
     {
         return $this->hasOne(ClientProfile::class);
@@ -430,6 +487,14 @@ class User extends Authenticatable implements Emailable, FilamentUser, HasPasske
     public function clientNotes(): HasMany
     {
         return $this->hasMany(ClientNote::class, 'client_id');
+    }
+
+    /**
+     * Therapy notes this user wrote about others (see ClientNote::author).
+     */
+    public function authoredClientNotes(): HasMany
+    {
+        return $this->hasMany(ClientNote::class, 'author_id');
     }
 
     /**

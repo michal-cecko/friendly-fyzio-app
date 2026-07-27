@@ -70,9 +70,12 @@ class ServicesRelationManager extends RelationManager
                     ->options(ServiceVisibility::class),
             ])
             ->headerActions([
+                // Custom action, so it carries no implicit policy check: staff who
+                // only read the catalogue (therapists, lecturers) must not see it.
                 Action::make('createService')
                     ->label('Nová služba')
                     ->icon(Heroicon::OutlinedPlus)
+                    ->visible(fn (): bool => (bool) auth()->user()?->can('create', Service::class))
                     ->url(ServiceResource::getUrl('create')),
             ])
             ->recordActions([

@@ -31,7 +31,11 @@ class ViewUser extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            EditAction::make(),
+            // Filament does not authorize action buttons against the resource on
+            // its own — only the pages they lead to — so the read-only rule is
+            // spelled out here as well.
+            EditAction::make()
+                ->visible(fn (): bool => UserResource::canManageStaff()),
             ActionGroup::make([
                 Impersonate::make()->record($this->getRecord()),
                 SendEmailAction::make(),
@@ -45,7 +49,10 @@ class ViewUser extends ViewRecord
                 ->label('Akce')
                 ->icon(Heroicon::OutlinedEllipsisVertical)
                 ->color('gray')
-                ->button(),
+                ->button()
+                // Every action in the group acts on the account. Non-admin staff
+                // read a colleague's page and nothing more, so the whole button goes.
+                ->visible(fn (): bool => UserResource::canManageStaff()),
         ];
     }
 }

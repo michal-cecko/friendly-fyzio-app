@@ -36,6 +36,8 @@ use App\Support\Reservations\ReactivateReservation;
 use App\Support\Reservations\ReservationChangeSnapshot;
 use App\Support\Reservations\SlotTakenException;
 use App\Support\Settings;
+use App\Support\StaffScope;
+use App\Support\WorkBlocks\NotifyWorkScheduleChange;
 use App\Support\WorkBlocks\WorkBlockGenerator;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
@@ -169,6 +171,9 @@ class ReservationCalendar extends FullCalendarWidget
     /** @var Collection<int, StaffProfile>|null */
     protected ?Collection $therapistCache = null;
 
+    /** Resolved own staff profile id; `false` until {@see ownTherapistId()} looks it up. */
+    protected string|false|null $ownTherapistIdCache = false;
+
     /**
      * Pre-edit snapshot of the reservation being edited ({{ puvodni_* }} tokens),
      * captured in the edit action's before() hook and consumed in after() so the
@@ -219,15 +224,13 @@ class ReservationCalendar extends FullCalendarWidget
      * the lecturer-only accounts created by the historical courses import — as
      * well as admin/assistant profiles that neither treat nor teach.
      *
+     * The list is the same for everyone: scoped staff see the whole team's work
+     * on their grid — read-only and dimmed, {@see isForeignTherapist()}.
+     *
      * @return Collection<int, StaffProfile>
      */
     public function therapists(): Collection
     {
-        // A pure therapist (therapist, not also an admin) only sees their own
-        // calendar; admins keep the all-therapists view.
-        $user = auth()->user();
-        $pureTherapist = $user instanceof User && $user->isTherapist() && ! $user->isAdmin();
-
         return $this->therapistCache ??= StaffProfile::query()->with('user')
             ->published()
             ->whereHas('user', fn (Builder $query): Builder => $query
@@ -236,8 +239,131 @@ class ReservationCalendar extends FullCalendarWidget
                     Capability::Therapist->roleName(),
                     Capability::Lecturer->roleName(),
                 ])))
-            ->when($pureTherapist, fn (Builder $query) => $query->where('user_id', $user->getKey()))
             ->get();
+    }
+
+    /**
+     * Whether this calendar belongs to staff scoped to their own work — someone
+     * who treats or teaches without being an admin ({@see User::isScopedToOwnWork()}).
+     * Their grid carries the whole clinic — colleagues' visits and working hours,
+     * courses and events — but only their own entries can be opened, edited or
+     * bulk-selected; the rest is dimmed, read-only context.
+     */
+    public function isScopedStaff(): bool
+    {
+        return StaffScope::current()->isScoped();
+    }
+
+    /**
+     * The staff profile whose entries the viewer may manage: their own when they
+     * are scoped, null for an admin (who manages everything anyway). Scoped staff
+     * without a profile — a lecturer, say — own no visits and no working hours,
+     * which leaves that part of the grid read-only for them rather than open.
+     */
+    public function ownTherapistId(): ?string
+    {
+        if ($this->ownTherapistIdCache !== false) {
+            return $this->ownTherapistIdCache;
+        }
+
+        return $this->ownTherapistIdCache = StaffScope::current()->staffProfileId;
+    }
+
+    /**
+     * Whether a visit or working block belongs to someone else — dimmed on the
+     * grid and inert to clicks. Always false for admins.
+     */
+    public function isForeignTherapist(?string $staffProfileId): bool
+    {
+        if (! $this->isScopedStaff()) {
+            return false;
+        }
+
+        $ownId = $this->ownTherapistId();
+
+        return $ownId === null || $staffProfileId !== $ownId;
+    }
+
+    /**
+     * The lesson counterpart of {@see isForeignTherapist()}: lessons and one-off
+     * events reference their instructor by `users.id`, not by staff profile.
+     */
+    public function isForeignInstructor(?string $instructorUserId): bool
+    {
+        return $this->isScopedStaff() && $instructorUserId !== auth()->id();
+    }
+
+    /**
+     * The blocking counterpart of {@see isForeignTherapist()}: a blocking has no
+     * therapist, so it belongs to whoever created it. Rentals, imports and
+     * anything an administrator put on the grid carry no creator and are
+     * therefore nobody's to edit but an admin's.
+     */
+    public function isForeignBlocking(?string $createdBy): bool
+    {
+        return $this->isScopedStaff() && ($createdBy === null || $createdBy !== auth()->id());
+    }
+
+    /**
+     * Whether the viewer may act on a calendar entry — open its modal, follow it
+     * to its detail page, or put it in a bulk selection. Admins may act on
+     * everything; a pure therapist only on their own visits, working hours,
+     * lessons and the blockings they created themselves.
+     *
+     * Resolved from the database rather than from the clicked event's props,
+     * which arrive from the browser.
+     */
+    protected function canManage(string $eventId): bool
+    {
+        if (! $this->isScopedStaff()) {
+            return true;
+        }
+
+        [$kind, $id] = str_contains($eventId, ':')
+            ? explode(':', $eventId, 2)
+            : ['reservation', $eventId];
+
+        return match ($kind) {
+            'reservation' => Reservation::withTrashed()
+                ->whereKey($id)
+                ->where('therapist_id', $this->ownTherapistId())
+                ->exists(),
+            'schedule' => TherapistWorkBlock::query()
+                ->whereKey($id)
+                ->where('therapist_id', $this->ownTherapistId())
+                ->exists(),
+            'course', 'oneoff' => Lesson::query()
+                ->whereKey($id)
+                ->where('instructor_id', auth()->id())
+                ->exists(),
+            'blocking' => RoomBlocking::query()
+                ->whereKey($id)
+                ->where('created_by', auth()->id())
+                ->exists(),
+            default => true,
+        };
+    }
+
+    /**
+     * The server-side twin of the click gate, for the template modals. Their
+     * subject is `editingTemplateId`, which comes back with the request, so
+     * every edit and delete re-checks ownership instead of trusting the id.
+     *
+     * @param  'schedule'|'blocking'  $kind
+     */
+    protected function authorizeTemplateChange(string $kind): bool
+    {
+        if ($this->editingTemplateId !== null && $this->canManage($kind.':'.$this->editingTemplateId)) {
+            return true;
+        }
+
+        Notification::make()
+            ->danger()
+            ->title('Tuto položku nemůžete upravovat')
+            ->body('Upravovat a mazat můžete jen vlastní záznamy.')
+            ->send();
+
+        return false;
     }
 
     /**
@@ -297,16 +423,6 @@ class ReservationCalendar extends FullCalendarWidget
         // page mounts the widget without a room.
         if ($room !== null) {
             $this->room = $room;
-        }
-
-        // A pure therapist's calendar defaults to their own schedule (unless a URL
-        // filter says otherwise); admins keep the all-therapists view.
-        $user = auth()->user();
-        if ($user instanceof User && $user->isTherapist() && ! $user->isAdmin() && $this->therapistIds === []) {
-            $ownProfileId = $user->staffProfile?->getKey();
-            if ($ownProfileId !== null) {
-                $this->therapistIds = [$ownProfileId];
-            }
         }
 
         // Livewire merges any URL query params over the property default above,
@@ -399,6 +515,10 @@ class ReservationCalendar extends FullCalendarWidget
 
     public function toggleSelection(string $id): void
     {
+        if (! $this->canManage($id)) {
+            return;
+        }
+
         $this->selectedIds = in_array($id, $this->selectedIds, true)
             ? array_values(array_diff($this->selectedIds, [$id]))
             : [...$this->selectedIds, $id];
@@ -426,6 +546,8 @@ class ReservationCalendar extends FullCalendarWidget
             ->withTrashed()
             ->with('client')
             ->whereIn('id', $this->selectedIds)
+            // Scoped staff act on their own visits only, whatever the selection carries.
+            ->when($this->isScopedStaff(), fn (Builder $query) => $query->where('therapist_id', $this->ownTherapistId()))
             ->get();
     }
 
@@ -442,6 +564,7 @@ class ReservationCalendar extends FullCalendarWidget
         return Reservation::query()
             ->withTrashed()
             ->whereIn('id', $this->selectedIds)
+            ->when($this->isScopedStaff(), fn (Builder $query) => $query->where('therapist_id', $this->ownTherapistId()))
             ->where(fn (Builder $query) => $query
                 ->whereNotNull('deleted_at')
                 ->orWhere('status', ReservationStatus::Cancelled))
@@ -595,11 +718,21 @@ class ReservationCalendar extends FullCalendarWidget
                 }
 
                 if ($workBlockIds !== []) {
-                    TherapistWorkBlock::whereIn('id', $workBlockIds)->delete();
+                    $deleted = TherapistWorkBlock::whereIn('id', $workBlockIds)
+                        // Scoped staff delete their own working hours only.
+                        ->when($this->isScopedStaff(), fn (Builder $query) => $query->where('therapist_id', $this->ownTherapistId()))
+                        ->delete();
+
+                    if ($deleted > 0) {
+                        NotifyWorkScheduleChange::send('smazal(a) si pracovní dobu', 'Smazané termíny: '.$deleted);
+                    }
                 }
 
                 if ($blockingIds !== []) {
-                    RoomBlocking::whereIn('id', $blockingIds)->delete();
+                    RoomBlocking::whereIn('id', $blockingIds)
+                        // Scoped staff delete only the blockings they created.
+                        ->when($this->isScopedStaff(), fn (Builder $query) => $query->where('created_by', auth()->id()))
+                        ->delete();
                 }
 
                 Notification::make()->success()->title('Vybrané položky byly smazány')->send();
@@ -650,6 +783,10 @@ class ReservationCalendar extends FullCalendarWidget
                     ->icon(Heroicon::OutlinedTrash)
                     ->requiresConfirmation()
                     ->action(function (): void {
+                        if (! $this->authorizeTemplateChange('blocking')) {
+                            return;
+                        }
+
                         RoomBlocking::whereKey($this->editingTemplateId)->delete();
 
                         Notification::make()->success()->title('Blokace byla smazána')->send();
@@ -659,6 +796,10 @@ class ReservationCalendar extends FullCalendarWidget
                     ->cancelParentActions(),
             ])
             ->action(function (array $data): void {
+                if (! $this->authorizeTemplateChange('blocking')) {
+                    return;
+                }
+
                 if ($this->room) {
                     $data['room_id'] = $this->room->getKey();
                 }
@@ -703,7 +844,7 @@ class ReservationCalendar extends FullCalendarWidget
             ->label('Přidat pracovní dobu')
             ->icon(Heroicon::OutlinedCalendarDays)
             ->modalHeading('Přidat pracovní dobu')
-            ->schema(WorkingHoursForm::components($this->room?->getKey()))
+            ->schema(WorkingHoursForm::components($this->room?->getKey(), $this->ownTherapistId()))
             ->action(function (array $data): void {
                 if ($this->room) {
                     $data['room_id'] = $this->room->getKey();
@@ -712,13 +853,18 @@ class ReservationCalendar extends FullCalendarWidget
                 $repeat = $data['repeat'] ?? 'none';
 
                 if ($repeat === 'none') {
-                    TherapistWorkBlock::create([
+                    $block = TherapistWorkBlock::create([
                         'therapist_id' => $data['therapist_id'],
                         'room_id' => $data['room_id'],
                         'work_date' => $data['work_date'],
                         'start_time' => $data['start_time'],
                         'end_time' => $data['end_time'],
                     ]);
+
+                    NotifyWorkScheduleChange::send(
+                        'přidal(a) si pracovní dobu',
+                        NotifyWorkScheduleChange::describe($block->load('room')),
+                    );
 
                     Notification::make()->success()->title('Pracovní doba byla přidána')->send();
                 } else {
@@ -737,6 +883,12 @@ class ReservationCalendar extends FullCalendarWidget
                     ]);
 
                     $result = app(WorkBlockGenerator::class)->materialize($series, WorkBlockGenerator::horizon());
+
+                    NotifyWorkScheduleChange::send(
+                        'přidal(a) si opakovanou pracovní dobu',
+                        $startsOn->format('j. n. Y').' od '.substr((string) $data['start_time'], 0, 5)
+                            .', celkem termínů: '.$result['created'],
+                    );
 
                     Notification::make()
                         ->success()
@@ -760,7 +912,7 @@ class ReservationCalendar extends FullCalendarWidget
             ->fillForm(fn (): array => TherapistWorkBlock::find($this->editingTemplateId)?->only([
                 'therapist_id', 'room_id', 'work_date', 'start_time', 'end_time',
             ]) ?? [])
-            ->schema(fn (): array => WorkingHoursForm::occurrence($this->room?->getKey(), $this->editingTemplateId))
+            ->schema(fn (): array => WorkingHoursForm::occurrence($this->room?->getKey(), $this->editingTemplateId, $this->ownTherapistId()))
             ->extraModalFooterActions([
                 Action::make('deleteSchedule')
                     ->label('Smazat')
@@ -768,7 +920,20 @@ class ReservationCalendar extends FullCalendarWidget
                     ->icon(Heroicon::OutlinedTrash)
                     ->requiresConfirmation()
                     ->action(function (): void {
+                        if (! $this->authorizeTemplateChange('schedule')) {
+                            return;
+                        }
+
+                        $block = TherapistWorkBlock::with('room')->find($this->editingTemplateId);
+
                         TherapistWorkBlock::whereKey($this->editingTemplateId)->delete();
+
+                        if ($block !== null) {
+                            NotifyWorkScheduleChange::send(
+                                'smazal(a) si pracovní dobu',
+                                NotifyWorkScheduleChange::describe($block),
+                            );
+                        }
 
                         Notification::make()->success()->title('Pracovní doba byla smazána')->send();
 
@@ -784,6 +949,10 @@ class ReservationCalendar extends FullCalendarWidget
                     ->modalHeading('Smazat tento a všechny následující termíny')
                     ->modalDescription('Smaže tento blok a všechny pozdější termíny stejného opakování. Dřívější termíny zůstanou.')
                     ->action(function (): void {
+                        if (! $this->authorizeTemplateChange('schedule')) {
+                            return;
+                        }
+
                         $block = TherapistWorkBlock::find($this->editingTemplateId);
 
                         if ($block === null || $block->series_id === null) {
@@ -797,6 +966,11 @@ class ReservationCalendar extends FullCalendarWidget
 
                         $this->truncateSeries($block->series, $block->work_date->copy()->subDay());
 
+                        NotifyWorkScheduleChange::send(
+                            'ukončil(a) si opakovanou pracovní dobu',
+                            'od '.$block->work_date->format('j. n. Y').', smazané termíny: '.$deleted,
+                        );
+
                         Notification::make()->success()->title("Smazané termíny: {$deleted}.")->send();
 
                         $this->dispatch('filament-fullcalendar--refresh');
@@ -804,11 +978,28 @@ class ReservationCalendar extends FullCalendarWidget
                     ->cancelParentActions(),
             ])
             ->action(function (array $data): void {
+                if (! $this->authorizeTemplateChange('schedule')) {
+                    return;
+                }
+
                 if ($this->room) {
                     $data['room_id'] = $this->room->getKey();
                 }
 
+                if ($this->isScopedStaff()) {
+                    $data['therapist_id'] = $this->ownTherapistId();
+                }
+
                 TherapistWorkBlock::whereKey($this->editingTemplateId)->update($data);
+
+                $block = TherapistWorkBlock::with('room')->find($this->editingTemplateId);
+
+                if ($block !== null) {
+                    NotifyWorkScheduleChange::send(
+                        'upravil(a) si pracovní dobu',
+                        NotifyWorkScheduleChange::describe($block),
+                    );
+                }
 
                 Notification::make()->success()->title('Pracovní doba byla upravena')->send();
 
@@ -833,11 +1024,15 @@ class ReservationCalendar extends FullCalendarWidget
             ->schema([
                 Select::make('therapist_id')
                     ->label('Terapeut')
+                    // Scoped staff may only clear their own diary.
                     ->options(fn (): array => $this->therapists()
+                        ->when($this->isScopedStaff(), fn (Collection $therapists): Collection => $therapists
+                            ->where('id', $this->ownTherapistId()))
                         ->mapWithKeys(fn (StaffProfile $therapist): array => [
                             $therapist->getKey() => $therapist->user?->name ?? '—',
                         ])
                         ->all())
+                    ->default(fn (): ?string => $this->ownTherapistId())
                     ->searchable()
                     ->required(),
                 DatePicker::make('from')
@@ -853,11 +1048,20 @@ class ReservationCalendar extends FullCalendarWidget
                     ->afterOrEqual('from'),
             ])
             ->action(function (array $data): void {
+                if ($this->isScopedStaff()) {
+                    $data['therapist_id'] = $this->ownTherapistId();
+                }
+
                 $deleted = TherapistWorkBlock::query()
                     ->where('therapist_id', $data['therapist_id'])
                     ->whereBetween('work_date', [$data['from'], $data['until']])
                     ->when($this->room, fn (Builder $query) => $query->where('room_id', $this->room->getKey()))
                     ->delete();
+
+                NotifyWorkScheduleChange::send(
+                    'smazal(a) si pracovní dobu v období',
+                    NotifyWorkScheduleChange::describeRange($data['from'], $data['until']).', smazané termíny: '.$deleted,
+                );
 
                 $reservations = Reservation::query()
                     ->where('therapist_id', $data['therapist_id'])
@@ -912,6 +1116,10 @@ class ReservationCalendar extends FullCalendarWidget
                     ->icon(Heroicon::OutlinedTrash)
                     ->requiresConfirmation()
                     ->action(function (): void {
+                        if (! $this->authorizeTemplateChange('blocking')) {
+                            return;
+                        }
+
                         RoomBlocking::whereKey($this->editingTemplateId)->delete();
 
                         Notification::make()->success()->title('Blokace byla smazána')->send();
@@ -921,6 +1129,10 @@ class ReservationCalendar extends FullCalendarWidget
                     ->cancelParentActions(),
             ])
             ->action(function (array $data): void {
+                if (! $this->authorizeTemplateChange('blocking')) {
+                    return;
+                }
+
                 if ($this->room) {
                     $data['room_id'] = $this->room->getKey();
                 }
@@ -1121,7 +1333,11 @@ class ReservationCalendar extends FullCalendarWidget
             )->get()
             : collect();
 
-        $this->weekCount = $reservations->count();
+        // "X termínů tento týden" counts the viewer's own work: a therapist's grid
+        // shows the whole team, but the counter stays about their week.
+        $this->weekCount = $this->isScopedStaff()
+            ? $reservations->where('therapist_id', $this->ownTherapistId())->count()
+            : $reservations->count();
 
         $events = $reservations->map(function (Reservation $reservation): array {
             $date = $reservation->reservation_date->toDateString();
@@ -1165,6 +1381,7 @@ class ReservationCalendar extends FullCalendarWidget
                     'statusText' => $statusText,
                     'isCancelled' => $isCancelled,
                     'isTrashed' => $reservation->trashed(),
+                    'isForeign' => $this->isForeignTherapist($reservation->therapist_id),
                     'isSelected' => in_array((string) $reservation->getKey(), $this->selectedIds, true),
                     // The break hangs off the bottom of this card rather than
                     // being an event of its own — see breakStrip().
@@ -1326,6 +1543,7 @@ class ReservationCalendar extends FullCalendarWidget
     protected function lessonEvent(Lesson $lesson): array
     {
         $partOfSeries = $lesson->isPartOfSeries();
+        $isForeign = $this->isForeignInstructor($lesson->instructor_id);
         [$accent, $tint] = $partOfSeries ? self::COURSE_COLORS : self::ONE_OFF_COLORS;
         $date = $lesson->lesson_date->toDateString();
         $title = $partOfSeries
@@ -1352,13 +1570,15 @@ class ReservationCalendar extends FullCalendarWidget
                 'accent' => $accent,
                 'occupancy' => $lesson->takenSpots().'/'.$lesson->capacity,
                 'isUnpublished' => ! $partOfSeries && ! $lesson->isPublished(),
+                'isForeign' => $isForeign,
             ])
             ->extraProperties(['editable' => false]);
 
-        if (! $this->selectionMode) {
+        if (! $this->selectionMode && ! $isForeign) {
             // The vendor JS navigates directly for events with a url and never
             // reaches onEventClick — read-only detail navigation. Omitted in
-            // selection mode so clicks fall through unhandled.
+            // selection mode so clicks fall through unhandled, and for someone
+            // else's lesson, whose detail page a therapist cannot open anyway.
             $event->url(LessonResource::getUrl('view', ['record' => $lesson]));
         }
 
@@ -1402,6 +1622,8 @@ class ReservationCalendar extends FullCalendarWidget
                     'timeLabel' => $blocking->start_at?->format('H:i').'–'.$blocking->end_at?->format('H:i'),
                     'title' => $blocking->reason ?: 'Blokace',
                     'room' => $blocking->room?->display_short_name,
+                    'isForeign' => $this->isForeignBlocking($blocking->created_by),
+                    'isSelected' => in_array('blocking:'.$blocking->getKey(), $this->selectedIds, true),
                 ])
                 ->toArray())
             ->all();
@@ -1452,6 +1674,7 @@ class ReservationCalendar extends FullCalendarWidget
                     'room' => $block->room?->display_short_name,
                     'accent' => $accent,
                     'isRecurring' => $block->series_id !== null,
+                    'isForeign' => $this->isForeignTherapist($block->therapist_id),
                     'isSelected' => in_array('schedule:'.$block->getKey(), $this->selectedIds, true),
                 ])
                 ->toArray();
@@ -1485,6 +1708,7 @@ class ReservationCalendar extends FullCalendarWidget
                         'timeLabel' => $this->timeLabel($blocking->start_time, $blocking->end_time),
                         'title' => $blocking->reason ?: 'Blokace',
                         'room' => $blocking->room?->display_short_name,
+                        'isForeign' => $this->isForeignBlocking($blocking->created_by),
                         'isSelected' => in_array('blocking:'.$blocking->getKey(), $this->selectedIds, true),
                     ])
                     ->toArray();
@@ -1646,15 +1870,21 @@ class ReservationCalendar extends FullCalendarWidget
         $date = $this->selectedDate();
         $roomId = $this->room?->getKey() ?? ($this->isTemplateMode() ? $this->templateRoomId : null);
 
+        // Scoped staff read their own day here, whichever colleagues their chips
+        // currently show on the grid — this panel is "my day", not the clinic's.
+        $therapistIds = $this->isScopedStaff()
+            ? array_values(array_filter([$this->ownTherapistId()]))
+            : $this->therapistIds;
+
         $reservations = Reservation::query()
             ->whereDate('reservation_date', $date->toDateString())
             ->where('status', '!=', ReservationStatus::Cancelled->value)
-            ->when($this->therapistIds, fn (Builder $query) => $query->whereIn('therapist_id', $this->therapistIds))
+            ->when($therapistIds, fn (Builder $query) => $query->whereIn('therapist_id', $therapistIds))
             ->when($roomId, fn (Builder $query) => $query->where('room_id', $roomId))
             ->get(['start_time', 'end_time']);
 
         $booked = (int) $reservations->sum(fn (Reservation $reservation): int => $this->minutesBetween($reservation->start_time, $reservation->end_time));
-        $available = app(CalendarAvailability::class)->availableMinutes($date, $this->therapistIds, $roomId);
+        $available = app(CalendarAvailability::class)->availableMinutes($date, $therapistIds, $roomId);
 
         return [
             'label' => ucfirst($date->locale('cs')->isoFormat('dd D. MMMM')),
@@ -1787,6 +2017,7 @@ class ReservationCalendar extends FullCalendarWidget
                 if (p.isCancelled) { classes.push('ff-cancelled'); }
                 if (p.isTrashed) { classes.push('ff-trashed'); }
                 if (p.isSelected) { classes.push('ff-selected'); }
+                if (p.isForeign) { classes.push('ff-foreign'); }
                 return classes;
             }
         JS;
@@ -1849,6 +2080,13 @@ class ReservationCalendar extends FullCalendarWidget
         $eventId = (string) ($event['id'] ?? '');
 
         if ($eventId === '') {
+            return;
+        }
+
+        // A pure therapist's grid carries the whole team's work, but only their
+        // own is theirs to touch: a colleague's card neither opens a modal nor
+        // joins a bulk selection.
+        if (! $this->canManage($eventId)) {
             return;
         }
 
@@ -1918,6 +2156,44 @@ class ReservationCalendar extends FullCalendarWidget
             'type' => 'click',
             'event' => $event,
         ]);
+    }
+
+    /**
+     * Dragging and resizing are not enabled on this grid, but both callbacks are
+     * public Livewire methods all the same — and they open the edit modal on
+     * whatever event id they are handed. They pass through the same ownership
+     * gate as a click.
+     *
+     * @param  array<string, mixed>  $event
+     * @param  array<string, mixed>  $oldEvent
+     * @param  array<int, mixed>  $relatedEvents
+     * @param  array<string, mixed>  $delta
+     * @param  array<string, mixed>|null  $oldResource
+     * @param  array<string, mixed>|null  $newResource
+     */
+    public function onEventDrop(array $event, array $oldEvent, array $relatedEvents, array $delta, ?array $oldResource, ?array $newResource): bool
+    {
+        if (! $this->canManage((string) ($event['id'] ?? ''))) {
+            return false;
+        }
+
+        return parent::onEventDrop($event, $oldEvent, $relatedEvents, $delta, $oldResource, $newResource);
+    }
+
+    /**
+     * @param  array<string, mixed>  $event
+     * @param  array<string, mixed>  $oldEvent
+     * @param  array<int, mixed>  $relatedEvents
+     * @param  array<string, mixed>  $startDelta
+     * @param  array<string, mixed>  $endDelta
+     */
+    public function onEventResize(array $event, array $oldEvent, array $relatedEvents, array $startDelta, array $endDelta): bool
+    {
+        if (! $this->canManage((string) ($event['id'] ?? ''))) {
+            return false;
+        }
+
+        return parent::onEventResize($event, $oldEvent, $relatedEvents, $startDelta, $endDelta);
     }
 
     protected function headerActions(): array

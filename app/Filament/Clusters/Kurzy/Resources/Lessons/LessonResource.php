@@ -3,6 +3,7 @@
 namespace App\Filament\Clusters\Kurzy\Resources\Lessons;
 
 use App\Filament\Clusters\Kurzy\KurzyCluster;
+use App\Filament\Clusters\Kurzy\Resources\Courses\CourseResource;
 use App\Filament\Clusters\Kurzy\Resources\Lessons\Pages\CreateLesson;
 use App\Filament\Clusters\Kurzy\Resources\Lessons\Pages\EditLesson;
 use App\Filament\Clusters\Kurzy\Resources\Lessons\Pages\ListLessons;
@@ -11,6 +12,8 @@ use App\Filament\Clusters\Kurzy\Resources\Lessons\RelationManagers\AttendancesRe
 use App\Filament\Clusters\Kurzy\Resources\Lessons\Schemas\LessonForm;
 use App\Filament\Clusters\Kurzy\Resources\Lessons\Schemas\LessonInfolist;
 use App\Filament\Clusters\Kurzy\Resources\Lessons\Tables\LessonsTable;
+use App\Filament\Support\Concerns\EscapesClusterNavigation;
+use App\Filament\Support\Concerns\RestrictedToLecturers;
 use App\Filament\Support\Concerns\ScopedToTherapist;
 use App\Filament\Support\RelationManagers\LessonBookingsRelationManager;
 use App\Filament\Support\RelationManagers\WaitlistEntriesRelationManager;
@@ -32,6 +35,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
  */
 class LessonResource extends Resource
 {
+    use EscapesClusterNavigation;
+    use RestrictedToLecturers;
     use ScopedToTherapist;
 
     protected static ?string $model = Lesson::class;
@@ -56,7 +61,15 @@ class LessonResource extends Resource
 
     public static function getNavigationLabel(): string
     {
-        return 'Lekce a akce';
+        return 'Lekce';
+    }
+
+    /**
+     * Directly under Kurzy once both have left the cluster's sidebar entry.
+     */
+    public static function getEscapedNavigationSort(): ?int
+    {
+        return CourseResource::getEscapedNavigationSort() + 1;
     }
 
     public static function getRecordTitle(?Model $record): string|Htmlable|null
@@ -109,7 +122,7 @@ class LessonResource extends Resource
         return parent::getEloquentQuery()
             ->with(['category', 'course', 'series.course', 'instructor', 'room'])
             ->withOccupancyCounts()
-            ->when(static::therapistUserScopeId(), fn (Builder $query, string $id) => $query->where('instructor_id', $id));
+            ->when(static::therapistUserScopeId(), fn (Builder $query, string $id) => $query->ledBy($id));
     }
 
     public static function getRelations(): array

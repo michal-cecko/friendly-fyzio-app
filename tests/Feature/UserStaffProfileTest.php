@@ -58,8 +58,8 @@ class UserStaffProfileTest extends TestCase
         $therapist = User::factory()->therapist()->create();
         $profile = $therapist->staffProfile;
 
-        // One block by default — the spec's 15 minutes after every visit.
-        $this->assertSame(1, $profile->break_blocks);
+        // No break by default; it is something a therapist asks for.
+        $this->assertSame(0, $profile->break_blocks);
 
         Livewire::test(EditUser::class, ['record' => $therapist->getKey()])
             ->fillForm(['staffProfile.break_blocks' => 2])

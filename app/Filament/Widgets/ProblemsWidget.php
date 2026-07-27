@@ -2,7 +2,7 @@
 
 namespace App\Filament\Widgets;
 
-use App\Filament\Widgets\Concerns\AdminOrTherapist;
+use App\Filament\Widgets\Concerns\AdminOrStaff;
 use App\Support\Reservations\Conflict;
 use App\Support\Reservations\ConflictFinder;
 use App\Support\StaffScope;
@@ -10,7 +10,7 @@ use Filament\Widgets\Widget;
 
 class ProblemsWidget extends Widget
 {
-    use AdminOrTherapist;
+    use AdminOrStaff;
 
     protected static ?int $sort = 1;
 

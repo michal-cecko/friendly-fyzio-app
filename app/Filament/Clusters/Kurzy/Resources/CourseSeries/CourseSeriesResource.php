@@ -12,6 +12,8 @@ use App\Filament\Clusters\Kurzy\Resources\CourseSeries\RelationManagers\Substitu
 use App\Filament\Clusters\Kurzy\Resources\CourseSeries\Schemas\CourseSeriesForm;
 use App\Filament\Clusters\Kurzy\Resources\CourseSeries\Schemas\CourseSeriesInfolist;
 use App\Filament\Clusters\Kurzy\Resources\CourseSeries\Tables\CourseSeriesTable;
+use App\Filament\Support\Concerns\RestrictedToLecturers;
+use App\Filament\Support\Concerns\ScopedToTherapist;
 use App\Filament\Support\RelationManagers\CourseSeriesEnrollmentsRelationManager;
 use App\Filament\Support\RelationManagers\WaitlistEntriesRelationManager;
 use App\Models\CourseSeries;
@@ -25,6 +27,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class CourseSeriesResource extends Resource
 {
+    use RestrictedToLecturers;
+    use ScopedToTherapist;
+
     protected static ?string $model = CourseSeries::class;
 
     protected static ?string $cluster = KurzyCluster::class;
@@ -90,7 +95,8 @@ class CourseSeriesResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with(['course']);
+        return parent::getEloquentQuery()->with(['course', 'instructor'])
+            ->when(static::therapistUserScopeId(), fn (Builder $query, string $id) => $query->ledBy($id));
     }
 
     public static function getRelations(): array

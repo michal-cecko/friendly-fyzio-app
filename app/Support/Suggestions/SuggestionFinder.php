@@ -11,6 +11,7 @@ use App\Support\Suggestions\Rules\DropInPriceMissingRule;
 use App\Support\Suggestions\Rules\ExpiredPaymentHoldRule;
 use App\Support\Suggestions\Rules\HiddenReviewsRule;
 use App\Support\Suggestions\Rules\LessonWaitlistOfferRule;
+use App\Support\Suggestions\Rules\MissingVisitNoteRule;
 use App\Support\Suggestions\Rules\NewContactInquiriesRule;
 use App\Support\Suggestions\Rules\PastDueInvoicesRule;
 use App\Support\Suggestions\Rules\PastDuePaymentsRule;
@@ -57,6 +58,7 @@ final class SuggestionFinder
             PastDuePaymentsRule::class,
             PastDueInvoicesRule::class,
             UnsettledPastVisitsRule::class,
+            MissingVisitNoteRule::class,
             DoctorNotePendingRule::class,
             NewContactInquiriesRule::class,
             HiddenReviewsRule::class,

@@ -32,7 +32,12 @@ class ReactivateUserAction extends Action
             ->modalIcon(Heroicon::OutlinedLockOpen)
             ->modalDescription('Účet byl deaktivován (např. neuhrazené storno). Reaktivací klient znovu získá přístup k přihlášení i online rezervacím.')
             ->modalSubmitActionLabel('Reaktivovat')
-            ->visible(fn (User $record): bool => $record->isDeactivated())
+            // Mirrors the deactivate guard: only shown for accounts that are
+            // actually deactivated, and only to someone allowed to manage them
+            // (see User::isManageableBy() — customers are open to all staff,
+            // colleagues to admins).
+            ->visible(fn (User $record): bool => $record->isDeactivated()
+                && $record->isManageableBy(auth()->user()))
             ->action(function (User $record): void {
                 $record->update([
                     'deactivated_at' => null,

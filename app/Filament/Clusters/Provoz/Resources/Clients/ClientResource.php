@@ -30,8 +30,6 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ClientResource extends Resource
 {
-    use ScopedToTherapist;
-
     protected static ?string $model = User::class;
 
     protected static ?string $cluster = ProvozCluster::class;
@@ -81,13 +79,50 @@ class ClientResource extends Resource
         ]);
     }
 
+    /**
+     * The client base is shared: every staff member sees all customers, not just
+     * the ones they have personally treated — a colleague covering a visit needs
+     * the client's history in front of them. Unlike the other shared resources,
+     * this one carries no {@see ScopedToTherapist} row scope.
+     */
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()
-            ->customers()
-            // "My Clients": a therapist only sees customers they have treated.
-            ->when(static::staffProfileScopeId(), fn (Builder $query, string $id) => $query
-                ->whereHas('reservations', fn (Builder $reservations) => $reservations->where('therapist_id', $id)));
+        return parent::getEloquentQuery()->customers();
+    }
+
+    /**
+     * Customers are any staff member's to manage — therapists and lecturers may
+     * create, edit and delete them. The guard only bites on the rare account
+     * that is both customer and staff: changing a colleague belongs in the Tým
+     * resource, under its admin-only rules. See {@see User::isManageableBy()}.
+     */
+    public static function canManageClient(User $record): bool
+    {
+        return $record->isManageableBy(auth()->user());
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        /** @var User $record */
+        return parent::canEdit($record) && static::canManageClient($record);
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        /** @var User $record */
+        return parent::canDelete($record) && static::canManageClient($record);
+    }
+
+    public static function canForceDelete(Model $record): bool
+    {
+        /** @var User $record */
+        return parent::canForceDelete($record) && static::canManageClient($record);
+    }
+
+    public static function canRestore(Model $record): bool
+    {
+        /** @var User $record */
+        return parent::canRestore($record) && static::canManageClient($record);
     }
 
     public static function form(Schema $schema): Schema

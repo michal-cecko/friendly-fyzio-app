@@ -16,6 +16,7 @@ class RoomBlocking extends Model
 
     protected $fillable = [
         'room_id',
+        'created_by',
         'reason',
         'is_recurring',
         'day_of_week',
@@ -37,6 +38,19 @@ class RoomBlocking extends Model
         ];
     }
 
+    protected static function booted(): void
+    {
+        // A blocking belongs to nobody in particular, so the person who added it
+        // is its owner: that is what lets a therapist manage their own blockings
+        // without touching anyone else's. Imports and seeders run without a user
+        // and leave the column empty — those are for admins only.
+        static::creating(function (self $blocking): void {
+            if ($blocking->created_by === null) {
+                $blocking->created_by = auth()->id();
+            }
+        });
+    }
+
     public function logTitle(): string
     {
         return $this->reason ?: 'Blokace místnosti';
@@ -45,5 +59,10 @@ class RoomBlocking extends Model
     public function room(): BelongsTo
     {
         return $this->belongsTo(Room::class);
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 }

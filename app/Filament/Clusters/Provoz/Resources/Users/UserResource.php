@@ -36,12 +36,27 @@ class UserResource extends Resource
     protected static ?string $recordTitleAttribute = 'name';
 
     /**
-     * Staff-account management is administrators only. The User model is shared
-     * with the customer-facing ClientResource (which therapists may reach), so
-     * this resource is gated by role rather than by the shared `…:User`
-     * permission to keep therapists out of staff accounts.
+     * The whole team may look one another up: everyone on staff — therapists and
+     * lecturers included — reaches the list and the read-only detail page, so a
+     * colleague's contact details, capabilities and schedule are never a dead
+     * link. Changing a staff account stays administrators-only
+     * ({@see canManageStaff()}).
+     *
+     * The User model is shared with the customer-facing ClientResource, so the
+     * `…:User` permission alone can't tell the two apart — every write here is
+     * gated by capability on top of it.
      */
     public static function canAccess(): bool
+    {
+        return (auth()->user()?->isStaff() ?? false) && static::canViewAny();
+    }
+
+    /**
+     * Whether the current user may change staff accounts at all. Everything that
+     * writes — creating, editing, deleting, restoring — hangs off this, leaving
+     * non-admin staff with a read-only view of their colleagues.
+     */
+    public static function canManageStaff(): bool
     {
         return auth()->user()?->isAdmin() ?? false;
     }
@@ -54,23 +69,58 @@ class UserResource extends Resource
      */
     public static function canCreate(): bool
     {
-        return auth()->user()?->isAdmin() ?? false;
+        return static::canManageStaff();
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return static::canManageStaff();
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        /** @var User $record */
+        return static::canDeleteUser($record);
+    }
+
+    public static function canDeleteAny(): bool
+    {
+        return static::canManageStaff();
+    }
+
+    public static function canForceDelete(Model $record): bool
+    {
+        return static::canManageStaff() && parent::canForceDelete($record);
+    }
+
+    public static function canForceDeleteAny(): bool
+    {
+        return static::canManageStaff() && parent::canForceDeleteAny();
+    }
+
+    public static function canRestore(Model $record): bool
+    {
+        return static::canManageStaff() && parent::canRestore($record);
+    }
+
+    public static function canRestoreAny(): bool
+    {
+        return static::canManageStaff() && parent::canRestoreAny();
+    }
+
+    public static function canReplicate(Model $record): bool
+    {
+        return static::canManageStaff() && parent::canReplicate($record);
     }
 
     /**
      * An admin/super-admin account may only be deleted by a super-admin, so a
      * plain admin can't remove a peer or the owner. Everyone else stays deletable
-     * by any admin.
+     * by any admin — and by nobody below that tier.
      */
     public static function canDeleteUser(User $record): bool
     {
-        $actor = auth()->user();
-
-        if (! $actor instanceof User) {
-            return false;
-        }
-
-        return $record->isAdmin() ? $actor->isSuperAdmin() : $actor->isAdmin();
+        return $record->isManageableBy(auth()->user());
     }
 
     public static function getModelLabel(): string
@@ -110,7 +160,9 @@ class UserResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->staff();
+        // Roles back both the „Schopnosti" column and the per-row write guards,
+        // so they are eager-loaded rather than queried per row.
+        return parent::getEloquentQuery()->staff()->with('roles');
     }
 
     public static function form(Schema $schema): Schema

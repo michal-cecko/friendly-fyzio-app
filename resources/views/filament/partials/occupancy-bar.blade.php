@@ -15,7 +15,8 @@
         {{ $occupancy['free'] }}/{{ $occupancy['capacity'] }}
     </span>
 
-    <span class="block h-1.5 overflow-hidden rounded-full bg-gray-200 dark:bg-white/10" style="width: 5rem">
+    {{-- The track keeps a visible outline so the bar's full extent reads even at 0 % and 100 %. --}}
+    <span class="block h-2 w-20 shrink-0 overflow-hidden rounded-full bg-gray-200 ring-1 ring-inset ring-gray-300 dark:bg-white/10 dark:ring-white/20">
         <span class="block h-full rounded-full {{ $barClass }}" style="width: {{ $percent }}%"></span>
     </span>
 </div>

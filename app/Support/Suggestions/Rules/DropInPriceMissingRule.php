@@ -4,6 +4,7 @@ namespace App\Support\Suggestions\Rules;
 
 use App\Enums\SuggestionGroup;
 use App\Filament\Clusters\Kurzy\Resources\Courses\CourseResource;
+use App\Filament\Support\RecordLinks;
 use App\Models\Course;
 use App\Models\EventCategory;
 use App\Support\Lessons\ReleaseFreeSpots;
@@ -60,7 +61,9 @@ class DropInPriceMissingRule implements SuggestionRule
                 icon: 'heroicon-m-banknotes',
                 title: 'Kurz nemá cenu jednotlivé lekce',
                 detail: "{$course->name} — volná místa v nadcházejících lekcích by šlo prodat jako jednorázový vstup.",
-                url: CourseResource::getUrl('edit', ['record' => $course]),
+                // The detail page, not the edit form: a lecturer sees this card
+                // but may not edit the course.
+                url: RecordLinks::detailUrl(CourseResource::class, $course) ?? CourseResource::getUrl('index'),
                 priority: 90,
                 id: $course->getKey(),
                 sortKey: (string) $course->name,

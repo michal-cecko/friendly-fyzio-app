@@ -14,6 +14,8 @@ Uživatel je účet. Terapeutický profil je to, co se o člověku ví odborně 
 
 Bez pracovní doby se terapeutka v kalendáři objeví, ale nikdo si u ní nic neobjedná.
 
+Schopnost **Lektor** je zároveň podmínkou pro to, aby šla kolegyně vybrat jako vyučující u kurzu, série nebo lekce — nabídky lektorů berou jen účty, které ji mají. Bez ní také sekci Kurzy v panelu vůbec neuvidí.
+
 ## Tituly
 
 Titul se nepíše do jména. Jsou na něj samostatná pole před jménem a za jménem, takže se jméno dá použít i tam, kde se titul nehodí, a přitom se všude zobrazí správně.

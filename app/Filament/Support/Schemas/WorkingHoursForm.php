@@ -25,10 +25,10 @@ class WorkingHoursForm
      *
      * @return array<int, Component>
      */
-    public static function components(?string $lockedRoomId = null): array
+    public static function components(?string $lockedRoomId = null, ?string $lockedTherapistId = null): array
     {
         return [
-            self::therapistSelect(),
+            self::therapistSelect($lockedTherapistId),
             self::roomSelect($lockedRoomId),
             DatePicker::make('work_date')
                 ->label('Datum')
@@ -66,10 +66,10 @@ class WorkingHoursForm
      *
      * @return array<int, Component>
      */
-    public static function occurrence(?string $lockedRoomId = null, ?string $ignoreBlockId = null): array
+    public static function occurrence(?string $lockedRoomId = null, ?string $ignoreBlockId = null, ?string $lockedTherapistId = null): array
     {
         return [
-            self::therapistSelect(),
+            self::therapistSelect($lockedTherapistId),
             self::roomSelect($lockedRoomId),
             DatePicker::make('work_date')
                 ->label('Datum')
@@ -84,12 +84,18 @@ class WorkingHoursForm
         ];
     }
 
-    protected static function therapistSelect(): Select
+    /**
+     * The therapist the block belongs to. Locked when the calendar is scoped to
+     * one person's own working hours (a therapist who is not also an admin), so
+     * they cannot write into a colleague's diary.
+     */
+    protected static function therapistSelect(?string $lockedTherapistId = null): Select
     {
-        return Select::make('therapist_id')
+        $select = Select::make('therapist_id')
             ->label('Terapeut')
             ->options(fn (): array => StaffProfile::query()
                 ->with('user')
+                ->when($lockedTherapistId, fn ($query, string $id) => $query->whereKey($id))
                 ->get()
                 ->mapWithKeys(fn (StaffProfile $therapist): array => [
                     $therapist->getKey() => $therapist->user?->name ?? '—',
@@ -97,6 +103,12 @@ class WorkingHoursForm
                 ->all())
             ->searchable()
             ->required();
+
+        if ($lockedTherapistId !== null) {
+            $select->default($lockedTherapistId)->disabled()->dehydrated();
+        }
+
+        return $select;
     }
 
     protected static function roomSelect(?string $lockedRoomId = null): Select

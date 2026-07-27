@@ -18,17 +18,18 @@ class Dashboard extends BaseDashboard
 
     /**
      * The reservation calendar lives on its own dedicated page, so keep it out
-     * of the dashboard grid. Admins additionally drop the generic Account/Info
-     * widgets for a clean clinic overview; pure therapists keep them until their
-     * own dashboard ships.
+     * of the dashboard grid. Staff drop the generic Account/Info widgets too —
+     * everyone who treats or teaches now has real widgets of their own, so the
+     * stock pair is only filler for an account with no clinic role at all.
      *
      * @return array<class-string<Widget> | WidgetConfiguration>
      */
     public function getWidgets(): array
     {
         $hidden = [ReservationCalendar::class];
+        $user = auth()->user();
 
-        if (auth()->user()?->isAdmin()) {
+        if ($user?->isAdmin() || $user?->isTherapist() || $user?->isLecturer()) {
             $hidden[] = AccountWidget::class;
             $hidden[] = FilamentInfoWidget::class;
         }

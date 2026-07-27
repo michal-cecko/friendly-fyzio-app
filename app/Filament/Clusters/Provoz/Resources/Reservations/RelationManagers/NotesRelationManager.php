@@ -2,12 +2,14 @@
 
 namespace App\Filament\Clusters\Provoz\Resources\Reservations\RelationManagers;
 
+use App\Filament\Support\ClientNotes;
 use App\Models\Reservation;
 use App\Support\Mentions\StaffMentions;
 use BackedEnum;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components\RichEditor;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
@@ -48,6 +50,11 @@ class NotesRelationManager extends RelationManager
             ]);
     }
 
+    public function infolist(Schema $schema): Schema
+    {
+        return ClientNotes::infolist($schema);
+    }
+
     public function table(Table $table): Table
     {
         return $table
@@ -57,12 +64,7 @@ class NotesRelationManager extends RelationManager
             ->emptyStateHeading('Zatím žádné poznámky')
             ->emptyStateDescription('Přidejte první poznámku z terapie.')
             ->columns([
-                TextColumn::make('content')
-                    ->label('Poznámka')
-                    ->formatStateUsing(fn (?string $state): string => str(strip_tags((string) $state))->squish()->toString())
-                    ->limit(80)
-                    ->wrap()
-                    ->searchable(),
+                ClientNotes::contentColumn(),
                 TextColumn::make('author.name')
                     ->label('Autor')
                     ->placeholder('—'),
@@ -72,6 +74,9 @@ class NotesRelationManager extends RelationManager
                     ->sortable(),
             ])
             ->defaultSort('created_at', 'desc')
+            ->filters([
+                ClientNotes::authorFilter(),
+            ])
             ->toolbarActions([
                 CreateAction::make()
                     ->modalHeading('Nová poznámka')
@@ -86,6 +91,7 @@ class NotesRelationManager extends RelationManager
                     }),
             ])
             ->recordActions([
+                ViewAction::make(),
                 EditAction::make(),
                 DeleteAction::make(),
             ]);

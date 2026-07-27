@@ -50,30 +50,38 @@ class RolePermissionSeeder extends Seeder
 
         // Lecturers manage the courses/events they instruct (rows scoped to
         // their instructor_id via ScopedToTherapist's lecturer branch).
+        //
+        // The série and the lessons they lead are theirs to edit — only deleting
+        // one stays an administrative act, so no `Delete:*` is granted here.
         $lecturer->syncPermissions(Permission::whereIn('name', [
             'View:MediaLibrary',
             'ViewAny:Course', 'View:Course',
             'ViewAny:CourseCategory', 'View:CourseCategory',
-            'ViewAny:CourseSeries', 'View:CourseSeries',
-            'ViewAny:Lesson', 'View:Lesson',
+            'ViewAny:CourseSeries', 'View:CourseSeries', 'Update:CourseSeries',
+            'ViewAny:Lesson', 'View:Lesson', 'Update:Lesson',
             'ViewAny:CourseEnrollment', 'View:CourseEnrollment',
             'ViewAny:LessonAttendance', 'View:LessonAttendance', 'Create:LessonAttendance', 'Update:LessonAttendance',
-            'ViewAny:Lesson', 'View:Lesson',
             'ViewAny:LessonBooking', 'View:LessonBooking',
             'ViewAny:EventCategory', 'View:EventCategory',
+            // The client base (ClientResource shares the User model with the
+            // Tým resource, which gates staff-account writes to admins on top
+            // of this — see UserResource::canManageStaff()).
+            'ViewAny:User', 'View:User', 'Create:User', 'Update:User', 'Delete:User',
         ])->get());
         $therapist->syncPermissions(Permission::whereIn('name', [
             'View:MediaLibrary',
             'View:Calendar',
+            // The service catalogue is readable, but its categories are an
+            // administrative concern — therapists get no ServiceCategory access at all.
             'ViewAny:Service', 'View:Service',
-            'ViewAny:ServiceCategory', 'View:ServiceCategory',
             'ViewAny:Room', 'View:Room',
             'ViewAny:Building', 'View:Building',
             'ViewAny:ClientNote', 'View:ClientNote', 'Create:ClientNote', 'Update:ClientNote', 'Delete:ClientNote',
-            // Their own clients (ClientResource shares the User model; UserResource
-            // in the System cluster is gated to admins via canAccess()). Rows are
-            // scoped to clients they've treated — see ScopedToTherapist.
-            'ViewAny:User', 'View:User', 'Update:User',
+            // The client base — therapists own their clients outright (create,
+            // edit, delete). The same `…:User` permission also opens the Tým
+            // resource, which is read-only below admin: writes there are gated by
+            // capability on top of this (see UserResource::canManageStaff()).
+            'ViewAny:User', 'View:User', 'Create:User', 'Update:User', 'Delete:User',
             // Their own reservations + recording payments after a visit.
             'ViewAny:Reservation', 'View:Reservation', 'Update:Reservation',
             'ViewAny:Payment', 'View:Payment', 'Create:Payment',

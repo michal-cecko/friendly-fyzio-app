@@ -3,7 +3,7 @@
 namespace App\Filament\Widgets;
 
 use App\Filament\Support\Concerns\InteractsWithSuggestions;
-use App\Filament\Widgets\Concerns\AdminOrTherapist;
+use App\Filament\Widgets\Concerns\AdminOrStaff;
 use App\Support\Suggestions\SuggestionFinder;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
@@ -17,7 +17,7 @@ use Filament\Widgets\Widget;
  */
 class SuggestionsWidget extends Widget implements HasActions, HasSchemas
 {
-    use AdminOrTherapist;
+    use AdminOrStaff;
     use InteractsWithActions;
     use InteractsWithSchemas;
     use InteractsWithSuggestions;

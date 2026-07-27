@@ -10,6 +10,7 @@ use App\Filament\Clusters\Kurzy\Resources\CourseCategories\Pages\ViewCourseCateg
 use App\Filament\Clusters\Kurzy\Resources\CourseCategories\Schemas\CourseCategoryForm;
 use App\Filament\Clusters\Kurzy\Resources\CourseCategories\Schemas\CourseCategoryInfolist;
 use App\Filament\Clusters\Kurzy\Resources\CourseCategories\Tables\CourseCategoriesTable;
+use App\Filament\Support\Concerns\RestrictedToLecturers;
 use App\Models\CourseCategory;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -19,6 +20,8 @@ use Filament\Tables\Table;
 
 class CourseCategoryResource extends Resource
 {
+    use RestrictedToLecturers;
+
     protected static ?string $model = CourseCategory::class;
 
     protected static ?string $cluster = KurzyCluster::class;
@@ -42,6 +45,16 @@ class CourseCategoryResource extends Resource
     public static function getNavigationLabel(): string
     {
         return 'Kategorie kurzů';
+    }
+
+    /**
+     * The catalogue's shape is an administrative concern: below admin the sidebar
+     * item only adds noise to a list nobody there will change. Access itself is
+     * untouched — links from a course, breadcrumbs and direct URLs all still work.
+     */
+    public static function shouldRegisterNavigation(): bool
+    {
+        return auth()->user()?->isAdmin() ?? false;
     }
 
     /**

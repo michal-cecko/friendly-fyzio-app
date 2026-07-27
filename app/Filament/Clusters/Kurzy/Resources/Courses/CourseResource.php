@@ -11,6 +11,8 @@ use App\Filament\Clusters\Kurzy\Resources\Courses\RelationManagers\SeriesRelatio
 use App\Filament\Clusters\Kurzy\Resources\Courses\Schemas\CourseForm;
 use App\Filament\Clusters\Kurzy\Resources\Courses\Schemas\CourseInfolist;
 use App\Filament\Clusters\Kurzy\Resources\Courses\Tables\CoursesTable;
+use App\Filament\Support\Concerns\EscapesClusterNavigation;
+use App\Filament\Support\Concerns\RestrictedToLecturers;
 use App\Filament\Support\Concerns\ScopedToTherapist;
 use App\Filament\Support\RelationManagers\WaitlistEntriesRelationManager;
 use App\Models\Course;
@@ -25,6 +27,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class CourseResource extends Resource
 {
+    use EscapesClusterNavigation;
+    use RestrictedToLecturers;
     use ScopedToTherapist;
 
     protected static ?string $model = Course::class;
@@ -90,7 +94,7 @@ class CourseResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()->with(['category', 'instructor'])
-            ->when(static::therapistUserScopeId(), fn (Builder $query, string $id) => $query->where('instructor_id', $id));
+            ->when(static::therapistUserScopeId(), fn (Builder $query, string $id) => $query->ledBy($id));
     }
 
     public static function getRelations(): array

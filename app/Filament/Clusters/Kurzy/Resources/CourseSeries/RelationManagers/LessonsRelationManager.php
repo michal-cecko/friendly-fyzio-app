@@ -81,9 +81,12 @@ class LessonsRelationManager extends RelationManager
                     ->icon(Heroicon::OutlinedArrowTopRightOnSquare)
                     ->color('gray')
                     ->url(fn (Lesson $record): string => LessonResource::getUrl('view', ['record' => $record])),
+                // Custom action, so it carries no implicit policy check — staff who
+                // may only read lessons keep the "Detail" link and nothing more.
                 Action::make('edit')
                     ->label('Upravit')
                     ->icon(Heroicon::OutlinedPencilSquare)
+                    ->visible(fn (Lesson $record): bool => LessonResource::canEdit($record))
                     ->url(fn (Lesson $record): string => LessonResource::getUrl('edit', ['record' => $record])),
                 DeleteAction::make(),
             ])

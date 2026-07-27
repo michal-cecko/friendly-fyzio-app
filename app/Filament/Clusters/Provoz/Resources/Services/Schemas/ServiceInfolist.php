@@ -43,7 +43,10 @@ class ServiceInfolist
                                             ->label('Kategorie')
                                             ->placeholder('—')
                                             ->columnSpan(['default' => 1, 'lg' => 5])
+                                            // Staff without category access (therapists, lecturers)
+                                            // read the name but get no link they cannot open.
                                             ->url(fn (Service $record): ?string => $record->category !== null
+                                                && ServiceCategoryResource::canView($record->category)
                                                 ? ServiceCategoryResource::getUrl('view', ['record' => $record->category])
                                                 : null),
                                         TextEntry::make('category.type')

@@ -10,6 +10,8 @@ use App\Filament\Clusters\Kurzy\Resources\LessonBookings\Pages\ViewLessonBooking
 use App\Filament\Clusters\Kurzy\Resources\LessonBookings\Schemas\LessonBookingForm;
 use App\Filament\Clusters\Kurzy\Resources\LessonBookings\Schemas\LessonBookingInfolist;
 use App\Filament\Clusters\Kurzy\Resources\LessonBookings\Tables\LessonBookingsTable;
+use App\Filament\Support\Concerns\RestrictedToLecturers;
+use App\Filament\Support\Concerns\ScopedToTherapist;
 use App\Filament\Support\RelationManagers\PaymentsRelationManager;
 use App\Models\LessonBooking;
 use BackedEnum;
@@ -23,6 +25,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class LessonBookingResource extends Resource
 {
+    use RestrictedToLecturers;
+    use ScopedToTherapist;
+
     protected static ?string $model = LessonBooking::class;
 
     protected static ?string $cluster = KurzyCluster::class;
@@ -103,7 +108,9 @@ class LessonBookingResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with(['client', 'lesson.category']);
+        return parent::getEloquentQuery()->with(['client', 'lesson.category'])
+            ->when(static::therapistUserScopeId(), fn (Builder $query, string $id) => $query
+                ->whereHas('lesson', fn (Builder $lesson) => $lesson->ledBy($id)));
     }
 
     public static function getRelations(): array

@@ -34,6 +34,7 @@ class RoomInfolist
                             ->badge(),
                         RepeatableEntry::make('services')
                             ->label('Služby')
+                            ->placeholder('Žádné služby se v této místnosti neposkytují')
                             ->columnSpanFull()
                             ->schema([
                                 TextEntry::make('name')

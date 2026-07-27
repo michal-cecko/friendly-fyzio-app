@@ -34,6 +34,6 @@ Vedle vyhledávacího pole nahoře najdete rychlé vstupy, které nejsou v menu:
 
 ## Co uvidíte vy
 
-Panel se liší podle toho, jaká máte oprávnění. Terapeut vidí jen svoje rezervace, svoje klienty a svůj kalendář; administrátor vidí všechno. Když v příručce narazíte na sekci, kterou ve svém menu nevidíte, nejde o chybu — jen na ni nemáte oprávnění.
+Panel se liší podle toho, jaká máte oprávnění. Terapeut má v seznamu rezervací jen svoje termíny a v kalendáři sice vidí provoz celé ambulance, ale upravovat může jen vlastní záznamy; lektor jen kurzy a lekce, které sám vede (a místo celé sekce Kurzy má v menu rovnou **Kurzy** a **Lekce**); administrátor vidí všechno. Když v příručce narazíte na sekci, kterou ve svém menu nevidíte, nejde o chybu — jen na ni nemáte oprávnění. Podrobný rozpis je v kapitole [Role a oprávnění](?tema=zaklady/role-a-opravneni).
 
 > **Dobré vědět:** panel se chová jako aplikace, ne jako běžný web. Přepínání mezi obrazovkami nenačítá stránku znovu, takže je rychlé. Když ale něco vypadá zaseknutě, pomůže tvrdé obnovení stránky (Cmd/Ctrl + Shift + R).

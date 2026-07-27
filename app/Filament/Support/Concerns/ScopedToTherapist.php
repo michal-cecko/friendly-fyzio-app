@@ -5,10 +5,11 @@ namespace App\Filament\Support\Concerns;
 use App\Models\User;
 
 /**
- * Row-level scoping for the therapist portal. A pure therapist (role Therapist)
- * only sees their own data in the shared admin resources; administrators — including
- * an admin who also practises (Therapist + Admin) keeps full, unscoped access
- * (the scope helpers return null for them, leaving the query unfiltered).
+ * Row-level scoping for the therapist portal. Staff who treat or teach (role
+ * Therapist or Lecturer) only see their own data in the shared admin resources;
+ * administrators — including an admin who also practises (Therapist + Admin) —
+ * keep full, unscoped access (the scope helpers return null for them, leaving
+ * the query unfiltered). See {@see User::isScopedToOwnWork()}.
  */
 trait ScopedToTherapist
 {
@@ -34,7 +35,8 @@ trait ScopedToTherapist
     {
         $user = auth()->user();
 
-        // A therapist who is not also an admin: admins keep full, unscoped access.
-        return $user instanceof User && $user->isTherapist() && ! $user->isAdmin() ? $user : null;
+        // Someone who treats or teaches but is not an admin: admins keep full,
+        // unscoped access.
+        return $user instanceof User && $user->isScopedToOwnWork() ? $user : null;
     }
 }

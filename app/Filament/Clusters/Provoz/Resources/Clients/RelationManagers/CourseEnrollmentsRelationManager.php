@@ -10,6 +10,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 class CourseEnrollmentsRelationManager extends RelationManager
 {
@@ -18,6 +19,15 @@ class CourseEnrollmentsRelationManager extends RelationManager
     protected static ?string $title = 'Kurzy';
 
     protected static string|BackedEnum|null $icon = Heroicon::OutlinedAcademicCap;
+
+    /**
+     * Every row here opens an enrollment, so the tab follows the same rule as
+     * the resource behind it: a therapist who does not teach never sees it.
+     */
+    public static function canViewForRecord(Model $ownerRecord, string $pageClass): bool
+    {
+        return CourseEnrollmentResource::canAccess();
+    }
 
     public function table(Table $table): Table
     {

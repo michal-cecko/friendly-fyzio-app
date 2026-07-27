@@ -9,7 +9,7 @@ use App\Support\Reservations\Conflict;
 /**
  * Whose work the Návrhy (and Problémy) surfaces are about.
  *
- * A pure therapist sees only their own: reservations they run
+ * A therapist or lecturer who is not also an admin sees only their own: reservations they run
  * (`reservations.therapist_id`) and offerings they teach
  * (`courses.instructor_id`, `lessons.instructor_id`) — the same two keys
  * {@see ScopedToTherapist} uses for the shared
@@ -34,7 +34,7 @@ final class StaffScope
 
     public static function for(?object $user): self
     {
-        if (! $user instanceof User || ! $user->isTherapist() || $user->isAdmin()) {
+        if (! $user instanceof User || ! $user->isScopedToOwnWork()) {
             return new self(null, null);
         }
 

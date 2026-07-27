@@ -11,6 +11,7 @@ use App\Models\Concerns\Auditable;
 use App\Models\Concerns\HasCapacity;
 use App\Observers\CourseSeriesObserver;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -25,6 +26,7 @@ class CourseSeries extends Model
 
     protected $fillable = [
         'course_id',
+        'instructor_id',
         'name',
         'invoice_title',
         'start_date',
@@ -55,6 +57,36 @@ class CourseSeries extends Model
     public function course(): BelongsTo
     {
         return $this->belongsTo(Course::class);
+    }
+
+    /**
+     * The lecturer of this run of the course. Optional: an empty column means
+     * the série is led by the course's own instructor — see {@see leadInstructor()}.
+     */
+    public function instructor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'instructor_id');
+    }
+
+    /**
+     * Who actually teaches the série: its own lecturer when one is assigned,
+     * otherwise the course's instructor.
+     */
+    public function leadInstructor(): ?User
+    {
+        return $this->instructor ?? $this->course?->instructor;
+    }
+
+    /**
+     * Series the given user leads — their own série assignments plus every série
+     * of a course they instruct. Both count, so assigning a lecturer to a single
+     * série never takes the course's owner off it.
+     */
+    public function scopeLedBy(Builder $query, string $userId): Builder
+    {
+        return $query->where(fn (Builder $nested) => $nested
+            ->where($this->qualifyColumn('instructor_id'), $userId)
+            ->orWhereHas('course', fn (Builder $course) => $course->where('instructor_id', $userId)));
     }
 
     public function lessons(): HasMany

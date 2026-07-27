@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Building;
 use App\Models\Room;
+use App\Models\RoomBlocking;
 use App\Models\StaffProfile;
 use App\Models\TherapistWorkBlock;
 use App\Models\User;
@@ -123,12 +124,53 @@ class WorkBlockImportTest extends TestCase
         $this->assertSame(2, TherapistWorkBlock::query()->whereDate('work_date', '2026-07-24')->count()); // Renča + Šárka only
     }
 
+    public function test_rentals_become_one_off_room_blockings(): void
+    {
+        $this->runImport();
+
+        // The three rentals in the fixture — and only those. Device time is the
+        // ambulance's own laser, not a tenant, so it blocks nothing here.
+        $this->assertSame(3, RoomBlocking::query()->count());
+        $this->assertSame(0, RoomBlocking::query()->where('is_recurring', true)->count());
+
+        $kuba = RoomBlocking::query()->where('reason', 'Kuba - pronájem AV')->firstOrFail();
+        $this->assertSame('Ambulance velká', $kuba->room->name);
+        // Stored as wall clock: 15:00 in Prague must not be filed as 13:00 UTC,
+        // because RoomBlockingIntervals reads the hour and minute verbatim.
+        $this->assertSame('2026-07-25 15:00:00', $kuba->start_at->format('Y-m-d H:i:s'));
+        $this->assertSame('2026-07-25 18:00:00', $kuba->end_at->format('Y-m-d H:i:s'));
+
+        // A rental named only by its tenant is labelled, or it reads as a shift.
+        $amani = RoomBlocking::query()->where('reason', 'Pronájem – Lucka A. - AM')->firstOrFail();
+        $this->assertSame('Ambulance malá', $amani->room->name);
+        $this->assertSame('2026-07-24 07:00:00', $amani->start_at->format('Y-m-d H:i:s'));
+
+        // Room-first title, and Šárka is a therapist — the "pronájem" still wins.
+        $sarka = RoomBlocking::query()->where('reason', 'AV- Šárka pronájem')->firstOrFail();
+        $this->assertSame('Ambulance velká', $sarka->room->name);
+        $this->assertSame(
+            0,
+            TherapistWorkBlock::query()->whereDate('work_date', '2026-07-28')->count(),
+            'A rental must not also become the therapist’s availability.',
+        );
+    }
+
+    public function test_a_past_rental_is_not_blocked(): void
+    {
+        Carbon::setTestNow('2026-07-29T08:00:00+02:00');
+
+        $this->runImport();
+
+        $this->assertSame(0, RoomBlocking::query()->count());
+    }
+
     public function test_is_idempotent(): void
     {
         $this->runImport();
         $this->runImport();
 
         $this->assertSame(9, TherapistWorkBlock::query()->count());
+        $this->assertSame(3, RoomBlocking::query()->count());
     }
 
     public function test_dry_run_writes_nothing(): void
@@ -136,5 +178,6 @@ class WorkBlockImportTest extends TestCase
         $this->runImport(dryRun: true);
 
         $this->assertSame(0, TherapistWorkBlock::query()->count());
+        $this->assertSame(0, RoomBlocking::query()->count());
     }
 }

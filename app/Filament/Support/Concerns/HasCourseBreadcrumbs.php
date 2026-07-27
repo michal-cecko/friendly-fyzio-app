@@ -3,6 +3,7 @@
 namespace App\Filament\Support\Concerns;
 
 use App\Filament\Support\Breadcrumbs\CourseAncestry;
+use App\Filament\Support\RecordLinks;
 use Filament\Resources\Resource;
 use Illuminate\Database\Eloquent\Model;
 
@@ -63,11 +64,7 @@ trait HasCourseBreadcrumbs
      */
     private static function appendAncestorCrumb(array &$trail, string $resource, Model $record, string $label): void
     {
-        $url = match (true) {
-            $resource::hasPage('view') && $resource::canView($record) => $resource::getUrl('view', ['record' => $record]),
-            $resource::hasPage('edit') && $resource::canEdit($record) => $resource::getUrl('edit', ['record' => $record]),
-            default => null,
-        };
+        $url = RecordLinks::detailUrl($resource, $record);
 
         if ($url === null) {
             $trail[] = $label;
