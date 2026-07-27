@@ -17,6 +17,9 @@
         x-data="{
             title: '',
             cal: null,
+            {{-- Phones and tablets stack the panel above the grid, where it costs a
+                 screenful before the calendar starts, so it opens collapsed there. --}}
+            sideOpen: window.innerWidth > 1024,
             wrapObserver: null,
             wlBadges: {},
             wlObserver: null,
@@ -96,6 +99,7 @@
             prev() { window.dispatchEvent(new CustomEvent('filament-fullcalendar--prev')); },
             next() { window.dispatchEvent(new CustomEvent('filament-fullcalendar--next')); },
             goto(date) { if (this.cal) this.cal.gotoDate(date); },
+            toggleSide() { this.sideOpen = ! this.sideOpen; },
         }"
         @calendar-goto.window="goto($event.detail.date)"
     >
@@ -196,10 +200,10 @@
                         wire:click="toggleTherapist('{{ $id }}')"
                         @class(['ff-chip', 'is-muted' => ! $isOn, 'is-me' => $isMe])
                         @style(["border-color: {$accent}" => $isOn])
-                        @if ($isMe) title="{{ $therapist->user?->name }}" @endif
+                        title="{{ $therapist->user?->name }}"
                     >
                         <span class="ff-chip-avatar" style="background: {{ $accent }}">{{ $this->therapistInitials($therapist->user?->name) }}</span>
-                        <span>{{ $isMe ? 'Já' : $therapist->user?->name }}</span>
+                        <span>{{ $isMe ? 'Já' : $this->therapistChipName($therapist->user?->name) }}</span>
                         @if ($inFilter)
                             <svg class="ff-chip-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                         @endif
@@ -280,73 +284,75 @@
             @endunless
         </div>
 
+        {{-- The panel toggles client side so its default can follow the viewport
+             (collapsed on phones) instead of one server-rendered state for all. --}}
         <div class="ff-body">
-            @if ($sidebarCollapsed)
-                <button type="button" class="ff-side-expand" wire:click="toggleSidebar" title="Zobrazit panel" aria-label="Zobrazit panel">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                </button>
-            @else
-                <aside class="ff-side">
-                    <div class="ff-side-top">
-                        <button type="button" class="ff-side-collapse" wire:click="toggleSidebar" title="Skrýt panel" aria-label="Skrýt panel">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                        </button>
-                    </div>
+            <button type="button" class="ff-side-expand" x-show="! sideOpen" x-cloak @click="toggleSide()" title="Zobrazit kalendář">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                <span>Zobrazit kalendář</span>
+            </button>
 
-                    <div class="ff-mini">
-                        <div class="ff-mini-head">
-                            <span class="ff-mini-month">{{ $this->sidebarMonthLabel() }}</span>
-                            <div class="ff-mini-nav">
-                                <button type="button" wire:click="sidebarPrevMonth" aria-label="Předchozí měsíc">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                                </button>
-                                <button type="button" wire:click="sidebarNextMonth" aria-label="Další měsíc">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                                </button>
+            <aside class="ff-side" x-show="sideOpen" x-cloak>
+                <div class="ff-side-top">
+                    <button type="button" class="ff-side-collapse" @click="toggleSide()" title="Skrýt kalendář">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                        <span>Skrýt kalendář</span>
+                    </button>
+                </div>
+
+                <div class="ff-mini">
+                    <div class="ff-mini-head">
+                        <span class="ff-mini-month">{{ $this->sidebarMonthLabel() }}</span>
+                        <div class="ff-mini-nav">
+                            <button type="button" wire:click="sidebarPrevMonth" aria-label="Předchozí měsíc">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                            </button>
+                            <button type="button" wire:click="sidebarNextMonth" aria-label="Další měsíc">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="ff-mini-dow">
+                        @foreach (['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'] as $dow)
+                            <span>{{ $dow }}</span>
+                        @endforeach
+                    </div>
+                    <div class="ff-mini-grid">
+                        @foreach ($this->sidebarMonthGrid() as $week)
+                            <div class="ff-mini-week">
+                                @foreach ($week as $day)
+                                    <button
+                                        type="button"
+                                        wire:click="goToDate('{{ $day['date'] }}')"
+                                        @class([
+                                            'ff-mini-day',
+                                            'is-out' => ! $day['inMonth'],
+                                            'is-today' => $day['isToday'],
+                                            'is-selected' => $day['isSelected'],
+                                        ])
+                                    >{{ $day['day'] }}</button>
+                                @endforeach
                             </div>
-                        </div>
-                        <div class="ff-mini-dow">
-                            @foreach (['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'] as $dow)
-                                <span>{{ $dow }}</span>
-                            @endforeach
-                        </div>
-                        <div class="ff-mini-grid">
-                            @foreach ($this->sidebarMonthGrid() as $week)
-                                <div class="ff-mini-week">
-                                    @foreach ($week as $day)
-                                        <button
-                                            type="button"
-                                            wire:click="goToDate('{{ $day['date'] }}')"
-                                            @class([
-                                                'ff-mini-day',
-                                                'is-out' => ! $day['inMonth'],
-                                                'is-today' => $day['isToday'],
-                                                'is-selected' => $day['isSelected'],
-                                            ])
-                                        >{{ $day['day'] }}</button>
-                                    @endforeach
-                                </div>
-                            @endforeach
-                        </div>
+                        @endforeach
                     </div>
+                </div>
 
-                    @php($summary = $this->daySummary())
-                    <div class="ff-day">
-                        <div class="ff-day-head">
-                            <span class="ff-day-title">{{ $this->selectedDate()->isToday() ? 'Dnes' : 'Vybraný den' }}</span>
-                            <span class="ff-day-sub">{{ $summary['label'] }}</span>
-                        </div>
-                        <div class="ff-day-stats">
-                            <div class="ff-stat"><span class="ff-stat-label">TERMÍNY</span><span class="ff-stat-value">{{ $summary['count'] }}</span></div>
-                            <div class="ff-stat"><span class="ff-stat-label">HODIN</span><span class="ff-stat-value">{{ $summary['hours'] }}</span></div>
-                            <div class="ff-stat"><span class="ff-stat-label">VOLNO</span><span class="ff-stat-value ff-stat-sm">{{ $summary['free'] }}</span></div>
-                            <div class="ff-stat"><span class="ff-stat-label">VYTÍŽENOST</span><span class="ff-stat-value ff-stat-sm ff-stat-util">{{ $summary['utilization'] }}%</span></div>
-                        </div>
-                        <div class="ff-day-track"><div class="ff-day-fill" style="width: {{ min(100, $summary['utilization']) }}%"></div></div>
-                        <div class="ff-day-caption">Vytíženost dne</div>
+                @php($summary = $this->daySummary())
+                <div class="ff-day">
+                    <div class="ff-day-head">
+                        <span class="ff-day-title">{{ $this->selectedDate()->isToday() ? 'Dnes' : 'Vybraný den' }}</span>
+                        <span class="ff-day-sub">{{ $summary['label'] }}</span>
                     </div>
-                </aside>
-            @endif
+                    <div class="ff-day-stats">
+                        <div class="ff-stat"><span class="ff-stat-label">TERMÍNY</span><span class="ff-stat-value">{{ $summary['count'] }}</span></div>
+                        <div class="ff-stat"><span class="ff-stat-label">HODIN</span><span class="ff-stat-value">{{ $summary['hours'] }}</span></div>
+                        <div class="ff-stat"><span class="ff-stat-label">VOLNO</span><span class="ff-stat-value ff-stat-sm">{{ $summary['free'] }}</span></div>
+                        <div class="ff-stat"><span class="ff-stat-label">VYTÍŽENOST</span><span class="ff-stat-value ff-stat-sm ff-stat-util">{{ $summary['utilization'] }}%</span></div>
+                    </div>
+                    <div class="ff-day-track"><div class="ff-day-fill" style="width: {{ min(100, $summary['utilization']) }}%"></div></div>
+                    <div class="ff-day-caption">Vytíženost dne</div>
+                </div>
+            </aside>
 
             <div class="ff-cal-wrap">
                 <div x-ref="wlData" data-badges="{{ json_encode($this->waitlistHeaderBadges()) }}" hidden></div>
@@ -435,7 +441,9 @@
         .ff-readonly-hint svg { width: 13px; height: 13px; }
         .ff-all { font-size: 14px; color: var(--ff-muted); background: transparent; border: none; cursor: pointer; padding: 4px 8px; }
         .ff-all:hover { color: var(--ff-text); }
-        .ff-legend { margin-left: auto; display: inline-flex; align-items: center; gap: 12px; }
+        /* Wraps rather than running off the row: on a phone the legend is far wider
+           than the filter bar, and it has to shrink (min-width) before it can wrap. */
+        .ff-legend { margin-left: auto; min-width: 0; display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
         .ff-leg { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ff-muted); }
         .ff-leg-sw { width: 14px; height: 14px; border-radius: 3px; border: 1px solid; }
         .ff-count { font-size: 14px; color: var(--ff-faint); white-space: nowrap; }
@@ -464,10 +472,10 @@
         .ff-cal-wrap { flex: 1 1 auto; min-width: 0; }
         .ff-side { flex: 0 0 288px; width: 288px; display: flex; flex-direction: column; gap: 10px; }
         .ff-side-top { display: flex; justify-content: flex-end; }
-        .ff-side-collapse, .ff-side-expand { width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; color: var(--ff-muted); background: var(--ff-panel); border: 1px solid var(--ff-border); border-radius: 10px; cursor: pointer; }
+        .ff-side-collapse, .ff-side-expand { height: 32px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 10px; font-size: 13px; font-weight: 500; color: var(--ff-muted); background: var(--ff-panel); border: 1px solid var(--ff-border); border-radius: 10px; cursor: pointer; white-space: nowrap; }
         .ff-side-collapse:hover, .ff-side-expand:hover { background: var(--ff-hover); color: var(--ff-text); }
-        .ff-side-collapse svg, .ff-side-expand svg { width: 16px; height: 16px; }
-        .ff-side-expand { flex: 0 0 32px; align-self: flex-start; }
+        .ff-side-collapse svg, .ff-side-expand svg { width: 16px; height: 16px; flex-shrink: 0; }
+        .ff-side-expand { flex: 0 0 auto; align-self: flex-start; }
 
         .ff-mini { background: var(--ff-panel); border: 1px solid var(--ff-border); border-radius: 12px; padding: 12px; }
         .ff-mini-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
@@ -618,6 +626,14 @@
         @media (max-width: 1024px) {
             .ff-body { flex-direction: column; }
             .ff-side { width: 100%; flex-basis: auto; }
+        }
+
+        /* Phones: the day stats are a desktop-sidebar luxury — on a narrow screen
+           they only push the grid further down. */
+        @media (max-width: 640px) {
+            .ff-day { display: none; }
+            /* Nothing to push against once the row wraps. */
+            .ff-legend { margin-left: 0; }
         }
     </style>
 </x-filament-widgets::widget>

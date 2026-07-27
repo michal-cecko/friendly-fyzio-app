@@ -223,6 +223,28 @@ class AdminDashboardTest extends TestCase
             ->assertSee('Dvojí rezervace místnosti');
     }
 
+    /**
+     * The cards sit in a grid, where an item defaults to min-width:auto — without
+     * min-w-0 the nowrap time/label lines widened the card past its column and
+     * spilled out of the widget on phones.
+     */
+    public function test_conflict_cards_shrink_inside_their_grid_column(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+
+        $room = Room::factory()->create();
+        Reservation::factory()->create(['reservation_date' => today()->addDay(), 'room_id' => $room->id, 'status' => ReservationStatus::Confirmed, 'start_time' => '09:00', 'end_time' => '10:00']);
+        Reservation::factory()->create(['reservation_date' => today()->addDay(), 'room_id' => $room->id, 'status' => ReservationStatus::Confirmed, 'start_time' => '09:30', 'end_time' => '10:30']);
+
+        $html = Livewire::test(ProblemsWidget::class)->html();
+
+        $this->assertStringContainsString('flex min-w-0 flex-col rounded-lg', $html);
+        // Wrapping on phones where a card owns the full width, ellipsis only once
+        // two cards share the row.
+        $this->assertStringContainsString('sm:truncate', $html);
+        $this->assertStringNotContainsString('block truncate', $html);
+    }
+
     public function test_dashboard_renders_for_admin(): void
     {
         $this->actingAs(User::factory()->admin()->create());

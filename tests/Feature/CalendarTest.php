@@ -88,6 +88,37 @@ class CalendarTest extends TestCase
             ->assertSee('Smazané');
     }
 
+    public function test_therapist_chips_are_labelled_with_the_given_name_only(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+
+        $therapist = User::factory()->therapist()->create(['name' => 'Lucie Fičkerová']);
+        StaffProfile::factory()->published()->create(['user_id' => $therapist->getKey()]);
+
+        $html = Livewire::test(ReservationCalendar::class)->assertSuccessful()->html();
+
+        // Chip label short, avatar initials and the tooltip still complete.
+        $this->assertStringContainsString('<span>Lucie</span>', $html);
+        $this->assertStringNotContainsString('<span>Lucie Fičkerová</span>', $html);
+        $this->assertStringContainsString('>LF</span>', $html);
+        $this->assertStringContainsString('title="Lucie Fičkerová"', $html);
+    }
+
+    public function test_side_panel_toggle_is_labelled_and_starts_collapsed_on_small_screens(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+
+        $html = Livewire::test(ReservationCalendar::class)->assertSuccessful()->html();
+
+        // Both arrow buttons now say what they do…
+        $this->assertStringContainsString('<span>Zobrazit kalendář</span>', $html);
+        $this->assertStringContainsString('<span>Skrýt kalendář</span>', $html);
+        // …and the open/closed state is client side, so phones can default to closed.
+        $this->assertStringContainsString('sideOpen: window.innerWidth > 1024', $html);
+        $this->assertStringContainsString('x-show="sideOpen"', $html);
+        $this->assertStringContainsString('x-show="! sideOpen"', $html);
+    }
+
     public function test_client_filter_limits_events(): void
     {
         $monday = Carbon::now()->startOfWeek(Carbon::MONDAY);

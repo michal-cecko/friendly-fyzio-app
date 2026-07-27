@@ -30,4 +30,22 @@ class Avatar
             (new Collection($words))->take(2)->map(fn (string $word): string => mb_substr($word, 0, 1))->implode('')
         );
     }
+
+    /**
+     * The given name alone, skipping academic-title words the same way initials
+     * do: "Mgr. Lucie Fičkerová" → "Lucie". Falls back to the whole name.
+     */
+    public static function firstName(?string $name): string
+    {
+        if (blank($name)) {
+            return '';
+        }
+
+        $words = array_values(array_filter(
+            preg_split('/\s+/', trim($name)) ?: [],
+            fn (string $word): bool => $word !== '' && ! str_ends_with($word, '.'),
+        ));
+
+        return $words[0] ?? trim($name);
+    }
 }

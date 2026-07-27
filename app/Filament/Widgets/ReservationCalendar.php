@@ -124,9 +124,6 @@ class ReservationCalendar extends FullCalendarWidget
     #[Url(as: 'm')]
     public ?string $sidebarMonth = null;
 
-    /** Reservations sidebar collapsed state. */
-    public bool $sidebarCollapsed = false;
-
     /** Whether clicking a calendar card selects it (for bulk actions) instead of opening the edit modal. */
     public bool $selectionMode = false;
 
@@ -1267,6 +1264,15 @@ class ReservationCalendar extends FullCalendarWidget
         return Avatar::initials($name);
     }
 
+    /**
+     * Filter chips label with the given name only — the surname would push the
+     * row past a phone's width, and the avatar still carries both initials.
+     */
+    public function therapistChipName(?string $name): string
+    {
+        return Avatar::firstName($name);
+    }
+
     public function toggleTherapist(string $id): void
     {
         $this->therapistIds = in_array($id, $this->therapistIds, true)
@@ -1852,11 +1858,6 @@ class ReservationCalendar extends FullCalendarWidget
         $this->calendarDate = $date;
         $this->sidebarMonth = Carbon::parse($date)->format('Y-m');
         $this->dispatch('calendar-goto', date: $date);
-    }
-
-    public function toggleSidebar(): void
-    {
-        $this->sidebarCollapsed = ! $this->sidebarCollapsed;
     }
 
     /**

@@ -9,13 +9,15 @@
 {{-- Laid out as a column so that side by side in a grid, where every card is
      stretched to the tallest in its row, the resolve link still sits on the
      bottom edge rather than floating in the middle. --}}
+{{-- min-w-0: as a grid item the card defaults to min-width:auto, which lets the
+     time/label lines below push it wider than its column instead of truncating. --}}
 <div @class([
-    'flex flex-col rounded-lg border-s-[3px] px-3.5 py-3',
+    'flex min-w-0 flex-col rounded-lg border-s-[3px] px-3.5 py-3',
     'border-danger-500 bg-danger-50/70 dark:bg-danger-400/10' => ! $isSoft,
     'border-warning-500 bg-warning-50/70 dark:bg-warning-400/10' => $isSoft,
 ])>
     <div class="flex items-start justify-between gap-2">
-        <p class="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
+        <p class="flex min-w-0 items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
             <x-filament::icon
                 :icon="$isSoft ? 'heroicon-m-information-circle' : 'heroicon-m-exclamation-triangle'"
                 @class([
@@ -39,17 +41,19 @@
         @endif
     </p>
 
-    <div class="mt-2 ps-6">
+    {{-- One card per row on phones, so the sides wrap in full there and only
+         truncate from sm up, where two cards share the width. --}}
+    <div class="mt-2 min-w-0 ps-6">
         @foreach ([$problem->a, $problem->b] as $side)
             @php $sideUrl = $side->url(); @endphp
             @if ($sideUrl)
                 <a href="{{ $sideUrl }}" @class([
-                    'block truncate text-sm text-gray-700 hover:underline dark:text-gray-200',
+                    'block text-sm text-gray-700 hover:underline sm:truncate dark:text-gray-200',
                     'hover:text-danger-600 dark:hover:text-danger-400' => ! $isSoft,
                     'hover:text-warning-600 dark:hover:text-warning-400' => $isSoft,
                 ])>{{ $side->time }} · {{ $side->label }}</a>
             @else
-                <span class="block truncate text-sm text-gray-700 dark:text-gray-200">{{ $side->time }} · {{ $side->label }}</span>
+                <span class="block text-sm text-gray-700 sm:truncate dark:text-gray-200">{{ $side->time }} · {{ $side->label }}</span>
             @endif
         @endforeach
     </div>
