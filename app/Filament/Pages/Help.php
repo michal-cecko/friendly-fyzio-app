@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Support\Help\HelpExport;
 use App\Filament\Support\Help\HelpRepository;
 use App\Filament\Support\Help\HelpSearch;
 use App\Filament\Support\Help\HelpSearchResult;
@@ -9,12 +10,14 @@ use App\Filament\Support\Help\HelpSection;
 use App\Filament\Support\Help\HelpTopic;
 use App\Providers\Filament\AdminPanelProvider;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Pages\Page;
 use Filament\Panel;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * In-app documentation: a topic tree and a search box beside the open article.
@@ -48,6 +51,33 @@ class Help extends Page
     public static function shouldRegisterNavigation(): bool
     {
         return false;
+    }
+
+    /**
+     * The whole manual as one markdown file, for feeding to an AI assistant.
+     * Admins only — the export is the entire panel's documentation in one place.
+     *
+     * @return array<int, Action>
+     */
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('download')
+                ->label('Stáhnout příručku')
+                ->tooltip('Celá nápověda v jednom .md souboru — dá se vložit do AI asistenta a ptát se ho.')
+                ->icon(Heroicon::OutlinedArrowDownTray)
+                ->color('gray')
+                ->visible(fn (): bool => (auth()->user()?->isAdmin() ?? false) && $this->sections->isNotEmpty())
+                ->action(function (): StreamedResponse {
+                    $export = app(HelpExport::class);
+
+                    return response()->streamDownload(
+                        fn () => print $export->markdown(),
+                        $export->filename(),
+                        ['Content-Type' => 'text/markdown; charset=UTF-8'],
+                    );
+                }),
+        ];
     }
 
     /**
