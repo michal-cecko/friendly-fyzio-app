@@ -34,6 +34,7 @@
                     this.$wire.calendarDate = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
                 };
                 this.cal.on('datesSet', sync);
+                this.syncView();
                 sync();
                 this.watchWrapWidth();
                 this.cal.on('datesSet', () => this.renderWaitlistBadges());
@@ -100,8 +101,16 @@
             next() { window.dispatchEvent(new CustomEvent('filament-fullcalendar--next')); },
             goto(date) { if (this.cal) this.cal.gotoDate(date); },
             toggleSide() { this.sideOpen = ! this.sideOpen; },
+            {{-- Seven columns are unreadable on a phone, so the grid drops to a
+                 single day there and follows the viewport if it is resized. --}}
+            syncView() {
+                if (! this.cal) return;
+                const want = window.innerWidth <= 768 ? 'timeGridDay' : 'timeGridWeek';
+                if (this.cal.view.type !== want) this.cal.changeView(want);
+            },
         }"
         @calendar-goto.window="goto($event.detail.date)"
+        @resize.window.debounce.200ms="syncView()"
     >
         <div class="ff-toolbar">
             <div class="ff-toolbar-left">
@@ -183,105 +192,145 @@
             </div>
         @endif
 
+        {{-- The whole bar folds behind one toggle. Folded, it still shows every
+             active filter as a removable chip, so a tidy bar never hides the fact
+             that the grid is filtered; unfolded, it adds the unpicked options. --}}
         <div class="ff-filterbar">
-            <div class="ff-filter-row">
-                <span class="ff-filter-label">Terapeuté:</span>
+            @php
+                $pills = $this->activeFilterPills();
+            @endphp
+            <div class="ff-filter-head">
+                <button
+                    type="button"
+                    class="ff-filters-toggle"
+                    :class="{ 'ff-filters-toggle-open': $wire.showFilters }"
+                    @click="$wire.showFilters = ! $wire.showFilters"
+                    aria-label="Zobrazit nebo skrýt filtry"
+                >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
+                    <span>Filtry</span>
+                    @if (count($pills) > 0)
+                        <span class="ff-filters-badge">{{ count($pills) }}</span>
+                    @endif
+                    <svg class="ff-filters-chevron" :class="{ 'ff-rotate': $wire.showFilters }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </button>
 
-                @foreach ($this->therapists() as $therapist)
-                    @php
-                        $id = $therapist->getKey();
-                        $inFilter = in_array($id, $therapistIds, true);
-                        $isOn = ! $hasSelection || $inFilter;
-                        $accent = $this->therapistColor($id);
-                        $isMe = $therapist->user_id === $currentUserId;
-                    @endphp
-                    <button
-                        type="button"
-                        wire:click="toggleTherapist('{{ $id }}')"
-                        @class(['ff-chip', 'is-muted' => ! $isOn, 'is-me' => $isMe])
-                        @style(["border-color: {$accent}" => $isOn])
-                        title="{{ $therapist->user?->name }}"
-                    >
-                        <span class="ff-chip-avatar" style="background: {{ $accent }}">{{ $this->therapistInitials($therapist->user?->name) }}</span>
-                        <span>{{ $isMe ? 'Já' : $this->therapistChipName($therapist->user?->name) }}</span>
-                        @if ($inFilter)
-                            <svg class="ff-chip-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                        @endif
-                    </button>
-                @endforeach
-
-                <button type="button" class="ff-all" wire:click="clearTherapists">Všichni</button>
-
-                @if ($isScoped)
-                    <span class="ff-readonly-hint" title="Kalendář ukazuje celý tým. Otevřít a upravit můžete jen své vlastní termíny a svou pracovní dobu.">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                        <span>Termíny kolegů jsou jen pro čtení</span>
-                    </span>
-                @endif
-
-                <span class="ff-legend">
-                    <span class="ff-leg"><span class="ff-leg-sw" style="background:#EEF2FF;border-color:#6366F1"></span>Blokace</span>
-                    @unless ($isTemplate)
-                        <span class="ff-leg" title="Pauza terapeuta po termínu"><span class="ff-leg-sw" style="background:#F5F5F5;border-color:#A3A3A3"></span>Pauza</span>
-                    @endunless
-                    @unless ($isTemplate)
-                        <label class="ff-leg ff-leg-toggle" title="Zobrazit či skrýt terapie v kalendáři">
-                            <input type="checkbox" wire:model.live="showReservations">
-                            <span class="ff-leg-sw" style="background:#FFF1F4;border-color:#ED86A3"></span>
-                            <span>Terapie</span>
-                        </label>
-                    @endunless
-                    <label class="ff-leg ff-leg-toggle" title="Zobrazit či skrýt lekce kurzů v kalendáři">
-                        <input type="checkbox" wire:model.live="showCourses">
-                        <span class="ff-leg-sw" style="background:#ECFEFF;border-color:#0891B2"></span>
-                        <span>Kurzy</span>
-                    </label>
-                    <label class="ff-leg ff-leg-toggle" title="Zobrazit či skrýt jednorázové akce v kalendáři">
-                        <input type="checkbox" wire:model.live="showLessons">
-                        <span class="ff-leg-sw" style="background:#FDF4FF;border-color:#C026D3"></span>
-                        <span>Akce</span>
-                    </label>
-                    @unless ($isTemplate)
-                        @if (! $this->room && Settings::dayWaitlistEnabled())
-                            <label class="ff-leg ff-leg-toggle" title="Zobrazit či skrýt pořadník na dny">
-                                <input type="checkbox" wire:model.live="showWaitlist">
-                                <span class="ff-leg-sw" style="background:#FFFBEB;border-color:#D97706"></span>
-                                <span>Pořadník</span>
-                            </label>
-                        @endif
-                        <span class="ff-count">{{ $this->weekCountLabel() }}</span>
-                    @endunless
-                </span>
-            </div>
-
-            @unless ($isTemplate)
-                <div class="ff-filter-row ff-filter-controls">
-                    <div class="ff-search">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                        <input type="search" wire:model.live.debounce.400ms="search" placeholder="Hledat klienta nebo službu…">
-                    </div>
-
-                    <button type="button" class="ff-filters-toggle" :class="{ 'ff-filters-toggle-open': $wire.showFilters }" @click="$wire.showFilters = ! $wire.showFilters" aria-label="Zobrazit nebo skrýt filtry">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
-                        <span>Filtry</span>
-                        @if ($this->activeFilterCount() > 0)
-                            <span class="ff-filters-badge">{{ $this->activeFilterCount() }}</span>
-                        @endif
-                        <svg class="ff-filters-chevron" :class="{ 'ff-rotate': $wire.showFilters }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                    </button>
-
-                    @if ($this->hasActiveFilters())
-                        <button type="button" class="ff-reset" wire:click="resetFilters" title="Zrušit všechny filtry" aria-label="Zrušit všechny filtry">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+                <div class="ff-active" x-show="! $wire.showFilters" x-cloak>
+                    @foreach ($pills as $pill)
+                        <button
+                            type="button"
+                            class="ff-pill"
+                            wire:click="removeFilter('{{ $pill['type'] }}', @js($pill['key']), @js($pill['value']))"
+                            @style(["border-color: {$pill['color']}" => filled($pill['color'])])
+                            title="Zrušit filtr: {{ $pill['label'] }}"
+                        >
+                            @if (filled($pill['color']))
+                                <span class="ff-pill-dot" style="background: {{ $pill['color'] }}"></span>
+                            @endif
+                            <span>{{ $pill['label'] }}</span>
+                            <svg class="ff-pill-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                         </button>
+                    @endforeach
+
+                    @if ($pills === [])
+                        <span class="ff-active-empty">Bez filtrů — celý tým a všechny termíny</span>
                     @endif
                 </div>
 
-                <div class="ff-filter-row ff-filament-filters" x-show="$wire.showFilters" x-cloak>
-                    {{ $this->filtersForm }}
+                @unless ($isTemplate)
+                    <span class="ff-count">{{ $this->weekCountLabel() }}</span>
+                @endunless
+
+                @if ($this->hasActiveFilters())
+                    <button type="button" class="ff-reset" wire:click="resetFilters" title="Zrušit všechny filtry" aria-label="Zrušit všechny filtry">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+                    </button>
+                @endif
+            </div>
+
+            <div class="ff-filter-body" x-show="$wire.showFilters" x-cloak>
+                <div class="ff-filter-row">
+                    <span class="ff-filter-label">Terapeuté:</span>
+
+                    @foreach ($this->therapists() as $therapist)
+                        @php
+                            $id = $therapist->getKey();
+                            $inFilter = in_array($id, $therapistIds, true);
+                            $isOn = ! $hasSelection || $inFilter;
+                            $accent = $this->therapistColor($id);
+                            $isMe = $therapist->user_id === $currentUserId;
+                        @endphp
+                        <button
+                            type="button"
+                            wire:click="toggleTherapist('{{ $id }}')"
+                            @class(['ff-chip', 'is-muted' => ! $isOn, 'is-me' => $isMe])
+                            @style(["border-color: {$accent}" => $isOn])
+                            title="{{ $therapist->user?->name }}"
+                        >
+                            <span class="ff-chip-avatar" style="background: {{ $accent }}">{{ $this->therapistInitials($therapist->user?->name) }}</span>
+                            <span>{{ $isMe ? 'Já' : $this->therapistChipName($therapist->user?->name) }}</span>
+                            @if ($inFilter)
+                                <svg class="ff-chip-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            @endif
+                        </button>
+                    @endforeach
+
+                    <button type="button" class="ff-all" wire:click="clearTherapists">Všichni</button>
+
+                    @if ($isScoped)
+                        <span class="ff-readonly-hint" title="Kalendář ukazuje celý tým. Otevřít a upravit můžete jen své vlastní termíny a svou pracovní dobu.">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                            <span>Termíny kolegů jsou jen pro čtení</span>
+                        </span>
+                    @endif
+
+                    <span class="ff-legend">
+                        <span class="ff-leg"><span class="ff-leg-sw" style="background:#EEF2FF;border-color:#6366F1"></span>Blokace</span>
+                        @unless ($isTemplate)
+                            <span class="ff-leg" title="Pauza terapeuta po termínu"><span class="ff-leg-sw" style="background:#F5F5F5;border-color:#A3A3A3"></span>Pauza</span>
+                        @endunless
+                        @unless ($isTemplate)
+                            <label class="ff-leg ff-leg-toggle" title="Zobrazit či skrýt terapie v kalendáři">
+                                <input type="checkbox" wire:model.live="showReservations">
+                                <span class="ff-leg-sw" style="background:#FFF1F4;border-color:#ED86A3"></span>
+                                <span>Terapie</span>
+                            </label>
+                        @endunless
+                        <label class="ff-leg ff-leg-toggle" title="Zobrazit či skrýt lekce kurzů v kalendáři">
+                            <input type="checkbox" wire:model.live="showCourses">
+                            <span class="ff-leg-sw" style="background:#ECFEFF;border-color:#0891B2"></span>
+                            <span>Kurzy</span>
+                        </label>
+                        <label class="ff-leg ff-leg-toggle" title="Zobrazit či skrýt jednorázové akce v kalendáři">
+                            <input type="checkbox" wire:model.live="showLessons">
+                            <span class="ff-leg-sw" style="background:#FDF4FF;border-color:#C026D3"></span>
+                            <span>Akce</span>
+                        </label>
+                        @unless ($isTemplate)
+                            @if (! $this->room && Settings::dayWaitlistEnabled())
+                                <label class="ff-leg ff-leg-toggle" title="Zobrazit či skrýt pořadník na dny">
+                                    <input type="checkbox" wire:model.live="showWaitlist">
+                                    <span class="ff-leg-sw" style="background:#FFFBEB;border-color:#D97706"></span>
+                                    <span>Pořadník</span>
+                                </label>
+                            @endif
+                        @endunless
+                    </span>
                 </div>
 
-            @endunless
+                @unless ($isTemplate)
+                    <div class="ff-filter-row ff-filter-controls">
+                        <div class="ff-search">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                            <input type="search" wire:model.live.debounce.400ms="search" placeholder="Hledat klienta nebo službu…">
+                        </div>
+                    </div>
+
+                    <div class="ff-filter-row ff-filament-filters">
+                        {{ $this->filtersForm }}
+                    </div>
+                @endunless
+            </div>
         </div>
 
         {{-- The panel toggles client side so its default can follow the viewport
@@ -427,8 +476,20 @@
         .ff-selectbar-clear:disabled { opacity: .5; cursor: default; }
 
         .ff-filterbar { display: flex; flex-direction: column; gap: 12px; background: var(--ff-panel); border: 1px solid var(--ff-border); border-radius: 12px; padding: 12px 14px; margin-bottom: 16px; }
+        .ff-filter-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .ff-filter-body { display: flex; flex-direction: column; gap: 12px; border-top: 1px solid var(--ff-border); padding-top: 12px; }
         .ff-filter-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-        .ff-filter-controls { gap: 10px; border-top: 1px solid var(--ff-border); padding-top: 12px; align-items: center; }
+        .ff-filter-controls { gap: 10px; align-items: center; }
+
+        /* Collapsed summary: one removable chip per active filter. */
+        .ff-active { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-width: 0; flex: 1 1 auto; }
+        .ff-active-empty { font-size: 13px; color: var(--ff-faint); }
+        .ff-pill { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; border: 1px solid var(--ff-border); border-radius: 999px; padding: 3px 8px 3px 10px; background: var(--ff-panel); cursor: pointer; font-size: 13px; font-weight: 500; color: var(--ff-text); }
+        .ff-pill:hover { background: var(--ff-hover); }
+        .ff-pill > span:not(.ff-pill-dot) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .ff-pill-dot { width: 8px; height: 8px; border-radius: 999px; flex-shrink: 0; }
+        .ff-pill-x { width: 13px; height: 13px; flex-shrink: 0; color: var(--ff-faint); }
+        .ff-pill:hover .ff-pill-x { color: var(--ff-text); }
         .ff-filter-label { font-size: 14px; color: var(--ff-muted); }
         .ff-chip { display: inline-flex; align-items: center; gap: 8px; border: 1.5px solid transparent; border-radius: 999px; padding: 4px 12px 4px 4px; background: var(--ff-panel); cursor: pointer; font-size: 14px; font-weight: 500; color: var(--ff-text); transition: opacity .15s; }
         .ff-chip-avatar { width: 26px; height: 26px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; color: #fff; font-size: 11px; font-weight: 700; flex-shrink: 0; }
@@ -447,6 +508,7 @@
         .ff-leg { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ff-muted); }
         .ff-leg-sw { width: 14px; height: 14px; border-radius: 3px; border: 1px solid; }
         .ff-count { font-size: 14px; color: var(--ff-faint); white-space: nowrap; }
+        .ff-filter-head .ff-count { margin-left: auto; }
 
         .ff-search { display: flex; align-items: center; gap: 8px; background: var(--ff-panel); border: 1px solid var(--ff-border); border-radius: 10px; padding: 7px 12px; flex: 1 1 240px; min-width: 180px; }
         .ff-search svg { width: 16px; height: 16px; color: var(--ff-faint); flex-shrink: 0; }

@@ -119,6 +119,19 @@ class CalendarTest extends TestCase
         $this->assertStringContainsString('x-show="! sideOpen"', $html);
     }
 
+    public function test_grid_drops_to_a_single_day_on_narrow_screens(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+
+        $html = Livewire::test(ReservationCalendar::class)->assertSuccessful()->html();
+
+        // The server still boots the week view; the client narrows it on phones
+        // and back again when the window grows.
+        $this->assertStringContainsString('timeGridWeek', $html);
+        $this->assertStringContainsString("window.innerWidth <= 768 ? 'timeGridDay' : 'timeGridWeek'", $html);
+        $this->assertStringContainsString('@resize.window.debounce.200ms="syncView()"', $html);
+    }
+
     public function test_client_filter_limits_events(): void
     {
         $monday = Carbon::now()->startOfWeek(Carbon::MONDAY);
@@ -142,6 +155,72 @@ class CalendarTest extends TestCase
 
         $component->set('filterData', ['statusIds' => [ReservationStatus::Confirmed->value], 'trashed' => 'only']);
         $this->assertSame(2, $component->instance()->activeFilterCount());
+    }
+
+    public function test_collapsed_filter_bar_summarises_every_active_filter_as_a_removable_chip(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+
+        $therapist = StaffProfile::factory()->published()->create([
+            'user_id' => User::factory()->therapist()->create(['name' => 'Lucie Fičkerová'])->getKey(),
+        ]);
+        $client = User::factory()->customer()->create(['name' => 'Jan Novák']);
+
+        $component = Livewire::test(ReservationCalendar::class)
+            ->set('therapistIds', [$therapist->getKey()])
+            ->set('filterData', ['clientIds' => [$client->getKey()], 'trashed' => 'only'])
+            ->set('search', 'masáž')
+            ->set('showCourses', false);
+
+        // The therapist chips, the search box and the selects all fold away, so the
+        // summary has to speak for every one of them.
+        $this->assertSame(
+            ['Lucie', 'Jan Novák', 'Pouze smazané', '„masáž“', 'Skryto: Kurzy'],
+            array_column($component->instance()->activeFilterPills(), 'label'),
+        );
+
+        $component->assertSee('Jan Novák')->assertSee('Skryto: Kurzy');
+
+        $component->call('removeFilter', 'select', 'clientIds', (string) $client->getKey())
+            ->assertSet('filterData.clientIds', [])
+            // …and only that one: the rest of the bar is untouched.
+            ->assertSet('search', 'masáž')
+            ->assertSet('therapistIds', [$therapist->getKey()]);
+
+        $component->call('removeFilter', 'therapist', null, (string) $therapist->getKey())
+            ->assertSet('therapistIds', []);
+
+        $component->call('removeFilter', 'trashed')->assertSet('filterData.trashed', 'without');
+        $component->call('removeFilter', 'search')->assertSet('search', '');
+        $component->call('removeFilter', 'layer', 'showCourses')->assertSet('showCourses', true);
+    }
+
+    public function test_reset_reaches_filters_that_are_not_selects(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+
+        // Hiding a layer used to leave the reset button hidden even though the
+        // grid was filtered; the reset covers the whole bar now.
+        Livewire::test(ReservationCalendar::class)
+            ->assertDontSee('Zrušit všechny filtry')
+            ->set('showLessons', false)
+            ->assertSee('Zrušit všechny filtry')
+            ->call('resetFilters')
+            ->assertSet('showLessons', true)
+            ->assertDontSee('Zrušit všechny filtry');
+    }
+
+    public function test_filter_toggle_folds_the_whole_bar_not_just_the_selects(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+
+        $html = Livewire::test(ReservationCalendar::class)->assertSuccessful()->html();
+
+        // Therapist chips, legend, search and selects share one collapsible body,
+        // and the compact summary shows in its place.
+        $this->assertStringContainsString('class="ff-filter-body" x-show="$wire.showFilters"', $html);
+        $this->assertStringContainsString('class="ff-active" x-show="! $wire.showFilters"', $html);
+        $this->assertStringContainsString('Bez filtrů', $html);
     }
 
     public function test_calendar_links_to_reservation_list(): void

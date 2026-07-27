@@ -470,9 +470,169 @@ class ReservationCalendar extends FullCalendarWidget
 
     public function hasActiveFilters(): bool
     {
-        return filled($this->therapistIds)
-            || filled($this->search)
-            || $this->activeFilterCount() > 0;
+        return $this->activeFilterPills() !== [];
+    }
+
+    /**
+     * Every active filter as a compact, removable chip — what the filter bar
+     * shows while it is collapsed, so a folded bar never hides the fact that
+     * the calendar is filtered. Covers the whole bar, not just the selects:
+     * therapist chips, the search term, the layer toggles and the trash scope
+     * all appear here and all come off with the same {@see removeFilter()}.
+     *
+     * @return list<array{type: string, key: ?string, value: ?string, label: string, color: ?string}>
+     */
+    public function activeFilterPills(): array
+    {
+        $pills = [];
+
+        foreach ($this->therapistIds as $therapistId) {
+            $therapist = $this->therapists()->firstWhere('id', $therapistId);
+
+            if (! $therapist) {
+                continue;
+            }
+
+            $pills[] = [
+                'type' => 'therapist',
+                'key' => null,
+                'value' => (string) $therapistId,
+                'label' => $this->therapistChipName($therapist->user?->name),
+                'color' => $this->therapistColor((string) $therapistId),
+            ];
+        }
+
+        foreach ($this->selectFilterKeys() as $key) {
+            $labels = $this->filterValueLabels($key);
+
+            foreach ($this->filterData[$key] ?? [] as $value) {
+                $pills[] = [
+                    'type' => 'select',
+                    'key' => $key,
+                    'value' => (string) $value,
+                    'label' => $labels[$value] ?? (string) $value,
+                    'color' => null,
+                ];
+            }
+        }
+
+        $trashed = $this->filterData['trashed'] ?? 'without';
+
+        if ($trashed !== 'without') {
+            $pills[] = [
+                'type' => 'trashed',
+                'key' => null,
+                'value' => null,
+                'label' => $trashed === 'only' ? 'Pouze smazané' : 'Se smazanými',
+                'color' => null,
+            ];
+        }
+
+        if (filled($this->search)) {
+            $pills[] = [
+                'type' => 'search',
+                'key' => null,
+                'value' => null,
+                'label' => '„'.$this->search.'“',
+                'color' => null,
+            ];
+        }
+
+        foreach ($this->hiddenLayers() as $property => $label) {
+            $pills[] = [
+                'type' => 'layer',
+                'key' => $property,
+                'value' => null,
+                'label' => 'Skryto: '.$label,
+                'color' => null,
+            ];
+        }
+
+        return $pills;
+    }
+
+    /**
+     * Drop a single filter — the × on a chip in the collapsed bar. The key is
+     * whitelisted per type: this is a public Livewire method, so a hand-made
+     * request must not be able to name any other property.
+     */
+    public function removeFilter(string $type, ?string $key = null, ?string $value = null): void
+    {
+        $isSelect = $type === 'select' && in_array($key, $this->selectFilterKeys(), true);
+        $isLayer = $type === 'layer' && array_key_exists($key, $this->hiddenLayers());
+
+        match (true) {
+            $type === 'therapist' => $this->therapistIds = array_values(array_diff($this->therapistIds, [$value])),
+            $isSelect => $this->filterData[$key] = array_values(array_diff($this->filterData[$key] ?? [], [$value])),
+            $type === 'trashed' => $this->filterData['trashed'] = 'without',
+            $type === 'search' => $this->search = '',
+            $isLayer => $this->{$key} = true,
+            default => null,
+        };
+
+        if ($isSelect || $type === 'trashed') {
+            $this->filtersForm->fill($this->filterData);
+        }
+
+        $this->dispatch('filament-fullcalendar--refresh');
+    }
+
+    /**
+     * Calendar layers switched off in the legend, as property => label.
+     *
+     * @return array<string, string>
+     */
+    protected function hiddenLayers(): array
+    {
+        $layers = $this->isTemplateMode()
+            ? ['showCourses' => 'Kurzy', 'showLessons' => 'Akce']
+            : ['showReservations' => 'Terapie', 'showCourses' => 'Kurzy', 'showLessons' => 'Akce'];
+
+        if (! $this->isTemplateMode() && ! $this->room && Settings::dayWaitlistEnabled()) {
+            $layers['showWaitlist'] = 'Pořadník';
+        }
+
+        return array_filter($layers, fn (string $label, string $property): bool => ! $this->{$property}, ARRAY_FILTER_USE_BOTH);
+    }
+
+    /**
+     * Labels for the values of one select filter, keyed by value.
+     *
+     * @return array<string, string>
+     */
+    protected function filterValueLabels(string $key): array
+    {
+        $values = $this->filterData[$key] ?? [];
+
+        if (blank($values)) {
+            return [];
+        }
+
+        return match ($key) {
+            'clientIds' => User::query()->whereIn('id', $values)->pluck('name', 'id')->all(),
+            'roomIds' => $this->roomOptions(),
+            'serviceIds' => $this->services()->pluck('name', 'id')->all(),
+            'statusIds' => array_reduce(
+                ReservationStatus::cases(),
+                function (array $labels, ReservationStatus $status): array {
+                    $labels[$status->value] = $status->getLabel();
+
+                    return $labels;
+                },
+                [],
+            ),
+            default => [],
+        };
+    }
+
+    /**
+     * @return list<string>
+     */
+    protected function selectFilterKeys(): array
+    {
+        return $this->room
+            ? ['clientIds', 'statusIds', 'serviceIds']
+            : ['clientIds', 'roomIds', 'statusIds', 'serviceIds'];
     }
 
     /**
@@ -482,11 +642,7 @@ class ReservationCalendar extends FullCalendarWidget
     {
         $count = 0;
 
-        $keys = $this->room
-            ? ['clientIds', 'statusIds', 'serviceIds']
-            : ['clientIds', 'roomIds', 'statusIds', 'serviceIds'];
-
-        foreach ($keys as $key) {
+        foreach ($this->selectFilterKeys() as $key) {
             if (filled($this->filterData[$key] ?? [])) {
                 $count++;
             }
