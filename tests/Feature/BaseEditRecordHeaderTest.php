@@ -75,7 +75,7 @@ class BaseEditRecordHeaderTest extends TestCase
             ->assertActionHasLabel('view', 'Zobrazit detail');
     }
 
-    public function test_course_edit_keeps_only_save_in_the_header(): void
+    public function test_course_edit_keeps_only_save_and_the_public_link_in_the_header(): void
     {
         $course = Course::factory()->create();
 
@@ -89,10 +89,13 @@ class BaseEditRecordHeaderTest extends TestCase
             ->instance()
             ->getCachedHeaderActions();
 
-        $this->assertCount(2, $headerActions);
-        $this->assertInstanceOf(Action::class, $headerActions[0]);
-        $this->assertSame('saveHeader', $headerActions[0]->getName());
-        $this->assertInstanceOf(ActionGroup::class, $headerActions[1]);
+        // A course has a public page, so its header carries that link alongside
+        // Save; everything else stays in the "Další akce" dropdown.
+        $this->assertCount(3, $headerActions);
+        $this->assertSame('visit', $headerActions[0]->getName());
+        $this->assertInstanceOf(Action::class, $headerActions[1]);
+        $this->assertSame('saveHeader', $headerActions[1]->getName());
+        $this->assertInstanceOf(ActionGroup::class, $headerActions[2]);
     }
 
     public function test_course_series_edit_keeps_only_save_in_the_header(): void

@@ -36,6 +36,29 @@ RUN git config --global --add safe.directory /var/www \
     && ls -la /var/www/rr || echo "rr not in /var/www" \
     && which rr || echo "rr not in PATH"
 
+# ---- Test stage: the suite is the build gate ----
+# Dev dependencies and the test run live here and nowhere else — the production
+# stage copies the application from `build`, so nothing from this stage ships.
+# The marker file it writes IS copied below, which is what makes the stage
+# mandatory: a red suite fails the build and no image is ever produced.
+FROM build AS test
+
+WORKDIR /var/www
+
+ARG COMPOSER_AUTH
+
+# The base image allows 128M, which the suite exhausts. Set it in php.ini
+# rather than on the command line so paratest's worker processes inherit it.
+RUN echo "memory_limit=512M" > /usr/local/etc/php/conf.d/zz-testing.ini
+
+# phpunit.xml pins the test database to in-memory sqlite; .env only has to
+# supply an APP_KEY for the encrypter.
+RUN cp .env.example .env \
+    && COMPOSER_AUTH="$COMPOSER_AUTH" composer install --no-interaction \
+    && php artisan key:generate \
+    && php artisan test --parallel --processes=4 \
+    && mkdir -p /tests && date -u +%FT%TZ > /tests/passed
+
 # ---- Production stage (lean runtime) ----
 FROM php:8.4-cli-alpine
 
@@ -73,6 +96,10 @@ RUN echo "upload_max_filesize = 128M" > /usr/local/etc/php/conf.d/php.ini \
 
 # Copy application from build stage
 COPY --from=build --chown=www-data:www-data /var/www /var/www
+
+# Proof the suite passed. Do not remove: this is the only thing tying the test
+# stage into the final image, and without it Docker skips the tests entirely.
+COPY --from=test /tests/passed /var/www/.tests-passed
 
 RUN chmod -R 755 /var/www/storage /var/www/bootstrap/cache /var/www/public \
     && chmod +x /var/www/rr /var/www/docker/entrypoint.sh \

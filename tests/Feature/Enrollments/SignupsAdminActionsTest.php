@@ -20,6 +20,7 @@ use App\Models\User;
 use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -65,6 +66,11 @@ class SignupsAdminActionsTest extends TestCase
 
     public function test_generate_invoices_bulk_issues_only_for_eligible_paid_records(): void
     {
+        // Issuing an invoice renders its PDF through Gotenberg over HTTP. Fake
+        // the service, the way the invoice tests do — otherwise the suite only
+        // passes where a gotenberg host happens to resolve.
+        Http::fake([config('services.gotenberg.url').'/*' => Http::response('%PDF-1.7 fake')]);
+
         $series = InvoiceSeries::factory()->asDefault()->create(['prefix' => 'FF']);
 
         $event = Lesson::factory()->standalone()->create(['capacity' => 10, 'price' => 900]);

@@ -19,6 +19,10 @@
     </source>
     <php>
         <env name="APP_ENV" value="testing"/>
+        <!-- The panel is Czech and a good many tests assert Czech strings.
+             Pinned here so the suite does not depend on whatever APP_LOCALE the
+             machine's .env happens to carry (.env.example ships "en"). -->
+        <env name="APP_LOCALE" value="cs"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
