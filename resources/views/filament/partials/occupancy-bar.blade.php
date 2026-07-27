@@ -10,7 +10,7 @@
     };
 @endphp
 
-<div @class(['flex flex-col items-start gap-1', $wrapperClass ?? ''])>
+<div @class(['flex flex-col gap-1', $alignClass ?? 'items-start', $wrapperClass ?? ''])>
     <span class="text-[0.625rem] font-semibold tabular-nums {{ $labelClass }}">
         {{ $occupancy['free'] }}/{{ $occupancy['capacity'] }}
     </span>

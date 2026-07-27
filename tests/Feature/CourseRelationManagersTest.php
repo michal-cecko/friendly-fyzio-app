@@ -10,10 +10,11 @@ use App\Filament\Clusters\Kurzy\Resources\CourseSeries\Pages\EditCourseSeries;
 use App\Filament\Clusters\Kurzy\Resources\CourseSeries\Pages\ViewCourseSeries;
 use App\Filament\Clusters\Kurzy\Resources\CourseSeries\RelationManagers\LessonsRelationManager;
 use App\Filament\Clusters\Kurzy\Resources\CourseSeries\RelationManagers\SubstituteRulesRelationManager;
+use App\Filament\Support\RelationManagers\CourseSeriesEnrollmentsRelationManager;
 use App\Filament\Support\RelationManagers\WaitlistEntriesRelationManager;
 use App\Models\Course;
-use App\Models\CourseLesson;
 use App\Models\CourseSeries;
+use App\Models\Lesson;
 use App\Models\Room;
 use App\Models\SubstituteRule;
 use App\Models\User;
@@ -96,8 +97,8 @@ class CourseRelationManagersTest extends TestCase
     public function test_series_view_lists_its_lessons(): void
     {
         $series = CourseSeries::factory()->create();
-        $lessons = CourseLesson::factory()->count(3)->create(['series_id' => $series->id]);
-        $otherLesson = CourseLesson::factory()->create();
+        $lessons = Lesson::factory()->count(3)->create(['series_id' => $series->id]);
+        $otherLesson = Lesson::factory()->create();
 
         Livewire::test(LessonsRelationManager::class, [
             'ownerRecord' => $series,
@@ -105,6 +106,24 @@ class CourseRelationManagersTest extends TestCase
         ])
             ->assertCanSeeTableRecords($lessons)
             ->assertCanNotSeeTableRecords([$otherLesson]);
+    }
+
+    public function test_series_lesson_times_are_shown_without_seconds(): void
+    {
+        $series = CourseSeries::factory()->create();
+        $lesson = Lesson::factory()->create([
+            'series_id' => $series->id,
+            'start_time' => '09:00:00',
+            'end_time' => '10:30:00',
+        ]);
+
+        Livewire::test(LessonsRelationManager::class, [
+            'ownerRecord' => $series,
+            'pageClass' => ViewCourseSeries::class,
+        ])
+            ->assertCanSeeTableRecords([$lesson])
+            ->assertTableColumnFormattedStateSet('start_time', '09:00', $lesson)
+            ->assertTableColumnFormattedStateSet('end_time', '10:30', $lesson);
     }
 
     public function test_lesson_can_be_created_inline_for_the_owning_series(): void
@@ -126,7 +145,7 @@ class CourseRelationManagersTest extends TestCase
             ])
             ->assertHasNoActionErrors();
 
-        $this->assertDatabaseHas(CourseLesson::class, [
+        $this->assertDatabaseHas(Lesson::class, [
             'series_id' => $series->id,
             'instructor_id' => $instructor->id,
             'lesson_date' => '2026-09-07 00:00:00',
@@ -192,5 +211,19 @@ class CourseRelationManagersTest extends TestCase
 
         $this->assertSame('Chci vědět první', WaitlistEntriesRelationManager::getTitle($course, ViewCourse::class));
         $this->assertSame('Čekací listina', WaitlistEntriesRelationManager::getTitle($series, ViewCourseSeries::class));
+    }
+
+    /**
+     * The tab holds sign-ups (the records), not the act of signing in — hence
+     * "Přihlášky" rather than the easily-confused "Přihlášení".
+     */
+    public function test_series_enrollments_tab_is_titled_prihlasky(): void
+    {
+        $series = CourseSeries::factory()->create();
+
+        $this->assertSame(
+            'Přihlášky',
+            CourseSeriesEnrollmentsRelationManager::getTitle($series, ViewCourseSeries::class),
+        );
     }
 }

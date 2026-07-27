@@ -60,7 +60,10 @@ class SendBulkParticipantEmailJob implements ShouldQueue
                 continue;
             }
 
-            $this->deliver($signup, $sender);
+            // A CC/BCC is the sender's single archive of this broadcast, not a
+            // per-recipient copy — attach it to the first delivered message only,
+            // so accounting or the archive gets one message instead of dozens.
+            $this->deliver($signup, $sender, $sent === 0 ? $this->copies : null);
 
             $sent++;
         }
@@ -79,10 +82,10 @@ class SendBulkParticipantEmailJob implements ShouldQueue
             ->get();
     }
 
-    private function deliver(Model&Emailable $signup, ?User $sender): void
+    private function deliver(Model&Emailable $signup, ?User $sender, ?CopyRecipients $copies): void
     {
         if ($this->templateKey !== null) {
-            $signup->sendTemplateEmail(EmailTemplateKey::from($this->templateKey), $this->copies);
+            $signup->sendTemplateEmail(EmailTemplateKey::from($this->templateKey), $copies);
 
             return;
         }
@@ -92,7 +95,7 @@ class SendBulkParticipantEmailJob implements ShouldQueue
                 record: $signup,
                 emailSubject: (string) $this->subject,
                 bodyHtml: (string) $this->bodyHtml,
-                copies: $this->copies,
+                copies: $copies,
                 replyToAddress: $sender?->email,
                 replyToName: $sender?->name,
             ));

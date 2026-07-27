@@ -29,7 +29,6 @@ class ServiceFactory extends Factory
             'name' => $name,
             'slug' => Str::slug($name).'-'.fake()->unique()->numberBetween(1, 999999),
             'duration_minutes' => fake()->numberBetween(1, 6) * 15,
-            'break_minutes' => fake()->numberBetween(0, 2) * 15,
             'price' => fake()->numberBetween(2, 30) * 100,
             'visibility' => fake()->randomElement(ServiceVisibility::cases()),
             'published_at' => fake()->boolean(80) ? now() : null,

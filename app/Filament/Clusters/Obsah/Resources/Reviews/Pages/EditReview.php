@@ -6,8 +6,10 @@ use App\Filament\Clusters\Obsah\Resources\Reviews\ReviewResource;
 use App\Filament\Resources\Pages\BaseEditRecord;
 use App\Filament\Support\Actions\ActivityLogAction;
 use App\Models\Review;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Support\Enums\Width;
+use Filament\Support\Icons\Heroicon;
 
 class EditReview extends BaseEditRecord
 {
@@ -29,8 +31,14 @@ class EditReview extends BaseEditRecord
     protected function getHeaderActions(): array
     {
         return [
-            DeleteAction::make(),
-            ActivityLogAction::make(),
+            ActionGroup::make([
+                DeleteAction::make(),
+                ActivityLogAction::make(),
+            ])
+                ->label('Další akce')
+                ->icon(Heroicon::OutlinedEllipsisHorizontal)
+                ->button()
+                ->color('gray'),
         ];
     }
 }

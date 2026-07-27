@@ -8,6 +8,7 @@ use App\Enums\ConfirmationSource;
 use App\Enums\EmailTemplateKey;
 use App\Enums\PayableType;
 use App\Enums\PaymentStatus;
+use App\Enums\ReservationDocumentType;
 use App\Enums\ReservationStatus;
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\IsPayable;
@@ -33,6 +34,16 @@ use Illuminate\Support\Facades\URL;
 class Reservation extends Model implements Emailable, Payable
 {
     use Auditable, HasFactory, HasUuids, Prunable, SoftDeletes;
+
+    /**
+     * The columns whose change counts as a termín change worth notifying the client
+     * and therapist about — when (date/time), where (room) and who (therapist).
+     * Shared by the reservation edit page and the calendar edit modal so their
+     * "notify on change" prompt fires on the same edits.
+     *
+     * @var array<int, string>
+     */
+    public const SCHEDULE_ATTRIBUTES = ['reservation_date', 'start_time', 'end_time', 'room_id', 'therapist_id'];
 
     public function logTitle(): string
     {
@@ -79,6 +90,7 @@ class Reservation extends Model implements Emailable, Payable
         'reservation_date',
         'start_time',
         'end_time',
+        'break_minutes',
         'status',
         'payment_status',
         'confirmation_sent_at',
@@ -110,6 +122,7 @@ class Reservation extends Model implements Emailable, Payable
             'settled_at' => 'datetime',
             'imported_at' => 'datetime',
             'is_control_therapy' => 'boolean',
+            'break_minutes' => 'integer',
         ];
     }
 
@@ -131,6 +144,28 @@ class Reservation extends Model implements Emailable, Payable
     }
 
     /**
+     * When the therapist is actually free again: the visit's end plus the break
+     * frozen onto this reservation when it was booked. This — not {@see endsAt()}
+     * — is the „Do" shown in the schedule, because the slot after it is what the
+     * next client can have.
+     */
+    public function endsAtIncludingBreak(): Carbon
+    {
+        return $this->endsAt()->addMinutes($this->break_minutes);
+    }
+
+    /**
+     * Human note naming the break folded into {@see endsAtIncludingBreak()},
+     * or null when there is none.
+     */
+    public function breakLabel(): ?string
+    {
+        return $this->break_minutes > 0
+            ? 'vč. '.$this->break_minutes.' min pauzy'
+            : null;
+    }
+
+    /**
      * Signed magic link (valid until the visit starts) that lets the customer manage
      * their reservation without logging in — confirming, cancelling, or resolving a
      * late-cancel storno decision. Opening it only shows the page; a separate POST
@@ -139,6 +174,27 @@ class Reservation extends Model implements Emailable, Payable
     public function manageUrl(): string
     {
         return URL::temporarySignedRoute('reservation.manage', $this->startsAt(), ['reservation' => $this->getKey()]);
+    }
+
+    /**
+     * How long the doctor-note upload link stays valid, counted from the moment the
+     * note was promised. Deliberately generous — a client who cancelled because they
+     * are ill may only get to a doctor days later.
+     */
+    public const DOCTOR_NOTE_UPLOAD_DAYS = 14;
+
+    /**
+     * Signed link to the passwordless page where the client uploads their doctor's
+     * note. Separate from {@see manageUrl()} because that one expires when the visit
+     * starts, which is always before the note can arrive.
+     */
+    public function doctorNoteUploadUrl(): string
+    {
+        return URL::temporarySignedRoute(
+            'reservation.doctor-note',
+            ($this->doctor_note_requested_at ?? now())->copy()->addDays(self::DOCTOR_NOTE_UPLOAD_DAYS),
+            ['reservation' => $this->getKey()],
+        );
     }
 
     /**
@@ -189,6 +245,32 @@ class Reservation extends Model implements Emailable, Payable
         return in_array($this->status, [ReservationStatus::Pending, ReservationStatus::Confirmed], true)
             && $this->stornoFee() > 0
             && ($this->status === ReservationStatus::Confirmed || $this->withinStornoWindow());
+    }
+
+    /**
+     * Reservations the client still has to act on — an unresolved doctor's note, an
+     * open payment, or a past visit that was never marked paid. This is what keeps a
+     * late storno (or an unpaid visit) in the client zone's „Aktivní" tab instead of
+     * dropping it straight into the archive.
+     *
+     * Deliberately a superset of what {@see ClientReservationState::needsAttention()}
+     * reports, so no row can ever land in „Dokončené" while its badge still says
+     * „Čeká na…". The precise grouping is done in PHP off the loaded models.
+     */
+    public function scopeNeedsClientAttention(Builder $query): void
+    {
+        $query->whereNull('settled_at')->where(fn (Builder $open) => $open
+            ->where(fn (Builder $note) => $note
+                ->whereNotNull('doctor_note_requested_at')
+                ->whereNull('doctor_note_resolved_at'))
+            ->orWhereHas('payments', fn ($payment) => $payment
+                ->whereIn('status', PaymentStatus::openValues()))
+            // A visit that has happened and was never marked paid. No payment row is
+            // needed: the client-facing state calls this "pay cash on site".
+            ->orWhere(fn (Builder $unpaidVisit) => $unpaidVisit
+                ->whereDate('reservation_date', '<', today())
+                ->where('status', '!=', ReservationStatus::Cancelled)
+                ->whereIn('payment_status', PaymentStatus::openValues())));
     }
 
     public function client(): BelongsTo
@@ -250,6 +332,57 @@ class Reservation extends Model implements Emailable, Payable
     public function clientNotes(): HasMany
     {
         return $this->hasMany(ClientNote::class);
+    }
+
+    /**
+     * Files the client attached to this reservation (private disk).
+     */
+    public function documents(): HasMany
+    {
+        return $this->hasMany(ReservationDocument::class);
+    }
+
+    /**
+     * The doctor's notes backing a late cancellation. Their presence is what turns
+     * the client-facing state from „čeká na potvrzení" into „potvrzení nahráno".
+     */
+    public function doctorNoteDocuments(): HasMany
+    {
+        return $this->documents()->where('type', ReservationDocumentType::DoctorNote);
+    }
+
+    /**
+     * Whether the client promised a doctor's note that staff have not resolved yet
+     * — the window in which uploading (and removing) a note is allowed.
+     */
+    public function awaitsDoctorNote(): bool
+    {
+        return $this->doctor_note_requested_at !== null && $this->doctor_note_resolved_at === null;
+    }
+
+    /**
+     * Whether the client may still change how they resolve a late storno (promise a
+     * doctor's note, pay the fee, or refuse). Open for as long as the storno is
+     * unresolved — a client who cannot get the note after all must be able to switch
+     * to paying. Deactivation is the one-way door: it blacklists the account, so
+     * from there nothing can be changed online.
+     */
+    public function canChangeStornoResolution(): bool
+    {
+        return $this->status === ReservationStatus::Cancelled
+            && $this->settled_at === null
+            && ! (bool) $this->client?->isDeactivated()
+            && ($this->awaitsDoctorNote() || $this->hasUnpaidStornoFee());
+    }
+
+    /**
+     * A raised storno fee that has not been paid.
+     */
+    public function hasUnpaidStornoFee(): bool
+    {
+        return $this->payments()
+            ->whereIn('status', PaymentStatus::openValues())
+            ->exists();
     }
 
     public function payableType(): PayableType

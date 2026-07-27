@@ -19,16 +19,6 @@
     $accountUrl = $isStaff ? url('/admin') : url('/muj-ucet');
     $accountLabel = $isStaff ? 'Administrace' : 'Můj účet';
 
-    // The client-zone sections mirrored into the account dropdown.
-    $zoneLinks = $isStaff ? [] : [
-        ['url' => url('/muj-ucet/rezervace'), 'label' => 'Moje rezervace'],
-        ['url' => url('/muj-ucet/kurzy'), 'label' => 'Moje kurzy'],
-        ['url' => url('/muj-ucet/nahrady'), 'label' => 'Náhradní vstupy'],
-        ['url' => url('/muj-ucet/kredity'), 'label' => 'Kredity'],
-        ['url' => url('/muj-ucet/platby'), 'label' => 'Platby'],
-        ['url' => url('/muj-ucet/profil'), 'label' => 'Můj profil'],
-    ];
-
     // Current page, normalized to a slash-trimmed path ('' for the homepage), so
     // nav links can highlight the active page/section.
     $currentPath = trim(request()->path(), '/');
@@ -108,12 +98,6 @@
                                     <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">{!! $icon['layout-dashboard'] !!}</svg>
                                     {{ $accountLabel }}
                                 </a>
-                                @foreach($zoneLinks as $zoneLink)
-                                    <a href="{{ $zoneLink['url'] }}" class="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm text-neutral-900 transition hover:bg-primary-light hover:text-primary">
-                                        <svg class="h-4 w-4 text-neutral-400" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">{!! $icon['chevron-right'] !!}</svg>
-                                        {{ $zoneLink['label'] }}
-                                    </a>
-                                @endforeach
                                 @if($adminEditUrl)
                                     <a href="{{ $adminEditUrl }}" class="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm text-neutral-900 transition hover:bg-primary-light hover:text-primary">
                                         <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">{!! $icon['pencil'] !!}</svg>

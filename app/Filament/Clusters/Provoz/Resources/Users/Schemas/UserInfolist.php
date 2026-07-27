@@ -64,7 +64,7 @@ class UserInfolist
                                     ->schema([
                                         TextEntry::make('staffProfile.title')->label('Pozice')->placeholder('—'),
                                         TextEntry::make('staffProfile.badge')->label('Odznak')->placeholder('—'),
-                                        TextEntry::make('staffProfile.slug')->label('Slug')->placeholder('—'),
+                                        TextEntry::make('staffProfile.slug')->label('URL název')->placeholder('—'),
                                         IconEntry::make('staffProfile.is_collaborator')
                                             ->label('Spolupracující terapeut')
                                             ->boolean(),

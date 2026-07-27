@@ -43,6 +43,17 @@ class Setting extends Model
     }
 
     /**
+     * A stable DOM id for this setting's field, used as a scroll anchor so global
+     * search can deep-link straight to the field on its settings page. Keys hold
+     * dots (`reservation.block_duration`); dots are invalid in a bare URL fragment
+     * target, so they collapse to dashes while underscores stay (both id-safe).
+     */
+    public function anchor(): string
+    {
+        return 'setting-'.str_replace('.', '-', $this->key);
+    }
+
+    /**
      * The stored value decoded into its typed PHP representation.
      */
     protected function typedValue(): Attribute

@@ -7,6 +7,7 @@ use App\Enums\CourseSeriesVisibility;
 use App\Enums\OfferState;
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\Publishable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -27,6 +28,7 @@ class Course extends Model
         'featured_image',
         'max_substitutions',
         'early_cancel_hours',
+        'drop_in_price',
         'published_at',
     ];
 
@@ -35,6 +37,7 @@ class Course extends Model
         return [
             'max_substitutions' => 'integer',
             'early_cancel_hours' => 'integer',
+            'drop_in_price' => 'integer',
             'featured_image' => 'integer',
             'published_at' => 'datetime',
         ];
@@ -56,20 +59,32 @@ class Course extends Model
     }
 
     /**
-     * One-off events derived from this course (typically the "Jednorázové
-     * lekce" category) — the try-before-the-full-series cross-sell.
+     * Standalone lessons pinned to this course by the optional `course_id` link
+     * — the hand-made "ochutnávka" offers.
      */
     public function oneOffEvents(): HasMany
     {
-        return $this->hasMany(OneOffEvent::class);
+        return $this->hasMany(Lesson::class);
     }
 
-    public function upcomingOneOffEvents(): HasMany
+    /**
+     * Everything of this course that can be bought as a single lesson: the
+     * standalone offers linked to it, plus lessons of its own séries whose free
+     * places have been released for sale. Both are the same model, reached by
+     * two different routes — a standalone one carries `course_id`, a released
+     * lesson belongs through its série.
+     */
+    public function upcomingPublicLessons(): Builder
     {
-        return $this->oneOffEvents()
+        return Lesson::query()
             ->published()
-            ->whereDate('event_date', '>=', today())
-            ->orderBy('event_date')
+            ->whereDate('lesson_date', '>=', today())
+            ->whereNotNull('slug')
+            ->whereNotNull('event_category_id')
+            ->where(fn (Builder $query) => $query
+                ->where('course_id', $this->getKey())
+                ->orWhereHas('series', fn (Builder $series) => $series->where('course_id', $this->getKey())))
+            ->orderBy('lesson_date')
             ->orderBy('start_time');
     }
 

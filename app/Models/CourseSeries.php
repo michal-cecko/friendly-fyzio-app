@@ -59,7 +59,7 @@ class CourseSeries extends Model
 
     public function lessons(): HasMany
     {
-        return $this->hasMany(CourseLesson::class, 'series_id')->orderBy('lesson_date');
+        return $this->hasMany(Lesson::class, 'series_id')->orderBy('lesson_date');
     }
 
     public function enrollments(): HasMany

@@ -180,6 +180,25 @@ class Settings
     }
 
     /**
+     * How late a free place on a lesson can still be sold as a single entry.
+     * Sales stop this many hours before the start so the lecturer walks in to a
+     * settled list — and nobody pays by QR five minutes before the door.
+     */
+    public static function dropInCutoffHours(): int
+    {
+        return (int) self::get('lessons.drop_in_cutoff_hours', 2);
+    }
+
+    /**
+     * The event category a released course lesson is filed under, which also
+     * forms its public address.
+     */
+    public static function dropInCategorySlug(): string
+    {
+        return (string) self::get('lessons.drop_in_category', 'jednorazove-lekce');
+    }
+
+    /**
      * Storno fee as a percentage of the service price, charged when a customer
      * cancels inside the storno window and chooses to pay rather than provide a
      * doctor's note.

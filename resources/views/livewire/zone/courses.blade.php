@@ -82,6 +82,14 @@
                                 </button>
                             @endif
 
+                            @if($enrollment->payment_status !== PaymentStatus::Paid && $enrollment->status->value !== 'cancelled' && ($payment = $openPayment($enrollment)))
+                                <a
+                                    href="{{ route('zone.payments', ['platba' => $payment->id]) }}"
+                                    wire:navigate
+                                    class="rounded-full bg-primary px-4 py-1.5 font-heading text-xs font-semibold text-white transition hover:bg-primary-dark"
+                                >Zaplatit</a>
+                            @endif
+
                             @if($canCancel($enrollment))
                                 <button
                                     type="button"
@@ -116,9 +124,8 @@
                                             @else
                                                 <button
                                                     type="button"
-                                                    wire:click="excuseFromLesson('{{ $enrollment->id }}', '{{ $row['lesson']->id }}')"
-                                                    wire:loading.attr="disabled"
-                                                    class="rounded-full border border-line bg-white px-3.5 py-1 text-xs font-semibold text-neutral-600 transition hover:border-primary hover:text-primary disabled:opacity-60"
+                                                    wire:click="confirmExcuse('{{ $enrollment->id }}', '{{ $row['lesson']->id }}')"
+                                                    class="rounded-full border border-line bg-white px-3.5 py-1 text-xs font-semibold text-neutral-600 transition hover:border-primary hover:text-primary"
                                                 >Omluvit se</button>
                                             @endif
                                         </div>
@@ -144,9 +151,9 @@
                 <div class="{{ $cardClass }} flex-row flex-wrap items-center justify-between gap-4 p-5">
                     <div class="min-w-0">
                         <div class="flex flex-wrap items-center gap-2.5">
-                            <h3 class="font-heading text-base font-semibold text-neutral-900">{{ $booking->event?->name ?? 'Akce' }}</h3>
-                            @if($booking->event?->category?->name)
-                                {!! $badge('bg-primary-light text-primary-dark', e($booking->event->category->name)) !!}
+                            <h3 class="font-heading text-base font-semibold text-neutral-900">{{ $booking->lesson?->name ?? 'Akce' }}</h3>
+                            @if($booking->lesson?->category?->name)
+                                {!! $badge('bg-primary-light text-primary-dark', e($booking->lesson->category->name)) !!}
                             @endif
                             @if($booking->payment_status === PaymentStatus::Paid)
                                 {!! $badge('bg-emerald-50 text-emerald-700', 'Zaplaceno') !!}
@@ -157,18 +164,28 @@
                             @endif
                         </div>
                         <p class="mt-1 text-sm text-neutral-500">
-                            {{ $booking->event?->startsAt()?->translatedFormat('j. n. Y · H:i') }}
-                            @if($booking->event?->room?->name) · {{ $booking->event->room->name }} @endif
+                            {{ $booking->lesson?->startsAt()?->translatedFormat('j. n. Y · H:i') }}
+                            @if($booking->lesson?->room?->name) · {{ $booking->lesson->room->name }} @endif
                         </p>
                     </div>
 
-                    @if($canCancel($booking))
-                        <button
-                            type="button"
-                            wire:click="confirmCancel('booking', '{{ $booking->id }}')"
-                            class="shrink-0 rounded-full border-[1.5px] border-red-200 bg-white px-4 py-1.5 font-heading text-xs font-semibold text-red-600 transition hover:bg-red-50"
-                        >Odhlásit se</button>
-                    @endif
+                    <div class="flex shrink-0 flex-wrap items-center gap-2.5">
+                        @if($booking->payment_status !== PaymentStatus::Paid && $booking->status !== \App\Enums\BookingStatus::Cancelled && ($payment = $openPayment($booking)))
+                            <a
+                                href="{{ route('zone.payments', ['platba' => $payment->id]) }}"
+                                wire:navigate
+                                class="rounded-full bg-primary px-4 py-1.5 font-heading text-xs font-semibold text-white transition hover:bg-primary-dark"
+                            >Zaplatit</a>
+                        @endif
+
+                        @if($canCancel($booking))
+                            <button
+                                type="button"
+                                wire:click="confirmCancel('booking', '{{ $booking->id }}')"
+                                class="rounded-full border-[1.5px] border-red-200 bg-white px-4 py-1.5 font-heading text-xs font-semibold text-red-600 transition hover:bg-red-50"
+                            >Odhlásit se</button>
+                        @endif
+                    </div>
                 </div>
             @endforeach
         </div>
@@ -200,6 +217,36 @@
                     </button>
                     <button type="button" wire:click="closeCancel" class="rounded-full border-[1.5px] border-line bg-white px-6 py-3 font-heading text-sm font-semibold text-neutral-900 transition hover:bg-surface-alt">
                         Ponechat přihlášku
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- Excuse confirmation --}}
+    @if($excusing)
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div class="absolute inset-0 bg-black/40" wire:click="closeExcuse"></div>
+
+            <div class="relative w-full max-w-md rounded-3xl bg-white p-8 shadow-xl">
+                <div class="flex justify-center">
+                    <span class="flex h-16 w-16 items-center justify-center rounded-full bg-amber-50 text-amber-500">
+                        <x-lucide name="calendar-x" class="h-7 w-7" />
+                    </span>
+                </div>
+
+                <h2 class="mt-5 text-center font-heading text-xl font-bold text-neutral-900">Omluvit se z lekce?</h2>
+                <p class="mt-2 text-center text-sm leading-relaxed text-neutral-500">
+                    Lekce <span class="font-semibold text-neutral-700">{{ $excusing->lesson_date->translatedFormat('j. n. Y') }}</span>.
+                    Při včasné omluvě vám vystavíme náhradní vstup do souběžné skupiny, který uplatníte v Náhradních vstupech.
+                </p>
+
+                <div class="mt-6 flex flex-col gap-2.5">
+                    <button type="button" wire:click="excuseFromLesson" wire:loading.attr="disabled" class="rounded-full bg-primary px-6 py-3 font-heading text-sm font-semibold text-white transition hover:bg-primary-dark disabled:opacity-60">
+                        Ano, omluvit se
+                    </button>
+                    <button type="button" wire:click="closeExcuse" class="rounded-full border-[1.5px] border-line bg-white px-6 py-3 font-heading text-sm font-semibold text-neutral-900 transition hover:bg-surface-alt">
+                        Zpět
                     </button>
                 </div>
             </div>

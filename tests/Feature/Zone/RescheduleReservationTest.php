@@ -51,7 +51,6 @@ class RescheduleReservationTest extends TestCase
         $this->service = Service::factory()->create([
             'category_id' => $category->id,
             'duration_minutes' => 60,
-            'break_minutes' => 15,
             'visibility' => ServiceVisibility::Public,
             'published_at' => now(),
         ]);
@@ -89,12 +88,14 @@ class RescheduleReservationTest extends TestCase
         $reservation = $this->reservation();
         $original = $reservation->startsAt()->translatedFormat('j. F Y');
 
-        app(RescheduleReservation::class)($reservation, $this->date->toDateString(), '10:00');
+        // 10:30 is the second anchor of an empty 08:00–16:00 day for a 60-minute
+        // service with a 15-minute break (08:00 → 09:15 → 10:30).
+        app(RescheduleReservation::class)($reservation, $this->date->toDateString(), '10:30');
 
         $reservation->refresh();
 
         $this->assertSame($this->date->toDateString(), $reservation->reservation_date->toDateString());
-        $this->assertSame('10:00:00', $reservation->start_time);
+        $this->assertSame('10:30:00', $reservation->start_time);
         // Status is untouched by a move.
         $this->assertSame(ReservationStatus::Confirmed, $reservation->status);
 
@@ -108,20 +109,21 @@ class RescheduleReservationTest extends TestCase
     {
         $reservation = $this->reservation();
 
-        // Someone else already holds 10:00 with this therapist.
+        // Someone else already holds 10:30 with this therapist — an anchor that
+        // would otherwise be offered.
         Reservation::factory()->create([
             'service_id' => $this->service->id,
             'therapist_id' => $this->therapist->id,
             'room_id' => $this->room->id,
             'reservation_date' => $this->date->toDateString(),
-            'start_time' => '10:00:00',
-            'end_time' => '11:00:00',
+            'start_time' => '10:30:00',
+            'end_time' => '11:30:00',
             'status' => ReservationStatus::Confirmed,
         ]);
 
         $this->expectException(SlotTakenException::class);
 
-        app(RescheduleReservation::class)($reservation, $this->date->toDateString(), '10:00');
+        app(RescheduleReservation::class)($reservation, $this->date->toDateString(), '10:30');
     }
 
     public function test_the_page_offers_slots_and_moves_the_reservation(): void
@@ -132,7 +134,7 @@ class RescheduleReservationTest extends TestCase
             ->test(RescheduleComponent::class, ['reservation' => $reservation])
             ->assertSee('Vyberte čas')
             ->call('selectDate', $this->date->toDateString())
-            ->call('selectTime', '10:00')
+            ->call('selectTime', '10:30')
             ->call('reschedule')
             ->assertRedirect(route('zone.reservations.show', $reservation));
 

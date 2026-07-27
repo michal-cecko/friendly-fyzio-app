@@ -32,9 +32,11 @@ class InstructedLessonsRelationManager extends RelationManager
                     ->date('d.m.Y')
                     ->sortable(),
                 TextColumn::make('start_time')
-                    ->label('Od'),
+                    ->label('Od')
+                    ->time('H:i'),
                 TextColumn::make('end_time')
-                    ->label('Do'),
+                    ->label('Do')
+                    ->time('H:i'),
                 TextColumn::make('room.name')
                     ->label('Místnost'),
             ])

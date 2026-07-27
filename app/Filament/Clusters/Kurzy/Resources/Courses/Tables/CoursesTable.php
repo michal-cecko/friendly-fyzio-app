@@ -2,6 +2,7 @@
 
 namespace App\Filament\Clusters\Kurzy\Resources\Courses\Tables;
 
+use App\Filament\Support\Actions\OpenPublicPageAction;
 use App\Filament\Support\Tables\TimestampColumns;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -52,6 +53,7 @@ class CoursesTable
                 TrashedFilter::make(),
             ])
             ->recordActions([
+                OpenPublicPageAction::make(),
                 ViewAction::make(),
                 EditAction::make(),
                 DeleteAction::make(),

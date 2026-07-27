@@ -3,12 +3,15 @@
 namespace Tests\Feature;
 
 use App\Enums\ReservationStatus;
+use App\Filament\Clusters\System\Pages\RezervaceSettings;
+use App\Filament\Support\Help\HelpRepository;
 use App\Filament\Support\Search\AdminSearchGroup;
 use App\Filament\Support\Search\AdminSearchResult;
 use App\Filament\Support\Search\AdminSearchService;
 use App\Filament\Support\Search\SearchHighlighter;
 use App\Models\Reservation;
 use App\Models\Service;
+use App\Models\Setting;
 use App\Models\User;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -145,6 +148,54 @@ class AdminSearchServiceTest extends TestCase
         $this->assertCount(AdminSearchService::RESULTS_PER_RESOURCE, $clients);
     }
 
+    public function test_finds_setting_by_label_and_deep_links_to_its_field(): void
+    {
+        $setting = Setting::factory()->create([
+            'key' => 'reservation.block_duration',
+            'group' => 'Rezervace',
+            'label' => 'Délka rezervačního bloku',
+            'description' => 'Výchozí délka jednoho slotu v minutách.',
+        ]);
+
+        $settings = $this->group($this->service()->search('rezervačního bloku'), 'Nastavení');
+
+        $result = $settings->first();
+
+        $this->assertSame('Délka rezervačního bloku', $result->title);
+        $this->assertSame('Rezervace', $result->details['Sekce']);
+        $this->assertStringContainsString(RezervaceSettings::getUrl(), $result->url);
+        $this->assertStringEndsWith('#'.$setting->anchor(), $result->url);
+        $this->assertSame('setting-reservation-block_duration', $setting->anchor());
+    }
+
+    public function test_finds_setting_by_helper_text_description(): void
+    {
+        Setting::factory()->create([
+            'group' => 'Rezervace',
+            'label' => 'Časový limit',
+            'description' => 'Nezaplacené rezervace se automaticky ruší po vypršení.',
+        ]);
+
+        $settings = $this->group($this->service()->search('automaticky ruší'), 'Nastavení');
+
+        $this->assertCount(1, $settings);
+        $this->assertStringContainsString('<mark', (string) $settings->first()->detailsHtml['Popis']);
+    }
+
+    public function test_settings_are_hidden_from_non_admins(): void
+    {
+        Setting::factory()->create([
+            'group' => 'Rezervace',
+            'label' => 'Tajné nastavení',
+        ]);
+
+        $this->actingAs(User::factory()->customer()->create());
+
+        $groups = $this->service()->search('Tajné nastavení');
+
+        $this->assertNull($groups->first(fn (AdminSearchGroup $group): bool => $group->label === 'Nastavení'));
+    }
+
     public function test_finds_client_by_phone_number(): void
     {
         User::factory()->customer()->create([
@@ -156,5 +207,33 @@ class AdminSearchServiceTest extends TestCase
 
         $this->assertSame('Telefonní Klient', $clients->first()->title);
         $this->assertSame('+420777123456', $clients->first()->details['Telefon']);
+    }
+
+    public function test_finds_help_topics_and_links_to_them(): void
+    {
+        $this->app->bind(HelpRepository::class, fn (): HelpRepository => new HelpRepository(
+            base_path('tests/Fixtures/help'),
+        ));
+
+        $help = $this->group($this->service()->search('alfa'), 'Nápověda');
+
+        $this->assertSame('Alfa článek', $help->first()->title);
+        $this->assertSame('Druhá sekce', $help->first()->details['Sekce']);
+        $this->assertStringContainsString('tema=druha%2Falfa', $help->first()->url);
+        $this->assertStringContainsString('<mark', (string) $help->first()->titleHtml);
+    }
+
+    public function test_help_is_searchable_by_non_admins(): void
+    {
+        // Unlike settings, the manual is open to everyone who can reach the panel.
+        $this->app->bind(HelpRepository::class, fn (): HelpRepository => new HelpRepository(
+            base_path('tests/Fixtures/help'),
+        ));
+
+        $this->actingAs(User::factory()->therapist()->create());
+
+        $help = $this->group($this->service()->search('alfa'), 'Nápověda');
+
+        $this->assertSame('Alfa článek', $help->first()->title);
     }
 }

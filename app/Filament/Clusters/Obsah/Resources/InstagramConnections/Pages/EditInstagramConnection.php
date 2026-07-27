@@ -6,9 +6,11 @@ use App\Filament\Clusters\Obsah\Resources\InstagramConnections\InstagramConnecti
 use App\Filament\Resources\Pages\BaseEditRecord;
 use App\Filament\Support\Actions\ActivityLogAction;
 use App\Models\InstagramConnection;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\RestoreAction;
+use Filament\Support\Icons\Heroicon;
 
 class EditInstagramConnection extends BaseEditRecord
 {
@@ -25,12 +27,20 @@ class EditInstagramConnection extends BaseEditRecord
     protected function getHeaderActions(): array
     {
         return [
-            InstagramConnectionResource::authorizeAction(),
-            InstagramConnectionResource::syncAction(),
-            DeleteAction::make(),
-            ForceDeleteAction::make(),
-            RestoreAction::make(),
-            ActivityLogAction::make(),
+            // Save stays a standalone header button (prepended by BaseEditRecord);
+            // everything else lives in the catch-all dropdown, which sits last.
+            ActionGroup::make([
+                InstagramConnectionResource::authorizeAction(),
+                InstagramConnectionResource::syncAction(),
+                ActivityLogAction::make(),
+                DeleteAction::make(),
+                ForceDeleteAction::make(),
+                RestoreAction::make(),
+            ])
+                ->label('Další akce')
+                ->icon(Heroicon::OutlinedEllipsisHorizontal)
+                ->button()
+                ->color('gray'),
         ];
     }
 }

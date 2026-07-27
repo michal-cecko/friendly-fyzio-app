@@ -4,11 +4,11 @@ namespace Tests\Feature;
 
 use App\Filament\Clusters\Kurzy\Resources\CourseCategories\Schemas\CourseCategoryInfolist;
 use App\Filament\Clusters\Kurzy\Resources\CourseEnrollments\Schemas\CourseEnrollmentInfolist;
-use App\Filament\Clusters\Kurzy\Resources\CourseLessons\Schemas\CourseLessonInfolist;
 use App\Filament\Clusters\Kurzy\Resources\Courses\Schemas\CourseInfolist;
 use App\Filament\Clusters\Kurzy\Resources\EventCategories\Schemas\EventCategoryInfolist;
 use App\Filament\Clusters\Kurzy\Resources\LessonAttendances\Schemas\LessonAttendanceInfolist;
-use App\Filament\Clusters\Kurzy\Resources\OneOffEventBookings\Schemas\OneOffEventBookingInfolist;
+use App\Filament\Clusters\Kurzy\Resources\LessonBookings\Schemas\LessonBookingInfolist;
+use App\Filament\Clusters\Kurzy\Resources\Lessons\Schemas\LessonInfolist;
 use App\Filament\Clusters\Provoz\Resources\Rooms\Schemas\RoomForm;
 use App\Filament\Clusters\Provoz\Resources\Rooms\Schemas\RoomInfolist;
 use App\Filament\Clusters\Provoz\Resources\ServiceCategories\Schemas\ServiceCategoryInfolist;
@@ -38,10 +38,10 @@ class FullWidthSchemaTest extends TestCase
             'course infolist' => [CourseInfolist::class],
             'course category infolist' => [CourseCategoryInfolist::class],
             'course enrollment infolist' => [CourseEnrollmentInfolist::class],
-            'course lesson infolist' => [CourseLessonInfolist::class],
+            'course lesson infolist' => [LessonInfolist::class],
             'event category infolist' => [EventCategoryInfolist::class],
             'lesson attendance infolist' => [LessonAttendanceInfolist::class],
-            'one-off event booking infolist' => [OneOffEventBookingInfolist::class],
+            'one-off event booking infolist' => [LessonBookingInfolist::class],
             'service category infolist' => [ServiceCategoryInfolist::class],
         ];
     }

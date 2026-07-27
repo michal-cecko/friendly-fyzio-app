@@ -4,15 +4,13 @@ namespace Tests\Feature;
 
 use App\Enums\EmailTemplateKey;
 use App\Enums\ReservationStatus;
-use App\Filament\Clusters\Kurzy\Resources\CourseLessons\CourseLessonResource;
-use App\Filament\Clusters\Kurzy\Resources\OneOffEvents\OneOffEventResource;
+use App\Filament\Clusters\Kurzy\Resources\Lessons\LessonResource;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Pages\EditReservation;
 use App\Filament\Clusters\Provoz\Resources\Reservations\ReservationResource;
 use App\Filament\Widgets\ReservationCalendar;
 use App\Models\Building;
-use App\Models\CourseLesson;
 use App\Models\CourseSeries;
-use App\Models\OneOffEvent;
+use App\Models\Lesson;
 use App\Models\Reservation;
 use App\Models\ReservationDayWaitlistEntry;
 use App\Models\Room;
@@ -357,6 +355,75 @@ class CalendarTest extends TestCase
         $this->assertContains($reservation->getKey(), array_column($events, 'id'));
     }
 
+    /**
+     * @return array<string, mixed>
+     */
+    private function eventFor(Reservation $reservation): array
+    {
+        return collect($this->fetchWeek(new ReservationCalendar))
+            ->firstWhere('id', $reservation->getKey());
+    }
+
+    public function test_a_reservation_with_a_break_carries_its_strip(): void
+    {
+        $reservation = $this->makeReservation([
+            'reservation_date' => Carbon::now()->startOfWeek(Carbon::MONDAY)->addDay()->toDateString(),
+            'start_time' => '09:00',
+            'end_time' => '10:00',
+            'break_minutes' => 15,
+            'status' => ReservationStatus::Confirmed,
+        ]);
+
+        $props = $this->eventFor($reservation)['extendedProps'];
+
+        $this->assertTrue($props['hasBreak']);
+        $this->assertSame(15, $props['breakMinutes']);
+        // A quarter of a 60-minute card, which in a timegrid is a quarter of its
+        // height — that ratio is what sizes the strip.
+        $this->assertSame(0.25, $props['breakRatio']);
+        $this->assertSame('Pauza 15 min', $props['breakLabel']);
+        $this->assertSame('10:15', $props['breakUntil']);
+    }
+
+    public function test_the_event_itself_still_ends_when_the_visit_does(): void
+    {
+        // The strip overhangs the card; it must not stretch the booking, or the
+        // slot engine's picture and the calendar's would disagree.
+        $reservation = $this->makeReservation([
+            'reservation_date' => Carbon::now()->startOfWeek(Carbon::MONDAY)->addDay()->toDateString(),
+            'start_time' => '09:00',
+            'end_time' => '10:00',
+            'break_minutes' => 15,
+            'status' => ReservationStatus::Confirmed,
+        ]);
+
+        $events = $this->fetchWeek(new ReservationCalendar);
+        $mine = array_values(array_filter($events, fn (array $event): bool => $event['id'] === $reservation->getKey()));
+
+        // Exactly one event, ending at the visit's end and not the break's.
+        $this->assertCount(1, $mine);
+        $this->assertSame($reservation->reservation_date->toDateString().'T10:00', $mine[0]['end']);
+    }
+
+    public function test_no_break_strip_without_a_break_or_once_the_visit_is_cancelled(): void
+    {
+        $monday = Carbon::now()->startOfWeek(Carbon::MONDAY);
+
+        $noBreak = $this->makeReservation([
+            'reservation_date' => $monday->copy()->addDay()->toDateString(),
+            'break_minutes' => 0,
+            'status' => ReservationStatus::Confirmed,
+        ]);
+        $cancelled = $this->makeReservation([
+            'reservation_date' => $monday->copy()->addDay()->toDateString(),
+            'break_minutes' => 15,
+            'status' => ReservationStatus::Cancelled,
+        ]);
+
+        $this->assertFalse($this->eventFor($noBreak)['extendedProps']['hasBreak']);
+        $this->assertFalse($this->eventFor($cancelled)['extendedProps']['hasBreak']);
+    }
+
     public function test_therapist_list_shows_only_current_published_therapists_and_lecturers(): void
     {
         $publishedTherapist = StaffProfile::create([
@@ -475,25 +542,31 @@ class CalendarTest extends TestCase
 
     // ---- Course lesson & one-off event overlays -------------------------------
 
-    protected function makeLesson(array $overrides = []): CourseLesson
+    /**
+     * A lesson belonging to a course série — the "Kurzy" overlay.
+     */
+    protected function makeSeriesLesson(array $overrides = []): Lesson
     {
-        return CourseLesson::factory()->create(array_merge([
+        return Lesson::factory()->create(array_merge([
             'lesson_date' => Carbon::now()->startOfWeek(Carbon::MONDAY)->toDateString(),
         ], $overrides));
     }
 
-    protected function makeOneOffEvent(array $overrides = []): OneOffEvent
+    /**
+     * A standalone workshop / jednorázová lekce — the "Jednorázové" overlay.
+     */
+    protected function makeStandaloneLesson(array $overrides = []): Lesson
     {
-        return OneOffEvent::factory()->published()->create(array_merge([
-            'event_date' => Carbon::now()->startOfWeek(Carbon::MONDAY)->toDateString(),
+        return Lesson::factory()->standalone()->published()->create(array_merge([
+            'lesson_date' => Carbon::now()->startOfWeek(Carbon::MONDAY)->toDateString(),
         ], $overrides));
     }
 
-    public function test_fetch_events_includes_course_lessons_and_one_off_events(): void
+    public function test_fetch_events_includes_lessons_and_lessons(): void
     {
         $reservation = $this->makeReservation(['reservation_date' => Carbon::now()->startOfWeek(Carbon::MONDAY)->toDateString()]);
-        $lesson = $this->makeLesson();
-        $event = $this->makeOneOffEvent();
+        $lesson = $this->makeSeriesLesson();
+        $event = $this->makeStandaloneLesson();
 
         $events = collect($this->fetchWeek(new ReservationCalendar));
         $ids = $events->pluck('id')->all();
@@ -505,32 +578,41 @@ class CalendarTest extends TestCase
         $lessonEvent = $events->firstWhere('id', 'course:'.$lesson->getKey());
         $this->assertSame('course', $lessonEvent['extendedProps']['kind']);
         $this->assertFalse($lessonEvent['editable']);
-        $this->assertSame(CourseLessonResource::getUrl('view', ['record' => $lesson]), $lessonEvent['url']);
+        $this->assertSame(LessonResource::getUrl('view', ['record' => $lesson]), $lessonEvent['url']);
 
-        $oneOffEvent = $events->firstWhere('id', 'oneoff:'.$event->getKey());
-        $this->assertSame('oneOffEvent', $oneOffEvent['extendedProps']['kind']);
-        $this->assertFalse($oneOffEvent['editable']);
-        $this->assertSame(OneOffEventResource::getUrl('view', ['record' => $event]), $oneOffEvent['url']);
+        $lesson = $events->firstWhere('id', 'oneoff:'.$event->getKey());
+        $this->assertSame('oneOffEvent', $lesson['extendedProps']['kind']);
+        $this->assertFalse($lesson['editable']);
+        $this->assertSame(LessonResource::getUrl('view', ['record' => $event]), $lesson['url']);
     }
 
-    public function test_course_and_event_overlays_only_in_reservations_mode(): void
+    public function test_course_and_event_overlays_render_in_the_working_hours_mode_too(): void
     {
-        $lesson = $this->makeLesson();
-        $event = $this->makeOneOffEvent();
+        // Working hours are laid out against whatever already competes with them,
+        // so the same read-only overlays appear in both modes. Reservations do
+        // not: that grid is the availability template, not the bookings in it.
+        $lesson = $this->makeSeriesLesson();
+        $event = $this->makeStandaloneLesson();
 
         $calendar = new ReservationCalendar;
         $calendar->mode = 'template';
-        $ids = array_column($this->fetchWeek($calendar), 'id');
+        $events = collect($this->fetchWeek($calendar));
+        $ids = $events->pluck('id')->all();
 
-        $this->assertNotContains('course:'.$lesson->getKey(), $ids);
-        $this->assertNotContains('oneoff:'.$event->getKey(), $ids);
+        $this->assertContains('course:'.$lesson->getKey(), $ids);
+        $this->assertContains('oneoff:'.$event->getKey(), $ids);
+
+        // Still read-only, still linking straight to the lesson detail.
+        $lessonEvent = $events->firstWhere('id', 'course:'.$lesson->getKey());
+        $this->assertFalse($lessonEvent['editable']);
+        $this->assertSame(LessonResource::getUrl('view', ['record' => $lesson]), $lessonEvent['url']);
     }
 
     public function test_courses_toggle_hides_only_lessons(): void
     {
         $reservation = $this->makeReservation(['reservation_date' => Carbon::now()->startOfWeek(Carbon::MONDAY)->toDateString()]);
-        $lesson = $this->makeLesson();
-        $event = $this->makeOneOffEvent();
+        $lesson = $this->makeSeriesLesson();
+        $event = $this->makeStandaloneLesson();
 
         $calendar = new ReservationCalendar;
         $calendar->showCourses = false;
@@ -541,14 +623,14 @@ class CalendarTest extends TestCase
         $this->assertContains('oneoff:'.$event->getKey(), $ids);
     }
 
-    public function test_one_off_events_toggle_hides_only_events(): void
+    public function test_lessons_toggle_hides_only_events(): void
     {
         $reservation = $this->makeReservation(['reservation_date' => Carbon::now()->startOfWeek(Carbon::MONDAY)->toDateString()]);
-        $lesson = $this->makeLesson();
-        $event = $this->makeOneOffEvent();
+        $lesson = $this->makeSeriesLesson();
+        $event = $this->makeStandaloneLesson();
 
         $calendar = new ReservationCalendar;
-        $calendar->showOneOffEvents = false;
+        $calendar->showLessons = false;
         $ids = array_column($this->fetchWeek($calendar), 'id');
 
         $this->assertContains($reservation->getKey(), $ids);
@@ -559,8 +641,8 @@ class CalendarTest extends TestCase
     public function test_reservations_toggle_hides_only_reservations(): void
     {
         $reservation = $this->makeReservation(['reservation_date' => Carbon::now()->startOfWeek(Carbon::MONDAY)->toDateString()]);
-        $lesson = $this->makeLesson();
-        $event = $this->makeOneOffEvent();
+        $lesson = $this->makeSeriesLesson();
+        $event = $this->makeStandaloneLesson();
 
         $calendar = new ReservationCalendar;
         $calendar->showReservations = false;
@@ -576,10 +658,10 @@ class CalendarTest extends TestCase
     {
         $roomA = Room::factory()->create();
         $roomB = Room::factory()->create();
-        $lessonA = $this->makeLesson(['room_id' => $roomA->getKey()]);
-        $lessonB = $this->makeLesson(['room_id' => $roomB->getKey()]);
-        $eventA = $this->makeOneOffEvent(['room_id' => $roomA->getKey()]);
-        $eventB = $this->makeOneOffEvent(['room_id' => $roomB->getKey()]);
+        $lessonA = $this->makeSeriesLesson(['room_id' => $roomA->getKey()]);
+        $lessonB = $this->makeSeriesLesson(['room_id' => $roomB->getKey()]);
+        $eventA = $this->makeStandaloneLesson(['room_id' => $roomA->getKey()]);
+        $eventB = $this->makeStandaloneLesson(['room_id' => $roomB->getKey()]);
 
         $calendar = new ReservationCalendar;
         $calendar->filterData = ['roomIds' => [(string) $roomA->getKey()]];
@@ -595,10 +677,10 @@ class CalendarTest extends TestCase
     {
         $instructor = User::factory()->therapist()->create();
         $profile = StaffProfile::create(['user_id' => $instructor->getKey(), 'published_at' => now()]);
-        $matchingLesson = $this->makeLesson(['instructor_id' => $instructor->getKey()]);
-        $otherLesson = $this->makeLesson();
-        $matchingEvent = $this->makeOneOffEvent(['instructor_id' => $instructor->getKey()]);
-        $otherEvent = $this->makeOneOffEvent();
+        $matchingLesson = $this->makeSeriesLesson(['instructor_id' => $instructor->getKey()]);
+        $otherLesson = $this->makeSeriesLesson();
+        $matchingEvent = $this->makeStandaloneLesson(['instructor_id' => $instructor->getKey()]);
+        $otherEvent = $this->makeStandaloneLesson();
 
         $calendar = new ReservationCalendar;
         $calendar->therapistIds = [(string) $profile->getKey()];
@@ -613,8 +695,8 @@ class CalendarTest extends TestCase
     public function test_reservation_specific_filters_hide_lessons_and_events(): void
     {
         $reservation = $this->makeReservation(['reservation_date' => Carbon::now()->startOfWeek(Carbon::MONDAY)->toDateString()]);
-        $lesson = $this->makeLesson();
-        $event = $this->makeOneOffEvent();
+        $lesson = $this->makeSeriesLesson();
+        $event = $this->makeStandaloneLesson();
 
         $calendar = new ReservationCalendar;
         $calendar->filterData = ['clientIds' => [(string) $reservation->client_id]];
@@ -642,14 +724,14 @@ class CalendarTest extends TestCase
     public function test_search_matches_course_and_event_names(): void
     {
         $series = CourseSeries::factory()->create(['name' => 'Pilates pro pokročilé']);
-        $matchingLesson = $this->makeLesson(['series_id' => $series->getKey()]);
+        $matchingLesson = $this->makeSeriesLesson(['series_id' => $series->getKey()]);
         // CourseFactory can randomly generate a "Pilates …" course name, so pin
         // the control lesson's series to a course that never matches the search.
         $otherSeries = CourseSeries::factory()->create(['name' => 'Série podzim']);
         $otherSeries->course->update(['name' => 'Zdravá záda']);
-        $otherLesson = $this->makeLesson(['series_id' => $otherSeries->getKey()]);
-        $matchingEvent = $this->makeOneOffEvent(['name' => 'Pilates workshop']);
-        $otherEvent = $this->makeOneOffEvent(['name' => 'Dýchací techniky']);
+        $otherLesson = $this->makeSeriesLesson(['series_id' => $otherSeries->getKey()]);
+        $matchingEvent = $this->makeStandaloneLesson(['name' => 'Pilates workshop']);
+        $otherEvent = $this->makeStandaloneLesson(['name' => 'Dýchací techniky']);
 
         $calendar = new ReservationCalendar;
         $calendar->search = 'pilates';
@@ -661,12 +743,12 @@ class CalendarTest extends TestCase
         $this->assertNotContains('oneoff:'.$otherEvent->getKey(), $ids);
     }
 
-    public function test_trashed_one_off_events_are_excluded_and_unpublished_shown(): void
+    public function test_trashed_lessons_are_excluded_and_unpublished_shown(): void
     {
-        $unpublished = OneOffEvent::factory()->unpublished()->create([
-            'event_date' => Carbon::now()->startOfWeek(Carbon::MONDAY)->toDateString(),
+        $unpublished = Lesson::factory()->standalone()->unpublished()->create([
+            'lesson_date' => Carbon::now()->startOfWeek(Carbon::MONDAY)->toDateString(),
         ]);
-        $trashed = $this->makeOneOffEvent();
+        $trashed = $this->makeSeriesLesson();
         $trashed->delete();
 
         $events = collect($this->fetchWeek(new ReservationCalendar));
@@ -679,23 +761,23 @@ class CalendarTest extends TestCase
 
     public function test_clicking_course_or_event_redirects_to_its_view_page(): void
     {
-        $lesson = $this->makeLesson();
-        $event = $this->makeOneOffEvent();
+        $lesson = $this->makeSeriesLesson();
+        $event = $this->makeStandaloneLesson();
         $this->actingAs(User::factory()->admin()->create());
 
         Livewire::test(ReservationCalendar::class)
             ->call('onEventClick', ['id' => 'course:'.$lesson->getKey()])
-            ->assertRedirect(CourseLessonResource::getUrl('view', ['record' => $lesson]));
+            ->assertRedirect(LessonResource::getUrl('view', ['record' => $lesson]));
 
         Livewire::test(ReservationCalendar::class)
             ->call('onEventClick', ['id' => 'oneoff:'.$event->getKey()])
-            ->assertRedirect(OneOffEventResource::getUrl('view', ['record' => $event]));
+            ->assertRedirect(LessonResource::getUrl('view', ['record' => $event]));
     }
 
     public function test_selection_mode_ignores_course_and_event_clicks(): void
     {
-        $lesson = $this->makeLesson();
-        $event = $this->makeOneOffEvent();
+        $lesson = $this->makeSeriesLesson();
+        $event = $this->makeStandaloneLesson();
         $this->actingAs(User::factory()->admin()->create());
 
         Livewire::test(ReservationCalendar::class)

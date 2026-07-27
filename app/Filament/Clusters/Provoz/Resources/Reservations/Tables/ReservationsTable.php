@@ -50,6 +50,13 @@ class ReservationsTable
                     ->label('Datum a čas')
                     ->state(fn (Reservation $record): string => $record->reservation_date->format('d.m.Y').' '.substr((string) $record->start_time, 0, 5))
                     ->sortable(['reservation_date', 'start_time']),
+                // When the therapist is free again, break included — that is what
+                // decides whether the next slot is bookable.
+                TextColumn::make('end_time')
+                    ->label('Do')
+                    ->state(fn (Reservation $record): string => $record->endsAtIncludingBreak()->format('H:i'))
+                    ->description(fn (Reservation $record): ?string => $record->breakLabel())
+                    ->sortable(),
                 TextColumn::make('client.name')
                     ->label('Klient')
                     ->searchable()

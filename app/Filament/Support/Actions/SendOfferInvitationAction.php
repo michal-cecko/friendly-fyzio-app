@@ -5,7 +5,7 @@ namespace App\Filament\Support\Actions;
 use App\Enums\EmailTemplateKey;
 use App\Filament\Support\Schemas\CopyRecipientsFields;
 use App\Models\CourseSeries;
-use App\Models\OneOffEvent;
+use App\Models\Lesson;
 use App\Models\User;
 use App\Notifications\EnrollmentTemplateNotification;
 use App\Support\Emails\CopyRecipients;
@@ -21,7 +21,7 @@ use Filament\Support\Icons\Heroicon;
  * customers — one or many. Each recipient gets the offer's shared hidden link
  * ({@see EmailTemplateKey::OfferInvitation}, `{{ odkaz }}` = presaleUrl), through
  * which they can sign up even while the offer is Private. Shared header action
- * across the course-series and one-off-event resources; only shown
+ * across the course-series and lesson resources; only shown
  * for a Private offer.
  */
 class SendOfferInvitationAction extends Action
@@ -39,7 +39,7 @@ class SendOfferInvitationAction extends Action
             ->label('Poslat pozvánku')
             ->icon(Heroicon::OutlinedEnvelope)
             ->color('gray')
-            ->visible(fn (CourseSeries|OneOffEvent $record): bool => $record->isPrivate())
+            ->visible(fn (CourseSeries|Lesson $record): bool => $record->isPrivate())
             ->modalHeading('Poslat přednostní pozvánku')
             ->modalDescription('Vybraní zákazníci dostanou e-mail s přihlašovacím odkazem, přes který se mohou přihlásit, i když termín není veřejně otevřený.')
             ->modalSubmitActionLabel('Odeslat')
@@ -66,9 +66,9 @@ class SendOfferInvitationAction extends Action
                 Textarea::make('zprava')
                     ->label('Osobní zpráva (nepovinné)')
                     ->rows(3),
-                ...CopyRecipientsFields::make('Kopie se přidá ke každé odeslané pozvánce.'),
+                ...CopyRecipientsFields::make('Kopie dostanete jen jednou, ne u každé odeslané pozvánky.'),
             ])
-            ->action(function (CourseSeries|OneOffEvent $record, array $data): void {
+            ->action(function (CourseSeries|Lesson $record, array $data): void {
                 $url = $record->presaleUrl();
                 $offerTokens = EnrollmentEmailContext::offerTokens($record);
                 $message = (string) ($data['zprava'] ?? '');
@@ -81,12 +81,14 @@ class SendOfferInvitationAction extends Action
                         continue;
                     }
 
+                    // The copy is the sender's single archive of the invite, not
+                    // one per guest — attach it to the first sent message only.
                     $recipient->notify(new EnrollmentTemplateNotification(EmailTemplateKey::OfferInvitation, [
                         'jmeno' => EnrollmentEmailContext::firstName($recipient),
                         ...$offerTokens,
                         'odkaz' => $url,
                         'zprava' => $message,
-                    ], $copies));
+                    ], $sent === 0 ? $copies : null));
 
                     $sent++;
                 }

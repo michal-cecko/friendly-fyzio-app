@@ -9,15 +9,17 @@ use App\Filament\Support\Actions\CancelSignupAction;
 use App\Filament\Support\Actions\CancelSignupBulkAction;
 use App\Filament\Support\Actions\MarkSignupsPaidBulkAction;
 use App\Filament\Support\Actions\RecordPaymentAction;
+use App\Filament\Support\Actions\RevertSignupAction;
 use App\Filament\Support\Tables\TimestampColumns;
+use App\Support\Enrollments\SignupStatus;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 
 class CourseEnrollmentsTable
 {
@@ -65,10 +67,13 @@ class CourseEnrollmentsTable
             ])
             ->recordActions([
                 ViewAction::make(),
-                EditAction::make(),
                 RecordPaymentAction::make(),
+                RevertSignupAction::make(),
                 CancelSignupAction::make(),
-                DeleteAction::make(),
+                // Zrušit already hard-deletes active sign-ups via its toggle, so a
+                // plain delete is only offered to purge already-cancelled rows.
+                DeleteAction::make()
+                    ->visible(fn (Model $record): bool => ! SignupStatus::isActiveSignup($record)),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

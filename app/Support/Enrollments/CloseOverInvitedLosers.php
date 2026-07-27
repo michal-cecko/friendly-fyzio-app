@@ -6,8 +6,8 @@ use App\Enums\EmailTemplateKey;
 use App\Enums\PaymentStatus;
 use App\Models\CourseEnrollment;
 use App\Models\CourseSeries;
-use App\Models\OneOffEvent;
-use App\Models\OneOffEventBooking;
+use App\Models\Lesson;
+use App\Models\LessonBooking;
 use App\Models\Payment;
 
 /**
@@ -31,7 +31,7 @@ class CloseOverInvitedLosers
 
         $offer = match (true) {
             $payable instanceof CourseEnrollment => $payable->series,
-            $payable instanceof OneOffEventBooking => $payable->event,
+            $payable instanceof LessonBooking => $payable->lesson,
             default => null,
         };
 
@@ -40,7 +40,7 @@ class CloseOverInvitedLosers
         }
     }
 
-    public function closeLosersFor(CourseSeries|OneOffEvent $offer): void
+    public function closeLosersFor(CourseSeries|Lesson $offer): void
     {
         $offer->refresh();
 
@@ -51,7 +51,7 @@ class CloseOverInvitedLosers
         $offer->activeTakers()
             ->where('payment_status', '!=', PaymentStatus::Paid->value)
             ->get()
-            ->each(fn (CourseEnrollment|OneOffEventBooking $loser) => ($this->cancelSignup)(
+            ->each(fn (CourseEnrollment|LessonBooking $loser) => ($this->cancelSignup)(
                 $loser,
                 emailKey: EmailTemplateKey::EnrollmentAutoCancelled,
                 reason: 'Místo bylo obsazeno jiným zájemcem z čekací listiny',

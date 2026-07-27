@@ -5,6 +5,7 @@ namespace App\Filament\Support\Actions;
 use App\Contracts\Payable;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
+use App\Filament\Support\RelationManagers\PaymentsRelationManager;
 use App\Support\Payments\PaymentNotifier;
 use App\Support\Settings;
 use Filament\Actions\Action;
@@ -15,6 +16,7 @@ use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Model;
+use Livewire\Component;
 
 /**
  * Records a payment on any Payable (reservation, course enrollment, workshop
@@ -61,13 +63,20 @@ class RecordPaymentAction extends Action
                 Toggle::make('received')
                     ->label('Platba již přijata')
                     ->default(true)
-                    ->live(),
+                    ->live()
+                    // The toggle decides between "money is in hand" and "this is
+                    // what the client owes" — two very different records, with
+                    // nothing in the label to tell them apart.
+                    ->helperText(fn (Get $get): string => (bool) $get('received')
+                        ? 'Peníze už máte. Platba se rovnou započítá, a je-li v hotovosti, vystaví se k ní příjmový pokladní doklad.'
+                        : 'Vypnuto = platbu jen předepisujete. Uloží se jako nezaplacená se splatností za '.Settings::paymentDueDays().' dní a záznam zůstane neuhrazený.'),
                 Toggle::make('notify_client')
                     ->label('Poslat potvrzení klientovi')
                     ->default(true)
+                    ->helperText('E-mail o přijaté platbě.')
                     ->visible(fn (Get $get): bool => (bool) $get('received')),
             ])
-            ->action(function (Model $record, array $data): void {
+            ->action(function (Model $record, array $data, Component $livewire): void {
                 if (! $record instanceof Payable) {
                     return;
                 }
@@ -86,6 +95,10 @@ class RecordPaymentAction extends Action
                 if ($received) {
                     PaymentNotifier::paymentReceived($payment, (bool) ($data['notify_client'] ?? false));
                 }
+
+                // The Platby table is a Livewire component of its own and would
+                // otherwise keep showing the payments it loaded with the page.
+                $livewire->dispatch(PaymentsRelationManager::REFRESH_EVENT);
 
                 Notification::make()
                     ->title('Platba byla zaznamenána.')

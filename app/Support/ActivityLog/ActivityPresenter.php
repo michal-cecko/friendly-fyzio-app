@@ -2,10 +2,10 @@
 
 namespace App\Support\ActivityLog;
 
-use Filament\Facades\Filament;
+use App\Models\Lesson;
+use App\Models\LessonAttendance;
 use Illuminate\Support\Str;
 use Spatie\Activitylog\Models\Activity;
-use Throwable;
 
 /**
  * Human-readable labels for activity-log entries: the event, the affected
@@ -26,13 +26,20 @@ class ActivityPresenter
         'reservation_edited' => 'Rezervace upravena',
         'reservation_no_show' => 'Nedostavil se',
         'reservation_storno_charged' => 'Storno poplatek',
+        'reservation_doctor_note_uploaded' => 'Potvrzení od lékaře nahráno',
         'reservation_auto_cancelled' => 'Automaticky zrušeno',
         'reservation_completed' => 'Rezervace vybavena',
         'reservation_reactivated' => 'Rezervace obnovena',
+        'account_deactivated' => 'Účet deaktivován',
         'payment_requested' => 'Platba vyžádána',
         'payment_received' => 'Platba přijata',
         'invoice_issued' => 'Faktura vystavena',
         'bulk_deleted' => 'Hromadné smazání',
+        'lesson_absence' => 'Odhlášen z lekce',
+        'lesson_absence_reverted' => 'Vrácen do lekce',
+        'lesson_attendance_recorded' => 'Účast zaznamenána',
+        'review_published' => 'Recenze zveřejněna',
+        'review_hidden' => 'Recenze skryta',
     ];
 
     /** @var array<string, string> */
@@ -47,13 +54,20 @@ class ActivityPresenter
         'reservation_edited' => 'warning',
         'reservation_no_show' => 'warning',
         'reservation_storno_charged' => 'warning',
+        'reservation_doctor_note_uploaded' => 'info',
         'reservation_auto_cancelled' => 'danger',
         'reservation_completed' => 'gray',
         'reservation_reactivated' => 'success',
+        'account_deactivated' => 'danger',
         'payment_requested' => 'info',
         'payment_received' => 'success',
         'invoice_issued' => 'info',
         'bulk_deleted' => 'danger',
+        'lesson_absence' => 'warning',
+        'lesson_absence_reverted' => 'success',
+        'lesson_attendance_recorded' => 'success',
+        'review_published' => 'success',
+        'review_hidden' => 'gray',
     ];
 
     /**
@@ -66,8 +80,8 @@ class ActivityPresenter
         'course' => 'Kurz',
         'course_series' => 'Běh kurzu',
         'course_enrollment' => 'Přihláška do kurzu',
-        'one_off_event' => 'Jednorázová akce',
-        'one_off_event_booking' => 'Přihláška na akci',
+        'lesson' => 'Lekce',
+        'lesson_booking' => 'Přihláška na akci',
         'event_category' => 'Kategorie akcí',
         'Reservation' => 'Rezervace',
         'User' => 'Uživatel',
@@ -80,10 +94,9 @@ class ActivityPresenter
         'Invoice' => 'Faktura',
         'Course' => 'Kurz',
         'CourseSeries' => 'Běh kurzu',
-        'CourseLesson' => 'Lekce kurzu',
         'CourseEnrollment' => 'Přihláška do kurzu',
-        'OneOffEvent' => 'Jednorázová akce',
-        'OneOffEventBooking' => 'Přihláška na akci',
+        'Lesson' => 'Lekce',
+        'LessonBooking' => 'Přihláška na akci',
         'EventCategory' => 'Kategorie akcí',
         'LessonAttendance' => 'Účast na lekci',
         'CreditTransaction' => 'Kreditní transakce',
@@ -122,8 +135,8 @@ class ActivityPresenter
         'course' => 'm',
         'course_series' => 'm',
         'course_enrollment' => 'f',
-        'one_off_event' => 'f',
-        'one_off_event_booking' => 'f',
+        'lesson' => 'f',
+        'lesson_booking' => 'f',
         'event_category' => 'f',
         'Reservation' => 'f',
         'User' => 'm',
@@ -136,10 +149,9 @@ class ActivityPresenter
         'Invoice' => 'f',
         'Course' => 'm',
         'CourseSeries' => 'm',
-        'CourseLesson' => 'f',
         'CourseEnrollment' => 'f',
-        'OneOffEvent' => 'f',
-        'OneOffEventBooking' => 'f',
+        'Lesson' => 'f',
+        'LessonBooking' => 'f',
         'EventCategory' => 'f',
         'LessonAttendance' => 'f',
         'CreditTransaction' => 'f',
@@ -260,7 +272,7 @@ class ActivityPresenter
         'course_id' => 'Kurz',
         'series_id' => 'Běh kurzu',
         'source_series_id' => 'Zdrojový běh kurzu',
-        'one_off_event_id' => 'Akce',
+        'lesson_id' => 'Akce',
         'event_category_id' => 'Kategorie',
         'lesson_id' => 'Lekce',
         'enrollment_id' => 'Přihláška',
@@ -315,6 +327,9 @@ class ActivityPresenter
         'waitlist_promotion_mode' => 'Uvolněné místo z pořadníku',
         'waitlist_invited_until' => 'Místo drženo čekajícím do',
         'reservations' => 'Rezervace',
+        'enrollments' => 'Přihlášky na kurz',
+        'bookings' => 'Přihlášky na lekci',
+        'waitlist' => 'Místa v pořadníku',
         'show_stats' => 'Zobrazovat statistiky',
         'sort' => 'Pořadí',
         'total' => 'Celkem',
@@ -351,7 +366,7 @@ class ActivityPresenter
         'pageable_type' => 'Typ navázaného záznamu',
         'waitlistable_id' => 'Předmět pořadníku',
         'waitlistable_type' => 'Typ předmětu pořadníku',
-        'event_date' => 'Datum akce',
+        'lesson_date' => 'Datum akce',
         'start_at' => 'Začátek',
         'end_at' => 'Konec',
         'starts_on' => 'Platí od',
@@ -380,7 +395,69 @@ class ActivityPresenter
         'source' => 'Zdroj',
         'erased' => 'Přesunuto do koše',
         'fee' => 'Poplatek',
+        'file' => 'Soubor',
         'due_at' => 'Splatnost',
+        'client' => 'Klient',
+        'cc' => 'Kopie',
+        'bcc' => 'Skrytá kopie',
+        'notified' => 'Zákazník upozorněn',
+        'past' => 'Lekce už proběhla',
+        'override' => 'Poukaz nad rámec pravidel',
+        'substitute_token' => 'Poukaz na náhradu',
+        'substitute_token_withdrawn' => 'Poukaz na náhradu odebrán',
+        'token_generated' => 'Poukaz vygenerován',
+        'auto_promote_waitlist' => 'Automaticky posouvat z pořadníku',
+        'excuse_reason' => 'Důvod omluvy',
+        'excuse_note' => 'Poznámka k omluvě',
+        'excused_by_id' => 'Omluvil',
+        'replacement_attendance_id' => 'Náhradní lekce',
+        'source_attendance_id' => 'Původní lekce',
+        'max_substitutions' => 'Maximální počet náhrad',
+        'early_cancel_hours' => 'Včasné odhlášení (hodin předem)',
+        'duration_minutes' => 'Délka (minut)',
+        'break_minutes' => 'Pauza po termínu (minut)',
+        'break_blocks' => 'Pauza po termínu (bloků)',
+        'existing_client_months' => 'Kontrolní vyšetření do (měsíců)',
+        'is_control_therapy' => 'Kontrolní vyšetření',
+        'author_id' => 'Autor',
+        'author_name' => 'Jméno autora',
+        'reservation_id' => 'Rezervace',
+        'visible' => 'Viditelné',
+        'reviewable_id' => 'Předmět recenze',
+        'reviewable_type' => 'Typ předmětu recenze',
+        'sort_order' => 'Pořadí',
+        'short_name' => 'Zkratka',
+        'placement' => 'Umístění',
+        'page_ids' => 'Stránky',
+        'active_from' => 'Aktivní od',
+        'active_to' => 'Aktivní do',
+        'hero_image' => 'Hlavní obrázek',
+        'meta_title' => 'Meta titulek',
+        'meta_description' => 'Meta popis',
+        'is_system' => 'Systémový záznam',
+        'is_default' => 'Výchozí',
+        'document_type' => 'Typ dokladu',
+        'reset_yearly' => 'Reset číslování každý rok',
+        'padding' => 'Počet číslic',
+        'purpose' => 'Účel',
+        'received_by' => 'Přijal',
+        'client_name' => 'Jméno klienta',
+        'recipient_name' => 'Jméno obdarovaného',
+        'recipient_email' => 'E-mail obdarovaného',
+        'voucher_code' => 'Kód poukazu',
+        'purchased_at' => 'Zakoupeno',
+        'redeemed_at' => 'Uplatněno',
+        'credited_to_client_id' => 'Kredit připsán klientovi',
+        'invited_by' => 'Pozval',
+        'inviteable_id' => 'Předmět pozvánky',
+        'inviteable_type' => 'Typ předmětu pozvánky',
+        'token' => 'Token',
+        'access_token' => 'Přístupový token',
+        'token_expires_at' => 'Platnost tokenu do',
+        'username' => 'Uživatelské jméno',
+        'instagram_user_id' => 'Instagram ID',
+        'last_synced_at' => 'Poslední synchronizace',
+        'last_error' => 'Poslední chyba',
     ];
 
     /**
@@ -460,8 +537,53 @@ class ActivityPresenter
             'restored' => self::normalize(self::verb('restored', $gender).' '.$labelLower.' '.$title),
             'updated' => self::updatedSummary($activity, $label, $labelLower, $title, $gender),
             'email_sent' => self::emailSummary($activity, $labelLower, $title),
+            'lesson_absence',
+            'lesson_absence_reverted',
+            'lesson_attendance_recorded' => self::lessonAttendanceSummary($activity, $labelLower, $title),
+            // The event label already names the subject; repeating it would read
+            // as "Recenze zveřejněna: recenze …".
+            'review_published',
+            'review_hidden' => self::normalize(self::eventLabel($activity->event).': '.$title),
             default => self::normalize(self::eventLabel($activity->event).': '.$labelLower.' '.$title),
         };
+    }
+
+    /**
+     * The presence events are about a person, not the lesson, so the client's
+     * name leads and the lesson follows as the place it happened. Rows logged
+     * before the name was recorded fall back to the plain sentence.
+     */
+    private static function lessonAttendanceSummary(Activity $activity, string $labelLower, string $title): string
+    {
+        $client = $activity->getProperty('client');
+        $event = self::eventLabel($activity->event);
+        $place = self::lessonPlace($activity) ?? $labelLower.' '.$title;
+
+        if (! is_string($client) || $client === '') {
+            return self::normalize($event.': '.$place);
+        }
+
+        return self::normalize($event.': '.$client.' — '.$place);
+    }
+
+    /**
+     * The lesson a presence event happened on. These used to be filed against
+     * the lesson itself and are now filed against the seat they changed, so the
+     * name is read from whichever of the two the row points at.
+     */
+    private static function lessonPlace(Activity $activity): ?string
+    {
+        $subject = $activity->subject;
+
+        if ($subject instanceof Lesson) {
+            return $subject->logTitle();
+        }
+
+        $lesson = $subject instanceof LessonAttendance
+            ? $subject->lesson
+            : Lesson::query()->find($activity->getProperty('lesson_id'));
+
+        return $lesson?->logTitle();
     }
 
     /**
@@ -512,31 +634,7 @@ class ActivityPresenter
     {
         $subject = $activity->subject;
 
-        if ($subject === null) {
-            return null;
-        }
-
-        foreach (Filament::getResources() as $resource) {
-            if ($resource::getModel() !== $subject::class) {
-                continue;
-            }
-
-            foreach (['view', 'edit'] as $page) {
-                try {
-                    return $resource::getUrl($page, ['record' => $subject]);
-                } catch (Throwable) {
-                    continue;
-                }
-            }
-
-            try {
-                return $resource::getUrl('index');
-            } catch (Throwable) {
-                return null;
-            }
-        }
-
-        return null;
+        return $subject === null ? null : ActivityLink::url($subject);
     }
 
     public static function causerLabel(Activity $activity): string

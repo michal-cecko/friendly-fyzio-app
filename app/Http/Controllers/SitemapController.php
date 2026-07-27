@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Course;
 use App\Models\EventCategory;
-use App\Models\OneOffEvent;
+use App\Models\Lesson;
 use App\Models\Page;
 use App\Models\Service;
 use App\Models\ServiceCategory;
@@ -42,8 +42,8 @@ class SitemapController extends Controller
         EventCategory::published()->get()
             ->each(fn (EventCategory $category) => $urls->push($category->permalink));
 
-        OneOffEvent::published()->with('category')->get()
-            ->each(fn (OneOffEvent $event) => $urls->push($event->permalink()));
+        Lesson::published()->with('category')->get()
+            ->each(fn (Lesson $event) => $urls->push($event->permalink()));
 
         StaffProfile::published()->get()
             ->each(fn (StaffProfile $therapist) => $urls->push($therapist->permalink));

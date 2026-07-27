@@ -3,7 +3,7 @@
 namespace App\Filament\Support\Actions;
 
 use App\Models\CourseSeries;
-use App\Models\OneOffEvent;
+use App\Models\Lesson;
 use App\Support\Enrollments\AlreadySignedUpException;
 use App\Support\Enrollments\EnrollmentData;
 use App\Support\Enrollments\OfferClosedException;
@@ -15,6 +15,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * Manually add a participant to an offer from admin, through the same domain
@@ -30,6 +31,19 @@ class AddParticipantAction extends Action
         return 'addParticipant';
     }
 
+    /**
+     * Whether the offer this action hangs off has run out of spots. Both
+     * enrollable offers count spots through `HasCapacity`; anything else (there
+     * is no third owner today) is treated as open.
+     */
+    protected static function isFull(Model $offer): bool
+    {
+        return match (true) {
+            $offer instanceof CourseSeries, $offer instanceof Lesson => $offer->isFull(),
+            default => false,
+        };
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -38,6 +52,14 @@ class AddParticipantAction extends Action
             ->label('Přidat účastníka')
             ->icon(Heroicon::OutlinedUserPlus)
             ->color('primary')
+            // A full offer would only be refused by the domain action anyway, so
+            // the button is disabled up front. Filament keeps a disabled button
+            // hoverable as long as it carries a tooltip, which is what explains
+            // the refusal.
+            ->disabled(fn (RelationManager $livewire): bool => self::isFull($livewire->getOwnerRecord()))
+            ->tooltip(fn (RelationManager $livewire): ?string => self::isFull($livewire->getOwnerRecord())
+                ? 'Kapacita je naplněná — uvolněte místo zrušením přihlášky, nebo navyšte kapacitu.'
+                : null)
             ->modalHeading('Přidat účastníka')
             ->modalDescription('Vytvoří přihlášku jako z veřejného webu: založí účet (pokud neexistuje), vystaví výzvu k QR platbě a odešle potvrzovací e-mail.')
             ->modalSubmitActionLabel('Přidat')
@@ -76,7 +98,7 @@ class AddParticipantAction extends Action
                 try {
                     match (true) {
                         $offer instanceof CourseSeries => $action->forSeries($offer, $enrollment),
-                        $offer instanceof OneOffEvent => $action->forEvent($offer, $enrollment),
+                        $offer instanceof Lesson => $action->forEvent($offer, $enrollment),
                         default => null,
                     };
                 } catch (OfferClosedException) {

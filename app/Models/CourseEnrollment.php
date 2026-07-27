@@ -11,8 +11,10 @@ use App\Enums\PaymentStatus;
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\IsPayable;
 use App\Observers\CourseEnrollmentObserver;
+use App\Observers\PaymentObserver;
 use App\Support\Emails\CopyRecipients;
 use App\Support\Emails\EnrollmentEmailer;
+use App\Support\Payments\PayablePaymentStatus;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -79,6 +81,42 @@ class CourseEnrollment extends Model implements Emailable, Payable
     public function series(): BelongsTo
     {
         return $this->belongsTo(CourseSeries::class, 'series_id');
+    }
+
+    /**
+     * Recomputes the cached `payment_status` + `paid_at` from the payment records
+     * so both are a deterministic function of the payments, never set by hand.
+     * `paid_at` is the moment the enrollment became covered (the latest received
+     * payment), and reverts to null when a covering payment is removed. Called by
+     * the {@see PaymentObserver} on every payment change.
+     */
+    public function recalculatePaymentStatus(): void
+    {
+        $status = PayablePaymentStatus::for($this);
+
+        $paidAt = $status === PaymentStatus::Paid
+            ? ($this->payments()
+                ->where('status', PaymentStatus::Paid->value)
+                ->max('paid_at') ?? now())
+            : null;
+
+        if ($this->payment_status === $status && (string) $this->paid_at === (string) $paidAt) {
+            return;
+        }
+
+        $this->forceFill([
+            'payment_status' => $status,
+            'paid_at' => $paidAt,
+        ])->save();
+    }
+
+    /**
+     * The auto-paid rule recomputes the derived status rather than blindly
+     * flipping it, keeping the column a pure cache of the payments.
+     */
+    public function markPaymentPaid(): void
+    {
+        $this->recalculatePaymentStatus();
     }
 
     public function attendances(): HasMany

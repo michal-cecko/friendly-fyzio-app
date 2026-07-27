@@ -33,7 +33,7 @@ class ReservationFactory extends Factory
             'start_time' => sprintf('%02d:00', $start),
             'end_time' => sprintf('%02d:00', $start + 1),
             'status' => fake()->randomElement(ReservationStatus::cases()),
-            'payment_status' => fake()->randomElement(PaymentStatus::cases()),
+            'payment_status' => fake()->randomElement(PaymentStatus::payableCases()),
             'is_control_therapy' => fake()->boolean(15),
             'notes' => fake()->boolean(30) ? fake()->sentence() : null,
         ];

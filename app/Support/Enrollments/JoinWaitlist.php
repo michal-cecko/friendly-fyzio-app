@@ -5,7 +5,7 @@ namespace App\Support\Enrollments;
 use App\Enums\EmailTemplateKey;
 use App\Models\Course;
 use App\Models\CourseSeries;
-use App\Models\OneOffEvent;
+use App\Models\Lesson;
 use App\Models\User;
 use App\Models\WaitlistEntry;
 use App\Notifications\EnrollmentTemplateNotification;
@@ -24,11 +24,17 @@ use Illuminate\Support\Facades\Notification;
  */
 class JoinWaitlist
 {
+    /**
+     * @param  bool  $notify  Staff adding somebody by hand (from a phone call, a
+     *                        paper list) can skip the receipt; the public forms
+     *                        always send it.
+     */
     public static function handle(
-        Course|CourseSeries|OneOffEvent $waitlistable,
+        Course|CourseSeries|Lesson $waitlistable,
         ?string $name,
         string $email,
         ?string $phone = null,
+        bool $notify = true,
     ): WaitlistEntry {
         $client = User::query()->whereRaw('lower(email) = ?', [mb_strtolower($email)])->first();
 
@@ -52,7 +58,7 @@ class JoinWaitlist
 
         // Interest subscriptions ("notify me when registration opens") stay
         // silent until the course actually opens; real queues get a receipt.
-        if (! $waitlistable instanceof Course) {
+        if ($notify && ! $waitlistable instanceof Course) {
             $position = $waitlistable->waitlistEntries()->whereNull('notified_at')->count();
 
             Notification::route('mail', $email)->notify(new EnrollmentTemplateNotification(

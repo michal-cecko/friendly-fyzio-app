@@ -3,10 +3,10 @@
 namespace App\Filament\Support;
 
 use App\Filament\Clusters\Kurzy\Resources\CourseEnrollments\CourseEnrollmentResource;
-use App\Filament\Clusters\Kurzy\Resources\OneOffEventBookings\OneOffEventBookingResource;
+use App\Filament\Clusters\Kurzy\Resources\LessonBookings\LessonBookingResource;
 use App\Filament\Clusters\Provoz\Resources\Reservations\ReservationResource;
 use App\Models\CourseEnrollment;
-use App\Models\OneOffEventBooking;
+use App\Models\LessonBooking;
 use App\Models\Reservation;
 
 /**
@@ -19,7 +19,7 @@ final class PayableLinks
         return match (true) {
             $payable instanceof Reservation => ReservationResource::getUrl('view', ['record' => $payable]),
             $payable instanceof CourseEnrollment => CourseEnrollmentResource::getUrl('view', ['record' => $payable]),
-            $payable instanceof OneOffEventBooking => OneOffEventBookingResource::getUrl('view', ['record' => $payable]),
+            $payable instanceof LessonBooking => LessonBookingResource::getUrl('view', ['record' => $payable]),
             default => null,
         };
     }

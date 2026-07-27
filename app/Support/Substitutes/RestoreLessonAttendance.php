@@ -7,14 +7,16 @@ use App\Models\SubstituteToken;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Undoes an excuse ({@see ExcuseFromLesson}): the client is expected on the
+ * Undoes an excuse ({@see ExcuseFromLesson}): the client is present on the
  * lesson again and their spot is taken back. A substitute token minted by that
  * excuse is withdrawn with it — it was compensation for a lesson they are now
  * attending after all.
  *
- * Two situations cannot be undone, because somebody else has since acted on the
- * freed spot: a redeemed token (the make-up already happened elsewhere) and a
- * lesson that filled up in the meantime.
+ * Three situations cannot be undone, because somebody else has since acted on
+ * the freed spot: a redeemed token, a make-up that already took place elsewhere,
+ * and an upcoming lesson that filled up in the meantime. A lesson that has
+ * already happened is exempt from the last one — its occupancy is history, and
+ * staff correcting the register must not be blocked by it.
  */
 class RestoreLessonAttendance
 {
@@ -37,13 +39,23 @@ class RestoreLessonAttendance
             throw new SubstituteException('Klient už si za tuto lekci vybral náhradu, vrátit ho zpět proto nelze.');
         }
 
-        if ($lesson->isFull()) {
-            throw new SubstituteException('Lekce je mezitím plná, uvolněné místo už obsadil někdo jiný.');
+        if ($attendance->replacement_attendance_id !== null) {
+            throw new SubstituteException('Tato lekce už byla nahrazena jinde, vrátit klienta zpět proto nelze.');
+        }
+
+        if (! $lesson->startsAt()->isPast() && $lesson->isFull()) {
+            throw new SubstituteException($lesson->dropInCount() > 0
+                ? 'Uvolněné místo si mezitím někdo koupil jako jednorázový vstup, vrátit klienta zpět proto nelze.'
+                : 'Lekce je mezitím plná, uvolněné místo už obsadil někdo jiný.');
         }
 
         DB::transaction(function () use ($attendance, $token): void {
             $attendance->update([
+                'attended' => true,
                 'cancelled_at' => null,
+                'excuse_reason' => null,
+                'excuse_note' => null,
+                'excused_by_id' => null,
                 'token_generated' => false,
             ]);
 
@@ -66,10 +78,6 @@ class RestoreLessonAttendance
             return null;
         }
 
-        return SubstituteToken::query()
-            ->where('source_lesson_id', $attendance->lesson_id)
-            ->where('client_id', $attendance->enrollment?->client_id)
-            ->latest('created_at')
-            ->first();
+        return $attendance->substituteToken;
     }
 }

@@ -4,7 +4,7 @@ namespace App\Support\Enrollments;
 
 use App\Enums\EmailTemplateKey;
 use App\Models\CourseSeries;
-use App\Models\OneOffEvent;
+use App\Models\Lesson;
 use App\Models\WaitlistEntry;
 use App\Notifications\EnrollmentTemplateNotification;
 use App\Support\Settings;
@@ -29,7 +29,7 @@ class InviteWaitlistToSpot
     /**
      * @return int number of waiters e-mailed (0 when the round was a no-op)
      */
-    public function handle(CourseSeries|OneOffEvent $offer): int
+    public function handle(CourseSeries|Lesson $offer): int
     {
         $offer->refresh();
 
@@ -68,7 +68,7 @@ class InviteWaitlistToSpot
         return $invited;
     }
 
-    protected function notify(WaitlistEntry $entry, CourseSeries|OneOffEvent $offer): bool
+    protected function notify(WaitlistEntry $entry, CourseSeries|Lesson $offer): bool
     {
         $email = $entry->displayEmail();
 
@@ -94,11 +94,11 @@ class InviteWaitlistToSpot
         return true;
     }
 
-    protected function offerOpenForInvites(CourseSeries|OneOffEvent $offer): bool
+    protected function offerOpenForInvites(CourseSeries|Lesson $offer): bool
     {
         return match (true) {
             $offer instanceof CourseSeries => ! $offer->hasEnded(),
-            $offer instanceof OneOffEvent => ! $offer->isPast(),
+            $offer instanceof Lesson => ! $offer->isPast(),
         };
     }
 }

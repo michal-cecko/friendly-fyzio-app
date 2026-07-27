@@ -31,6 +31,9 @@ class ReservationEmailContext
             'termin' => self::formatWhen($reservation),
             'misto' => (string) (Settings::get('web.address') ?? ''),
             'odkaz' => $reservation->manageUrl(),
+            // Its own link, valid for days after the visit — `odkaz` above dies when
+            // the visit starts, long before a note from the doctor can arrive.
+            'potvrzeni_odkaz' => $reservation->doctorNoteUploadUrl(),
             'duvod' => (string) ($reservation->cancellation_reason ?? ''),
             'telefon' => (string) ($reservation->client?->phone ?? ''),
             'email' => (string) ($reservation->client?->email ?? ''),

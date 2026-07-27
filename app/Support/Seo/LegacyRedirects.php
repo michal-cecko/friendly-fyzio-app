@@ -3,7 +3,7 @@
 namespace App\Support\Seo;
 
 use App\Models\CourseCategory;
-use App\Models\OneOffEvent;
+use App\Models\Lesson;
 use App\Models\Service;
 use App\Models\ServiceCategory;
 
@@ -53,7 +53,7 @@ class LegacyRedirects
         // one-off events with PRESERVED ids, so the id resolves directly to the
         // event's new canonical URL (or the course archive as a safety net).
         if (preg_match('#^kurzy/[^/]+/lekce/([^/]+)$#', $path, $matches) === 1) {
-            $event = OneOffEvent::query()->with('category')->find($matches[1]);
+            $event = Lesson::query()->with('category')->find($matches[1]);
 
             return $event?->category !== null ? $event->permalink() : '/kurzy';
         }

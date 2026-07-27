@@ -7,6 +7,7 @@ use App\Filament\Support\Actions\ActivityLogAction;
 use App\Filament\Support\Actions\PresaleLinkAction;
 use App\Filament\Support\Actions\SendBulkParticipantEmailAction;
 use App\Filament\Support\Actions\SendOfferInvitationAction;
+use App\Filament\Support\Concerns\HasCourseBreadcrumbs;
 use App\Models\CourseSeries;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
@@ -16,6 +17,8 @@ use Filament\Support\Icons\Heroicon;
 
 class ViewCourseSeries extends ViewRecord
 {
+    use HasCourseBreadcrumbs;
+
     protected static string $resource = CourseSeriesResource::class;
 
     public function getTitle(): string

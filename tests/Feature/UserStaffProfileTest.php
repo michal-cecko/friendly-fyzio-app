@@ -51,6 +51,24 @@ class UserStaffProfileTest extends TestCase
         $this->assertNotEmpty($profile->slug);
     }
 
+    public function test_a_therapists_default_break_is_saved_in_blocks(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+
+        $therapist = User::factory()->therapist()->create();
+        $profile = $therapist->staffProfile;
+
+        // One block by default — the spec's 15 minutes after every visit.
+        $this->assertSame(1, $profile->break_blocks);
+
+        Livewire::test(EditUser::class, ['record' => $therapist->getKey()])
+            ->fillForm(['staffProfile.break_blocks' => 2])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $this->assertSame(2, $profile->refresh()->break_blocks);
+    }
+
     public function test_creating_a_therapist_with_profile_data_persists_exactly_one_profile(): void
     {
         $this->actingAs(User::factory()->admin()->create());

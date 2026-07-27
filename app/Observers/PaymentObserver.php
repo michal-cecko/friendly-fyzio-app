@@ -6,6 +6,7 @@ use App\Contracts\Payable;
 use App\Enums\DocumentType;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
+use App\Models\CourseEnrollment;
 use App\Models\Payment;
 use App\Models\Reservation;
 use App\Support\Enrollments\CloseOverInvitedLosers;
@@ -30,27 +31,32 @@ class PaymentObserver
             $this->handlePaid($payment);
         }
 
-        $this->syncReservation($payment);
+        $this->syncPayable($payment);
         $this->syncInvoice($payment);
     }
 
+    /**
+     * A corrected amount decides whether the payable is covered just as much as
+     * a status change does, so editing one down (or up) has to recompute the
+     * cached payment status too — only becoming Paid additionally issues the PPD.
+     */
     public function updated(Payment $payment): void
     {
-        if (! $payment->wasChanged('status')) {
+        if (! $payment->wasChanged(['status', 'amount'])) {
             return;
         }
 
-        if ($payment->status === PaymentStatus::Paid) {
+        if ($payment->wasChanged('status') && $payment->status === PaymentStatus::Paid) {
             $this->handlePaid($payment);
         }
 
-        $this->syncReservation($payment);
+        $this->syncPayable($payment);
         $this->syncInvoice($payment);
     }
 
     public function deleted(Payment $payment): void
     {
-        $this->syncReservation($payment);
+        $this->syncPayable($payment);
         // Invoices deliberately NOT synced here: their paid derivation is
         // forward-only — removing a payment never reverts an issued document.
     }
@@ -78,18 +84,27 @@ class PaymentObserver
     }
 
     /**
-     * A reservation's payment_status is a deterministic cache of its payments, so
-     * every payment change (created / status change / deleted) recomputes it —
-     * including reverting to Unpaid when a covering payment is removed. Other
-     * payables keep the forward-only PayableSettlement rule in handlePaid().
+     * A reservation's and a course enrollment's payment_status (+ the
+     * enrollment's paid_at) are a deterministic cache of their payments, so every
+     * payment change (created / status change / deleted) recomputes them —
+     * including reverting to Unpaid when a covering payment is removed. The
+     * remaining payables keep the forward-only PayableSettlement rule in
+     * handlePaid().
      */
-    private function syncReservation(Payment $payment): void
+    private function syncPayable(Payment $payment): void
     {
-        if ($payment->payable instanceof Reservation) {
-            $reservation = $payment->payable;
-            $reservation->recalculatePaymentStatus();
+        $payable = $payment->payable;
+
+        if ($payable instanceof Reservation) {
+            $payable->recalculatePaymentStatus();
             // A past visit now fully paid — or a storno fee just settled — is closed.
-            $reservation->markSettledIfQualifies();
+            $payable->markSettledIfQualifies();
+
+            return;
+        }
+
+        if ($payable instanceof CourseEnrollment) {
+            $payable->recalculatePaymentStatus();
         }
     }
 

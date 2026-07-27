@@ -336,6 +336,26 @@ class ReservationManageTest extends TestCase
         });
     }
 
+    /**
+     * A client who cancels here can hand the note over on the spot. The form posts
+     * to the longer-lived upload link, since this page's signature dies at the
+     * visit start.
+     */
+    public function test_the_manage_page_offers_the_doctor_note_upload(): void
+    {
+        Notification::fake();
+
+        $reservation = $this->stornoReservation();
+
+        $this->post($reservation->manageUrl(), ['action' => 'doctor'])->assertRedirect();
+
+        $this->get($reservation->manageUrl())
+            ->assertOk()
+            ->assertSee('Potvrzení od lékaře')
+            ->assertSee('Nahrát potvrzení')
+            ->assertSee(route('reservation.doctor-note', $reservation, false), escape: false);
+    }
+
     public function test_storno_doctor_note_notifies_staff_in_the_database(): void
     {
         Mail::fake();

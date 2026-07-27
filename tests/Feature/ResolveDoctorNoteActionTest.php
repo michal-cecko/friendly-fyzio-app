@@ -5,15 +5,19 @@ namespace Tests\Feature;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Enums\ReservationStatus;
+use App\Filament\Clusters\Provoz\Resources\Reservations\Actions\ResolveDoctorNoteAction;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Pages\ListReservations;
 use App\Models\Reservation;
 use App\Models\Service;
 use App\Models\User;
 use App\Notifications\ReservationStornoPaymentNotification;
+use App\Support\Reservations\ReservationDocuments;
 use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -95,6 +99,51 @@ class ResolveDoctorNoteActionTest extends TestCase
         $payment->update(['status' => PaymentStatus::Paid, 'paid_at' => now()]);
 
         $this->assertNotNull($reservation->fresh()->settled_at);
+    }
+
+    public function test_the_modal_lists_the_uploaded_notes_for_review(): void
+    {
+        Storage::fake(ReservationDocuments::DISK);
+
+        $reservation = $this->doctorNoteReservation();
+
+        $document = app(ReservationDocuments::class)->store(
+            $reservation,
+            UploadedFile::fake()->create('potvrzeni-lekar.pdf', 100, 'application/pdf'),
+        );
+
+        $rendered = ResolveDoctorNoteAction::documentLinks($reservation)->toHtml();
+
+        $this->assertStringContainsString('potvrzeni-lekar.pdf', $rendered);
+        $this->assertStringContainsString(e($document->downloadUrl()), $rendered);
+    }
+
+    public function test_the_modal_warns_when_nothing_was_uploaded(): void
+    {
+        $this->assertStringContainsString(
+            'Klient zatím nenahrál žádné potvrzení.',
+            ResolveDoctorNoteAction::documentLinks($this->doctorNoteReservation())->toHtml(),
+        );
+    }
+
+    public function test_waiving_keeps_the_uploaded_note_on_file(): void
+    {
+        Storage::fake(ReservationDocuments::DISK);
+        Notification::fake();
+
+        $reservation = $this->doctorNoteReservation();
+
+        $document = app(ReservationDocuments::class)->store(
+            $reservation,
+            UploadedFile::fake()->create('potvrzeni-lekar.pdf', 100, 'application/pdf'),
+        );
+
+        Livewire::test(ListReservations::class)
+            ->callAction(TestAction::make('resolveDoctorNote')->table($reservation), ['outcome' => 'received'])
+            ->assertHasNoActionErrors();
+
+        $this->assertModelExists($document);
+        Storage::disk(ReservationDocuments::DISK)->assertExists($document->path);
     }
 
     public function test_action_hidden_without_a_pending_note(): void

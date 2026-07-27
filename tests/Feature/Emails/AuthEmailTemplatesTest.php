@@ -8,6 +8,7 @@ use App\Models\ReviewRequest;
 use App\Models\User;
 use App\Notifications\Auth\FilamentResetPasswordNotification;
 use App\Notifications\Auth\ResetPasswordNotification;
+use App\Notifications\Auth\VerifyEmailChangeForClientNotification;
 use App\Notifications\Auth\VerifyEmailChangeNotification;
 use App\Notifications\Auth\VerifyEmailNotification;
 use App\Notifications\ClientAccountCreatedNotification;
@@ -63,6 +64,29 @@ class AuthEmailTemplatesTest extends TestCase
         // The signed link targets the public verification route.
         $this->assertStringContainsString('/overeni-emailu/'.$user->getKey(), $html);
         $this->assertStringContainsString('Jana', $html);
+        $this->assertStringNotContainsString('{{ odkaz }}', $html);
+    }
+
+    public function test_client_email_change_verification_renders_change_wording_not_registration(): void
+    {
+        $this->seed(EmailTemplateSeeder::class);
+
+        // The zone flow updates the address up front, so the notifiable already
+        // carries the new e-mail the template greets.
+        $user = User::factory()->customer()->create([
+            'name' => 'Jana Nováková',
+            'email' => 'nova.adresa@example.cz',
+        ]);
+
+        $html = (new VerifyEmailChangeForClientNotification)->toMail($user)->viewData['html'] ?? '';
+
+        // Change wording + the new address, around the public signed verification URL.
+        $this->assertStringContainsString('/overeni-emailu/'.$user->getKey(), $html);
+        $this->assertStringContainsString('nova.adresa@example.cz', $html);
+        $this->assertStringContainsString('změnu e-mailové adresy', $html);
+        $this->assertStringContainsString('Jana', $html);
+        // Not the registration copy the bug report showed.
+        $this->assertStringNotContainsString('Děkujeme za registraci', $html);
         $this->assertStringNotContainsString('{{ odkaz }}', $html);
     }
 

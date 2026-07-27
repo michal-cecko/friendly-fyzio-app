@@ -71,7 +71,7 @@ class CourseController extends Controller
                 ? $series->offerStateForPresale()
                 : ($series?->offerState() ?? OfferState::Inactive),
             'seriesLessons' => $series?->lessons()->with('room')->get() ?? collect(),
-            'upcomingLessons' => $course->upcomingOneOffEvents()->withCount('activeTakers')->with(['room', 'category'])->get(),
+            'upcomingLessons' => $course->upcomingPublicLessons()->withOccupancyCounts()->with(['room', 'category'])->get(),
             'reviews' => $course->reviews()->where('visible', true)->latest()->take(6)->get(),
             'isPreview' => $isPreview,
             'adminEditUrl' => $this->adminEditUrl($course, CourseResource::class),

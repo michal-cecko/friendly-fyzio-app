@@ -419,9 +419,9 @@ class User extends Authenticatable implements Emailable, FilamentUser, HasPasske
         return $this->hasMany(Payment::class, 'client_id');
     }
 
-    public function oneOffEventBookings(): HasMany
+    public function lessonBookings(): HasMany
     {
-        return $this->hasMany(OneOffEventBooking::class, 'client_id');
+        return $this->hasMany(LessonBooking::class, 'client_id');
     }
 
     /**
@@ -445,7 +445,7 @@ class User extends Authenticatable implements Emailable, FilamentUser, HasPasske
      */
     public function instructedLessons(): HasMany
     {
-        return $this->hasMany(CourseLesson::class, 'instructor_id');
+        return $this->hasMany(Lesson::class, 'instructor_id');
     }
 
     public function courseEnrollments(): HasMany

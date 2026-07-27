@@ -6,17 +6,16 @@ use App\Enums\Capability;
 use App\Enums\DayOfWeek;
 use App\Enums\EmailTemplateKey;
 use App\Enums\ReservationStatus;
-use App\Filament\Clusters\Kurzy\Resources\CourseLessons\CourseLessonResource;
-use App\Filament\Clusters\Kurzy\Resources\OneOffEvents\OneOffEventResource;
+use App\Filament\Clusters\Kurzy\Resources\Lessons\LessonResource;
 use App\Filament\Clusters\Provoz\Resources\ReservationDayWaitlist\ReservationDayWaitlistResource;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Actions\CancelReservationAction;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Actions\RestoreReservationAction;
 use App\Filament\Clusters\Provoz\Resources\Reservations\ReservationResource;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Schemas\ReservationForm;
+use App\Filament\Support\Actions\ScheduleChangeNotificationPrompt;
 use App\Filament\Support\Schemas\BlockingForm;
 use App\Filament\Support\Schemas\WorkingHoursForm;
-use App\Models\CourseLesson;
-use App\Models\OneOffEvent;
+use App\Models\Lesson;
 use App\Models\Reservation;
 use App\Models\ReservationDayWaitlistEntry;
 use App\Models\Room;
@@ -28,11 +27,11 @@ use App\Models\TherapistWorkBlockSeries;
 use App\Models\User;
 use App\Notifications\ReservationNotification;
 use App\Notifications\ReservationTemplateNotification;
-use App\Notifications\TherapistReservationTemplateNotification;
 use App\Support\ActivityLog\LogActivity;
 use App\Support\Avatar;
 use App\Support\CalendarAvailability;
 use App\Support\Emails\SentEmailReceipt;
+use App\Support\Reservations\NotifyReservationChange;
 use App\Support\Reservations\ReactivateReservation;
 use App\Support\Reservations\ReservationChangeSnapshot;
 use App\Support\Reservations\SlotTakenException;
@@ -71,6 +70,9 @@ class ReservationCalendar extends FullCalendarWidget
     /** Fuchsia accent/tint used for one-off event entries (matches the "Akce" legend). */
     private const ONE_OFF_COLORS = ['#C026D3', '#FDF4FF'];
 
+    /** Neutral accent/tint for the break strip trailing a reservation card. */
+    private const BREAK_COLORS = ['#A3A3A3', '#F5F5F5'];
+
     /**
      * When set, the calendar is scoped to a single room: every query is filtered
      * by this room, the room filter UI is hidden, and the add/edit blocking and
@@ -102,7 +104,7 @@ class ReservationCalendar extends FullCalendarWidget
 
     /** Reservations mode: overlay scheduled one-off events (read-only). */
     #[Url(as: 'akce')]
-    public bool $showOneOffEvents = true;
+    public bool $showLessons = true;
 
     /** Reservations mode: show the day-waitlist summary strip above the grid. */
     #[Url(as: 'poradnik')]
@@ -268,6 +270,27 @@ class ReservationCalendar extends FullCalendarWidget
             ->all();
     }
 
+    /**
+     * The room ids every overlay query must be restricted to, resolved from
+     * whichever room control the current context uses: a room-scoped calendar
+     * pins its own room, template mode uses the toolbar select, and reservations
+     * mode uses the filter form. An empty array means "all rooms".
+     *
+     * @return array<int, string>
+     */
+    public function scopedRoomIds(): array
+    {
+        if ($this->room !== null) {
+            return [(string) $this->room->getKey()];
+        }
+
+        if ($this->isTemplateMode()) {
+            return array_values(array_filter([$this->templateRoomId]));
+        }
+
+        return array_values($this->filterData['roomIds'] ?? []);
+    }
+
     public function mount(?Room $room = null): void
     {
         // Set only when provided (room-scoped View page); the global calendar
@@ -314,7 +337,7 @@ class ReservationCalendar extends FullCalendarWidget
             $this->selectedIds = [];
         }
 
-        if (in_array($property, ['search', 'mode', 'templateRoomId', 'showReservations', 'showCourses', 'showOneOffEvents'], true)) {
+        if (in_array($property, ['search', 'mode', 'templateRoomId', 'showReservations', 'showCourses', 'showLessons'], true)) {
             $this->dispatch('filament-fullcalendar--refresh');
         }
     }
@@ -325,7 +348,7 @@ class ReservationCalendar extends FullCalendarWidget
         $this->search = '';
         $this->showReservations = true;
         $this->showCourses = true;
-        $this->showOneOffEvents = true;
+        $this->showLessons = true;
         $this->showWaitlist = true;
         $this->filtersForm->fill();
 
@@ -1060,6 +1083,22 @@ class ReservationCalendar extends FullCalendarWidget
     }
 
     /**
+     * The dates FullCalendar is actually showing, as an inclusive [from, to]
+     * pair. The `end` it hands us is exclusive (the first day *after* the view),
+     * so it has to lose a day before it can be used in a `whereBetween`.
+     *
+     * @param  array{start: string, end: string, timezone: string}  $info
+     * @return array{0: string, 1: string}
+     */
+    protected function visibleDateRange(array $info): array
+    {
+        $start = substr((string) $info['start'], 0, 10);
+        $end = Carbon::parse(substr((string) $info['end'], 0, 10))->subDay()->toDateString();
+
+        return [$start, max($start, $end)];
+    }
+
+    /**
      * @param  array{start: string, end: string, timezone: string}  $info
      */
     public function fetchEvents(array $info): array
@@ -1127,6 +1166,9 @@ class ReservationCalendar extends FullCalendarWidget
                     'isCancelled' => $isCancelled,
                     'isTrashed' => $reservation->trashed(),
                     'isSelected' => in_array((string) $reservation->getKey(), $this->selectedIds, true),
+                    // The break hangs off the bottom of this card rather than
+                    // being an event of its own — see breakStrip().
+                    ...$this->breakStrip($reservation),
                 ])
                 ->toArray();
         })->all();
@@ -1134,9 +1176,53 @@ class ReservationCalendar extends FullCalendarWidget
         return [
             ...$events,
             ...$this->fetchOneTimeBlockingEvents($info),
-            ...$this->fetchCourseLessonEvents($info),
-            ...$this->fetchOneOffEventEvents($info),
+            ...$this->fetchLessonEvents($info),
         ];
+    }
+
+    /**
+     * Props describing the greyed strip that covers the therapist's break.
+     *
+     * It is drawn as part of the reservation card, overhanging its bottom edge,
+     * rather than as a second event. A separate event would compete for the slot
+     * with whatever is booked next and both would be squeezed to half width —
+     * the break would no longer line up with the card it belongs to. Hanging it
+     * off the card keeps the two exactly the same width, and because later
+     * events are painted after it, a booking that really does start inside the
+     * break covers it instead of fighting it for room.
+     *
+     * The height is expressed as a fraction of the card, which is exact: a
+     * timegrid card's height *is* its duration, so break ÷ duration of it is the
+     * break.
+     *
+     * @return array<string, mixed>
+     */
+    protected function breakStrip(Reservation $reservation): array
+    {
+        $duration = (int) $reservation->startsAt()->diffInMinutes($reservation->endsAt());
+
+        if (! $this->hasBreakStrip($reservation) || $duration <= 0) {
+            return ['hasBreak' => false];
+        }
+
+        return [
+            'hasBreak' => true,
+            'breakMinutes' => $reservation->break_minutes,
+            'breakRatio' => round($reservation->break_minutes / $duration, 4),
+            'breakLabel' => 'Pauza '.$reservation->break_minutes.' min',
+            'breakUntil' => $reservation->endsAtIncludingBreak()->format('H:i'),
+        ];
+    }
+
+    /**
+     * Whether a visit leaves a break behind it: a cancelled or binned one frees
+     * its break with it.
+     */
+    protected function hasBreakStrip(Reservation $reservation): bool
+    {
+        return $reservation->break_minutes > 0
+            && $reservation->status !== ReservationStatus::Cancelled
+            && ! $reservation->trashed();
     }
 
     /**
@@ -1171,145 +1257,112 @@ class ReservationCalendar extends FullCalendarWidget
     }
 
     /**
-     * Scheduled course lessons overlaid read-only on the reservations grid.
-     * Honours room scope/filter, therapist chips (mapped to instructor users)
-     * and search; clicking navigates to the lesson's admin detail page.
+     * Lessons overlaid read-only on both grids — both the scheduled lessons of a
+     * course série and standalone workshops / jednorázové lekce, which are the
+     * same record since the merge. The two "Kurzy" / "Akce" toggles select
+     * between them rather than between two queries.
+     *
+     * In template mode they answer "what already competes with this working
+     * hour?", so the room scope comes from the toolbar select and the
+     * reservation-only filters (client/service/status/trash, which survive in
+     * the URL after a mode switch) and the search box do not apply.
+     *
+     * Honours room scope/filter and therapist chips (mapped to instructor
+     * users); clicking navigates to the lesson's admin detail page.
+     * Soft-deleted lessons are excluded by the default scope; unpublished ones
+     * are shown.
      *
      * @param  array{start: string, end: string, timezone: string}  $info
      * @return array<int, mixed>
      */
-    protected function fetchCourseLessonEvents(array $info): array
+    protected function fetchLessonEvents(array $info): array
     {
-        if (! $this->showCourses || $this->reservationSpecificFilterActive()) {
+        if (! $this->showCourses && ! $this->showLessons) {
             return [];
         }
 
-        $roomIds = $this->room ? [] : ($this->filterData['roomIds'] ?? []);
+        if (! $this->isTemplateMode() && $this->reservationSpecificFilterActive()) {
+            return [];
+        }
+
+        $roomIds = $this->scopedRoomIds();
         $instructorUserIds = $this->selectedInstructorUserIds();
 
-        [$accent, $tint] = self::COURSE_COLORS;
-
-        return CourseLesson::query()
+        return Lesson::query()
             ->with([
                 'series' => fn ($query) => $query->withCount('activeTakers'),
                 'series.course',
                 'instructor',
                 'room',
+                'category',
             ])
-            ->whereBetween('lesson_date', [substr((string) $info['start'], 0, 10), substr((string) $info['end'], 0, 10)])
-            ->when($this->room, fn (Builder $query) => $query->where('room_id', $this->room->getKey()))
+            ->withCount('activeTakers')
+            ->whereBetween('lesson_date', $this->visibleDateRange($info))
+            ->unless($this->showCourses, fn (Builder $query) => $query->whereNull('series_id'))
+            ->unless($this->showLessons, fn (Builder $query) => $query->whereNotNull('series_id'))
             ->when($roomIds, fn (Builder $query) => $query->whereIn('room_id', $roomIds))
             ->when($this->therapistIds, fn (Builder $query) => $query->whereIn('instructor_id', $instructorUserIds))
-            ->when(filled($this->search), function (Builder $query): void {
+            ->when(! $this->isTemplateMode() && filled($this->search), function (Builder $query): void {
                 $term = '%'.mb_strtolower($this->search).'%';
-                $query->whereHas('series', function (Builder $series) use ($term): void {
-                    $series->whereRaw('LOWER(name) LIKE ?', [$term])
-                        ->orWhereHas('course', fn (Builder $course) => $course->whereRaw('LOWER(name) LIKE ?', [$term]));
+                $query->where(function (Builder $inner) use ($term): void {
+                    $inner->whereRaw('LOWER(name) LIKE ?', [$term])
+                        ->orWhereHas('series', function (Builder $series) use ($term): void {
+                            $series->whereRaw('LOWER(name) LIKE ?', [$term])
+                                ->orWhereHas('course', fn (Builder $course) => $course->whereRaw('LOWER(name) LIKE ?', [$term]));
+                        });
                 });
             })
             ->get()
-            ->map(function (CourseLesson $lesson) use ($accent, $tint): array {
-                $date = $lesson->lesson_date->toDateString();
-                $title = $lesson->series?->course?->name ?? $lesson->series?->name ?? 'Lekce kurzu';
-
-                $event = EventData::make()
-                    ->id('course:'.$lesson->getKey())
-                    ->title($title)
-                    ->start($date.'T'.$lesson->start_time)
-                    ->end($date.'T'.$lesson->end_time)
-                    ->backgroundColor($tint)
-                    ->borderColor($accent)
-                    ->textColor('#155E75')
-                    ->extendedProps([
-                        'kind' => 'course',
-                        'timeLabel' => $this->timeLabel($lesson->start_time, $lesson->end_time),
-                        'title' => $title,
-                        'series' => $lesson->series?->name,
-                        'room' => $lesson->room?->display_short_name,
-                        'instructorName' => $lesson->instructor?->name,
-                        'initials' => $this->therapistInitials($lesson->instructor?->name),
-                        'accent' => $accent,
-                        'occupancy' => $lesson->series
-                            ? $lesson->series->takenSpots().'/'.$lesson->series->capacity
-                            : null,
-                    ])
-                    ->extraProperties(['editable' => false]);
-
-                if (! $this->selectionMode) {
-                    // The vendor JS navigates directly for events with a url and
-                    // never reaches onEventClick — read-only detail navigation.
-                    // Omitted in selection mode so clicks fall through unhandled.
-                    $event->url(CourseLessonResource::getUrl('view', ['record' => $lesson]));
-                }
-
-                return $event->toArray();
-            })
+            ->map(fn (Lesson $lesson): array => $this->lessonEvent($lesson))
             ->all();
     }
 
     /**
-     * Scheduled one-off events (workshops, single lessons) overlaid read-only on
-     * the reservations grid, same filter rules as course lessons. Soft-deleted
-     * events are excluded by the default scope; unpublished ones are shown.
+     * A lesson of a série reads as its course; a standalone one as its own name,
+     * and they are tinted differently so the grid still tells them apart.
      *
-     * @param  array{start: string, end: string, timezone: string}  $info
-     * @return array<int, mixed>
+     * @return array<string, mixed>
      */
-    protected function fetchOneOffEventEvents(array $info): array
+    protected function lessonEvent(Lesson $lesson): array
     {
-        if (! $this->showOneOffEvents || $this->reservationSpecificFilterActive()) {
-            return [];
+        $partOfSeries = $lesson->isPartOfSeries();
+        [$accent, $tint] = $partOfSeries ? self::COURSE_COLORS : self::ONE_OFF_COLORS;
+        $date = $lesson->lesson_date->toDateString();
+        $title = $partOfSeries
+            ? ($lesson->series?->course?->name ?? $lesson->series?->name ?? 'Lekce kurzu')
+            : (string) $lesson->name;
+
+        $event = EventData::make()
+            ->id(($partOfSeries ? 'course:' : 'oneoff:').$lesson->getKey())
+            ->title($title)
+            ->start($date.'T'.$lesson->start_time)
+            ->end($date.'T'.$lesson->end_time)
+            ->backgroundColor($tint)
+            ->borderColor($accent)
+            ->textColor($partOfSeries ? '#155E75' : '#86198F')
+            ->extendedProps([
+                'kind' => $partOfSeries ? 'course' : 'oneOffEvent',
+                'timeLabel' => $this->timeLabel($lesson->start_time, $lesson->end_time),
+                'title' => $title,
+                'series' => $lesson->series?->name,
+                'category' => $lesson->category?->name,
+                'room' => $lesson->room?->display_short_name,
+                'instructorName' => $lesson->instructor?->name,
+                'initials' => $this->therapistInitials($lesson->instructor?->name),
+                'accent' => $accent,
+                'occupancy' => $lesson->takenSpots().'/'.$lesson->capacity,
+                'isUnpublished' => ! $partOfSeries && ! $lesson->isPublished(),
+            ])
+            ->extraProperties(['editable' => false]);
+
+        if (! $this->selectionMode) {
+            // The vendor JS navigates directly for events with a url and never
+            // reaches onEventClick — read-only detail navigation. Omitted in
+            // selection mode so clicks fall through unhandled.
+            $event->url(LessonResource::getUrl('view', ['record' => $lesson]));
         }
 
-        $roomIds = $this->room ? [] : ($this->filterData['roomIds'] ?? []);
-        $instructorUserIds = $this->selectedInstructorUserIds();
-
-        [$accent, $tint] = self::ONE_OFF_COLORS;
-
-        return OneOffEvent::query()
-            ->with(['instructor', 'room', 'category'])
-            ->withCount('activeTakers')
-            ->whereBetween('event_date', [substr((string) $info['start'], 0, 10), substr((string) $info['end'], 0, 10)])
-            ->when($this->room, fn (Builder $query) => $query->where('room_id', $this->room->getKey()))
-            ->when($roomIds, fn (Builder $query) => $query->whereIn('room_id', $roomIds))
-            ->when($this->therapistIds, fn (Builder $query) => $query->whereIn('instructor_id', $instructorUserIds))
-            ->when(filled($this->search), function (Builder $query): void {
-                $term = '%'.mb_strtolower($this->search).'%';
-                $query->whereRaw('LOWER(name) LIKE ?', [$term]);
-            })
-            ->get()
-            ->map(function (OneOffEvent $oneOffEvent) use ($accent, $tint): array {
-                $date = $oneOffEvent->event_date->toDateString();
-
-                $event = EventData::make()
-                    ->id('oneoff:'.$oneOffEvent->getKey())
-                    ->title($oneOffEvent->name)
-                    ->start($date.'T'.$oneOffEvent->start_time)
-                    ->end($date.'T'.$oneOffEvent->end_time)
-                    ->backgroundColor($tint)
-                    ->borderColor($accent)
-                    ->textColor('#86198F')
-                    ->extendedProps([
-                        'kind' => 'oneOffEvent',
-                        'timeLabel' => $this->timeLabel($oneOffEvent->start_time, $oneOffEvent->end_time),
-                        'title' => $oneOffEvent->name,
-                        'category' => $oneOffEvent->category?->name,
-                        'room' => $oneOffEvent->room?->display_short_name,
-                        'instructorName' => $oneOffEvent->instructor?->name,
-                        'initials' => $this->therapistInitials($oneOffEvent->instructor?->name),
-                        'accent' => $accent,
-                        'occupancy' => $oneOffEvent->takenSpots().'/'.$oneOffEvent->capacity,
-                        'isUnpublished' => ! $oneOffEvent->isPublished(),
-                    ])
-                    ->extraProperties(['editable' => false]);
-
-                if (! $this->selectionMode) {
-                    $event->url(OneOffEventResource::getUrl('view', ['record' => $oneOffEvent]));
-                }
-
-                return $event->toArray();
-            })
-            ->all();
+        return $event->toArray();
     }
 
     /**
@@ -1322,9 +1375,7 @@ class ReservationCalendar extends FullCalendarWidget
      */
     protected function fetchOneTimeBlockingEvents(array $info): array
     {
-        $roomIds = $this->room ? [] : ($this->isTemplateMode()
-            ? array_values(array_filter([$this->templateRoomId]))
-            : ($this->filterData['roomIds'] ?? []));
+        $roomIds = $this->scopedRoomIds();
         $start = substr((string) $info['start'], 0, 10);
         $end = substr((string) $info['end'], 0, 10);
 
@@ -1336,7 +1387,6 @@ class ReservationCalendar extends FullCalendarWidget
             ->whereNotNull('start_at')
             ->where('start_at', '<', $end.' 00:00:00')
             ->where('end_at', '>', $start.' 00:00:00')
-            ->when($this->room, fn (Builder $query) => $query->where('room_id', $this->room->getKey()))
             ->when($roomIds, fn (Builder $query) => $query->whereIn('room_id', $roomIds))
             ->get()
             ->map(fn (RoomBlocking $blocking): array => EventData::make()
@@ -1359,8 +1409,11 @@ class ReservationCalendar extends FullCalendarWidget
 
     /**
      * Real-date working hours: dated work blocks in the visible range, plus
-     * room blockings (recurring rows expanded onto their matching dates,
-     * one-off rows as-is).
+     * everything that already competes with them — room blockings (recurring
+     * rows expanded onto their matching dates, one-off rows as-is) and course
+     * lessons / one-off events, which occupy a room and often the therapist
+     * too. Reservations are deliberately absent: this grid is the availability
+     * template, not what has already been booked into it.
      *
      * @param  array{start: string, end: string, timezone: string}  $info
      */
@@ -1438,7 +1491,11 @@ class ReservationCalendar extends FullCalendarWidget
             }
         }
 
-        return [...$events, ...$this->fetchOneTimeBlockingEvents($info)];
+        return [
+            ...$events,
+            ...$this->fetchOneTimeBlockingEvents($info),
+            ...$this->fetchLessonEvents($info),
+        ];
     }
 
     protected function timeLabel(?string $start, ?string $end): string
@@ -1691,6 +1748,13 @@ class ReservationCalendar extends FullCalendarWidget
                     : '';
                 var sub = p.service ? '<div class="ff-event-sub">' + esc(p.service) + '</div>' : '';
                 var room = p.room ? '<span class="ff-event-room">' + esc(p.room) + '</span>' : '<span></span>';
+                // The break hangs below the card. Its height is a fraction of the
+                // card's own, which in a timegrid is exactly its duration.
+                var pause = p.hasBreak
+                    ? '<div class="ff-event-break" style="height:calc(100% * ' + p.breakRatio + ')" title="' + esc(p.breakLabel) + ' · volno v ' + esc(p.breakUntil) + '">' +
+                          '<span class="ff-event-break-label">' + esc(p.breakLabel) + '</span>' +
+                      '</div>'
+                    : '';
                 var html =
                     '<div class="ff-event">' +
                         '<div class="ff-event-head">' +
@@ -1703,7 +1767,7 @@ class ReservationCalendar extends FullCalendarWidget
                             '<span class="ff-event-avatar" title="' + esc(p.therapistName) + '" style="background:' + p.accent + '">' + esc(p.initials) + '</span>' +
                             room +
                         '</div>' +
-                    '</div>';
+                    '</div>' + pause;
 
                 return { html: html };
             }
@@ -1716,6 +1780,7 @@ class ReservationCalendar extends FullCalendarWidget
             function (arg) {
                 var p = arg.event.extendedProps || {};
                 var classes = [];
+                if (p.hasBreak) { classes.push('ff-has-break'); }
                 if (p.kind === 'blocking') { classes.push('ff-blocking'); }
                 if (p.kind === 'course') { classes.push('ff-course'); }
                 if (p.kind === 'oneOffEvent') { classes.push('ff-oneoff'); }
@@ -1760,29 +1825,47 @@ class ReservationCalendar extends FullCalendarWidget
             ...ReservationForm::components(withControlTherapy: false),
             Grid::make(2)->schema([
                 ReservationForm::controlTherapyToggle(),
+                // Create-only: a new booking's confirmation e-mail is opt-in here, but an
+                // edit that changes the termín asks afterwards via the schedule-change
+                // prompt ({@see reservationChangeNotifyAction}) instead of a toggle.
                 Toggle::make('notify_client')
                     ->label('Upozornit zákazníka?')
-                    ->helperText('Po uložení odešle zákazníkovi e-mail o vytvoření či změně rezervace.')
-                    ->default(true),
+                    ->helperText('Po uložení odešle zákazníkovi e-mail o vytvoření rezervace.')
+                    ->default(true)
+                    ->visible(fn (?Reservation $record): bool => ! (bool) $record?->exists),
             ]),
         ];
     }
 
     /**
      * Route event clicks: template blocks open their edit modal; reservations
-     * open the edit modal (or toggle selection in selection mode).
+     * open the edit modal (or toggle selection in selection mode). Lessons are
+     * read-only in both modes and only ever navigate.
      *
      * @param  array<string, mixed>  $event
      */
     public function onEventClick(array $event): void
     {
-        if ($this->isTemplateMode()) {
-            $eventId = (string) ($event['id'] ?? '');
+        $eventId = (string) ($event['id'] ?? '');
 
-            if ($eventId === '') {
-                return;
+        if ($eventId === '') {
+            return;
+        }
+
+        // Course lessons and one-off events are read-only overlays in both
+        // modes. The per-event url normally handles the click in JS; this
+        // covers selection mode (no url set) and any stray Livewire
+        // round-trips, and keeps lesson ids out of the template edit modals
+        // and out of the bulk selection.
+        if (str_starts_with($eventId, 'course:') || str_starts_with($eventId, 'oneoff:')) {
+            if (! $this->selectionMode) {
+                $this->redirect(LessonResource::getUrl('view', ['record' => explode(':', $eventId, 2)[1]]));
             }
 
+            return;
+        }
+
+        if ($this->isTemplateMode()) {
             if ($this->selectionMode) {
                 $this->toggleSelection($eventId);
 
@@ -1809,24 +1892,8 @@ class ReservationCalendar extends FullCalendarWidget
             return;
         }
 
-        $id = (string) ($event['id'] ?? '');
+        $id = $eventId;
         $isBlocking = str_starts_with($id, 'blocking:');
-        $isReadOnlyOverlay = str_starts_with($id, 'course:') || str_starts_with($id, 'oneoff:');
-
-        if ($isReadOnlyOverlay) {
-            // Course lessons and one-off events are read-only overlays. The
-            // per-event url normally handles the click in JS; this covers
-            // selection mode (no url set) and any stray Livewire round-trips.
-            if (! $this->selectionMode) {
-                [$kind, $recordId] = explode(':', $id, 2);
-
-                $this->redirect($kind === 'course'
-                    ? CourseLessonResource::getUrl('view', ['record' => $recordId])
-                    : OneOffEventResource::getUrl('view', ['record' => $recordId]));
-            }
-
-            return;
-        }
 
         if ($this->selectionMode) {
             if (! $isBlocking) {
@@ -1933,34 +2000,52 @@ class ReservationCalendar extends FullCalendarWidget
                 ])
                 ->after(function (FullCalendarWidget $livewire, Model $record, array $data): void {
                     if ($record instanceof Reservation) {
-                        $notify = (bool) ($data['notify_client'] ?? false);
-                        $notifiedClient = $notify && filled($record->client?->email);
-                        $notifiedTherapist = $notify && $record->therapist?->user !== null;
-
-                        if ($notifiedClient) {
-                            $record->client?->notify(new ReservationTemplateNotification($record, EmailTemplateKey::ReservationChanged, $this->reservationChangeSnapshot));
-                        }
-
-                        if ($notifiedTherapist) {
-                            $record->therapist?->user?->notify(new TherapistReservationTemplateNotification($record, EmailTemplateKey::TherapistReservationChanged, $this->reservationChangeSnapshot));
-                        }
-
                         LogActivity::record('reservation_edited', $record, 'Rezervace upravena', [
                             'source' => 'Kalendář',
-                            'notified_client' => $notifiedClient,
-                            'notified_therapist' => $notifiedTherapist,
                         ]);
 
-                        if ($notifiedClient || $notifiedTherapist) {
-                            SentEmailReceipt::forCurrentUser(
-                                'Změna rezervace',
-                                (int) $notifiedClient + (int) $notifiedTherapist,
-                            );
+                        // A termín change (date/time, room or therapist) asks whether to
+                        // notify the client + therapist via the follow-up prompt, carrying
+                        // the record and the pre-edit snapshot as mount arguments.
+                        if ($record->wasChanged(Reservation::SCHEDULE_ATTRIBUTES)) {
+                            $livewire->replaceMountedAction('reservationChangeNotify', [
+                                'record' => (string) $record->getKey(),
+                                'snapshot' => $this->reservationChangeSnapshot,
+                            ]);
                         }
                     }
 
                     $livewire->refreshRecords();
                 }),
         ];
+    }
+
+    /**
+     * The follow-up prompt opened after an edit that changes a reservation's termín:
+     * asks whether to e-mail the client and therapist about the change and lets staff
+     * attach an optional message. Chained in via replaceMountedAction from the edit
+     * action's after(), with the record id + pre-edit snapshot as mount arguments so
+     * they survive the extra round-trip.
+     */
+    public function reservationChangeNotifyAction(): Action
+    {
+        return ScheduleChangeNotificationPrompt::make(
+            'reservationChangeNotify',
+            'zákazníka a terapeuta',
+            function (?string $reason, array $arguments): int {
+                $reservation = Reservation::with(['client', 'service', 'therapist.user'])
+                    ->find($arguments['record'] ?? null);
+
+                if ($reservation === null) {
+                    return 0;
+                }
+
+                return app(NotifyReservationChange::class)(
+                    $reservation,
+                    is_array($arguments['snapshot'] ?? null) ? $arguments['snapshot'] : [],
+                    $reason,
+                );
+            },
+        );
     }
 }

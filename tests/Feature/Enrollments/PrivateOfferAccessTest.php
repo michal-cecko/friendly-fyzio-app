@@ -6,10 +6,10 @@ use App\Enums\BookingStatus;
 use App\Enums\EmailTemplateKey;
 use App\Enums\OfferState;
 use App\Enums\OfferVisibility;
-use App\Filament\Clusters\Kurzy\Resources\OneOffEvents\Pages\EditOneOffEvent;
-use App\Livewire\OneOffEventArchive;
+use App\Filament\Clusters\Kurzy\Resources\Lessons\Pages\EditLesson;
+use App\Livewire\LessonArchive;
 use App\Models\EventCategory;
-use App\Models\OneOffEvent;
+use App\Models\Lesson;
 use App\Models\User;
 use App\Notifications\EnrollmentTemplateNotification;
 use App\Support\Enrollments\EnrollmentData;
@@ -25,15 +25,15 @@ class PrivateOfferAccessTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function privateEvent(): OneOffEvent
+    private function privateEvent(): Lesson
     {
-        return OneOffEvent::factory()
+        return Lesson::factory()->standalone()
             ->forCategory(EventCategory::query()->where('slug', 'workshopy')->firstOrFail())
             ->create([
                 'name' => 'Tajný workshop',
                 'visibility' => OfferVisibility::Private,
                 'published_at' => now(),
-                'event_date' => today()->addWeeks(2)->toDateString(),
+                'lesson_date' => today()->addWeeks(2)->toDateString(),
                 'capacity' => 10,
             ]);
     }
@@ -52,10 +52,10 @@ class PrivateOfferAccessTest extends TestCase
     {
         $this->privateEvent();
 
-        Livewire::test(OneOffEventArchive::class)->assertDontSee('Tajný workshop');
+        Livewire::test(LessonArchive::class)->assertDontSee('Tajný workshop');
 
         $this->actingAs(User::factory()->customer()->create());
-        Livewire::test(OneOffEventArchive::class)->assertSee('Tajný workshop');
+        Livewire::test(LessonArchive::class)->assertSee('Tajný workshop');
     }
 
     public function test_private_event_detail_is_404_for_guest_but_ok_for_customer_and_token(): void
@@ -109,7 +109,7 @@ class PrivateOfferAccessTest extends TestCase
         $event = $this->privateEvent();
         $recipients = User::factory()->customer()->count(2)->create();
 
-        Livewire::test(EditOneOffEvent::class, ['record' => $event->getKey()])
+        Livewire::test(EditLesson::class, ['record' => $event->getKey()])
             ->callAction('sendInvitation', [
                 'recipient_ids' => $recipients->pluck('id')->all(),
                 'zprava' => 'Vítejte v předprodeji.',
@@ -124,13 +124,13 @@ class PrivateOfferAccessTest extends TestCase
             );
         }
 
-        $public = OneOffEvent::factory()->create([
+        $public = Lesson::factory()->standalone()->create([
             'visibility' => OfferVisibility::Public,
             'published_at' => now(),
-            'event_date' => today()->addWeeks(2)->toDateString(),
+            'lesson_date' => today()->addWeeks(2)->toDateString(),
         ]);
 
-        Livewire::test(EditOneOffEvent::class, ['record' => $public->getKey()])
+        Livewire::test(EditLesson::class, ['record' => $public->getKey()])
             ->assertActionHidden('sendInvitation');
     }
 }

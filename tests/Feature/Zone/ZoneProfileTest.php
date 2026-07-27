@@ -4,7 +4,7 @@ namespace Tests\Feature\Zone;
 
 use App\Livewire\Zone\Profile;
 use App\Models\User;
-use App\Notifications\Auth\VerifyEmailNotification;
+use App\Notifications\Auth\VerifyEmailChangeForClientNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
@@ -84,7 +84,8 @@ class ZoneProfileTest extends TestCase
         $this->assertSame('nova.adresa@example.cz', $customer->email);
         $this->assertNull($customer->email_verified_at);
 
-        Notification::assertSentTo($customer, VerifyEmailNotification::class);
+        // The e-mail-change notification (change wording), not the registration one.
+        Notification::assertSentTo($customer, VerifyEmailChangeForClientNotification::class);
     }
 
     public function test_an_email_already_in_use_is_rejected(): void
@@ -120,6 +121,54 @@ class ZoneProfileTest extends TestCase
             ->assertHasNoErrors();
 
         $this->assertTrue(Hash::check('noveheslo123', $customer->fresh()->password));
+    }
+
+    public function test_customer_self_service_changes_are_logged(): void
+    {
+        $customer = $this->customer();
+
+        // Personal details: audited as a plain attribute update, caused by the customer.
+        Livewire::actingAs($customer)
+            ->test(Profile::class)
+            ->set('name', 'Jana Nová')
+            ->set('phone', '+420 777 000 111')
+            ->call('saveDetails')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('activity_log', [
+            'event' => 'updated',
+            'subject_type' => $customer->getMorphClass(),
+            'subject_id' => $customer->id,
+            'causer_id' => $customer->id,
+        ]);
+
+        // Password: never audited as an attribute, so recorded as a semantic event.
+        Livewire::actingAs($customer)
+            ->test(Profile::class)
+            ->set('current_password', 'stareheslo')
+            ->set('password', 'noveheslo123')
+            ->set('password_confirmation', 'noveheslo123')
+            ->call('savePassword')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('activity_log', [
+            'event' => 'password_changed',
+            'subject_id' => $customer->id,
+            'causer_id' => $customer->id,
+        ]);
+
+        // Billing details persist on the client profile, which is audited too.
+        Livewire::actingAs($customer)
+            ->test(Profile::class)
+            ->set('billing_name', 'Firma s.r.o.')
+            ->call('saveBilling')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('activity_log', [
+            'subject_type' => $customer->clientProfile->getMorphClass(),
+            'subject_id' => $customer->clientProfile->id,
+            'causer_id' => $customer->id,
+        ]);
     }
 
     public function test_company_billing_details_persist_to_the_client_profile(): void

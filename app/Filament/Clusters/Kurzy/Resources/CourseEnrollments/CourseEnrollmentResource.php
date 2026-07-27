@@ -4,7 +4,6 @@ namespace App\Filament\Clusters\Kurzy\Resources\CourseEnrollments;
 
 use App\Filament\Clusters\Kurzy\KurzyCluster;
 use App\Filament\Clusters\Kurzy\Resources\CourseEnrollments\Pages\CreateCourseEnrollment;
-use App\Filament\Clusters\Kurzy\Resources\CourseEnrollments\Pages\EditCourseEnrollment;
 use App\Filament\Clusters\Kurzy\Resources\CourseEnrollments\Pages\ListCourseEnrollments;
 use App\Filament\Clusters\Kurzy\Resources\CourseEnrollments\Pages\ViewCourseEnrollment;
 use App\Filament\Clusters\Kurzy\Resources\CourseEnrollments\Schemas\CourseEnrollmentForm;
@@ -125,7 +124,6 @@ class CourseEnrollmentResource extends Resource
             'index' => ListCourseEnrollments::route('/'),
             'create' => CreateCourseEnrollment::route('/create'),
             'view' => ViewCourseEnrollment::route('/{record}'),
-            'edit' => EditCourseEnrollment::route('/{record}/edit'),
         ];
     }
 }

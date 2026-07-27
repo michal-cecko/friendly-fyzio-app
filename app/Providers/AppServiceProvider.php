@@ -9,10 +9,11 @@ use App\Models\Course;
 use App\Models\CourseEnrollment;
 use App\Models\CourseSeries;
 use App\Models\EventCategory;
+use App\Models\Lesson;
+use App\Models\LessonBooking;
 use App\Models\Navigation;
-use App\Models\OneOffEvent;
-use App\Models\OneOffEventBooking;
 use App\Models\Reservation;
+use App\Models\Scopes\MediaLibraryItemOwnershipScope;
 use App\Models\Service;
 use App\Models\User;
 use App\Notifications\Auth\FilamentResetPasswordNotification;
@@ -61,6 +62,10 @@ class AppServiceProvider extends ServiceProvider
         // can't carry an #[ObservedBy] attribute, so the observer registers here.
         MediaLibraryItem::observe(MediaLibraryItemObserver::class);
 
+        // In the admin panel a non-admin (e.g. a therapist) only browses their
+        // own uploads; already-saved items still resolve by id. See the scope.
+        MediaLibraryItem::addGlobalScope(new MediaLibraryItemOwnershipScope);
+
         // The Admin capability grants access to everything that isn't gated by a
         // different capability. Filament resource/policy checks are all Gates, so
         // an all-abilities bypass here is the cleanest expression of that — it
@@ -86,10 +91,10 @@ class AppServiceProvider extends ServiceProvider
             'course_series' => CourseSeries::class,
             'course' => Course::class,
             'event_category' => EventCategory::class,
-            'one_off_event' => OneOffEvent::class,
+            'lesson' => Lesson::class,
             'reservation' => Reservation::class,
             'course_enrollment' => CourseEnrollment::class,
-            'one_off_event_booking' => OneOffEventBooking::class,
+            'lesson_booking' => LessonBooking::class,
         ]);
 
         FilamentIcon::register([

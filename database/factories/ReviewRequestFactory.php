@@ -3,7 +3,7 @@
 namespace Database\Factories;
 
 use App\Enums\ReviewRequestChannel;
-use App\Models\OneOffEvent;
+use App\Models\Lesson;
 use App\Models\ReviewRequest;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -21,8 +21,8 @@ class ReviewRequestFactory extends Factory
     {
         return [
             'user_id' => User::factory(),
-            'reviewable_type' => (new OneOffEvent)->getMorphClass(),
-            'reviewable_id' => OneOffEvent::factory(),
+            'reviewable_type' => (new Lesson)->getMorphClass(),
+            'reviewable_id' => Lesson::factory(),
             'channel' => ReviewRequestChannel::Automatic,
             'token' => Str::random(48),
             'sent_at' => now(),

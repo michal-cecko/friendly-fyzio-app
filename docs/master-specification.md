@@ -1470,8 +1470,7 @@ Authenticated client area. Sidebar navigation mirrors customer dashboard section
 | Moje kurzy | Enrolled courses, substitute token status, waitlist status |
 | Moje náhradové tokeny | Active tokens + "Use token" flow |
 | Můj kredit | Balance + expiry + charge/deduct/expiry history |
-| Moje platby | Date · amount · method · service · invoice link |
-| Moje faktury | PDF download list · status (Paid / Overdue) |
+| Moje platby | Date · amount · method · service · on-demand invoice download (settled payments) · "Zaplatit" (transfer details + QR, cash → transfer switch) |
 
 Account is created automatically on first reservation. Login credentials sent by email.
 

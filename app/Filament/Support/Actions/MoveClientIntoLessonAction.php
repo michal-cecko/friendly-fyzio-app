@@ -5,7 +5,7 @@ namespace App\Filament\Support\Actions;
 use App\Enums\CourseEnrollmentStatus;
 use App\Enums\EmailTemplateKey;
 use App\Models\CourseEnrollment;
-use App\Models\CourseLesson;
+use App\Models\Lesson;
 use App\Models\LessonAttendance;
 use App\Models\User;
 use App\Notifications\SubstituteTokenNotification;
@@ -29,7 +29,7 @@ use Illuminate\Database\Eloquent\Builder;
  * automatic substitution rules (série pairing, token limits, capacity) — the
  * staff escape hatch behind {@see MoveClientToLesson}. Placed as a header action
  * on a lesson's attendance (Docházka) relation manager, whose owner record is the
- * target {@see CourseLesson}.
+ * target {@see Lesson}.
  */
 class MoveClientIntoLessonAction extends Action
 {
@@ -84,7 +84,7 @@ class MoveClientIntoLessonAction extends Action
             ->action(function (array $data, RelationManager $livewire): void {
                 $target = self::target($livewire);
                 $client = User::find($data['client_id']);
-                $source = CourseLesson::find($data['source_lesson_id']);
+                $source = Lesson::find($data['source_lesson_id']);
 
                 if ($target === null || $client === null || $source === null) {
                     Notification::make()->title('Přesun se nezdařil — chybí údaje.')->danger()->send();
@@ -120,11 +120,11 @@ class MoveClientIntoLessonAction extends Action
             });
     }
 
-    protected static function target(RelationManager $livewire): ?CourseLesson
+    protected static function target(RelationManager $livewire): ?Lesson
     {
         $owner = $livewire->getOwnerRecord();
 
-        return $owner instanceof CourseLesson ? $owner : null;
+        return $owner instanceof Lesson ? $owner : null;
     }
 
     /**
@@ -133,7 +133,7 @@ class MoveClientIntoLessonAction extends Action
      *
      * @return array<string, string>
      */
-    protected static function sourceLessonOptions(?string $clientId, ?CourseLesson $target): array
+    protected static function sourceLessonOptions(?string $clientId, ?Lesson $target): array
     {
         if ($clientId === null || $target === null) {
             return [];
@@ -153,7 +153,7 @@ class MoveClientIntoLessonAction extends Action
             ->whereHas('enrollment', fn (Builder $query) => $query->where('client_id', $clientId))
             ->pluck('lesson_id');
 
-        return CourseLesson::query()
+        return Lesson::query()
             ->whereIn('series_id', $seriesIds)
             ->whereKeyNot($target->getKey())
             ->whereNotIn('id', $excusedLessonIds)
@@ -162,8 +162,8 @@ class MoveClientIntoLessonAction extends Action
             ->orderBy('lesson_date')
             ->orderBy('start_time')
             ->get()
-            ->filter(fn (CourseLesson $lesson): bool => $lesson->endsAt()->isFuture())
-            ->mapWithKeys(fn (CourseLesson $lesson): array => [
+            ->filter(fn (Lesson $lesson): bool => $lesson->endsAt()->isFuture())
+            ->mapWithKeys(fn (Lesson $lesson): array => [
                 $lesson->getKey() => trim(
                     ($lesson->series?->course?->name ?? $lesson->series?->name ?? 'Lekce')
                     .' · '.$lesson->startsAt()->format('j. n. Y · H:i'),
@@ -173,7 +173,7 @@ class MoveClientIntoLessonAction extends Action
             ->all();
     }
 
-    protected static function freeSpotsLabel(?CourseLesson $target): string
+    protected static function freeSpotsLabel(?Lesson $target): string
     {
         if ($target === null) {
             return '—';

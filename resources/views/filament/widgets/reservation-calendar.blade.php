@@ -203,25 +203,28 @@
                 <button type="button" class="ff-all" wire:click="clearTherapists">Všichni</button>
 
                 <span class="ff-legend">
-                    @if ($isTemplate)
-                        <span class="ff-leg"><span class="ff-leg-sw" style="background:#EEF2FF;border-color:#6366F1"></span>Blokace</span>
-                    @else
-                        <span class="ff-leg"><span class="ff-leg-sw" style="background:#EEF2FF;border-color:#6366F1"></span>Blokace</span>
+                    <span class="ff-leg"><span class="ff-leg-sw" style="background:#EEF2FF;border-color:#6366F1"></span>Blokace</span>
+                    @unless ($isTemplate)
+                        <span class="ff-leg" title="Pauza terapeuta po termínu"><span class="ff-leg-sw" style="background:#F5F5F5;border-color:#A3A3A3"></span>Pauza</span>
+                    @endunless
+                    @unless ($isTemplate)
                         <label class="ff-leg ff-leg-toggle" title="Zobrazit či skrýt terapie v kalendáři">
                             <input type="checkbox" wire:model.live="showReservations">
                             <span class="ff-leg-sw" style="background:#FFF1F4;border-color:#ED86A3"></span>
                             <span>Terapie</span>
                         </label>
-                        <label class="ff-leg ff-leg-toggle" title="Zobrazit či skrýt lekce kurzů v kalendáři">
-                            <input type="checkbox" wire:model.live="showCourses">
-                            <span class="ff-leg-sw" style="background:#ECFEFF;border-color:#0891B2"></span>
-                            <span>Kurzy</span>
-                        </label>
-                        <label class="ff-leg ff-leg-toggle" title="Zobrazit či skrýt jednorázové akce v kalendáři">
-                            <input type="checkbox" wire:model.live="showOneOffEvents">
-                            <span class="ff-leg-sw" style="background:#FDF4FF;border-color:#C026D3"></span>
-                            <span>Akce</span>
-                        </label>
+                    @endunless
+                    <label class="ff-leg ff-leg-toggle" title="Zobrazit či skrýt lekce kurzů v kalendáři">
+                        <input type="checkbox" wire:model.live="showCourses">
+                        <span class="ff-leg-sw" style="background:#ECFEFF;border-color:#0891B2"></span>
+                        <span>Kurzy</span>
+                    </label>
+                    <label class="ff-leg ff-leg-toggle" title="Zobrazit či skrýt jednorázové akce v kalendáři">
+                        <input type="checkbox" wire:model.live="showLessons">
+                        <span class="ff-leg-sw" style="background:#FDF4FF;border-color:#C026D3"></span>
+                        <span>Akce</span>
+                    </label>
+                    @unless ($isTemplate)
                         @if (! $this->room && Settings::dayWaitlistEnabled())
                             <label class="ff-leg ff-leg-toggle" title="Zobrazit či skrýt pořadník na dny">
                                 <input type="checkbox" wire:model.live="showWaitlist">
@@ -230,7 +233,7 @@
                             </label>
                         @endif
                         <span class="ff-count">{{ $this->weekCountLabel() }}</span>
-                    @endif
+                    @endunless
                 </span>
             </div>
 
@@ -533,6 +536,37 @@
         .ff-event-room { font-size: 11px; color: var(--ff-muted); white-space: nowrap; }
         .ff-event-recur { font-size: 11px; font-weight: 700; color: var(--ff-muted); flex-shrink: 0; }
 
+        /* The break hangs off the bottom of its own card, so the two are always
+           exactly the same width. The card gives up its bottom radius to meet it
+           flush; the strip carries the rounding instead. Its `left/right: -1px`
+           covers the card's borders, and no z-index is set on purpose — a later
+           event in the column paints over it, which is what should happen when
+           something really is booked inside the break. */
+        .ff-cal .fc-event.ff-has-break {
+            overflow: visible;
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+        .ff-event-break {
+            position: absolute;
+            top: 100%;
+            left: -1px;
+            right: -1px;
+            display: flex;
+            align-items: center;
+            padding: 0 9px;
+            box-sizing: border-box;
+            background: #F5F5F5;
+            border: 1px solid #A3A3A3;
+            border-top: 0;
+            border-radius: 0 0 10px 10px;
+            color: #737373;
+            overflow: hidden;
+        }
+        .ff-event-break-label { font-size: 10px; font-weight: 600; letter-spacing: .02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        /* A month cell is a list of bookings; a break has no height there to hang in. */
+        .ff-cal .fc-daygrid-event .ff-event-break { display: none; }
+
         /* Dark mode (Filament toggles the `dark` class on <html>) */
         .dark .ff-cal {
             --ff-border: #3F3F46;
@@ -557,6 +591,7 @@
         .dark .ff-cal .fc-event .ff-event-sub,
         .dark .ff-cal .fc-event .ff-event-room,
         .dark .ff-cal .fc-event .ff-event-recur { color: #525252; }
+        .dark .ff-cal .fc-event .ff-event-break { color: #737373; }
 
         @media (max-width: 1024px) {
             .ff-body { flex-direction: column; }

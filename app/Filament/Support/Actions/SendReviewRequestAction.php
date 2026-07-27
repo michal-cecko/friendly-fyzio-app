@@ -5,7 +5,7 @@ namespace App\Filament\Support\Actions;
 use App\Enums\ReservationStatus;
 use App\Enums\ReviewRequestChannel;
 use App\Filament\Support\Schemas\CopyRecipientsFields;
-use App\Models\OneOffEventBooking;
+use App\Models\LessonBooking;
 use App\Models\Reservation;
 use App\Models\ReviewRequest;
 use App\Models\User;
@@ -93,15 +93,15 @@ class SendReviewRequestAction extends Action
     {
         return match (true) {
             $record instanceof Reservation => $record->client,
-            $record instanceof OneOffEventBooking => $record->client,
+            $record instanceof LessonBooking => $record->client,
             default => null,
         };
     }
 
     private static function resolveReviewable(Model $record): Model
     {
-        return $record instanceof OneOffEventBooking
-            ? $record->event
+        return $record instanceof LessonBooking
+            ? $record->lesson
             : $record;
     }
 
@@ -117,8 +117,8 @@ class SendReviewRequestAction extends Action
             $record instanceof Reservation => $record->status === ReservationStatus::Confirmed
                 && $record->reservation_date !== null
                 && ! $record->reservation_date->isFuture(),
-            $record instanceof OneOffEventBooking => $record->event?->event_date !== null
-                && ! $record->event->event_date->isFuture(),
+            $record instanceof LessonBooking => $record->lesson?->lesson_date !== null
+                && ! $record->lesson->lesson_date->isFuture(),
             default => false,
         };
     }

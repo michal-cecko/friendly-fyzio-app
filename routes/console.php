@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Reservation;
+use App\Models\SuggestionDismissal;
 use Illuminate\Support\Facades\Schedule;
 
 /*
@@ -29,10 +30,14 @@ Schedule::command('reservations:send-confirmations')->hourly();
 Schedule::command('reservations:send-reminders')->hourly();
 Schedule::command('reservations:cancel-unconfirmed')->hourly();
 Schedule::command('enrollments:cancel-unpaid')->hourly();
+Schedule::command('lessons:release-free-spots')->hourly();
 Schedule::command('credits:notify-expiring')->dailyAt('05:45');
 Schedule::command('credits:expire')->dailyAt('05:50');
 Schedule::command('payments:mark-overdue')->dailyAt('06:00');
 Schedule::command('reservations:settle-past')->dailyAt('06:05');
 Schedule::command('invoices:mark-overdue')->dailyAt('06:10');
 Schedule::command('invoices:prune-exports')->dailyAt('06:20');
+// Drop Návrhy dismissals whose snooze has run out — they hide nothing from that
+// point on, and keeping them would make the "Skryté návrhy" list lie.
+Schedule::call(fn () => SuggestionDismissal::prune())->dailyAt('06:25')->name('suggestions:prune-dismissals');
 Schedule::command('work-blocks:extend')->dailyAt('05:30');

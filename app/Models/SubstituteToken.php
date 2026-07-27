@@ -15,6 +15,7 @@ class SubstituteToken extends Model
     protected $fillable = [
         'client_id',
         'source_lesson_id',
+        'source_attendance_id',
         'expires_at',
         'used_at',
         'used_for_lesson_id',
@@ -35,11 +36,19 @@ class SubstituteToken extends Model
 
     public function sourceLesson(): BelongsTo
     {
-        return $this->belongsTo(CourseLesson::class, 'source_lesson_id');
+        return $this->belongsTo(Lesson::class, 'source_lesson_id');
+    }
+
+    /**
+     * The excuse that minted this token.
+     */
+    public function sourceAttendance(): BelongsTo
+    {
+        return $this->belongsTo(LessonAttendance::class, 'source_attendance_id');
     }
 
     public function usedForLesson(): BelongsTo
     {
-        return $this->belongsTo(CourseLesson::class, 'used_for_lesson_id');
+        return $this->belongsTo(Lesson::class, 'used_for_lesson_id');
     }
 }

@@ -69,6 +69,16 @@ class AdminPanelProvider extends PanelProvider
                 PanelsRenderHook::GLOBAL_SEARCH_AFTER,
                 fn (): string => view('filament.topbar.global-search-page-link')->render(),
             )
+            // Problémy and Návrhy live here rather than in the sidebar — what is
+            // wrong and what is undone, glanced at from anywhere in the panel.
+            ->renderHook(
+                PanelsRenderHook::GLOBAL_SEARCH_AFTER,
+                fn (): string => view('filament.topbar.problems-link')->render(),
+            )
+            ->renderHook(
+                PanelsRenderHook::GLOBAL_SEARCH_AFTER,
+                fn (): string => view('filament.topbar.suggestions-link')->render(),
+            )
             ->renderHook(
                 PanelsRenderHook::GLOBAL_SEARCH_AFTER,
                 fn (): string => view('filament.topbar.website-link')->render(),
@@ -76,6 +86,13 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(
                 PanelsRenderHook::GLOBAL_SEARCH_AFTER,
                 fn (): string => view('filament.topbar.contact-inquiries-link')->render(),
+            )
+            // The in-app manual is pinned below the navigation rather than placed in
+            // it: SIDEBAR_FOOTER renders outside the scrolling nav, so Nápověda stays
+            // reachable however long the sidebar grows and whatever it gets sorted by.
+            ->renderHook(
+                PanelsRenderHook::SIDEBAR_FOOTER,
+                fn (): string => view('filament.sidebar.help-link')->render(),
             )
             ->colors([
                 'primary' => Color::hex('#d4678a'),

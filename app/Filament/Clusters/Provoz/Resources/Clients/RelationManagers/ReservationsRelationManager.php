@@ -74,6 +74,7 @@ class ReservationsRelationManager extends RelationManager
                     ->sortable(),
                 TextColumn::make('start_time')
                     ->label('Od')
+                    ->time('H:i')
                     // Imported visits carry a placeholder time, so the badge
                     // warns not to read anything into it.
                     ->badge(fn (Reservation $record): bool => $record->imported_at !== null)
@@ -81,6 +82,10 @@ class ReservationsRelationManager extends RelationManager
                     ->tooltip(fn (Reservation $record): ?string => $record->imported_at
                         ? 'Přenesená historie – přesný čas návštěvy není znám.'
                         : null),
+                TextColumn::make('end_time')
+                    ->label('Do')
+                    ->state(fn (Reservation $record): string => $record->endsAtIncludingBreak()->format('H:i'))
+                    ->description(fn (Reservation $record): ?string => $record->breakLabel()),
                 TextColumn::make('service.name')
                     ->label('Služba')
                     ->searchable(),

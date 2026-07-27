@@ -8,10 +8,9 @@ use App\Enums\CourseSeriesStatus;
 use App\Enums\PaymentStatus;
 use App\Models\Course;
 use App\Models\CourseCategory;
-use App\Models\CourseLesson;
 use App\Models\CourseSeries;
 use App\Models\EventCategory;
-use App\Models\OneOffEvent;
+use App\Models\Lesson;
 use App\Models\Room;
 use App\Models\User;
 use Database\Seeders\Concerns\ImportsMedia;
@@ -73,7 +72,7 @@ class CourseOfferStatesSeeder extends Seeder
             ['name' => 'Workshopy', 'display_order' => 1, 'published_at' => now()],
         );
 
-        $workshop = OneOffEvent::query()->updateOrCreate(
+        $workshop = Lesson::query()->updateOrCreate(
             ['slug' => 'baby-massage-workshop'],
             [
                 'event_category_id' => $workshopCategory->getKey(),
@@ -82,7 +81,7 @@ class CourseOfferStatesSeeder extends Seeder
                 'name' => 'Baby massage workshop',
                 'description' => 'Naučte se techniky masáže pro vaše miminko. Dvoudenní workshop pod vedením zkušené fyzioterapeutky.',
                 'featured_image' => $this->media('https://images.unsplash.com/photo-1719942274381-c4c05b0dcf68?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080', 'demo-baby-massage'),
-                'event_date' => today()->addWeeks(5)->toDateString(),
+                'lesson_date' => today()->addWeeks(5)->toDateString(),
                 'start_time' => '09:00',
                 'end_time' => '13:00',
                 'capacity' => 4,
@@ -132,7 +131,7 @@ class CourseOfferStatesSeeder extends Seeder
 
         if ($series->lessons()->count() === 0) {
             foreach (range(0, 11) as $week) {
-                CourseLesson::factory()->for($series, 'series')->create([
+                Lesson::factory()->for($series, 'series')->create([
                     'instructor_id' => $instructor->getKey(),
                     'room_id' => $room->getKey(),
                     'lesson_date' => $start->copy()->addWeeks($week)->toDateString(),

@@ -35,7 +35,6 @@ class LastMinuteBrickTest extends TestCase
         $this->service = Service::factory()->create([
             'category_id' => $category->id,
             'duration_minutes' => 60,
-            'break_minutes' => 15,
             'visibility' => ServiceVisibility::Public,
             'published_at' => now(),
         ]);

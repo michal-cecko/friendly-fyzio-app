@@ -41,6 +41,16 @@ abstract class SettingsGroupPage extends Page
     abstract protected static function group(): string;
 
     /**
+     * Public accessor for {@see static::group()} so global search can map a
+     * {@see Setting} back to the page that edits it without widening every
+     * subclass's own `group()` visibility.
+     */
+    public static function settingGroup(): string
+    {
+        return static::group();
+    }
+
+    /**
      * Viewing and updating settings is restricted to admins (and super-admins,
      * which {@see User::isAdmin()} folds in) — a plain therapist or
      * lecturer must not reach or save any settings group.
@@ -110,6 +120,7 @@ abstract class SettingsGroupPage extends Page
         $component = $setting->type->formComponent($setting->key)
             ->label($setting->label)
             ->helperText($setting->description)
+            ->extraFieldWrapperAttributes(['id' => $setting->anchor(), 'data-setting-anchor' => true])
             ->hintIcon(Heroicon::OutlinedClock)
             ->hint($setting->updated_at !== null
                 ? 'Upraveno '.$setting->updated_at->format('d.m.Y H:i')

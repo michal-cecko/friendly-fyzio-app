@@ -5,13 +5,15 @@ namespace Tests\Feature;
 use App\Enums\CourseSeriesVisibility;
 use App\Enums\OfferVisibility;
 use App\Filament\Clusters\Kurzy\Resources\CourseSeries\Pages\ViewCourseSeries;
-use App\Filament\Clusters\Kurzy\Resources\OneOffEvents\Pages\ViewOneOffEvent;
+use App\Filament\Clusters\Kurzy\Resources\Lessons\Pages\ViewLesson;
 use App\Models\CourseSeries;
-use App\Models\OneOffEvent;
+use App\Models\Lesson;
 use App\Models\User;
+use App\Notifications\EnrollmentTemplateNotification;
 use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -44,12 +46,12 @@ class OfferInvitationActionsTest extends TestCase
 
     public function test_event_detail_offers_the_link_and_the_invitation(): void
     {
-        $event = OneOffEvent::factory()->create([
+        $event = Lesson::factory()->create([
             'visibility' => OfferVisibility::Private,
-            'event_date' => today()->addWeeks(2)->toDateString(),
+            'lesson_date' => today()->addWeeks(2)->toDateString(),
         ]);
 
-        Livewire::test(ViewOneOffEvent::class, ['record' => $event->getKey()])
+        Livewire::test(ViewLesson::class, ['record' => $event->getKey()])
             ->assertActionExists('presaleLink')
             ->assertActionExists('sendInvitation')
             ->assertActionExists('delete')
@@ -68,12 +70,12 @@ class OfferInvitationActionsTest extends TestCase
             ->assertActionHidden('presaleLink')
             ->assertActionHidden('sendInvitation');
 
-        $event = OneOffEvent::factory()->create([
+        $event = Lesson::factory()->create([
             'visibility' => OfferVisibility::Public,
-            'event_date' => today()->addWeeks(2)->toDateString(),
+            'lesson_date' => today()->addWeeks(2)->toDateString(),
         ]);
 
-        Livewire::test(ViewOneOffEvent::class, ['record' => $event->getKey()])
+        Livewire::test(ViewLesson::class, ['record' => $event->getKey()])
             ->assertActionHidden('presaleLink')
             ->assertActionHidden('sendInvitation');
     }
@@ -89,5 +91,45 @@ class OfferInvitationActionsTest extends TestCase
         Livewire::test(ViewCourseSeries::class, ['record' => $series->getKey()])
             ->mountAction('presaleLink')
             ->assertActionExists(TestAction::make('copyPresaleLink'));
+    }
+
+    /**
+     * A CC/BCC on the invitation is the sender's single archive of the send-out,
+     * not a copy for every guest — it rides on exactly one message.
+     */
+    public function test_invitation_copy_rides_on_only_one_message(): void
+    {
+        Notification::fake();
+        config(['mail.suppress_non_admin' => false]);
+
+        $series = CourseSeries::factory()->create(['visibility' => CourseSeriesVisibility::Private]);
+        $guests = User::factory()->customer()->count(3)->create();
+
+        Livewire::test(ViewCourseSeries::class, ['record' => $series->getKey()])
+            ->callAction('sendInvitation', [
+                'recipient_ids' => $guests->modelKeys(),
+                'bcc' => ['archiv@friendlyfyzio.cz'],
+            ])
+            ->assertHasNoActionErrors();
+
+        $withCopies = 0;
+
+        Notification::assertSentTimes(EnrollmentTemplateNotification::class, 3);
+
+        foreach ($guests as $guest) {
+            Notification::assertSentTo(
+                $guest,
+                EnrollmentTemplateNotification::class,
+                function (EnrollmentTemplateNotification $notification) use (&$withCopies): bool {
+                    if ($notification->copies !== null) {
+                        $withCopies++;
+                    }
+
+                    return true;
+                },
+            );
+        }
+
+        $this->assertSame(1, $withCopies);
     }
 }

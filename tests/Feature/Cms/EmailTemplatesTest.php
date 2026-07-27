@@ -229,6 +229,28 @@ class EmailTemplatesTest extends TestCase
         Setting::query()->where('key', $key)->firstOrFail()->update(['value' => $value]);
     }
 
+    public function test_email_builder_preview_layout_pads_content_in_email_card(): void
+    {
+        $this->seed(SettingsSeeder::class);
+
+        $html = view('mason.email-preview', [
+            'blocks' => [[
+                'index' => 0,
+                'id' => 'greeting',
+                'config' => [],
+                'html' => '<p data-preview-marker>Ahoj</p>',
+                'label' => 'Oslovení',
+            ]],
+        ])->render();
+
+        // Bricks are slotted into the padded content area of the email card, not flush to the edge.
+        $this->assertStringContainsString('e-content', $html);
+        $this->assertStringContainsString('padding: 40px 48px', $html);
+        // The brick HTML lives inside that card, wrapped by the standard email chrome.
+        $this->assertStringContainsString('data-preview-marker', $html);
+        $this->assertStringContainsString('FriendlyFyzio s.r.o.', $html);
+    }
+
     public function test_admin_sees_seeded_templates_and_cannot_create(): void
     {
         $this->seed(EmailTemplateSeeder::class);

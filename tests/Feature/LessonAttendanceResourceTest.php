@@ -2,18 +2,23 @@
 
 namespace Tests\Feature;
 
-use App\Filament\Clusters\Kurzy\Resources\LessonAttendances\Pages\CreateLessonAttendance;
-use App\Filament\Clusters\Kurzy\Resources\LessonAttendances\Pages\EditLessonAttendance;
+use App\Enums\LessonExcuseReason;
+use App\Filament\Clusters\Kurzy\Resources\LessonAttendances\LessonAttendanceResource;
 use App\Filament\Clusters\Kurzy\Resources\LessonAttendances\Pages\ListLessonAttendances;
-use App\Models\CourseEnrollment;
-use App\Models\CourseLesson;
+use App\Filament\Clusters\Kurzy\Resources\LessonAttendances\Pages\ViewLessonAttendance;
 use App\Models\LessonAttendance;
 use App\Models\User;
+use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
 
+/**
+ * The standalone docházka resource is a read-only lookup: seats are created by
+ * enrolling or by buying one, presence is changed from the lesson's own roster,
+ * and the only thing editable here is the note on an absence.
+ */
 class LessonAttendanceResourceTest extends TestCase
 {
     use RefreshDatabase;
@@ -35,53 +40,64 @@ class LessonAttendanceResourceTest extends TestCase
             ->assertCanSeeTableRecords($records);
     }
 
-    public function test_admin_can_create_record(): void
+    /**
+     * A drop-in has no enrollment behind their seat, so anything reading the
+     * client through one shows an empty row.
+     */
+    public function test_a_drop_in_seat_names_its_client(): void
     {
-        $enrollment = CourseEnrollment::factory()->create();
-        $lesson = CourseLesson::factory()->create();
+        $attendance = LessonAttendance::factory()->dropIn()->create();
 
-        Livewire::test(CreateLessonAttendance::class)
-            ->fillForm([
-                'enrollment_id' => $enrollment->id,
-                'lesson_id' => $lesson->id,
-                'attended' => true,
-            ])
-            ->call('create')
-            ->assertHasNoFormErrors();
+        $this->assertNull($attendance->enrollment_id);
 
-        $this->assertDatabaseHas(LessonAttendance::class, [
-            'enrollment_id' => $enrollment->id,
-            'lesson_id' => $lesson->id,
-            'attended' => true,
-        ]);
+        Livewire::test(ListLessonAttendances::class)
+            ->assertCanSeeTableRecords([$attendance])
+            ->assertSee($attendance->client->name);
+
+        Livewire::test(ViewLessonAttendance::class, ['record' => $attendance->getKey()])
+            ->assertSee($attendance->client->name)
+            ->assertSee('Jednorázový vstup');
     }
 
-    public function test_create_validates_required_fields(): void
+    public function test_admin_can_amend_an_absence(): void
     {
-        Livewire::test(CreateLessonAttendance::class)
-            ->fillForm([
-                'enrollment_id' => null,
-                'lesson_id' => null,
+        $attendance = LessonAttendance::factory()->excused()->create();
+
+        Livewire::test(ViewLessonAttendance::class, ['record' => $attendance->getKey()])
+            ->callAction(TestAction::make('editExcuse'), [
+                'excuse_reason' => LessonExcuseReason::Injury->value,
+                'excuse_note' => 'Volala, vrátí se za dva týdny.',
             ])
-            ->call('create')
-            ->assertHasFormErrors([
-                'enrollment_id' => 'required',
-                'lesson_id' => 'required',
-            ]);
+            ->assertHasNoActionErrors();
+
+        $attendance->refresh();
+
+        $this->assertSame(LessonExcuseReason::Injury, $attendance->excuse_reason);
+        $this->assertSame('Volala, vrátí se za dva týdny.', $attendance->excuse_note);
     }
 
-    public function test_admin_can_edit_record(): void
+    /**
+     * There is nothing to amend on somebody who is coming — and the action must
+     * not become a back door to marking them absent without the náhrada rules.
+     */
+    public function test_the_excuse_action_is_hidden_on_a_present_seat(): void
     {
-        $record = LessonAttendance::factory()->create(['attended' => false]);
+        $attendance = LessonAttendance::factory()->attended()->create();
 
-        Livewire::test(EditLessonAttendance::class, ['record' => $record->getKey()])
-            ->fillForm(['attended' => true])
-            ->call('save')
-            ->assertHasNoFormErrors();
+        Livewire::test(ViewLessonAttendance::class, ['record' => $attendance->getKey()])
+            ->assertActionHidden(TestAction::make('editExcuse'));
+    }
 
-        $this->assertDatabaseHas(LessonAttendance::class, [
-            'id' => $record->id,
-            'attended' => true,
-        ]);
+    /**
+     * Presence and creation belong to the lesson's roster and to the sign-up
+     * flows; this resource must not offer a form that bypasses either.
+     */
+    public function test_the_resource_has_no_create_or_edit_pages(): void
+    {
+        $pages = array_keys(
+            LessonAttendanceResource::getPages(),
+        );
+
+        $this->assertSame(['index', 'view'], $pages);
     }
 }

@@ -7,6 +7,7 @@ use App\Enums\ReservationStatus;
 use App\Enums\WeekType;
 use App\Filament\Widgets\ReservationCalendar;
 use App\Models\Building;
+use App\Models\Lesson;
 use App\Models\Reservation;
 use App\Models\Room;
 use App\Models\RoomBlocking;
@@ -223,6 +224,130 @@ class CalendarModesTest extends TestCase
 
         $this->assertContains('schedule:'.$inA->getKey(), $ids);
         $this->assertNotContains('schedule:'.$inB->getKey(), $ids);
+    }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     */
+    protected function makeLesson(Room $room, array $attributes = []): Lesson
+    {
+        return Lesson::factory()->create([
+            'room_id' => $room->getKey(),
+            'lesson_date' => $this->monday->toDateString(),
+            'start_time' => '17:00',
+            'end_time' => '18:00',
+            ...$attributes,
+        ]);
+    }
+
+    public function test_template_mode_overlays_course_lessons_and_one_off_events(): void
+    {
+        $room = $this->makeRoom();
+
+        $courseLesson = $this->makeLesson($room);
+        $oneOff = Lesson::factory()->standalone()->create([
+            'room_id' => $room->getKey(),
+            'lesson_date' => $this->monday->toDateString(),
+            'start_time' => '18:30',
+            'end_time' => '20:00',
+        ]);
+
+        $ids = array_column($this->fetchTemplateWeek(new ReservationCalendar), 'id');
+
+        $this->assertContains('course:'.$courseLesson->getKey(), $ids);
+        $this->assertContains('oneoff:'.$oneOff->getKey(), $ids);
+    }
+
+    public function test_template_mode_lesson_toggles_hide_them(): void
+    {
+        $room = $this->makeRoom();
+        $lesson = $this->makeLesson($room);
+
+        $calendar = new ReservationCalendar;
+        $calendar->showCourses = false;
+
+        $this->assertNotContains(
+            'course:'.$lesson->getKey(),
+            array_column($this->fetchTemplateWeek($calendar), 'id'),
+        );
+    }
+
+    public function test_template_mode_never_shows_reservations(): void
+    {
+        $room = $this->makeRoom();
+        $therapist = $this->makeTherapist();
+
+        $reservation = Reservation::factory()->create([
+            'therapist_id' => $therapist->getKey(),
+            'room_id' => $room->getKey(),
+            'reservation_date' => $this->monday->toDateString(),
+            'start_time' => '09:00',
+            'end_time' => '10:00',
+            'status' => ReservationStatus::Confirmed,
+        ]);
+
+        $ids = array_column($this->fetchTemplateWeek(new ReservationCalendar), 'id');
+
+        $this->assertNotContains((string) $reservation->getKey(), $ids);
+    }
+
+    public function test_template_room_filter_limits_lessons(): void
+    {
+        $roomA = $this->makeRoom('Sál A');
+        $roomB = $this->makeRoom('Sál B');
+
+        $inA = $this->makeLesson($roomA);
+        $inB = $this->makeLesson($roomB);
+
+        $calendar = new ReservationCalendar;
+        $calendar->templateRoomId = $roomA->getKey();
+        $ids = array_column($this->fetchTemplateWeek($calendar), 'id');
+
+        $this->assertContains('course:'.$inA->getKey(), $ids);
+        $this->assertNotContains('course:'.$inB->getKey(), $ids);
+    }
+
+    public function test_reservation_filters_left_in_the_url_do_not_blank_template_lessons(): void
+    {
+        // clientIds is a reservation-only filter that survives the mode switch in
+        // the URL; it must not silently empty the working-hours overlay.
+        $room = $this->makeRoom();
+        $lesson = $this->makeLesson($room);
+
+        $calendar = new ReservationCalendar;
+        $calendar->filterData = ['clientIds' => [User::factory()->customer()->create()->getKey()]];
+
+        $this->assertContains(
+            'course:'.$lesson->getKey(),
+            array_column($this->fetchTemplateWeek($calendar), 'id'),
+        );
+    }
+
+    public function test_clicking_a_lesson_in_template_mode_never_opens_an_edit_modal(): void
+    {
+        $room = $this->makeRoom();
+        $this->actingAs(User::factory()->admin()->create());
+
+        $lesson = $this->makeLesson($room);
+
+        Livewire::test(ReservationCalendar::class)
+            ->set('mode', 'template')
+            ->call('onEventClick', ['id' => 'course:'.$lesson->getKey()])
+            ->assertSet('editingTemplateId', null);
+    }
+
+    public function test_lessons_are_not_selectable_for_bulk_actions(): void
+    {
+        $room = $this->makeRoom();
+        $this->actingAs(User::factory()->admin()->create());
+
+        $lesson = $this->makeLesson($room);
+
+        Livewire::test(ReservationCalendar::class)
+            ->set('mode', 'template')
+            ->set('selectionMode', true)
+            ->call('onEventClick', ['id' => 'course:'.$lesson->getKey()])
+            ->assertSet('selectedIds', []);
     }
 
     public function test_day_summary_counts_reservations_and_computes_utilization(): void

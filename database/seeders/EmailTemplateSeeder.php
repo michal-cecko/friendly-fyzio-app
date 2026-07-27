@@ -90,7 +90,7 @@ class EmailTemplateSeeder extends Seeder
             ],
             EmailTemplateKey::ReservationChanged => [
                 $this->brick('email-greeting', ['text' => '<p>Dobrý den, {{ jmeno }},</p>']),
-                $this->brick('email-paragraph', ['text' => '<p>Vaše rezervace byla změněna. Zkontrolujte prosím nové údaje níže.</p>']),
+                $this->brick('email-paragraph', ['text' => '<p>Vaše rezervace byla změněna. Zkontrolujte prosím nové údaje níže.</p>{{ zprava }}']),
                 $this->detailsBrick('muted', 'Původní termín', [
                     ['Služba:', '{{ puvodni_sluzba }}'],
                     ['Terapeut:', '{{ puvodni_terapeut }}'],
@@ -126,7 +126,12 @@ class EmailTemplateSeeder extends Seeder
                 $this->brick('email-greeting', ['text' => '<p>Dobrý den, {{ jmeno }},</p>']),
                 $this->brick('email-paragraph', ['text' => '<p>Vaši rezervaci jsme zrušili. Uvedli jste, že důvodem byla nemoc a doložíte potvrzení od lékaře – v takovém případě vám storno poplatek účtovat nebudeme.</p>']),
                 $this->detailsBrick('muted', 'Stornovaná návštěva', $this->stornoRows()),
-                $this->brick('email-callout', ['variant' => 'info', 'icon' => 'file-text', 'text' => '<p>Potvrzení od lékaře nám prosím doručte co nejdříve. Do jeho doručení evidujeme storno jako neuhrazené.</p>']),
+                $this->brick('email-callout', ['variant' => 'info', 'icon' => 'file-text', 'text' => '<p>Potvrzení nám prosím nahrajte tlačítkem níže — stačí sken i fotka z telefonu. Do jeho doručení evidujeme storno jako neuhrazené.</p>']),
+                $this->brick('email-buttons', [
+                    'buttons' => [
+                        ['text' => 'Nahrát potvrzení od lékaře', 'style' => 'primary', 'link_type' => 'custom', 'url' => '{{ potvrzeni_odkaz }}'],
+                    ],
+                ]),
                 $this->replyCallout(),
             ],
             EmailTemplateKey::ReservationUnpaid => [
@@ -144,7 +149,7 @@ class EmailTemplateSeeder extends Seeder
                 $this->brick('email-paragraph', ['text' => '<p>Bohužel jsme vás na potvrzeném termínu nezastihli. V souladu s našimi storno podmínkami je za nedostavení bez omluvy účtován poplatek, který prosím uhraďte QR platbou nebo převodem na uvedený účet.</p>']),
                 $this->detailsBrick('danger', 'Termín, na který jste se nedostavili', $this->stornoRows()),
                 $this->brick('email-payment', ['title' => 'Úhrada poplatku', 'show_qr' => true, 'show_due' => true]),
-                $this->brick('email-callout', ['variant' => 'info', 'icon' => 'file-text', 'text' => '<p>Máte potvrzení od lékaře? Pokud vám v návštěvě zabránily zdravotní důvody, <a href="{{ odkaz }}">doložte nám potvrzení zde</a> a poplatek vám odpustíme.</p>']),
+                $this->brick('email-callout', ['variant' => 'info', 'icon' => 'file-text', 'text' => '<p>Máte potvrzení od lékaře? Pokud vám v návštěvě zabránily zdravotní důvody, <a href="{{ potvrzeni_odkaz }}">nahrajte nám potvrzení zde</a> a poplatek vám odpustíme.</p>']),
                 $this->replyCallout(),
             ],
             EmailTemplateKey::PaymentReceived => [
@@ -257,7 +262,7 @@ class EmailTemplateSeeder extends Seeder
             ],
             EmailTemplateKey::TherapistReservationChanged => [
                 $this->brick('email-greeting', ['text' => '<p>Dobrý den, {{ jmeno }},</p>']),
-                $this->brick('email-paragraph', ['text' => '<p>Klient změnil svou rezervaci. Zkontrolujte prosím nové údaje níže.</p>']),
+                $this->brick('email-paragraph', ['text' => '<p>Klient změnil svou rezervaci. Zkontrolujte prosím nové údaje níže.</p>{{ zprava }}']),
                 $this->detailsBrick('muted', 'Původní termín', [
                     ['Služba:', '{{ puvodni_sluzba }}'],
                     ['Klient:', '{{ klient }}'],
@@ -446,6 +451,28 @@ class EmailTemplateSeeder extends Seeder
                 $this->brick('email-note', ['text' => '<p>Máte-li k tomu jakékoliv dotazy nebo jste přihlášku již uhradili, ozvěte se nám prosím — společně vše vyřešíme.</p>']),
                 $this->replyCallout(),
             ],
+            EmailTemplateKey::LessonExcused => [
+                $this->brick('email-greeting', ['text' => '<p>Dobrý den, {{ jmeno }},</p>']),
+                $this->brick('email-callout', ['variant' => 'info', 'icon' => 'circle-alert', 'text' => '<p>Vaše účast na této lekci je zrušená.</p>']),
+                $this->brick('email-paragraph', ['text' => '<p>Dáváme vám vědět, že na níže uvedené lekci s vámi nepočítáme. Ostatní lekce kurzu zůstávají beze změny.</p>']),
+                $this->detailsBrick('muted', 'Zrušená lekce', [
+                    ['Kurz:', '{{ kurz }}'],
+                    ['Lekce:', '{{ lekce }}'],
+                ]),
+                $this->brick('email-note', ['text' => '<p>Pokud jde o omyl nebo si chcete lekci nahradit, ozvěte se nám prosím — rádi to s vámi vyřešíme.</p>']),
+                $this->replyCallout(),
+            ],
+            EmailTemplateKey::LessonBookingCancelled => [
+                $this->brick('email-greeting', ['text' => '<p>Dobrý den, {{ jmeno }},</p>']),
+                $this->brick('email-callout', ['variant' => 'info', 'icon' => 'circle-alert', 'text' => '<p>Vaši účast na této lekci jsme zrušili.</p>']),
+                $this->brick('email-paragraph', ['text' => '<p>Dáváme vám vědět, že s vámi na níže uvedené lekci už nepočítáme. Pokud jste ji už uhradili, ozvěte se nám prosím kvůli vrácení platby.</p>']),
+                $this->detailsBrick('muted', 'Zrušená lekce', [
+                    ['Lekce:', '{{ nazev }}'],
+                    ['Termín:', '{{ termin }}'],
+                ]),
+                $this->brick('email-note', ['text' => '<p>Pokud jde o omyl, ozvěte se nám prosím — rádi to s vámi vyřešíme.</p>']),
+                $this->replyCallout(),
+            ],
             EmailTemplateKey::SubstituteTokenGenerated => [
                 $this->brick('email-greeting', ['text' => '<p>Dobrý den, {{ jmeno }},</p>']),
                 $this->brick('email-callout', ['variant' => 'success', 'icon' => 'ticket', 'text' => '<p>Za omluvenou lekci máte náhradní vstup.</p>']),
@@ -494,7 +521,7 @@ class EmailTemplateSeeder extends Seeder
             EmailTemplateKey::LessonScheduleChanged => [
                 $this->brick('email-greeting', ['text' => '<p>Dobrý den, {{ jmeno }},</p>']),
                 $this->brick('email-callout', ['variant' => 'warning', 'icon' => 'clock', 'text' => '<p>Došlo ke změně termínu.</p>']),
-                $this->brick('email-paragraph', ['text' => '<p>Rádi bychom vás informovali o změně termínu v rámci {{ nazev }}. Zkontrolujte prosím nové údaje níže.</p>']),
+                $this->brick('email-paragraph', ['text' => '<p>Rádi bychom vás informovali o změně termínu v rámci {{ nazev }}. Zkontrolujte prosím nové údaje níže.</p>{{ zprava }}']),
                 $this->detailsBrick('muted', 'Původní termín', [
                     ['Termín:', '{{ puvodni_termin }}'],
                     ['Místo:', '{{ puvodni_misto }}'],
@@ -544,7 +571,7 @@ class EmailTemplateSeeder extends Seeder
             EmailTemplateKey::TherapistLessonScheduleChanged => [
                 $this->brick('email-greeting', ['text' => '<p>Dobrý den, {{ jmeno }},</p>']),
                 $this->brick('email-callout', ['variant' => 'info', 'icon' => 'clock', 'text' => '<p>Změnil se termín lekce, kterou vedete.</p>']),
-                $this->brick('email-paragraph', ['text' => '<p>Termín v rámci {{ nazev }} byl změněn. Přihlášení účastníci byli o změně informováni. Níže naleznete přehled.</p>']),
+                $this->brick('email-paragraph', ['text' => '<p>Termín v rámci {{ nazev }} byl změněn. Přihlášení účastníci byli o změně informováni. Níže naleznete přehled.</p>{{ zprava }}']),
                 $this->detailsBrick('muted', 'Původní termín', [
                     ['Termín:', '{{ puvodni_termin }}'],
                     ['Místo:', '{{ puvodni_misto }}'],

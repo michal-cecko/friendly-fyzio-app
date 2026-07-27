@@ -8,16 +8,16 @@ use App\Filament\Clusters\Finance\Resources\Payments\Pages\ViewPayment;
 use App\Filament\Clusters\Finance\Resources\Payments\PaymentResource;
 use App\Filament\Clusters\Kurzy\Resources\CourseCategories\CourseCategoryResource;
 use App\Filament\Clusters\Kurzy\Resources\CourseEnrollments\Pages\ViewCourseEnrollment;
-use App\Filament\Clusters\Kurzy\Resources\CourseLessons\Pages\ViewCourseLesson;
 use App\Filament\Clusters\Kurzy\Resources\Courses\CourseResource;
 use App\Filament\Clusters\Kurzy\Resources\Courses\Pages\ViewCourse;
 use App\Filament\Clusters\Kurzy\Resources\CourseSeries\CourseSeriesResource;
 use App\Filament\Clusters\Kurzy\Resources\CourseSeries\Pages\ViewCourseSeries;
 use App\Filament\Clusters\Kurzy\Resources\EventCategories\EventCategoryResource;
 use App\Filament\Clusters\Kurzy\Resources\LessonAttendances\Pages\ViewLessonAttendance;
-use App\Filament\Clusters\Kurzy\Resources\OneOffEventBookings\Pages\ViewOneOffEventBooking;
-use App\Filament\Clusters\Kurzy\Resources\OneOffEvents\OneOffEventResource;
-use App\Filament\Clusters\Kurzy\Resources\OneOffEvents\Pages\ViewOneOffEvent;
+use App\Filament\Clusters\Kurzy\Resources\LessonBookings\LessonBookingResource;
+use App\Filament\Clusters\Kurzy\Resources\LessonBookings\Pages\ViewLessonBooking;
+use App\Filament\Clusters\Kurzy\Resources\Lessons\LessonResource;
+use App\Filament\Clusters\Kurzy\Resources\Lessons\Pages\ViewLesson;
 use App\Filament\Clusters\Provoz\Resources\Clients\ClientResource;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Pages\ViewReservation;
 use App\Filament\Clusters\Provoz\Resources\Rooms\Pages\ViewRoom;
@@ -28,12 +28,11 @@ use App\Filament\Clusters\Provoz\Resources\Users\UserResource;
 use App\Models\CashReceipt;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
-use App\Models\CourseLesson;
 use App\Models\CourseSeries;
 use App\Models\Invoice;
+use App\Models\Lesson;
 use App\Models\LessonAttendance;
-use App\Models\OneOffEvent;
-use App\Models\OneOffEventBooking;
+use App\Models\LessonBooking;
 use App\Models\Payment;
 use App\Models\Reservation;
 use App\Models\Room;
@@ -94,11 +93,24 @@ class InfolistResourceLinksTest extends TestCase
             ->assertSee(ClientResource::getUrl('view', ['record' => $attendance->enrollment->client]), false);
     }
 
-    public function test_one_off_event_infolist_links_related_records(): void
+    /**
+     * A drop-in has no enrollment behind their seat, so a client read through
+     * one leaves the whole page unable to name who it is about.
+     */
+    public function test_lesson_attendance_infolist_links_a_drop_in_client_and_its_booking(): void
     {
-        $event = OneOffEvent::factory()->create();
+        $attendance = LessonAttendance::factory()->dropIn()->create();
 
-        Livewire::test(ViewOneOffEvent::class, ['record' => $event->getKey()])
+        Livewire::test(ViewLessonAttendance::class, ['record' => $attendance->getKey()])
+            ->assertSee(ClientResource::getUrl('view', ['record' => $attendance->client]), false)
+            ->assertSee(LessonBookingResource::getUrl('view', ['record' => $attendance->booking]), false);
+    }
+
+    public function test_lesson_infolist_links_related_records(): void
+    {
+        $event = Lesson::factory()->standalone()->create();
+
+        Livewire::test(ViewLesson::class, ['record' => $event->getKey()])
             ->assertSee(EventCategoryResource::getUrl('view', ['record' => $event->category]), false)
             ->assertSee(UserResource::getUrl('view', ['record' => $event->instructor]), false)
             ->assertSee(RoomResource::getUrl('view', ['record' => $event->room]), false);
@@ -106,21 +118,21 @@ class InfolistResourceLinksTest extends TestCase
 
     public function test_course_lesson_infolist_links_related_records(): void
     {
-        $lesson = CourseLesson::factory()->create();
+        $lesson = Lesson::factory()->create();
 
-        Livewire::test(ViewCourseLesson::class, ['record' => $lesson->getKey()])
+        Livewire::test(ViewLesson::class, ['record' => $lesson->getKey()])
             ->assertSee(CourseSeriesResource::getUrl('view', ['record' => $lesson->series]), false)
             ->assertSee(CourseResource::getUrl('view', ['record' => $lesson->series->course]), false)
             ->assertSee(UserResource::getUrl('view', ['record' => $lesson->instructor]), false)
             ->assertSee(RoomResource::getUrl('view', ['record' => $lesson->room]), false);
     }
 
-    public function test_one_off_event_booking_infolist_links_event_and_client(): void
+    public function test_lesson_booking_infolist_links_event_and_client(): void
     {
-        $booking = OneOffEventBooking::factory()->create();
+        $booking = LessonBooking::factory()->create();
 
-        Livewire::test(ViewOneOffEventBooking::class, ['record' => $booking->getKey()])
-            ->assertSee(OneOffEventResource::getUrl('view', ['record' => $booking->event]), false)
+        Livewire::test(ViewLessonBooking::class, ['record' => $booking->getKey()])
+            ->assertSee(LessonResource::getUrl('view', ['record' => $booking->lesson]), false)
             ->assertSee(ClientResource::getUrl('view', ['record' => $booking->client]), false);
     }
 

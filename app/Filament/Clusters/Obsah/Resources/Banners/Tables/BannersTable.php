@@ -46,11 +46,13 @@ class BannersTable
                     ->label('Od')
                     ->dateTime()
                     ->sortable()
+                    ->placeholder('–')
                     ->toggleable(),
                 TextColumn::make('active_to')
                     ->label('Do')
                     ->dateTime()
                     ->sortable()
+                    ->placeholder('–')
                     ->toggleable(),
                 TextColumn::make('sort_order')
                     ->label('Priorita')

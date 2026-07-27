@@ -7,8 +7,8 @@ use App\Enums\CourseSeriesStatus;
 use App\Enums\EmailTemplateKey;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
-use App\Models\CourseLesson;
 use App\Models\CourseSeries;
+use App\Models\Lesson;
 use App\Models\LessonAttendance;
 use App\Models\SubstituteRule;
 use App\Models\SubstituteToken;
@@ -50,9 +50,9 @@ class SubstituteTokenTest extends TestCase
         ]);
     }
 
-    protected function lesson(CourseSeries $series, string $date, string $time = '18:00:00'): CourseLesson
+    protected function lesson(CourseSeries $series, string $date, string $time = '18:00:00'): Lesson
     {
-        return CourseLesson::factory()->for($series, 'series')->create([
+        return Lesson::factory()->for($series, 'series')->create([
             'lesson_date' => $date,
             'start_time' => $time,
             'end_time' => '19:00:00',
@@ -78,6 +78,9 @@ class SubstituteTokenTest extends TestCase
         $this->assertNotNull($token);
         $this->assertSame($enrollment->client_id, $token->client_id);
         $this->assertTrue($token->expires_at->isSameDay(now()->addDays(30)));
+        // Bound to the excuse that minted it, not merely to its lesson.
+        $this->assertSame($enrollment->id, $token->sourceAttendance->enrollment_id);
+        $this->assertSame($lesson->id, $token->sourceAttendance->lesson_id);
 
         $this->assertDatabaseHas('lesson_attendances', [
             'enrollment_id' => $enrollment->id,
@@ -210,6 +213,8 @@ class SubstituteTokenTest extends TestCase
         // Recorded against the client's own enrollment, on the target lesson.
         $this->assertSame($enrollment->id, $attendance->enrollment_id);
         $this->assertSame($target->id, $attendance->lesson_id);
+        // The excuse that minted the token now points at the lesson that made it up.
+        $this->assertSame($attendance->id, $token->sourceAttendance->replacement_attendance_id);
 
         Notification::assertSentTo($enrollment->client, SubstituteTokenNotification::class, fn (SubstituteTokenNotification $notification): bool => $notification->key === EmailTemplateKey::SubstituteTokenRedeemed);
     }

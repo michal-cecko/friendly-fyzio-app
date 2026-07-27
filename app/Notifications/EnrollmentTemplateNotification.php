@@ -10,6 +10,7 @@ use App\Support\Emails\CopyRecipients;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\HtmlString;
 
 /**
  * Sends a CMS-authored course/lesson/workshop e-mail: renders the template for
@@ -23,7 +24,7 @@ class EnrollmentTemplateNotification extends Notification
     use HasCopyRecipients, Queueable;
 
     /**
-     * @param  array<string, string>  $tokens
+     * @param  array<string, string|HtmlString>  $tokens
      */
     public function __construct(
         public EmailTemplateKey $key,

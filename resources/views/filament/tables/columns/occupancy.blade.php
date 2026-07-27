@@ -1,4 +1,4 @@
 @include('filament.partials.occupancy-bar', [
     'occupancy' => $getState(),
-    'wrapperClass' => 'fi-ta-view',
+    'wrapperClass' => 'fi-ta-view w-fit mx-auto',
 ])

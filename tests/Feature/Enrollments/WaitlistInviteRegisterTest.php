@@ -72,6 +72,51 @@ class WaitlistInviteRegisterTest extends TestCase
         ]);
     }
 
+    public function test_an_empty_waitlist_hides_the_header_actions(): void
+    {
+        $series = $this->openSeries(capacity: 2);
+
+        $this->manager($series)
+            ->assertActionHidden(TestAction::make('promote')->table())
+            ->assertActionHidden(TestAction::make('invite')->table());
+    }
+
+    public function test_the_header_actions_appear_once_somebody_is_waiting(): void
+    {
+        $series = $this->openSeries(capacity: 2);
+        $this->pendingEntries($series, 1);
+
+        $this->manager($series)
+            ->assertActionVisible(TestAction::make('promote')->table())
+            ->assertActionEnabled(TestAction::make('promote')->table())
+            ->assertActionVisible(TestAction::make('invite')->table());
+    }
+
+    public function test_a_full_run_keeps_the_header_actions_visible_but_disabled(): void
+    {
+        $series = $this->openSeries(capacity: 1);
+        $this->pendingEntries($series, 1);
+
+        CourseEnrollment::factory()->for($series, 'series')->create([
+            'status' => CourseEnrollmentStatus::Active,
+        ]);
+
+        $this->manager($series)
+            ->assertActionVisible(TestAction::make('promote')->table())
+            ->assertActionDisabled(TestAction::make('promote')->table())
+            ->assertActionDisabled(TestAction::make('invite')->table());
+    }
+
+    public function test_a_waitlist_of_already_notified_people_hides_the_header_actions(): void
+    {
+        $series = $this->openSeries(capacity: 2);
+        $this->pendingEntries($series, 2)->each->update(['notified_at' => now()]);
+
+        $this->manager($series)
+            ->assertActionHidden(TestAction::make('promote')->table())
+            ->assertActionHidden(TestAction::make('invite')->table());
+    }
+
     public function test_hold_invite_creates_an_unpaid_signup_and_consumes_the_entry(): void
     {
         $series = $this->openSeries(capacity: 2);
@@ -209,6 +254,120 @@ class WaitlistInviteRegisterTest extends TestCase
                 return $job->signupClass === WaitlistEntry::class && $ids === $expected;
             }
         );
+    }
+
+    /**
+     * Somebody who rang up rather than using the site still has to get onto the
+     * list — through the same engine, so an existing account is linked by
+     * e-mail and the confirmation is the one the public form sends.
+     */
+    public function test_staff_can_add_an_entry_by_hand(): void
+    {
+        $series = $this->openSeries(capacity: 2);
+
+        $this->manager($series)
+            ->callAction(TestAction::make('addEntry')->table(), [
+                'name' => 'Jan Novák',
+                'email' => 'jan@example.com',
+                'phone' => '+420777123456',
+                'notify' => true,
+            ])
+            ->assertHasNoActionErrors();
+
+        $entry = $series->waitlistEntries()->sole();
+
+        $this->assertSame('Jan Novák', $entry->name);
+        $this->assertSame('jan@example.com', $entry->email);
+        $this->assertTrue($entry->isPending());
+        Notification::assertSentTimes(EnrollmentTemplateNotification::class, 1);
+    }
+
+    public function test_adding_by_hand_can_skip_the_confirmation_email(): void
+    {
+        $series = $this->openSeries(capacity: 2);
+
+        $this->manager($series)
+            ->callAction(TestAction::make('addEntry')->table(), [
+                'name' => 'Jan Novák',
+                'email' => 'jan@example.com',
+                'notify' => false,
+            ])
+            ->assertHasNoActionErrors();
+
+        $this->assertSame(1, $series->waitlistEntries()->count());
+        Notification::assertNothingSent();
+    }
+
+    public function test_adding_an_existing_e_mail_does_not_queue_the_same_person_twice(): void
+    {
+        $series = $this->openSeries(capacity: 2);
+        WaitlistEntry::factory()->forWaitlistable($series)->create([
+            'client_id' => null,
+            'email' => 'jan@example.com',
+        ]);
+
+        $this->manager($series)
+            ->callAction(TestAction::make('addEntry')->table(), [
+                'name' => 'Jan Novák',
+                'email' => 'jan@example.com',
+                'notify' => true,
+            ])
+            ->assertHasNoActionErrors();
+
+        $this->assertSame(1, $series->waitlistEntries()->count());
+        Notification::assertNothingSent();
+    }
+
+    /**
+     * A course's list is an interest sign-up that stays silent until a série
+     * opens, so there is no confirmation to send and no toggle to offer.
+     */
+    public function test_adding_to_a_course_interest_list_sends_nothing(): void
+    {
+        $course = Course::factory()->create();
+
+        Livewire::test(WaitlistEntriesRelationManager::class, [
+            'ownerRecord' => $course,
+            'pageClass' => ViewCourse::class,
+        ])
+            ->assertActionVisible(TestAction::make('addEntry')->table())
+            ->callAction(TestAction::make('addEntry')->table(), [
+                'name' => 'Jan Novák',
+                'email' => 'jan@example.com',
+            ])
+            ->assertHasNoActionErrors();
+
+        $this->assertSame(1, $course->waitlistEntries()->count());
+        Notification::assertNothingSent();
+    }
+
+    /**
+     * The waitlist is worked from a View page, where Filament marks relation
+     * managers read-only by default — which would hide both delete actions.
+     */
+    public function test_staff_can_remove_a_single_entry(): void
+    {
+        $series = $this->openSeries(capacity: 2);
+        $entry = $this->pendingEntries($series, 1)->first();
+
+        $this->manager($series)
+            ->callAction(TestAction::make('delete')->table($entry))
+            ->assertHasNoActionErrors();
+
+        $this->assertSame(0, $series->waitlistEntries()->count());
+    }
+
+    public function test_staff_can_remove_selected_entries_in_bulk(): void
+    {
+        $series = $this->openSeries(capacity: 2);
+        $entries = $this->pendingEntries($series, 3);
+
+        $this->manager($series)
+            ->set('selectedTableRecords', $entries->take(2)->pluck('id')->all())
+            ->callAction(TestAction::make('delete')->table()->bulk())
+            ->assertHasNoActionErrors();
+
+        $this->assertSame(1, $series->waitlistEntries()->count());
     }
 
     public function test_course_owner_invite_targets_the_chosen_series(): void

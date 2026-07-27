@@ -2,7 +2,9 @@
 
 namespace App\Filament\Clusters\Obsah\Resources\Reviews\Tables;
 
+use App\Filament\Support\Tables\RecordLinkColumn;
 use App\Filament\Support\Tables\TimestampColumns;
+use App\Models\Review;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -12,26 +14,15 @@ use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 class ReviewsTable
 {
-    /**
-     * Human labels for the polymorphic reviewable morph aliases.
-     *
-     * @var array<string, string>
-     */
-    private const TYPE_LABELS = [
-        'course' => 'Kurz',
-        'course_series' => 'Kurz',
-        'one_off_event' => 'Jednorázová akce',
-        'service' => 'Služba',
-        'one_time_lesson' => 'Lekce',
-        'reservation' => 'Rezervace',
-    ];
-
     public static function configure(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with('reviewable'))
             ->defaultSort('created_at', 'desc')
             ->columns([
                 TextColumn::make('rating')
@@ -47,11 +38,11 @@ class ReviewsTable
                     ->limit(60)
                     ->wrap()
                     ->toggleable(),
-                TextColumn::make('reviewable_type')
+                RecordLinkColumn::make('reviewable', fn (Review $record): ?Model => $record->reviewable)
                     ->label('Vztahuje se k')
-                    ->badge()
-                    ->color('gray')
-                    ->formatStateUsing(fn (?string $state): string => self::TYPE_LABELS[$state] ?? 'Obecná'),
+                    ->state(fn (Review $record): ?string => RecordLinkColumn::label($record->reviewable))
+                    ->placeholder('Obecná')
+                    ->wrap(),
                 ToggleColumn::make('visible')
                     ->label('Zveřejněno'),
                 ...TimestampColumns::make(),
@@ -72,7 +63,7 @@ class ReviewsTable
                     ->label('Typ')
                     ->options([
                         'course' => 'Kurz',
-                        'one_off_event' => 'Jednorázová akce',
+                        'lesson' => 'Lekce',
                         'service' => 'Služba',
                     ]),
             ])

@@ -8,6 +8,7 @@ use App\Enums\EmailTemplateKey;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Enums\ReservationStatus;
+use App\Filament\Clusters\Provoz\Resources\Reservations\ReservationResource;
 use App\Http\Controllers\ReservationManageController;
 use App\Models\Payment;
 use App\Models\Reservation;
@@ -16,6 +17,8 @@ use App\Notifications\ReservationStornoPaymentNotification;
 use App\Notifications\ReservationTemplateNotification;
 use App\Notifications\TherapistReservationTemplateNotification;
 use App\Support\ActivityLog\LogActivity;
+use App\Support\Clients\DeactivateAccount;
+use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 
 /**
@@ -164,7 +167,7 @@ class ClientReservationActions
             'cancellation_reason' => 'Pozdní storno – bez úhrady',
         ]);
 
-        $reservation->client?->update(['deactivated_at' => now()]);
+        $this->deactivate($reservation);
 
         $reservation->client?->notify(new ReservationTemplateNotification($reservation, EmailTemplateKey::ReservationCancelled));
         $this->notifyTherapistOfClientCancellation($reservation, 'Klient odmítl úhradu – účet deaktivován', $reservation->stornoFee().' Kč');
@@ -175,6 +178,124 @@ class ClientReservationActions
             'notified_client' => true,
             'notified_therapist' => $reservation->therapist?->user !== null,
         ], $reservation->client);
+    }
+
+    /**
+     * Switch an already-cancelled reservation to "I'll pay the storno fee after all"
+     * — typically a client who promised a doctor's note and cannot get one. Raises
+     * the fee exactly like {@see cancelAndPay()} and closes the pending note.
+     */
+    public function switchToStornoPayment(Reservation $reservation): ?Payment
+    {
+        if (! $reservation->canChangeStornoResolution() || $reservation->hasUnpaidStornoFee()) {
+            return null;
+        }
+
+        $reservation->update([
+            'cancellation_reason' => 'Pozdní storno – klient zaplatí',
+            'payment_status' => PaymentStatus::Unpaid,
+            // The promise is withdrawn, not pending — staff have nothing left to review.
+            'doctor_note_resolved_at' => $reservation->awaitsDoctorNote() ? now() : $reservation->doctor_note_resolved_at,
+        ]);
+
+        /** @var Payment $payment */
+        $payment = $reservation->payments()->create([
+            'client_id' => $reservation->client_id,
+            'amount' => $reservation->stornoFee(),
+            'method' => PaymentMethod::Qr,
+            'status' => PaymentStatus::Unpaid,
+        ]);
+
+        $reservation->client?->notify(new ReservationStornoPaymentNotification($reservation, $payment));
+        $this->notifyTherapistOfClientCancellation($reservation, 'Klient uhradí storno poplatek (změna rozhodnutí)', $payment->amount.' Kč');
+
+        LogActivity::record('reservation_storno_charged', $reservation, 'Storno poplatek vyžádán', [
+            'source' => 'Zákazník (online) – změna způsobu vyřešení storna',
+            'fee' => $payment->amount.' Kč',
+            'notified_client' => true,
+            'notified_therapist' => $reservation->therapist?->user !== null,
+        ], $reservation->client);
+
+        return $payment;
+    }
+
+    /**
+     * Switch an already-cancelled reservation to "I will supply a doctor's note" —
+     * the mirror of {@see switchToStornoPayment()}, for a client who first agreed to
+     * pay. Any unpaid fee is withdrawn while the note is pending.
+     */
+    public function switchToDoctorNote(Reservation $reservation): void
+    {
+        if (! $reservation->canChangeStornoResolution() || $reservation->awaitsDoctorNote()) {
+            return;
+        }
+
+        // Withdrawn, not erased — the request stays on the books as "Zrušeno".
+        $reservation->payments()->whereIn('status', PaymentStatus::openValues())->update(['status' => PaymentStatus::Cancelled]);
+
+        $reservation->update([
+            'cancellation_reason' => 'Pozdní storno – potvrzení od lékaře',
+            'payment_status' => PaymentStatus::Unpaid,
+            'doctor_note_requested_at' => now(),
+            'doctor_note_resolved_at' => null,
+        ]);
+
+        $reservation->client?->notify(new ReservationTemplateNotification($reservation, EmailTemplateKey::ReservationDoctorNote));
+        $this->notifyTherapistOfClientCancellation($reservation, 'Klient doloží potvrzení od lékaře (změna rozhodnutí)', 'pozastaveno');
+
+        $this->notifyStaffOfDoctorNote($reservation);
+
+        LogActivity::record('reservation_cancelled', $reservation, 'Rezervace zrušena', [
+            'source' => 'Zákazník (online) – změna na potvrzení od lékaře',
+            'notified_client' => true,
+            'notified_therapist' => $reservation->therapist?->user !== null,
+        ], $reservation->client);
+    }
+
+    /**
+     * Switch an already-cancelled reservation to "I won't pay" and deactivate the
+     * account. One-way: a deactivated client cannot change their mind online again.
+     */
+    public function switchToDeactivation(Reservation $reservation): void
+    {
+        if (! $reservation->canChangeStornoResolution()) {
+            return;
+        }
+
+        // Withdrawn, not erased — the request stays on the books as "Zrušeno".
+        $reservation->payments()->whereIn('status', PaymentStatus::openValues())->update(['status' => PaymentStatus::Cancelled]);
+
+        $reservation->update([
+            'cancellation_reason' => 'Pozdní storno – bez úhrady',
+            'doctor_note_resolved_at' => $reservation->awaitsDoctorNote() ? now() : $reservation->doctor_note_resolved_at,
+        ]);
+
+        $this->deactivate($reservation);
+
+        $reservation->client?->notify(new ReservationTemplateNotification($reservation, EmailTemplateKey::ReservationCancelled));
+        $this->notifyTherapistOfClientCancellation($reservation, 'Klient odmítl úhradu – účet deaktivován', $reservation->stornoFee().' Kč');
+
+        LogActivity::record('reservation_cancelled', $reservation, 'Rezervace zrušena', [
+            'source' => 'Zákazník (online) – změna na odmítnutí úhrady, účet deaktivován',
+            'fee' => $reservation->stornoFee().' Kč',
+            'notified_client' => true,
+            'notified_therapist' => $reservation->therapist?->user !== null,
+        ], $reservation->client);
+    }
+
+    /**
+     * Blacklist the account behind a "won't pay" refusal. Deactivation also releases
+     * everything the client holds — upcoming reservations, course sign-ups, waitlist
+     * spots — see {@see DeactivateAccount}. The reservation that triggered it is
+     * excluded; the caller has already cancelled it.
+     */
+    private function deactivate(Reservation $reservation): void
+    {
+        $client = $reservation->client;
+
+        if ($client !== null) {
+            app(DeactivateAccount::class)($client, except: $reservation);
+        }
     }
 
     /**
@@ -190,7 +311,7 @@ class ClientReservationActions
         ));
     }
 
-    protected function notifyStaffOfDoctorNote(Reservation $reservation): void
+    public function notifyStaffOfDoctorNote(Reservation $reservation): void
     {
         $admins = User::query()->whereHas('roles', fn ($q) => $q->where('name', Capability::Admin->roleName()))->get();
 
@@ -203,6 +324,11 @@ class ClientReservationActions
             ->body(($reservation->client?->name ?? 'Klient').' zrušil rezervaci a doloží potvrzení od lékaře. Storno poplatek je pozastaven.')
             ->icon('heroicon-o-document-text')
             ->warning()
+            ->actions([
+                Action::make('open')
+                    ->label('Zobrazit rezervaci')
+                    ->url(ReservationResource::getUrl('view', ['record' => $reservation])),
+            ])
             ->sendToDatabase($admins);
     }
 }

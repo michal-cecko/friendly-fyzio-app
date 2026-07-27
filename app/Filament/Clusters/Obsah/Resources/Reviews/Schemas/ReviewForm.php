@@ -4,7 +4,7 @@ namespace App\Filament\Clusters\Obsah\Resources\Reviews\Schemas;
 
 use App\Filament\Support\Schemas\PresenceBanner;
 use App\Models\Course;
-use App\Models\OneOffEvent;
+use App\Models\Lesson;
 use App\Models\Service;
 use App\Models\User;
 use Filament\Forms\Components\MorphToSelect;
@@ -78,14 +78,15 @@ class ReviewForm
                                 MorphToSelect\Type::make(Course::class)
                                     ->titleAttribute('name')
                                     ->label('Kurz'),
-                                MorphToSelect\Type::make(OneOffEvent::class)
+                                MorphToSelect\Type::make(Lesson::class)
                                     ->titleAttribute('name')
-                                    ->label('Jednorázová akce'),
+                                    ->label('Lekce'),
                                 MorphToSelect\Type::make(Service::class)
                                     ->titleAttribute('name')
                                     ->label('Služba'),
                             ])
                             ->searchable()
+                            ->preload()
                             ->columnSpanFull(),
                         Toggle::make('visible')
                             ->label('Zveřejnit na webu')

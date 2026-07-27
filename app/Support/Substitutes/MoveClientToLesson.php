@@ -4,7 +4,7 @@ namespace App\Support\Substitutes;
 
 use App\Enums\CourseEnrollmentStatus;
 use App\Models\CourseEnrollment;
-use App\Models\CourseLesson;
+use App\Models\Lesson;
 use App\Models\LessonAttendance;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
@@ -25,9 +25,9 @@ use Illuminate\Support\Facades\DB;
  */
 class MoveClientToLesson
 {
-    public function __invoke(User $client, CourseLesson $target, CourseLesson $source): LessonAttendance
+    public function __invoke(User $client, Lesson $target, Lesson $source): LessonAttendance
     {
-        $lock = Cache::lock("substitute:lesson:{$target->getKey()}", 10);
+        $lock = Cache::lock("lesson:{$target->getKey()}", 10);
 
         /** @var LessonAttendance */
         return $lock->block(5, fn (): LessonAttendance => DB::transaction(
@@ -35,7 +35,7 @@ class MoveClientToLesson
         ));
     }
 
-    protected function persist(User $client, CourseLesson $target, CourseLesson $source): LessonAttendance
+    protected function persist(User $client, Lesson $target, Lesson $source): LessonAttendance
     {
         $enrollment = $this->activeEnrollment($client, $source);
 
@@ -43,19 +43,30 @@ class MoveClientToLesson
             throw new SubstituteException('Klient už je do této lekce přihlášen.');
         }
 
-        LessonAttendance::updateOrCreate(
-            ['enrollment_id' => $enrollment->getKey(), 'lesson_id' => $source->getKey()],
-            ['attended' => false, 'cancelled_at' => now(), 'token_generated' => false],
+        $excused = LessonAttendance::updateOrCreate(
+            ['client_id' => $client->getKey(), 'lesson_id' => $source->getKey()],
+            [
+                'enrollment_id' => $enrollment->getKey(),
+                'attended' => false,
+                'cancelled_at' => now(),
+                'excused_by_id' => auth()->id(),
+                'token_generated' => false,
+            ],
         );
 
-        return LessonAttendance::create([
+        $replacement = LessonAttendance::create([
+            'client_id' => $client->getKey(),
             'enrollment_id' => $enrollment->getKey(),
             'lesson_id' => $target->getKey(),
-            'attended' => false,
+            'attended' => true,
         ]);
+
+        $excused->update(['replacement_attendance_id' => $replacement->getKey()]);
+
+        return $replacement;
     }
 
-    protected function activeEnrollment(User $client, CourseLesson $source): CourseEnrollment
+    protected function activeEnrollment(User $client, Lesson $source): CourseEnrollment
     {
         $enrollment = CourseEnrollment::query()
             ->where('client_id', $client->getKey())
@@ -70,12 +81,12 @@ class MoveClientToLesson
         return $enrollment;
     }
 
-    protected function alreadyBookedInTarget(User $client, CourseLesson $target): bool
+    protected function alreadyBookedInTarget(User $client, Lesson $target): bool
     {
         return LessonAttendance::query()
             ->where('lesson_id', $target->getKey())
+            ->where('client_id', $client->getKey())
             ->whereNull('cancelled_at')
-            ->whereHas('enrollment', fn ($query) => $query->where('client_id', $client->getKey()))
             ->exists();
     }
 }

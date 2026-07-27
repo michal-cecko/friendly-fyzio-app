@@ -1,12 +1,22 @@
 @php
+    use App\Enums\ReservationDocumentType;
+    use App\Enums\ReservationStatus;
     use App\Support\Payments\QrPlatba;
     use App\Support\Reservations\ClientReservationState;
     use App\Support\Settings;
 
     $needsStorno = $reservation->requiresStornoDecision();
-    $isActive = ! in_array($state, [ClientReservationState::Cancelled, ClientReservationState::Completed], true);
+    // Keyed on the stored status, not the display state: a cancellation has several
+    // customer-facing states (unpaid fee, doctor's note pending) and none of them
+    // may hand back the confirm / reschedule / cancel actions.
+    $isActive = $reservation->status !== ReservationStatus::Cancelled
+        && $state !== ClientReservationState::Completed;
     $canReschedule = $isActive && ! $reservation->withinStornoWindow();
+    $canChangeStorno = $reservation->canChangeStornoResolution();
+    // Pending is only ever reached by a future, non-cancelled reservation.
+    $canConfirm = $state === ClientReservationState::Pending;
     $phone = Settings::get('web.contact_phone');
+    $actionItem = 'flex w-full items-center gap-2.5 whitespace-nowrap px-4 py-2.5 text-left text-sm font-medium transition hover:bg-surface-alt';
 @endphp
 
 {{-- Single stable Livewire root: a conditional root element breaks morphing
@@ -78,11 +88,16 @@
 
         <div class="mt-6 flex flex-col gap-2.5">
             @if($confirmation === 'doctor_note')
-                <a href="mailto:{{ $contactEmail }}?subject={{ rawurlencode('Potvrzení od lékaře – storno rezervace') }}" class="inline-flex items-center justify-center gap-2 rounded-full bg-amber-500 px-6 py-3 font-heading text-sm font-semibold text-white transition hover:bg-amber-600">
-                    <x-lucide name="mail" class="h-4 w-4" />
-                    Odeslat potvrzení e-mailem
-                </a>
-                <a href="{{ route('zone.dashboard') }}" class="rounded-full border-[1.5px] border-line bg-white px-6 py-3 font-heading text-sm font-semibold text-neutral-900 transition hover:bg-surface-alt">Zpět na přehled</a>
+                {{-- Dismisses the result screen and reveals the detail page, whose
+                     doctor-note card is where the file actually goes. --}}
+                <button type="button" wire:click="showDetail" class="inline-flex items-center justify-center gap-2 rounded-full bg-amber-500 px-6 py-3 font-heading text-sm font-semibold text-white transition hover:bg-amber-600">
+                    <x-lucide name="upload" class="h-4 w-4" />
+                    Nahrát potvrzení
+                </button>
+                @if($contactEmail)
+                    <a href="mailto:{{ $contactEmail }}?subject={{ rawurlencode('Potvrzení od lékaře – storno rezervace') }}" class="rounded-full border-[1.5px] border-line bg-white px-6 py-3 font-heading text-sm font-semibold text-neutral-900 transition hover:bg-surface-alt">Poslat e-mailem na {{ $contactEmail }}</a>
+                @endif
+                <a href="{{ route('zone.dashboard') }}" class="text-sm font-medium text-neutral-500 underline-offset-2 transition hover:text-neutral-900 hover:underline">Zpět na přehled</a>
             @elseif($confirmation === 'deactivated')
                 <a href="mailto:{{ $contactEmail }}?subject={{ rawurlencode('Obnovení účtu a úhrada storno poplatku') }}" class="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 font-heading text-sm font-semibold text-white transition hover:bg-primary-dark">
                     <x-lucide name="credit-card" class="h-4 w-4" />
@@ -115,34 +130,68 @@
                 <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold {{ $state->badgeClasses() }}">{{ $state->label() }}</span>
             </div>
             <p class="mt-1 text-sm text-neutral-500">{{ $reservation->startsAt()->translatedFormat('l j. F Y · H:i') }}</p>
+            @if($reservation->confirmed_at)
+                <p class="mt-1 inline-flex items-center gap-1.5 text-sm text-emerald-700">
+                    <x-lucide name="circle-check" class="h-3.5 w-3.5 shrink-0" />
+                    Potvrzeno {{ $reservation->confirmed_at->translatedFormat('j. n. Y · H:i') }}
+                </p>
+            @endif
         </div>
 
         @if($isActive)
-            <div class="flex flex-wrap gap-2.5">
-                @if($canReschedule)
-                    <a href="{{ route('zone.reservations.reschedule', $reservation) }}" class="inline-flex items-center gap-1.5 rounded-full bg-primary px-5 py-2.5 font-heading text-sm font-semibold text-white transition hover:bg-primary-dark">
-                        <x-lucide name="calendar-sync" class="h-4 w-4" />
-                        Přesunout termín
-                    </a>
-                @else
-                    <span
-                        x-data
-                        @click="$dispatch('open-reschedule-disabled')"
-                        class="inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-surface-muted px-5 py-2.5 font-heading text-sm font-semibold text-neutral-400"
-                    >
-                        <x-lucide name="calendar-off" class="h-4 w-4" />
-                        Přesunout termín
-                    </span>
-                @endif
-
+            {{-- Three actions no longer fit as inline buttons, so they live in one menu. --}}
+            <div
+                x-data="{ open: false }"
+                @click.outside="open = false"
+                @keydown.escape.window="open = false"
+                class="relative"
+            >
                 <button
                     type="button"
-                    wire:click="openCancel"
-                    class="inline-flex items-center gap-1.5 rounded-full border-[1.5px] border-red-200 bg-white px-5 py-2.5 font-heading text-sm font-semibold text-red-600 transition hover:bg-red-50"
+                    @click="open = ! open"
+                    :aria-expanded="open"
+                    aria-haspopup="true"
+                    class="inline-flex items-center gap-1.5 rounded-full border-[1.5px] border-line bg-white px-5 py-2.5 font-heading text-sm font-semibold text-neutral-900 transition hover:bg-surface-alt"
                 >
-                    <x-lucide name="x" class="h-4 w-4" />
-                    Zrušit rezervaci
+                    <x-lucide name="ellipsis" class="h-4 w-4" />
+                    Akce
+                    {{-- The rotation rides a wrapper: x-lucide forwards only `class`
+                         to blade-icons, so x-bind:class on it would be dropped. --}}
+                    <span class="text-neutral-400 transition" x-bind:class="open && 'rotate-180'">
+                        <x-lucide name="chevron-down" class="h-4 w-4" />
+                    </span>
                 </button>
+
+                <div
+                    x-show="open"
+                    x-cloak
+                    {{-- w-max so the longest label sets the width; items never wrap. --}}
+                    class="absolute right-0 z-20 mt-2 w-max min-w-64 overflow-hidden rounded-2xl border border-line bg-white py-1.5 shadow-lg"
+                >
+                    @if($canConfirm)
+                        <button type="button" wire:click="openConfirm" @click="open = false" class="{{ $actionItem }} text-emerald-700">
+                            <x-lucide name="circle-check" class="h-4 w-4 shrink-0" />
+                            Potvrdit rezervaci
+                        </button>
+                    @endif
+
+                    @if($canReschedule)
+                        <a href="{{ route('zone.reservations.reschedule', $reservation) }}" class="{{ $actionItem }} text-neutral-900">
+                            <x-lucide name="calendar-sync" class="h-4 w-4 shrink-0" />
+                            Přesunout termín
+                        </a>
+                    @else
+                        <button type="button" @click="open = false; $dispatch('open-reschedule-disabled')" class="{{ $actionItem }} text-neutral-400">
+                            <x-lucide name="calendar-off" class="h-4 w-4 shrink-0" />
+                            Přesunout termín
+                        </button>
+                    @endif
+
+                    <button type="button" wire:click="openCancel" @click="open = false" class="{{ $actionItem }} text-red-600">
+                        <x-lucide name="x" class="h-4 w-4 shrink-0" />
+                        Zrušit rezervaci
+                    </button>
+                </div>
             </div>
         @endif
     </div>
@@ -172,6 +221,80 @@
             <span class="text-sm text-neutral-600">{{ $state->isAwaitingPayment() ? 'K úhradě' : 'Za terapii' }}</span>
         </div>
     </div>
+
+    {{-- Doctor's note: the client promised one to waive the storno fee. Uploading it
+         here is what flips the badge to „Potvrzení nahráno" and alerts staff. --}}
+    @if($state->isDoctorNotePending())
+        @php($noteType = ReservationDocumentType::DoctorNote)
+        <div class="rounded-2xl border border-amber-200 bg-amber-50/50 p-6">
+            <h2 class="flex items-center gap-2 font-heading text-base font-bold text-neutral-900">
+                <x-lucide name="file-text" class="h-4 w-4 shrink-0 text-amber-500" />
+                Potvrzení od lékaře
+            </h2>
+            <p class="mt-1 text-sm leading-relaxed text-neutral-600">
+                Storno poplatek {{ number_format($reservation->stornoFee(), 0, ',', ' ') }} Kč je pozastavený, dokud potvrzení nezkontrolujeme.
+                Nahrajte je prosím zde — stačí i fotka z telefonu.
+            </p>
+
+            @if(session('doctor_note_status'))
+                <p class="mt-4 rounded-xl bg-emerald-50 px-4 py-2.5 text-sm font-medium text-emerald-700">{{ session('doctor_note_status') }}</p>
+            @endif
+
+            <label class="mt-4 flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-amber-300 bg-white px-4 py-6 text-center transition hover:border-amber-400">
+                <x-lucide name="upload" class="h-6 w-6 text-amber-500" />
+                <span class="font-heading text-sm font-semibold text-neutral-900">Vyberte soubor</span>
+                <span class="text-xs text-neutral-500">{{ $noteType->formatsLabel() }} · max {{ (int) ($noteType->maxKilobytes() / 1024) }} MB</span>
+                <input
+                    type="file"
+                    multiple
+                    wire:model="doctorNoteFiles"
+                    accept="{{ $noteType->acceptAttribute() }}"
+                    class="mt-2 w-full text-xs text-neutral-600 file:mr-3 file:rounded-full file:border-0 file:bg-neutral-100 file:px-4 file:py-1.5 file:font-heading file:text-xs file:font-semibold file:text-neutral-700"
+                >
+            </label>
+
+            <p wire:loading wire:target="doctorNoteFiles, uploadDoctorNote" class="mt-3 text-sm text-neutral-500">Nahrávám…</p>
+
+            @error('doctorNoteFiles.*')
+                <p class="mt-3 rounded-xl bg-red-50 px-4 py-2.5 text-sm font-medium text-red-600">{{ $message }}</p>
+            @enderror
+
+            <button
+                type="button"
+                wire:click="uploadDoctorNote"
+                wire:loading.attr="disabled"
+                class="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full bg-amber-500 px-6 py-3 font-heading text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-60"
+            >
+                <x-lucide name="upload" class="h-4 w-4" />
+                Nahrát potvrzení
+            </button>
+
+            <x-reservations.document-list :documents="$doctorNoteDocuments" remove-wire="removeDoctorNote" />
+
+            @if($contactEmail)
+                <p class="mt-4 text-xs text-neutral-500">
+                    Nahrání se nedaří? Pošlete potvrzení na
+                    <a href="mailto:{{ $contactEmail }}" class="font-medium text-primary-dark underline">{{ $contactEmail }}</a>.
+                </p>
+            @endif
+
+            @if($canChangeStorno)
+                <p class="mt-4 border-t border-amber-200 pt-4 text-xs text-neutral-500">
+                    Potvrzení nakonec neseženete?
+                    <button type="button" wire:click="openChangeStorno" class="font-medium text-primary-dark underline">Změnit způsob vyřešení storna</button>
+                </p>
+            @endif
+        </div>
+    @elseif($reservation->doctor_note_resolved_at && $reservation->doctorNoteDocuments->isNotEmpty())
+        <div class="rounded-2xl border border-line bg-white p-6">
+            <h2 class="flex items-center gap-2 font-heading text-base font-bold text-neutral-900">
+                <x-lucide name="circle-check" class="h-4 w-4 shrink-0 text-emerald-500" />
+                Potvrzení od lékaře
+            </h2>
+            <p class="mt-1 text-sm text-neutral-600">Vaše potvrzení jsme zpracovali {{ $reservation->doctor_note_resolved_at->translatedFormat('j. n. Y') }}.</p>
+            <x-reservations.document-list :documents="$doctorNoteDocuments" />
+        </div>
+    @endif
 
     {{-- Payment panel (unpaid QR request: late-storno fee or a requested payment) --}}
     @if($openQrPayment)
@@ -205,6 +328,13 @@
                     <img src="{{ QrPlatba::dataUri($openQrPayment) }}" alt="QR platba" class="h-40 w-40">
                 </div>
             </div>
+
+            @if($canChangeStorno && ! $state->isDoctorNotePending())
+                <p class="mt-5 border-t border-amber-200 pt-4 text-xs text-neutral-500">
+                    Zabránily vám v návštěvě zdravotní důvody?
+                    <button type="button" wire:click="openChangeStorno" class="font-medium text-primary-dark underline">Změnit způsob vyřešení storna</button>
+                </p>
+            @endif
         </div>
     @endif
 
@@ -274,6 +404,104 @@
         </div>
     </div>
 
+    {{-- Confirm modal --}}
+    @if($confirmingConfirm)
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div class="absolute inset-0 bg-black/40" wire:click="closeConfirm"></div>
+
+            <div class="relative w-full max-w-md rounded-3xl bg-white p-8 shadow-xl">
+                <div class="flex justify-center">
+                    <span class="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 text-emerald-500">
+                        <x-lucide name="circle-check" class="h-7 w-7" />
+                    </span>
+                </div>
+                <h2 class="mt-5 text-center font-heading text-xl font-bold text-neutral-900">Potvrdit rezervaci?</h2>
+                <p class="mt-2 text-center text-sm leading-relaxed text-neutral-500">
+                    Potvrzením dáváte terapeutovi vědět, že na termín {{ $reservation->startsAt()->translatedFormat('j. n. Y · H:i') }} dorazíte.
+                    Od té chvíle se na zrušení vztahují storno podmínky.
+                </p>
+
+                <div class="mt-6 flex flex-col gap-2.5">
+                    <button type="button" wire:click="confirmReservation" wire:loading.attr="disabled" class="inline-flex items-center justify-center gap-2 rounded-full bg-emerald-500 px-6 py-3 font-heading text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:opacity-60">
+                        <x-lucide name="check" class="h-4 w-4" />
+                        Ano, potvrdit
+                    </button>
+                    <button type="button" wire:click="closeConfirm" class="rounded-full border-[1.5px] border-line bg-white px-6 py-3 font-heading text-sm font-semibold text-neutral-900 transition hover:bg-surface-alt">
+                        Zpět
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- Change the storno resolution. Open while the storno is unresolved — a client
+         who cannot get the promised note must be able to switch to paying, and vice
+         versa. Deactivation is absent from the reverse direction: it blacklists the
+         account, so it is never something to change back FROM. --}}
+    @if($changingStorno)
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div class="absolute inset-0 bg-black/40" wire:click="closeChangeStorno"></div>
+
+            <div class="relative w-full max-w-md rounded-3xl bg-white p-8 shadow-xl">
+                <div class="flex justify-center">
+                    <span class="flex h-16 w-16 items-center justify-center rounded-full bg-amber-50 text-amber-500">
+                        <x-lucide name="refresh-cw" class="h-7 w-7" />
+                    </span>
+                </div>
+                <h2 class="mt-5 text-center font-heading text-xl font-bold text-neutral-900">Změnit způsob vyřešení storna</h2>
+                <p class="mt-2 text-center text-sm leading-relaxed text-neutral-500">
+                    Rezervace zůstává zrušená. Vyberte, jak chcete storno vyřešit místo dosavadní volby.
+                </p>
+
+                <div class="mt-4 flex items-center justify-between gap-4 rounded-xl bg-surface-alt px-4 py-3">
+                    <span class="text-sm text-neutral-500">Storno poplatek:</span>
+                    <span class="font-heading text-base font-bold text-red-600">{{ number_format($reservation->stornoFee(), 0, ',', ' ') }} Kč ({{ Settings::stornoFeePercent() }} %)</span>
+                </div>
+
+                <div class="mt-5 flex flex-col gap-2.5">
+                    @if($state->isDoctorNotePending())
+                        <button type="button" wire:click="switchToStornoPayment" wire:loading.attr="disabled" class="inline-flex items-center justify-center gap-2 rounded-full bg-red-500 px-6 py-3 font-heading text-sm font-semibold text-white transition hover:bg-red-600 disabled:opacity-60">
+                            <x-lucide name="credit-card" class="h-4 w-4" />
+                            Potvrzení nedoložím, zaplatím storno
+                        </button>
+                    @else
+                        <button type="button" wire:click="switchToDoctorNote" wire:loading.attr="disabled" class="inline-flex items-center justify-center gap-2 rounded-full bg-amber-500 px-6 py-3 font-heading text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-60">
+                            <x-lucide name="file-text" class="h-4 w-4" />
+                            Přece jen dodám potvrzení od lékaře
+                        </button>
+                    @endif
+
+                    <div x-data="{ confirmDeactivate: false }" class="contents">
+                        <button type="button" x-show="!confirmDeactivate" @click="confirmDeactivate = true" class="inline-flex items-center justify-center gap-2 rounded-full border-[1.5px] border-red-200 bg-white px-6 py-3 font-heading text-sm font-semibold text-red-600 transition hover:bg-red-50">
+                            <x-lucide name="user-x" class="h-4 w-4" />
+                            Nezaplatím (deaktivace účtu)
+                        </button>
+                        <div x-show="confirmDeactivate" x-cloak class="rounded-xl border-[1.5px] border-red-200 bg-red-50 p-4 text-left">
+                            <p class="text-xs leading-relaxed text-red-700">
+                                Opravdu? Váš účet bude <strong>deaktivován</strong> — nebudete se moci přihlásit ani online spravovat své rezervace a tuto volbu už online nezměníte. Pro obnovení účtu nás budete muset kontaktovat.
+                            </p>
+                            <p class="mt-2 text-xs leading-relaxed text-red-700">
+                                Zároveň <strong>zrušíme všechny vaše budoucí rezervace, přihlášky na kurzy a lekce i místa v pořadníku</strong>{{ $deactivationPreview ? ' ('.$deactivationPreview.')' : '' }}.
+                            </p>
+                            <div class="mt-3 flex flex-col gap-2">
+                                <button type="button" wire:click="switchToDeactivation" wire:loading.attr="disabled" class="inline-flex items-center justify-center gap-2 rounded-full bg-red-500 px-6 py-2.5 font-heading text-sm font-semibold text-white transition hover:bg-red-600 disabled:opacity-60">
+                                    Ano, deaktivovat účet
+                                </button>
+                                <button type="button" @click="confirmDeactivate = false" class="rounded-full border-[1.5px] border-line bg-white px-6 py-2.5 font-heading text-sm font-semibold text-neutral-900 transition hover:bg-surface-alt">
+                                    Zpět
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="button" wire:click="closeChangeStorno" class="rounded-full border-[1.5px] border-line bg-white px-6 py-3 font-heading text-sm font-semibold text-neutral-900 transition hover:bg-surface-alt">
+                        Ponechat současnou volbu
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
+
     {{-- Cancel modals --}}
     @if($confirmingCancel)
         <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -328,6 +556,9 @@
                             <div x-show="confirmDeactivate" x-cloak class="rounded-xl border-[1.5px] border-red-200 bg-red-50 p-4 text-left">
                                 <p class="text-xs leading-relaxed text-red-700">
                                     Opravdu? Váš účet bude <strong>deaktivován</strong> — nebudete se moci přihlásit ani online spravovat své rezervace. Pro obnovení účtu nás budete muset kontaktovat.
+                                </p>
+                                <p class="mt-2 text-xs leading-relaxed text-red-700">
+                                    Zároveň <strong>zrušíme všechny vaše budoucí rezervace, přihlášky na kurzy a lekce i místa v pořadníku</strong>{{ $deactivationPreview ? ' ('.$deactivationPreview.')' : '' }}.
                                 </p>
                                 <div class="mt-3 flex flex-col gap-2">
                                     <button type="button" wire:click="cancelAndDeactivate" wire:loading.attr="disabled" class="inline-flex items-center justify-center gap-2 rounded-full bg-red-500 px-6 py-2.5 font-heading text-sm font-semibold text-white transition hover:bg-red-600 disabled:opacity-60">

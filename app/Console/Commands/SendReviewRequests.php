@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 
 use App\Enums\ReviewRequestChannel;
 use App\Models\CourseSeries;
-use App\Models\OneOffEvent;
+use App\Models\Lesson;
 use App\Models\ReviewRequest;
 use App\Models\User;
 use App\Notifications\ReviewRequestNotification;
@@ -51,11 +51,11 @@ class SendReviewRequests extends Command
                 $sent += $this->notifyParticipants($series, $this->clientsFrom($series->enrollments()->with('client')->get()));
             });
 
-        OneOffEvent::query()
-            ->whereDate('event_date', '>=', $windowStart)
-            ->whereDate('event_date', '<=', $windowEnd)
+        Lesson::query()
+            ->whereDate('lesson_date', '>=', $windowStart)
+            ->whereDate('lesson_date', '<=', $windowEnd)
             ->get()
-            ->each(function (OneOffEvent $event) use (&$sent): void {
+            ->each(function (Lesson $event) use (&$sent): void {
                 $sent += $this->notifyParticipants($event, $this->clientsFrom($event->bookings()->with('client')->get()));
             });
 

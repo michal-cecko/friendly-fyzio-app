@@ -44,7 +44,7 @@ class EventCategory extends Model implements HasPublicPage
 
     public function events(): HasMany
     {
-        return $this->hasMany(OneOffEvent::class, 'event_category_id');
+        return $this->hasMany(Lesson::class, 'event_category_id');
     }
 
     /**

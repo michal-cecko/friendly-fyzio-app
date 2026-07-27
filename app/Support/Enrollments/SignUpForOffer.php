@@ -8,11 +8,11 @@ use App\Enums\EmailTemplateKey;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Filament\Clusters\Kurzy\Resources\CourseEnrollments\CourseEnrollmentResource;
-use App\Filament\Clusters\Kurzy\Resources\OneOffEventBookings\OneOffEventBookingResource;
+use App\Filament\Clusters\Kurzy\Resources\LessonBookings\LessonBookingResource;
 use App\Models\CourseEnrollment;
 use App\Models\CourseSeries;
-use App\Models\OneOffEvent;
-use App\Models\OneOffEventBooking;
+use App\Models\Lesson;
+use App\Models\LessonBooking;
 use App\Models\Payment;
 use App\Models\User;
 use App\Notifications\ClientAccountCreatedNotification;
@@ -39,7 +39,7 @@ class SignUpForOffer
     public function forSeries(CourseSeries $series, EnrollmentData $data, bool $viaPresale = false): CourseEnrollment
     {
         /** @var CourseEnrollment $enrollment */
-        [$enrollment, $payment, $client, $isNewAccount] = $this->locked('series:'.$series->getKey(), function () use ($series, $data, $viaPresale): array {
+        [$enrollment, $payment, $client, $isNewAccount] = $this->locked('enrollment:series:'.$series->getKey(), function () use ($series, $data, $viaPresale): array {
             $series->refresh()->load('course');
 
             $state = $viaPresale ? $series->offerStateForPresale() : $series->offerState();
@@ -80,10 +80,10 @@ class SignUpForOffer
         return $enrollment;
     }
 
-    public function forEvent(OneOffEvent $event, EnrollmentData $data, bool $viaPresale = false): OneOffEventBooking
+    public function forEvent(Lesson $event, EnrollmentData $data, bool $viaPresale = false): LessonBooking
     {
-        /** @var OneOffEventBooking $booking */
-        [$booking, $payment, $client, $isNewAccount] = $this->locked('event:'.$event->getKey(), function () use ($event, $data, $viaPresale): array {
+        /** @var LessonBooking $booking */
+        [$booking, $payment, $client, $isNewAccount] = $this->locked('lesson:'.$event->getKey(), function () use ($event, $data, $viaPresale): array {
             $event->refresh()->load(['course', 'category']);
 
             $state = $viaPresale ? $event->offerStateForPresale() : $event->offerState();
@@ -118,13 +118,19 @@ class SignUpForOffer
             $event->instructor,
             EnrollmentEmailContext::offerTokens($event),
             $booking->note,
-            OneOffEventBookingResource::getUrl('view', ['record' => $booking]),
+            LessonBookingResource::getUrl('view', ['record' => $booking]),
         );
 
         return $booking;
     }
 
     /**
+     * The key is the full lock name. A lesson sign-up locks on `lesson:{id}`,
+     * the same key {@see App\Support\Substitutes\RedeemToken} and
+     * {@see App\Support\Substitutes\MoveClientToLesson} use — a drop-in buyer
+     * and a náhrada redeemer compete for the same seat, so they must not hold
+     * two different locks over it.
+     *
      * @template TResult
      *
      * @param  callable(): TResult  $callback
@@ -132,7 +138,7 @@ class SignUpForOffer
      */
     protected function locked(string $key, callable $callback): mixed
     {
-        return Cache::lock('enrollment:'.$key, 10)
+        return Cache::lock($key, 10)
             ->block(5, fn (): mixed => DB::transaction($callback));
     }
 
@@ -140,7 +146,7 @@ class SignUpForOffer
      * The unpaid QR payment request holding the spot: due when the configured
      * hold window runs out, after which the sign-up is auto-cancelled.
      */
-    protected function paymentRequest(CourseEnrollment|OneOffEventBooking $signup, User $client, int $amount): Payment
+    protected function paymentRequest(CourseEnrollment|LessonBooking $signup, User $client, int $amount): Payment
     {
         return $signup->payments()->create([
             'client_id' => $client->id,

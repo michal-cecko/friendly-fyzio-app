@@ -20,6 +20,11 @@
 
     $phone = \App\Support\Settings::get('web.contact_phone');
     $submitUrl = request()->fullUrl();
+    // Named in the "won't pay" confirmation step: deactivation also releases every
+    // future reservation, sign-up and waitlist spot the client holds.
+    $deactivationPreview = $reservation->client
+        ? app(\App\Support\Clients\DeactivateAccount::class)->previewSentence($reservation->client)
+        : null;
 
     $btnBase = 'inline-flex w-full items-center justify-center rounded-full px-8 py-[15px] font-heading text-base font-semibold transition';
 @endphp
@@ -78,6 +83,12 @@
                     <div class="flex gap-3"><span class="w-28 shrink-0 font-semibold text-neutral-900">Datum a čas:</span><span class="text-neutral-600">{{ $when }}</span></div>
                 </div>
 
+                {{-- A promised note can be delivered right here. Posts to its own longer-lived
+                     signed link, since this page's signature dies when the visit starts. --}}
+                @if($reservation->awaitsDoctorNote())
+                    <x-reservations.doctor-note-upload :reservation="$reservation" :action="$reservation->doctorNoteUploadUrl()" />
+                @endif
+
                 {{-- Actions (only while the reservation is still active) --}}
                 @unless($status === ReservationStatus::Cancelled)
                     @if($status === ReservationStatus::Pending)
@@ -122,6 +133,9 @@
                                     <div x-show="confirmDeactivate" x-cloak class="rounded-xl border border-red-200 bg-red-50 p-4">
                                         <p class="text-sm leading-relaxed text-red-700">
                                             Opravdu? Váš účet bude <strong>deaktivován</strong> — nebudete se moci přihlásit ani online spravovat rezervace.
+                                        </p>
+                                        <p class="mt-2 text-sm leading-relaxed text-red-700">
+                                            Zároveň <strong>zrušíme všechny vaše budoucí rezervace, přihlášky na kurzy a lekce i místa v pořadníku</strong>{{ $deactivationPreview ? ' ('.$deactivationPreview.')' : '' }}.
                                         </p>
                                         <form method="POST" action="{{ $submitUrl }}" class="mt-3 space-y-2">
                                             @csrf

@@ -3,13 +3,13 @@
 namespace App\Filament\Clusters\Kurzy\Resources\LessonAttendances;
 
 use App\Filament\Clusters\Kurzy\KurzyCluster;
-use App\Filament\Clusters\Kurzy\Resources\LessonAttendances\Pages\CreateLessonAttendance;
-use App\Filament\Clusters\Kurzy\Resources\LessonAttendances\Pages\EditLessonAttendance;
 use App\Filament\Clusters\Kurzy\Resources\LessonAttendances\Pages\ListLessonAttendances;
 use App\Filament\Clusters\Kurzy\Resources\LessonAttendances\Pages\ViewLessonAttendance;
-use App\Filament\Clusters\Kurzy\Resources\LessonAttendances\Schemas\LessonAttendanceForm;
 use App\Filament\Clusters\Kurzy\Resources\LessonAttendances\Schemas\LessonAttendanceInfolist;
 use App\Filament\Clusters\Kurzy\Resources\LessonAttendances\Tables\LessonAttendancesTable;
+use App\Filament\Support\Actions\EditExcuseAction;
+use App\Filament\Support\Actions\ToggleLessonAttendanceAction;
+use App\Filament\Support\AttendancePresenter;
 use App\Filament\Support\Concerns\ScopedToTherapist;
 use App\Models\LessonAttendance;
 use BackedEnum;
@@ -21,6 +21,16 @@ use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * A seat on a lesson, on its own page — reached from the lesson's Docházka
+ * section, from global search, or from a link in the activity log.
+ *
+ * Read-only by design: rows are created by the roster and by sign-ups, never by
+ * hand, and the two things staff do change — who is coming, and why they are not
+ * — go through {@see ToggleLessonAttendanceAction}
+ * and {@see EditExcuseAction}, which keep the
+ * náhrada engine in step. A free-form edit form could not.
+ */
 class LessonAttendanceResource extends Resource
 {
     use ScopedToTherapist;
@@ -59,7 +69,7 @@ class LessonAttendanceResource extends Resource
     public static function getRecordTitle(?Model $record): string|Htmlable|null
     {
         /** @var ?LessonAttendance $record */
-        return trim('docházku '.($record?->enrollment?->client?->name ?? ''));
+        return trim('docházku '.($record?->client?->name ?? ''));
     }
 
     /**
@@ -67,13 +77,13 @@ class LessonAttendanceResource extends Resource
      */
     public static function getGloballySearchableAttributes(): array
     {
-        return ['enrollment.client.name', 'enrollment.client.email', 'lesson.series.name'];
+        return ['client.name', 'client.email', 'lesson.series.name'];
     }
 
     public static function getGlobalSearchResultTitle(Model $record): string|Htmlable
     {
         /** @var LessonAttendance $record */
-        return trim(($record->enrollment?->client?->name ?? 'Neznámý klient').' — '.($record->lesson?->lesson_date?->format('j. n. Y') ?? 'neznámé datum'));
+        return trim(($record->client?->name ?? 'Neznámý klient').' — '.($record->lesson?->lesson_date?->format('j. n. Y') ?? 'neznámé datum'));
     }
 
     /**
@@ -84,13 +94,9 @@ class LessonAttendanceResource extends Resource
         /** @var LessonAttendance $record */
         return array_filter([
             'Kurz' => $record->lesson?->series?->course?->name,
-            'Přítomen' => $record->attended ? 'Ano' : 'Ne',
+            'Přihláška' => AttendancePresenter::originLabel($record),
+            'Účast' => AttendancePresenter::presenceLabel($record),
         ]);
-    }
-
-    public static function form(Schema $schema): Schema
-    {
-        return LessonAttendanceForm::configure($schema);
     }
 
     public static function infolist(Schema $schema): Schema
@@ -105,7 +111,7 @@ class LessonAttendanceResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with(['enrollment.client', 'lesson.series.course'])
+        return parent::getEloquentQuery()->with(['client', 'enrollment.series', 'booking', 'lesson.series.course'])
             ->when(static::therapistUserScopeId(), fn (Builder $query, string $id) => $query
                 ->whereHas('lesson.series.course', fn (Builder $course) => $course->where('instructor_id', $id)));
     }
@@ -121,9 +127,7 @@ class LessonAttendanceResource extends Resource
     {
         return [
             'index' => ListLessonAttendances::route('/'),
-            'create' => CreateLessonAttendance::route('/create'),
             'view' => ViewLessonAttendance::route('/{record}'),
-            'edit' => EditLessonAttendance::route('/{record}/edit'),
         ];
     }
 }

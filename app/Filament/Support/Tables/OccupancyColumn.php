@@ -4,7 +4,8 @@ namespace App\Filament\Support\Tables;
 
 use App\Filament\Support\Schemas\OccupancyEntry;
 use App\Models\Concerns\HasCapacity;
-use App\Models\CourseLesson;
+use App\Models\Lesson;
+use Filament\Support\Enums\Alignment;
 use Filament\Tables\Columns\ViewColumn;
 use Illuminate\Database\Eloquent\Model;
 
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\Model;
  * one-off events) and by individual course lessons: a progress bar that fills as
  * spots are taken, with the free spots out of the total shown above it. Records
  * must expose a `capacity` and a `takenSpots()` — either via {@see HasCapacity}
- * or, for lessons, via {@see CourseLesson}'s own spot accounting.
+ * or, for lessons, via {@see Lesson}'s own spot accounting.
  *
  * The infolist twin is {@see OccupancyEntry}; both render the same bar and share
  * {@see state()}.
@@ -40,6 +41,7 @@ class OccupancyColumn
         $column = ViewColumn::make($name)
             ->label('Obsazenost')
             ->view('filament.tables.columns.occupancy')
+            ->alignment(Alignment::Center)
             ->state(fn (Model $record): array => static::state($record))
             ->tooltip(fn (Model $record): string => static::tooltip($record));
 

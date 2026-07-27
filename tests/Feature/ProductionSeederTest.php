@@ -6,8 +6,8 @@ use App\Enums\ServiceVisibility;
 use App\Models\Building;
 use App\Models\Course;
 use App\Models\EmailTemplate;
+use App\Models\Lesson;
 use App\Models\Navigation;
-use App\Models\OneOffEvent;
 use App\Models\Page;
 use App\Models\Reservation;
 use App\Models\Room;
@@ -130,7 +130,7 @@ class ProductionSeederTest extends TestCase
         $this->seedProduction();
 
         $this->assertSame(0, Course::query()->count(), 'Demo courses must not reach a live install.');
-        $this->assertSame(0, OneOffEvent::query()->count());
+        $this->assertSame(0, Lesson::query()->count());
         $this->assertSame(0, Reservation::query()->count());
         $this->assertSame(0, User::query()->customers()->count());
 

@@ -17,12 +17,15 @@ class DerivedSlug
 {
     /**
      * @param  string  $helperText  Shown while creating, when the slug can still be adjusted.
+     * @param  bool|Closure  $required  Records without a public address of their own
+     *                                  (a lesson of a série that is not on sale) pass
+     *                                  a condition here instead of the default true.
      */
-    public static function field(string $helperText): TextInput
+    public static function field(string $helperText, bool|Closure $required = true): TextInput
     {
         return TextInput::make('slug')
-            ->label('Slug')
-            ->required()
+            ->label('URL název')
+            ->required($required)
             ->maxLength(255)
             ->unique(ignoreRecord: true)
             // Disabled rather than read-only: a read-only field still takes its
@@ -33,7 +36,7 @@ class DerivedSlug
             ->dehydrated()
             ->helperText(fn (string $operation): string => $operation === 'create'
                 ? $helperText
-                : 'Po vytvoření už slug nelze měnit, aby zůstaly funkční dříve sdílené odkazy.');
+                : 'Po vytvoření už URL název nelze měnit, aby zůstaly funkční dříve sdílené odkazy.');
     }
 
     /**

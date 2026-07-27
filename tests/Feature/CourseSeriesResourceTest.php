@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\CourseSeriesStatus;
 use App\Enums\CourseSeriesVisibility;
+use App\Enums\WaitlistPromotionMode;
 use App\Filament\Clusters\Kurzy\Resources\CourseSeries\Pages\CreateCourseSeries;
 use App\Filament\Clusters\Kurzy\Resources\CourseSeries\Pages\EditCourseSeries;
 use App\Filament\Clusters\Kurzy\Resources\CourseSeries\Pages\ListCourseSeries;
@@ -90,6 +91,63 @@ class CourseSeriesResourceTest extends TestCase
             'id' => $record->id,
             'name' => 'Aktualizovaný běh',
         ]);
+    }
+
+    /**
+     * The edit form splits its fields across the Základní údaje / Přihlašování
+     * tabs; saving must still carry fields from both of them.
+     */
+    public function test_edit_saves_fields_from_both_form_tabs(): void
+    {
+        $record = CourseSeries::factory()->create([
+            'status' => CourseSeriesStatus::Open,
+            'visibility' => CourseSeriesVisibility::Public,
+            'capacity' => 8,
+        ]);
+
+        Livewire::test(EditCourseSeries::class, ['record' => $record->getKey()])
+            ->fillForm([
+                'name' => 'Podzimní běh',
+                'price' => 3300,
+                'capacity' => 15,
+                'status' => CourseSeriesStatus::Inactive->value,
+                'visibility' => CourseSeriesVisibility::Private->value,
+                'waitlist_promotion_mode' => WaitlistPromotionMode::AutomaticInvite->value,
+            ])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $this->assertDatabaseHas(CourseSeries::class, [
+            'id' => $record->id,
+            'name' => 'Podzimní běh',
+            'price' => 3300,
+            'capacity' => 15,
+            'status' => CourseSeriesStatus::Inactive->value,
+            'visibility' => CourseSeriesVisibility::Private->value,
+            'waitlist_promotion_mode' => WaitlistPromotionMode::AutomaticInvite->value,
+        ]);
+    }
+
+    /**
+     * The tabs render several fields per row through Tailwind container
+     * queries, which only resolve inside an element carrying `fi-grid-ctn`.
+     * That element comes from `gridContainer()` on the Tabs component — a Tab
+     * renders no wrapper of its own, so declaring it there would silently drop
+     * the form back to one field per row.
+     */
+    public function test_form_tabs_render_inside_a_grid_container(): void
+    {
+        $record = CourseSeries::factory()->create();
+
+        $html = Livewire::test(EditCourseSeries::class, ['record' => $record->getKey()])->html();
+
+        $this->assertMatchesRegularExpression(
+            '/class="[^"]*fi-grid-ctn[^"]*"[^>]*>\s*<div[^>]*class="[^"]*fi-sc-tabs/',
+            $html,
+            'The série form Tabs are not wrapped in a fi-grid-ctn element, so the @-breakpoint column spans never apply.',
+        );
+
+        $this->assertStringContainsString('@xl:fi-grid-cols', $html);
     }
 
     /**

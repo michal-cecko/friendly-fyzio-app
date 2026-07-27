@@ -2,14 +2,16 @@
 
 use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\CourseController;
+use App\Http\Controllers\DoctorNoteUploadController;
 use App\Http\Controllers\InstagramOAuthController;
+use App\Http\Controllers\LessonController;
 use App\Http\Controllers\NewsletterController;
-use App\Http\Controllers\OneOffEventController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\Pdf\CustomerInvoiceDownloadController;
 use App\Http\Controllers\Pdf\InvoiceExportDownloadController;
 use App\Http\Controllers\Pdf\InvoicePreviewController;
 use App\Http\Controllers\Pdf\ReceiptPreviewController;
+use App\Http\Controllers\ReservationDocumentDownloadController;
 use App\Http\Controllers\ReservationManageController;
 use App\Http\Controllers\ServiceCategoryController;
 use App\Http\Controllers\ServiceController;
@@ -76,6 +78,22 @@ Route::post('/rezervace/spravovat/{reservation}', [ReservationManageController::
     ->middleware('signed')
     ->name('reservation.manage.submit');
 
+// Delivering the doctor's note behind a late cancellation. Its own signed link,
+// valid for days after the visit — the manage link above expires when the visit
+// starts, long before a note from the doctor can arrive.
+Route::get('/rezervace/potvrzeni/{reservation}', [DoctorNoteUploadController::class, 'show'])
+    ->middleware('signed')
+    ->name('reservation.doctor-note');
+Route::post('/rezervace/potvrzeni/{reservation}', [DoctorNoteUploadController::class, 'submit'])
+    ->middleware('signed')
+    ->name('reservation.doctor-note.submit');
+
+// Streams a reservation attachment from the private disk to its owner or to staff.
+// Outside the zone group on purpose — staff are bounced out of the client zone.
+Route::get('/rezervace/dokument/{document}', ReservationDocumentDownloadController::class)
+    ->middleware('auth')
+    ->name('reservation.document.download');
+
 // Public review form, reached only via the magic-link token sent in a review
 // request e-mail. Two path segments, so it never collides with the /{slug} catch-all.
 Route::get('/recenze/{token}', fn (string $token) => view('reviews.form', ['token' => $token]))
@@ -132,8 +150,9 @@ Route::middleware(['auth', 'verified', EnsureZoneCustomer::class])
         Route::get('/nahrady', fn () => view('zone.tokens', ['seo' => ['title' => 'Náhradní vstupy'], 'breadcrumbs' => [['label' => 'Můj účet', 'url' => url('/muj-ucet')], ['label' => 'Náhradní vstupy', 'url' => null]]]))->name('tokens');
         Route::get('/kredity', fn () => view('zone.credits', ['seo' => ['title' => 'Kredity'], 'breadcrumbs' => [['label' => 'Můj účet', 'url' => url('/muj-ucet')], ['label' => 'Kredity', 'url' => null]]]))->name('credits');
         Route::get('/platby', fn () => view('zone.payments', ['seo' => ['title' => 'Platby'], 'breadcrumbs' => [['label' => 'Můj účet', 'url' => url('/muj-ucet')], ['label' => 'Platby', 'url' => null]]]))->name('payments');
-        Route::get('/faktury', fn () => view('zone.invoices', ['seo' => ['title' => 'Faktury'], 'breadcrumbs' => [['label' => 'Můj účet', 'url' => url('/muj-ucet')], ['label' => 'Faktury', 'url' => null]]]))->name('invoices');
-        Route::get('/faktury/{invoice}/stahnout', CustomerInvoiceDownloadController::class)->name('invoices.download');
+        // Invoices are issued lazily: the first download of a settled payment
+        // allocates the number and persists the invoice, later ones re-render it.
+        Route::get('/platby/{payment}/faktura', CustomerInvoiceDownloadController::class)->name('payments.invoice');
         Route::get('/profil', fn () => view('zone.profile', ['seo' => ['title' => 'Můj profil'], 'breadcrumbs' => [['label' => 'Můj účet', 'url' => url('/muj-ucet')], ['label' => 'Můj profil', 'url' => null]]]))->name('profile');
     });
 
@@ -166,12 +185,12 @@ Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
 // multi-segment paths. The controller resolves the pair manually and falls
 // through to LegacyRedirects for unknown two-segment paths (which previously
 // reached PageController — e.g. /relaxace-ritualy/masaze).
-Route::get('/{category}/{event}', [OneOffEventController::class, 'show'])
+Route::get('/{category}/{event}', [LessonController::class, 'show'])
     ->where([
         'category' => '(?!(?:admin|kurzy|sluzby|o-nas|rezervace|recenze|nahledy|muj-ucet|klientska-zona|prihlaseni|registrace|overeni-emailu|odhlaseni|instagram|livewire|passkeys|storage|up)/)[^/]+',
         'event' => '[^/]+',
     ])
-    ->name('one-off-event.show');
+    ->name('lesson.show');
 
 Route::get('/{slug}', [PageController::class, 'show'])
     ->where('slug', '^(?!admin|klientska-zona|muj-ucet|livewire|passkeys|storage|up|rezervace|prihlaseni|registrace|overeni-emailu|odhlaseni|instagram|nahledy).*$')

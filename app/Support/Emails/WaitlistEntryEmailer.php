@@ -5,7 +5,7 @@ namespace App\Support\Emails;
 use App\Enums\EmailTemplateKey;
 use App\Models\Course;
 use App\Models\CourseSeries;
-use App\Models\OneOffEvent;
+use App\Models\Lesson;
 use App\Models\WaitlistEntry;
 use App\Notifications\EnrollmentTemplateNotification;
 use App\Support\Enrollments\EnrollmentEmailContext;
@@ -36,7 +36,7 @@ class WaitlistEntryEmailer
     public static function templateGroups(WaitlistEntry $entry): array
     {
         if (! self::offer($entry) instanceof CourseSeries
-            && ! self::offer($entry) instanceof OneOffEvent
+            && ! self::offer($entry) instanceof Lesson
             && ! self::offer($entry) instanceof Course) {
             return [];
         }
@@ -62,7 +62,7 @@ class WaitlistEntryEmailer
     {
         $offer = self::offer($entry);
 
-        if (! $offer instanceof CourseSeries && ! $offer instanceof OneOffEvent && ! $offer instanceof Course) {
+        if (! $offer instanceof CourseSeries && ! $offer instanceof Lesson && ! $offer instanceof Course) {
             return;
         }
 
@@ -91,7 +91,7 @@ class WaitlistEntryEmailer
     /**
      * @return array<string, string>
      */
-    private static function extraTokens(WaitlistEntry $entry, CourseSeries|OneOffEvent|Course $offer, EmailTemplateKey $key): array
+    private static function extraTokens(WaitlistEntry $entry, CourseSeries|Lesson|Course $offer, EmailTemplateKey $key): array
     {
         return match ($key) {
             EmailTemplateKey::WaitlistJoined => [

@@ -10,10 +10,12 @@ use App\Models\InvoiceSeries;
 use App\Models\Payment;
 use App\Support\Invoices\DocumentNumberAllocator;
 use App\Support\Invoices\InvoiceGenerator;
+use App\Support\Invoices\InvoiceNotifier;
 use App\Support\Settings;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Carbon;
@@ -67,6 +69,10 @@ class GenerateInvoiceAction extends Action
                     ->native(false)
                     ->default(fn (): Carbon => today()->addDays(Settings::invoiceDueDays()))
                     ->required(),
+                Toggle::make('notify_client')
+                    ->label('Odeslat fakturu zákazníkovi e-mailem')
+                    ->default(true)
+                    ->visible(fn (Payment $record): bool => filled($record->client?->email)),
             ])
             ->action(function (Payment $record, array $data): void {
                 $invoice = app(InvoiceGenerator::class)->fromPayment(
@@ -75,6 +81,10 @@ class GenerateInvoiceAction extends Action
                     Carbon::parse($data['issued_at']),
                     Carbon::parse($data['due_at']),
                 );
+
+                if ($data['notify_client'] ?? false) {
+                    InvoiceNotifier::send($invoice);
+                }
 
                 Notification::make()
                     ->title("Faktura {$invoice->invoice_number} byla vystavena.")

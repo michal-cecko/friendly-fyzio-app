@@ -14,8 +14,8 @@ use App\Mason\Bricks\HeroBrick;
 use App\Mason\Bricks\HtmlBlockBrick;
 use App\Mason\Bricks\InstagramBrick;
 use App\Mason\Bricks\LastMinuteBrick;
+use App\Mason\Bricks\LessonArchiveBrick;
 use App\Mason\Bricks\NewsletterBrick;
-use App\Mason\Bricks\OneOffEventArchiveBrick;
 use App\Mason\Bricks\PageIntroBrick;
 use App\Mason\Bricks\PhotoTextBrick;
 use App\Mason\Bricks\PriceListBrick;
@@ -80,7 +80,7 @@ class BrickRegistry
             BrickGroup::make('Kurzy a workshopy')->bricks([
                 EnrollingNowBrick::class,
                 CourseArchiveBrick::class,
-                OneOffEventArchiveBrick::class,
+                LessonArchiveBrick::class,
             ]),
             BrickGroup::make('Sociální sítě')->bricks([
                 InstagramBrick::class,

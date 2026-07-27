@@ -12,10 +12,9 @@ use App\Models\Building;
 use App\Models\Course;
 use App\Models\CourseCategory;
 use App\Models\CourseEnrollment;
-use App\Models\CourseLesson;
 use App\Models\CourseSeries;
 use App\Models\EventCategory;
-use App\Models\OneOffEvent;
+use App\Models\Lesson;
 use App\Models\Room;
 use App\Models\User;
 use Illuminate\Console\Command;
@@ -608,7 +607,7 @@ class CoursesImport extends Command
             $start = $slot['time'];
             $end = Carbon::parse($start)->addMinutes($duration)->format('H:i:s');
 
-            $exists = CourseLesson::query()
+            $exists = Lesson::query()
                 ->where('series_id', $series->getKey())
                 ->whereDate('lesson_date', $slot['date']->toDateString())
                 ->where('start_time', $start)
@@ -618,7 +617,7 @@ class CoursesImport extends Command
                 continue;
             }
 
-            CourseLesson::query()->create([
+            Lesson::query()->create([
                 'series_id' => $series->getKey(),
                 'instructor_id' => $instructor->getKey(),
                 'room_id' => $room->getKey(),
@@ -651,7 +650,7 @@ class CoursesImport extends Command
             [$start, $end] = $this->parseTimeRange((string) $row['time']);
             $slug = Str::slug($row['name']).'-'.$row['date']->format('Y-m-d');
 
-            $event = $this->dryRun ? null : OneOffEvent::query()->firstOrNew(['slug' => $slug]);
+            $event = $this->dryRun ? null : Lesson::query()->firstOrNew(['slug' => $slug]);
 
             $this->bump($event?->exists ? 'workshops_existing' : 'workshops_created');
 
@@ -668,7 +667,7 @@ class CoursesImport extends Command
                     'name' => $row['name'],
                     'slug' => $slug,
                     'description' => $this->workshopDescription($row),
-                    'event_date' => $row['date']->toDateString(),
+                    'lesson_date' => $row['date']->toDateString(),
                     'start_time' => $start,
                     'end_time' => $end,
                     'capacity' => (int) $row['capacity'],

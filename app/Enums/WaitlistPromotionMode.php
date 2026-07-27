@@ -2,6 +2,7 @@
 
 namespace App\Enums;
 
+use App\Support\Settings;
 use Filament\Support\Contracts\HasColor;
 use Filament\Support\Contracts\HasLabel;
 
@@ -44,12 +45,18 @@ enum WaitlistPromotionMode: string implements HasColor, HasLabel
         };
     }
 
+    /**
+     * Both automatic modes hold the freed spot for a configurable window, so the
+     * description spells out the current setting instead of a vague "lhůta":
+     * {@see Settings::waitlistInviteHours()} for the invite race and
+     * {@see Settings::enrollmentHoldHours()} for the unpaid sign-up.
+     */
     public function description(): string
     {
         return match ($this) {
             self::Manual => 'Systém neudělá nic — uvolněné místo obsadíte z čekací listiny sami tlačítkem.',
-            self::AutomaticInvite => 'Všem čekajícím přijde e-mail s odkazem a kdo se první přihlásí, ten místo dostane. Po dobu lhůty místo nemůže obsadit nikdo z webu; když se nikdo neozve, uvolní se veřejnosti.',
-            self::AutomaticAdd => 'Dalšímu v pořadí rovnou vytvoříme přihlášku a pošleme výzvu k platbě. Místo mu držíme, dokud nevyprší lhůta na zaplacení.',
+            self::AutomaticInvite => 'Všem čekajícím přijde e-mail s odkazem a kdo se první přihlásí, ten místo dostane. Po dobu '.Settings::waitlistInviteHours().' hodin místo nemůže obsadit nikdo z webu; když se nikdo neozve, uvolní se veřejnosti.',
+            self::AutomaticAdd => 'Dalšímu v pořadí rovnou vytvoříme přihlášku a pošleme výzvu k platbě. Místo mu držíme '.Settings::enrollmentHoldHours().' hodin na zaplacení.',
         };
     }
 

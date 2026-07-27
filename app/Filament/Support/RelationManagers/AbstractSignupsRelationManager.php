@@ -11,6 +11,7 @@ use App\Filament\Support\Actions\CancelSignupAction;
 use App\Filament\Support\Actions\CancelSignupBulkAction;
 use App\Filament\Support\Actions\MarkSignupsPaidBulkAction;
 use App\Filament\Support\Actions\RecordPaymentAction;
+use App\Filament\Support\Actions\RevertSignupAction;
 use App\Filament\Support\Actions\SendBulkParticipantEmailAction;
 use App\Filament\Support\Actions\SendEmailAction;
 use App\Filament\Support\Tables\TimestampColumns;
@@ -75,6 +76,9 @@ abstract class AbstractSignupsRelationManager extends RelationManager
     {
         return $table
             ->defaultSort('created_at', 'desc')
+            // Clicking a row opens the sign-up's own detail page, same as the
+            // série rows on a course; the row actions stay for everything else.
+            ->recordUrl(fn (Model $record): string => $this->detailUrl($record))
             ->columns([
                 TextColumn::make('client.name')
                     ->label('Klient')
@@ -109,6 +113,7 @@ abstract class AbstractSignupsRelationManager extends RelationManager
                 RecordPaymentAction::make(),
                 GenerateInvoiceFromPayableAction::make(),
                 SendEmailAction::make(),
+                RevertSignupAction::make(),
                 CancelSignupAction::make(),
                 ...$this->extraRecordActions(),
                 Action::make('detail')

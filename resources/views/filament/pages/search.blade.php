@@ -163,6 +163,7 @@
                                     @if ($result->url)
                                         <a
                                             href="{{ $result->url }}"
+                                            wire:navigate
                                             class="group flex items-center gap-3 px-4 py-3 transition hover:bg-gray-50 dark:hover:bg-white/5"
                                         >
                                     @else

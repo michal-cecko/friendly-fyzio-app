@@ -9,7 +9,7 @@ use App\Models\Course;
 use App\Models\CourseCategory;
 use App\Models\CourseSeries;
 use App\Models\EventCategory;
-use App\Models\OneOffEvent;
+use App\Models\Lesson;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -163,7 +163,7 @@ class CourseArchive extends Component
      * the configured event category page. Suppressed on filtered/paged views
      * (mirrors the preparing tail) and via the brick toggle.
      *
-     * @return array{title: string, text: string, url: ?string, events: Collection<int, OneOffEvent>}|null
+     * @return array{title: string, text: string, url: ?string, events: Collection<int, Lesson>}|null
      */
     protected function crossSell(): ?array
     {
@@ -178,15 +178,17 @@ class CourseArchive extends Component
         $categorySlug = (string) ($this->config['cross_sell_category'] ?? 'jednorazove-lekce');
         $category = EventCategory::query()->published()->where('slug', $categorySlug)->first();
 
-        $events = OneOffEvent::query()
+        $events = Lesson::query()
             ->published()
             ->upcoming()
             ->where('visibility', OfferVisibility::Public)
-            ->whereNotNull('course_id')
-            ->whereHas('course', fn (Builder $course) => $course->published())
-            ->withCount('activeTakers')
-            ->with(['course', 'category'])
-            ->orderBy('event_date')
+            ->whereNotNull('slug')
+            ->where(fn (Builder $query) => $query
+                ->whereHas('course', fn (Builder $course) => $course->published())
+                ->orWhereHas('series.course', fn (Builder $course) => $course->published()))
+            ->withOccupancyCounts()
+            ->with(['course', 'series.course', 'category'])
+            ->orderBy('lesson_date')
             ->orderBy('start_time')
             ->limit(3)
             ->get();

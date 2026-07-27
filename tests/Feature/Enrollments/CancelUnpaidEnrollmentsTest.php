@@ -66,10 +66,11 @@ class CancelUnpaidEnrollmentsTest extends TestCase
         $this->artisan('enrollments:cancel-unpaid')->assertSuccessful();
 
         $this->assertSame(CourseEnrollmentStatus::Cancelled, $expired->fresh()->status);
-        $this->assertSame(0, $expired->payments()->count());
+        // Withdrawn, not erased — the record survives as "Zrušeno".
+        $this->assertSame(PaymentStatus::Cancelled, $expired->payments()->sole()->status);
 
         $this->assertSame(CourseEnrollmentStatus::Active, $stillHeld->fresh()->status);
-        $this->assertSame(1, $stillHeld->payments()->count());
+        $this->assertSame(1, $stillHeld->payments()->whereIn('status', PaymentStatus::openValues())->count());
 
         Notification::assertSentTo($expired->client, EnrollmentTemplateNotification::class, fn (EnrollmentTemplateNotification $notification): bool => $notification->key === EmailTemplateKey::EnrollmentAutoCancelled);
     }

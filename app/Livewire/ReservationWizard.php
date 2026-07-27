@@ -790,6 +790,12 @@ class ReservationWizard extends Component
 
     public function submit(): void
     {
+        // The field is read-only for logged-in clients; pin it server-side too so a
+        // tampered payload cannot slip a foreign address past the locked input.
+        if (($authenticated = auth()->user()) !== null) {
+            $this->email = $authenticated->email;
+        }
+
         $this->validate([
             'firstName' => ['required', 'string', 'max:255'],
             'lastName' => ['required', 'string', 'max:255'],
@@ -855,13 +861,18 @@ class ReservationWizard extends Component
         return $latest !== null && Carbon::parse($latest)->gte(now()->subMonths($months));
     }
 
+    /**
+     * Name and phone keep anything already typed, but the e-mail always comes from
+     * the account: the booking is attached to the logged-in user regardless of what
+     * the field says, so the contact step locks it and must show the real address.
+     */
     protected function prefillContactFromUser(User $user): void
     {
         [$first, $last] = array_pad(explode(' ', trim((string) $user->name), 2), 2, '');
 
         $this->firstName = $this->firstName ?: $first;
         $this->lastName = $this->lastName ?: $last;
-        $this->email = $this->email ?: $user->email;
+        $this->email = $user->email;
         $this->phone = $this->phone ?: ((string) $user->phone);
     }
 

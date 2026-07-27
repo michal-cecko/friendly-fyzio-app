@@ -13,6 +13,7 @@
     'price' => null,
     'ctaLabel' => 'Přihlásit se',
     'muted' => false,
+    'soonest' => false,
 ])
 
 @php
@@ -48,7 +49,9 @@
 @endphp
 
 <article @class([
-    'group flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-white transition hover:shadow-md',
+    'group flex h-full flex-col overflow-hidden rounded-2xl border bg-white transition hover:shadow-md',
+    'border-line' => ! $soonest,
+    'border-primary shadow-md ring-1 ring-primary/20' => $soonest,
     'opacity-60 saturate-50' => $muted,
 ])>
     <a href="{{ $url ?? '#' }}" class="relative block h-45 shrink-0 overflow-hidden bg-primary-light">
@@ -57,6 +60,9 @@
         @endif
         @if($category)
             <span class="absolute left-4 top-4 rounded-full bg-primary px-3.5 py-1 font-heading text-xs font-semibold text-white">{{ $category }}</span>
+        @endif
+        @if($soonest)
+            <span class="absolute right-4 top-4 rounded-full bg-white/95 px-3.5 py-1 font-heading text-xs font-semibold text-primary-dark shadow-sm">Nejbližší termín</span>
         @endif
     </a>
 

@@ -60,7 +60,7 @@ class CourseArchiveBrick extends Brick
                     ->label('Sekce „vyzkoušejte jednorázovou lekci“')
                     ->default(true)
                     ->live()
-                    ->helperText('Pod mřížkou kurzů nabídne nejbližší jednorázové akce navázané na kurzy.'),
+                    ->helperText('Pod mřížkou kurzů nabídne nejbližší lekce navázané na kurzy.'),
                 TextInput::make('cross_sell_title')
                     ->label('Titulek sekce')
                     ->default('Chcete si to nejdřív vyzkoušet?')

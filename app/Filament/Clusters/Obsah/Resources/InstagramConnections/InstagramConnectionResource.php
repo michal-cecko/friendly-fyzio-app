@@ -6,6 +6,7 @@ use App\Filament\Clusters\Obsah\ObsahCluster;
 use App\Filament\Clusters\Obsah\Resources\InstagramConnections\Pages\CreateInstagramConnection;
 use App\Filament\Clusters\Obsah\Resources\InstagramConnections\Pages\EditInstagramConnection;
 use App\Filament\Clusters\Obsah\Resources\InstagramConnections\Pages\ListInstagramConnections;
+use App\Filament\Clusters\Obsah\Resources\InstagramConnections\RelationManagers\PostsRelationManager;
 use App\Filament\Clusters\Obsah\Resources\InstagramConnections\Schemas\InstagramConnectionForm;
 use App\Filament\Clusters\Obsah\Resources\InstagramConnections\Tables\InstagramConnectionsTable;
 use App\Jobs\SyncInstagramConnectionJob;
@@ -55,6 +56,13 @@ class InstagramConnectionResource extends Resource
     public static function table(Table $table): Table
     {
         return InstagramConnectionsTable::configure($table);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            PostsRelationManager::class,
+        ];
     }
 
     public static function getPages(): array

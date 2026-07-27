@@ -32,7 +32,6 @@ class Service extends Model implements HasPublicPage
         'icon',
         'duration_minutes',
         'price',
-        'break_minutes',
         'visibility',
         'existing_client_months',
         'published_at',
@@ -46,7 +45,6 @@ class Service extends Model implements HasPublicPage
             'published_at' => 'datetime',
             'duration_minutes' => 'integer',
             'price' => 'integer',
-            'break_minutes' => 'integer',
             'existing_client_months' => 'integer',
         ];
     }
@@ -113,7 +111,18 @@ class Service extends Model implements HasPublicPage
 
     public function therapists(): BelongsToMany
     {
-        return $this->belongsToMany(StaffProfile::class, 'service_therapists', 'service_id', 'therapist_id');
+        return $this->belongsToMany(StaffProfile::class, 'service_therapists', 'service_id', 'therapist_id')
+            ->using(ServiceTherapist::class)
+            ->withPivot('break_blocks');
+    }
+
+    /**
+     * The same assignments seen as rows rather than as therapists, so the break
+     * each one carries can be edited alongside it.
+     */
+    public function serviceTherapists(): HasMany
+    {
+        return $this->hasMany(ServiceTherapist::class);
     }
 
     public function specializations(): HasMany

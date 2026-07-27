@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\EventCategory;
-use App\Models\OneOffEvent;
+use App\Models\Lesson;
 use App\Models\Page;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -25,8 +25,8 @@ class EventCategoryPageTest extends TestCase
     public function test_default_category_page_renders_with_the_archive(): void
     {
         $category = EventCategory::query()->where('slug', 'workshopy')->firstOrFail();
-        $event = OneOffEvent::factory()->forCategory($category)->published()->create([
-            'event_date' => today()->addWeeks(2)->toDateString(),
+        $event = Lesson::factory()->forCategory($category)->published()->create([
+            'lesson_date' => today()->addWeeks(2)->toDateString(),
         ]);
 
         $this->get('/workshopy')

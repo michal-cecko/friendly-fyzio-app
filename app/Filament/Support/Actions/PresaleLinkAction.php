@@ -3,7 +3,7 @@
 namespace App\Filament\Support\Actions;
 
 use App\Models\CourseSeries;
-use App\Models\OneOffEvent;
+use App\Models\Lesson;
 use Filament\Actions\Action;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Support\Icons\Heroicon;
@@ -33,18 +33,18 @@ class PresaleLinkAction extends Action
             ->label('Přihlašovací odkaz')
             ->icon(Heroicon::OutlinedLink)
             ->color('gray')
-            ->visible(fn (CourseSeries|OneOffEvent $record): bool => $record->isPrivate())
+            ->visible(fn (CourseSeries|Lesson $record): bool => $record->isPrivate())
             ->modalHeading('Skrytý přihlašovací odkaz')
             ->modalDescription('Kdo dostane tento odkaz, může se přihlásit, i když termín není veřejně otevřený — hodí se pro předprodej i pro soukromé termíny jen na pozvánku. Plně obsazený nebo ukončený termín zůstává uzavřený i s odkazem.')
             ->modalIcon(Heroicon::OutlinedLink)
-            ->schema(fn (CourseSeries|OneOffEvent $record): array => [
+            ->schema(fn (CourseSeries|Lesson $record): array => [
                 TextEntry::make('presale_url')
                     ->label('Odkaz')
                     ->state($record->presaleUrl())
                     ->copyable()
                     ->copyMessage('Odkaz zkopírován.'),
             ])
-            ->extraModalFooterActions(fn (CourseSeries|OneOffEvent $record): array => [
+            ->extraModalFooterActions(fn (CourseSeries|Lesson $record): array => [
                 Action::make('copyPresaleLink')
                     ->label('Kopírovat odkaz')
                     ->icon(Heroicon::OutlinedClipboardDocument)

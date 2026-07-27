@@ -8,7 +8,6 @@ use App\Models\EmailTemplate;
 use App\Models\Payment;
 use App\Support\EmailTemplateRenderer;
 use App\Support\Invoices\PayableTitle;
-use App\Support\Pdf\InvoicePdfRenderer;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -16,8 +15,8 @@ use Illuminate\Support\Str;
 
 /**
  * Client confirmation that a payment was received, rendered from the CMS
- * "payment_received" template. When the payment has an invoice, its PDF is
- * attached (re-rendered from the stored snapshot).
+ * "payment_received" template. No invoice is attached — invoices are issued on
+ * demand and only ever e-mailed from InvoiceNotifier, never as a side effect.
  */
 class PaymentReceivedNotification extends Notification
 {
@@ -59,20 +58,8 @@ class PaymentReceivedNotification extends Notification
             'odkaz' => url('/muj-ucet'),
         ];
 
-        $mail = (new MailMessage)
+        return (new MailMessage)
             ->subject($template->subject)
             ->view('emails.rendered', ['html' => EmailTemplateRenderer::render($template, $context)]);
-
-        $invoice = $this->payment->invoice;
-
-        if ($invoice !== null) {
-            $mail->attachData(
-                app(InvoicePdfRenderer::class)->render($invoice),
-                "{$invoice->invoice_number}.pdf",
-                ['mime' => 'application/pdf'],
-            );
-        }
-
-        return $mail;
     }
 }

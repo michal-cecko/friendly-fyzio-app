@@ -88,7 +88,6 @@ class ServiceInfolist
                                     ->columns(ResponsiveColumns::DENSE)
                                     ->schema([
                                         TextEntry::make('duration_minutes')->label('Délka')->suffix(' min'),
-                                        TextEntry::make('break_minutes')->label('Pauza')->suffix(' min'),
                                         TextEntry::make('price')->label('Cena')->suffix(' Kč'),
                                     ]),
                                 Section::make('Storno podmínky')

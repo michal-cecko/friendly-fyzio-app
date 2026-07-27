@@ -62,20 +62,26 @@ class ActivityValue
     /**
      * The value broken into labelled rows for the detail views. Scalars yield a
      * single unlabelled row, so callers can render both shapes the same way.
+     * A row carries a `url` when its value refers to a record staff can open
+     * ({@see ActivityLink}).
      *
      * @param  array<string, string>  $scope  Field → label overrides for nested keys.
-     * @return list<array{label: ?string, value: string}>
+     * @return list<array{label: ?string, value: string, url: ?string}>
      */
     public static function rows(mixed $value, ?string $key = null, ?Model $subject = null, string $placeholder = '—', array $scope = []): array
     {
         $value = self::decode($value);
 
         if (self::isEmpty($value)) {
-            return [['label' => null, 'value' => $placeholder]];
+            return [self::row(null, $placeholder)];
         }
 
         if (! is_array($value)) {
-            return [['label' => null, 'value' => self::inline($value, $key, $subject, placeholder: $placeholder)]];
+            $link = ActivityLink::for($key, $value, $subject);
+
+            return [$link === null
+                ? self::row(null, self::inline($value, $key, $subject, placeholder: $placeholder))
+                : self::row(null, $link['label'], $link['url'])];
         }
 
         if (self::isBrickList($value)) {
@@ -85,14 +91,11 @@ class ActivityValue
         if (array_is_list($value)) {
             // A list of scalars stays on one line; a list of structures gets a row each.
             if (self::isScalarList($value)) {
-                return [['label' => null, 'value' => self::arrayToInline($value, 1, $scope)]];
+                return [self::row(null, self::arrayToInline($value, 1, $scope))];
             }
 
             return array_values(array_map(
-                fn (int $index, mixed $item): array => [
-                    'label' => '#'.($index + 1),
-                    'value' => self::inline($item, scope: $scope),
-                ],
+                fn (int $index, mixed $item): array => self::row('#'.($index + 1), self::inline($item, scope: $scope)),
                 array_keys($value),
                 $value,
             ));
@@ -101,13 +104,23 @@ class ActivityValue
         $rows = [];
 
         foreach ($value as $childKey => $childValue) {
-            $rows[] = [
-                'label' => ActivityPresenter::attributeLabel((string) $childKey, $scope),
-                'value' => self::inline($childValue, (string) $childKey, placeholder: $placeholder, scope: $scope),
-            ];
+            $childKey = (string) $childKey;
+            $link = ActivityLink::for($childKey, $childValue, $subject);
+
+            $rows[] = self::row(
+                ActivityPresenter::attributeLabel($childKey, $scope),
+                $link['label'] ?? self::inline($childValue, $childKey, placeholder: $placeholder, scope: $scope),
+                $link['url'] ?? null,
+            );
         }
 
         return $rows;
+    }
+
+    /** @return array{label: ?string, value: string, url: ?string} */
+    private static function row(?string $label, string $value, ?string $url = null): array
+    {
+        return ['label' => $label, 'value' => $value, 'url' => $url];
     }
 
     /** Whether {@see rows()} produced anything worth rendering as a nested table. */
@@ -164,6 +177,13 @@ class ActivityValue
             if ($label !== null) {
                 return $label;
             }
+        }
+
+        // A foreign key reads as the record it points at, never as a bare UUID.
+        $referenced = ActivityLink::record($key, $value, $subject);
+
+        if ($referenced !== null) {
+            return ActivityLink::label($referenced);
         }
 
         $string = (string) $value;
@@ -275,7 +295,7 @@ class ActivityValue
 
     /**
      * @param  array<array-key, mixed>  $nodes
-     * @return list<array{label: ?string, value: string}>
+     * @return list<array{label: ?string, value: string, url: ?string}>
      */
     private static function brickRows(array $nodes): array
     {
@@ -284,14 +304,14 @@ class ActivityValue
         foreach (array_values($nodes) as $index => $node) {
             $config = $node['attrs']['config'] ?? [];
 
-            $rows[] = [
-                'label' => ($index + 1).'. '.self::brickLabel($node),
-                'value' => is_array($config) && $config !== []
+            $rows[] = self::row(
+                ($index + 1).'. '.self::brickLabel($node),
+                is_array($config) && $config !== []
                     // The brick's own form names its config fields. Depth restarts
                     // here so a repeater nested in the config still unfolds.
                     ? self::arrayToInline($config, 1, FieldLabels::forBrick((string) ($node['attrs']['id'] ?? '')))
                     : '—',
-            ];
+            );
         }
 
         return $rows;

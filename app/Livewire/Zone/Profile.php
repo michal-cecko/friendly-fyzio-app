@@ -3,6 +3,8 @@
 namespace App\Livewire\Zone;
 
 use App\Models\User;
+use App\Notifications\Auth\VerifyEmailChangeForClientNotification;
+use App\Support\ActivityLog\LogActivity;
 use Illuminate\Contracts\View\View;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
@@ -87,7 +89,9 @@ class Profile extends Component
         $user->save();
 
         if ($emailChanged) {
-            $user->sendEmailVerificationNotification();
+            // Re-verify the new address with e-mail-change wording, not the
+            // registration copy that sendEmailVerificationNotification() sends.
+            $user->notify(new VerifyEmailChangeForClientNotification);
 
             return redirect()->route('verification.notice');
         }
@@ -104,7 +108,12 @@ class Profile extends Component
             'password' => ['required', 'confirmed', Password::min(8)],
         ], [], ['current_password' => 'současné heslo', 'password' => 'nové heslo']);
 
-        $this->user()->update(['password' => $this->password]);
+        $user = $this->user();
+        $user->update(['password' => $this->password]);
+
+        // The password itself is never audited, so a password-only save leaves
+        // no attribute diff — record the change as a semantic event instead.
+        LogActivity::record('password_changed', $user, 'Heslo změněno');
 
         $this->reset('current_password', 'password', 'password_confirmation');
 

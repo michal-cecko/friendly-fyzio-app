@@ -7,7 +7,7 @@ use App\Enums\CourseEnrollmentStatus;
 use App\Enums\EmailTemplateKey;
 use App\Enums\PaymentStatus;
 use App\Models\CourseEnrollment;
-use App\Models\OneOffEventBooking;
+use App\Models\LessonBooking;
 use App\Notifications\EnrollmentTemplateNotification;
 use Illuminate\Support\Facades\DB;
 
@@ -21,15 +21,17 @@ use Illuminate\Support\Facades\DB;
 class CancelSignup
 {
     public function __invoke(
-        CourseEnrollment|OneOffEventBooking $signup,
+        CourseEnrollment|LessonBooking $signup,
         bool $notify = true,
         EmailTemplateKey $emailKey = EmailTemplateKey::EnrollmentCancelledByClient,
         ?string $reason = null,
     ): void {
         DB::transaction(function () use ($signup): void {
+            // Withdrawn, not erased — the request stays on the books as "Zrušeno" so
+            // the money trail survives the cancellation.
             $signup->payments()
-                ->whereIn('status', [PaymentStatus::Unpaid->value, PaymentStatus::Overdue->value])
-                ->delete();
+                ->whereIn('status', PaymentStatus::openValues())
+                ->update(['status' => PaymentStatus::Cancelled]);
 
             // Fires the model observer, which promotes the waitlist.
             $signup->update([
@@ -51,8 +53,8 @@ class CancelSignup
         }
     }
 
-    protected function offer(CourseEnrollment|OneOffEventBooking $signup): mixed
+    protected function offer(CourseEnrollment|LessonBooking $signup): mixed
     {
-        return $signup instanceof CourseEnrollment ? $signup->series : $signup->event;
+        return $signup instanceof CourseEnrollment ? $signup->series : $signup->lesson;
     }
 }

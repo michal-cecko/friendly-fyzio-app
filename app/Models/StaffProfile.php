@@ -52,6 +52,7 @@ class StaffProfile extends Model implements HasPermalink
         'education',
         'certifications',
         'display_order',
+        'break_blocks',
         'is_collaborator',
         'published_at',
     ];
@@ -59,6 +60,7 @@ class StaffProfile extends Model implements HasPermalink
     protected function casts(): array
     {
         return [
+            'break_blocks' => 'integer',
             'is_collaborator' => 'boolean',
             'education' => 'array',
             'certifications' => 'array',
@@ -91,7 +93,18 @@ class StaffProfile extends Model implements HasPermalink
 
     public function services(): BelongsToMany
     {
-        return $this->belongsToMany(Service::class, 'service_therapists', 'therapist_id', 'service_id');
+        return $this->belongsToMany(Service::class, 'service_therapists', 'therapist_id', 'service_id')
+            ->using(ServiceTherapist::class)
+            ->withPivot('break_blocks');
+    }
+
+    /**
+     * The assignments seen as rows rather than as services, so the break each
+     * one carries can be read without going through the pivot accessor.
+     */
+    public function serviceTherapists(): HasMany
+    {
+        return $this->hasMany(ServiceTherapist::class, 'therapist_id');
     }
 
     /**

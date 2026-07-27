@@ -32,7 +32,7 @@ class PageSeeder extends Seeder
     /**
      * The "Pohybové kurzy" archive page: hero + the data-driven course archive
      * brick (category pills, availability, search, pagination — all in the
-     * URL, plus the one-off-event cross-sell section) + newsletter signup.
+     * URL, plus the lesson cross-sell section) + newsletter signup.
      */
     private function coursesPage(): void
     {

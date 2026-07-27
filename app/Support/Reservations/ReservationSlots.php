@@ -2,12 +2,12 @@
 
 namespace App\Support\Reservations;
 
-use App\Enums\DayOfWeek;
 use App\Enums\ReservationStatus;
-use App\Enums\ServiceVisibility;
+use App\Models\Lesson;
 use App\Models\Reservation;
 use App\Models\RoomBlocking;
 use App\Models\Service;
+use App\Models\StaffProfile;
 use App\Models\TherapistWorkBlock;
 use App\Support\CalendarAvailability;
 use App\Support\Settings;
@@ -20,8 +20,14 @@ use Illuminate\Support\Collection;
  * Stateless and Octane-safe (mirrors {@see CalendarAvailability}):
  * every call resolves its own data and nothing is cached on the instance. The pure
  * gap-fill maths lives in {@see GapFiller}; this class only feeds it the database
- * picture (work blocks, existing reservations, room blockings) and shapes results
- * into {@see Slot} objects.
+ * picture (work blocks, existing reservations, lessons, room blockings) and shapes
+ * results into {@see Slot} objects.
+ *
+ * Lessons — course lessons and one-off events alike — count as busy time exactly
+ * like a reservation: they occupy their room for everyone, and when the lecturer
+ * is a bookable therapist they occupy that therapist in every room. They are
+ * deliberately *not* treated as cuts the way room blockings are; see
+ * {@see busyForDate()}.
  *
  * All slot maths runs in wall-clock minutes since midnight; only the lead-time
  * guard is timezone-aware (Europe/Prague), because reservation times are stored as
@@ -64,7 +70,7 @@ class ReservationSlots
 
         $today = Carbon::today();
         $context = $this->preload($baseIds, $from, $to);
-        $gapFiller = $this->gapFiller($service);
+        $gapFillers = $this->gapFillers($service, $baseIds, $context['breaks']);
         $surface = [$service->duration_minutes];
 
         $available = [];
@@ -76,15 +82,15 @@ class ReservationSlots
                 continue;
             }
 
-            $reservations = $this->reservationsFromContext($context, $date);
+            $busy = $this->busyFromContext($context, $date);
             $slots = $this->buildSlots(
                 $date,
                 $baseIds,
-                $gapFiller,
+                $gapFillers,
                 $surface,
                 $workBlocks,
-                $reservations['byTherapist'],
-                $reservations['byRoom'],
+                $busy['byTherapist'],
+                $busy['byRoom'],
                 $this->roomBlockingsFromContext($context, $date),
             );
 
@@ -105,8 +111,8 @@ class ReservationSlots
      *
      * Service-agnostic on purpose: the waitlist is a therapist's whole day, so any
      * future, past-lead-time gap of at least one block ({@see Settings::blockMinutes()})
-     * in their work blocks — after their own reservations, room reservations and room
-     * blockings are removed — counts as an opening.
+     * in their work blocks — after their own reservations and lessons, whatever else
+     * occupies the room, and room blockings are removed — counts as an opening.
      */
     public function therapistHasOpening(string $therapistId, Carbon $date): bool
     {
@@ -117,15 +123,15 @@ class ReservationSlots
             return false;
         }
 
-        $reservations = $this->reservationsForDate($date);
-        $therapistBusy = $reservations['byTherapist'][$therapistId] ?? [];
+        $busyBuckets = $this->busyForDate($date, [$therapistId], new BreakResolver);
+        $therapistBusy = $busyBuckets['byTherapist'][$therapistId] ?? [];
         $roomBlockings = $this->roomBlockingsForDate($date);
 
         $minDuration = Settings::blockMinutes();
         $cutoffMin = $this->leadCutoffMinutes($date);
 
         foreach ($workBlocks as [$blockStart, $blockEnd, $roomId]) {
-            $busyAll = $this->mergeIntervals(array_merge($therapistBusy, $reservations['byRoom'][$roomId] ?? []));
+            $busyAll = $this->mergeIntervals(array_merge($therapistBusy, $busyBuckets['byRoom'][$roomId] ?? []));
 
             foreach ($this->subtractIntervals($blockStart, $blockEnd, $roomBlockings[$roomId] ?? []) as [$subStart, $subEnd]) {
                 $busy = $this->clipIntervals($busyAll, $subStart, $subEnd);
@@ -175,15 +181,16 @@ class ReservationSlots
             return [];
         }
 
-        $reservations = $this->reservationsForDate($date);
+        $breaks = new BreakResolver;
+        $busy = $this->busyForDate($date, $therapistIds, $breaks);
         $slots = $this->buildSlots(
             $date,
             $therapistIds,
-            $this->gapFiller($service),
+            $this->gapFillers($service, $therapistIds, $breaks),
             [$service->duration_minutes],
             $this->workBlocksForDate($therapistIds, $date),
-            $reservations['byTherapist'],
-            $reservations['byRoom'],
+            $busy['byTherapist'],
+            $busy['byRoom'],
             $this->roomBlockingsForDate($date),
         );
 
@@ -209,36 +216,54 @@ class ReservationSlots
     }
 
     /**
-     * Build a configured gap filler for a service's category.
+     * One configured gap filler per therapist, because the break folded into a
+     * booking's footprint is theirs and nobody else's. The category's services
+     * are read once and costed separately for each of them.
+     *
+     * Only services this therapist actually performs count: the anchor lattice
+     * decides what is offered, so a length only a colleague can deliver must not
+     * shift the anchors in this therapist's day.
+     *
+     * @param  array<int, string>  $therapistIds
+     * @return array<string, GapFiller>
      */
-    protected function gapFiller(Service $service): GapFiller
+    protected function gapFillers(Service $service, array $therapistIds, BreakResolver $breaks): array
     {
         $services = $service->category
-            ? $service->category->services()->get(['duration_minutes', 'visibility'])
+            ? $service->category->services()->bookable()->with('therapists:id')->get(['id', 'duration_minutes'])
             : collect([$service]);
 
-        $all = $services
-            ->reject(fn (Service $s): bool => $s->visibility === ServiceVisibility::Hidden)
-            ->pluck('duration_minutes')
-            ->push($service->duration_minutes)
-            ->unique()
-            ->values()
-            ->all();
+        $fillers = [];
 
-        $public = $services
-            ->filter(fn (Service $s): bool => $s->visibility === ServiceVisibility::Public)
-            ->pluck('duration_minutes')
-            ->unique()
-            ->values()
-            ->all();
+        foreach ($therapistIds as $therapistId) {
+            $cost = fn (Service $sibling): int => $sibling->duration_minutes
+                + $breaks->minutesFor($therapistId, $sibling->getKey());
 
-        // Fall back to the chainable durations when the category has no public
-        // service of its own (e.g. an all-"clients" category).
-        if ($public === []) {
-            $public = $all;
+            $anchors = [];
+
+            foreach ($services as $sibling) {
+                if (! $sibling->therapists->contains(fn (StaffProfile $profile): bool => $profile->getKey() === $therapistId)) {
+                    continue;
+                }
+
+                // Two services of the same length may cost different amounts of
+                // this therapist's time. For chaining, the cheaper one wins — if
+                // any booking of that length can tile the gap, the gap is fillable.
+                $duration = $sibling->duration_minutes;
+                $anchors[$duration] = min($anchors[$duration] ?? PHP_INT_MAX, $cost($sibling));
+            }
+
+            // The service actually being placed costs exactly what it costs, even
+            // where a same-length sibling is cheaper. It may also be one nobody can
+            // book online (a hidden service placed by staff or by a reschedule), in
+            // which case it still chains but must not generate anchors of its own.
+            $all = $anchors;
+            $all[$service->duration_minutes] = $cost($service);
+
+            $fillers[$therapistId] = new GapFiller($all, $anchors === [] ? $all : $anchors);
         }
 
-        return new GapFiller($all, $public, $service->break_minutes, Settings::blockMinutes());
+        return $fillers;
     }
 
     /**
@@ -264,21 +289,22 @@ class ReservationSlots
      * Turn the offers from every therapist + work block into concrete slots.
      *
      * @param  array<int, string>  $therapistIds
+     * @param  array<string, GapFiller>  $gapFillers
      * @param  array<int, int>  $surface
      * @param  array<string, array<int, array{0: int, 1: int, 2: string}>>  $workBlocksByTid
-     * @param  array<string, array<int, array{0: int, 1: int}>>  $reservationsByTherapist
-     * @param  array<string, array<int, array{0: int, 1: int}>>  $reservationsByRoom
+     * @param  array<string, array<int, array{0: int, 1: int, 2: int}>>  $busyByTherapist
+     * @param  array<string, array<int, array{0: int, 1: int, 2: int}>>  $busyByRoom
      * @param  array<string, array<int, array{0: int, 1: int}>>  $roomBlockingsByRoom
      * @return array<int, Slot>
      */
     protected function buildSlots(
         Carbon $date,
         array $therapistIds,
-        GapFiller $gapFiller,
+        array $gapFillers,
         array $surface,
         array $workBlocksByTid,
-        array $reservationsByTherapist,
-        array $reservationsByRoom,
+        array $busyByTherapist,
+        array $busyByRoom,
         array $roomBlockingsByRoom,
     ): array {
         $duration = $surface[0];
@@ -286,14 +312,20 @@ class ReservationSlots
 
         foreach ($therapistIds as $therapistId) {
             $workBlocks = $workBlocksByTid[$therapistId] ?? [];
-            $therapistBusy = $reservationsByTherapist[$therapistId] ?? [];
+            $therapistBusy = $busyByTherapist[$therapistId] ?? [];
+            $gapFiller = $gapFillers[$therapistId] ?? null;
+
+            if ($gapFiller === null) {
+                continue;
+            }
 
             foreach ($workBlocks as [$blockStart, $blockEnd, $roomId]) {
                 // Room blockings carve the work block into independent sub-blocks.
                 $cuts = $roomBlockingsByRoom[$roomId] ?? [];
-                // The therapist is busy with their own reservations (in any room); the
-                // room is also occupied by anyone else's reservation booked in it.
-                $busyAll = $this->mergeIntervals(array_merge($therapistBusy, $reservationsByRoom[$roomId] ?? []));
+                // The therapist is busy with their own reservations and lessons (in any
+                // room); the room is also occupied by anyone else's reservation or
+                // lesson held in it.
+                $busyAll = $this->mergeIntervals(array_merge($therapistBusy, $busyByRoom[$roomId] ?? []));
 
                 foreach ($this->subtractIntervals($blockStart, $blockEnd, $cuts) as [$subStart, $subEnd]) {
                     $busy = $this->clipIntervals($busyAll, $subStart, $subEnd);
@@ -337,6 +369,10 @@ class ReservationSlots
 
     /**
      * Remove the cut intervals from [start, end], yielding open sub-intervals.
+     * Only the bounds are read, so this takes busy intervals (which carry a
+     * trailing break) just as happily as plain room blockings — the break is
+     * deliberately ignored, since this answers "what time is unoccupied", not
+     * "what time is bookable".
      *
      * @param  array<int, array{0: int, 1: int}>  $cuts
      * @return array<int, array{0: int, 1: int}>
@@ -371,21 +407,23 @@ class ReservationSlots
     }
 
     /**
-     * Clip intervals to [start, end], dropping any that fall outside.
+     * Clip busy intervals to [start, end], dropping any that fall outside. The
+     * break rides along untouched — it is owed after the booking wherever the
+     * window happens to be cut.
      *
-     * @param  array<int, array{0: int, 1: int}>  $intervals
-     * @return array<int, array{0: int, 1: int}>
+     * @param  array<int, array{0: int, 1: int, 2: int}>  $intervals
+     * @return array<int, array{0: int, 1: int, 2: int}>
      */
     protected function clipIntervals(array $intervals, int $start, int $end): array
     {
         $clipped = [];
 
-        foreach ($intervals as [$intervalStart, $intervalEnd]) {
+        foreach ($intervals as [$intervalStart, $intervalEnd, $breakAfter]) {
             $intervalStart = max($intervalStart, $start);
             $intervalEnd = min($intervalEnd, $end);
 
             if ($intervalStart < $intervalEnd) {
-                $clipped[] = [$intervalStart, $intervalEnd];
+                $clipped[] = [$intervalStart, $intervalEnd, $breakAfter];
             }
         }
 
@@ -393,24 +431,30 @@ class ReservationSlots
     }
 
     /**
-     * Sort and merge overlapping or touching intervals so the gap filler receives a
-     * clean, non-overlapping busy set (therapist + room reservations may coincide).
+     * Sort and merge overlapping or touching busy intervals so the gap filler
+     * receives a clean, non-overlapping set (therapist + room reservations may
+     * coincide). A merged block is free again at the latest moment any of its
+     * parts is free again — end plus break — which the surviving break is sized
+     * to reproduce. A long break behind an early-finishing booking therefore
+     * still counts.
      *
-     * @param  array<int, array{0: int, 1: int}>  $intervals
-     * @return array<int, array{0: int, 1: int}>
+     * @param  array<int, array{0: int, 1: int, 2: int}>  $intervals
+     * @return array<int, array{0: int, 1: int, 2: int}>
      */
     protected function mergeIntervals(array $intervals): array
     {
         usort($intervals, fn (array $a, array $b): int => $a[0] <=> $b[0]);
 
         $merged = [];
-        foreach ($intervals as [$start, $end]) {
+        foreach ($intervals as [$start, $end, $breakAfter]) {
             $lastIndex = count($merged) - 1;
 
             if ($merged !== [] && $start <= $merged[$lastIndex][1]) {
+                $freeAgain = max($merged[$lastIndex][1] + $merged[$lastIndex][2], $end + $breakAfter);
                 $merged[$lastIndex][1] = max($merged[$lastIndex][1], $end);
+                $merged[$lastIndex][2] = $freeAgain - $merged[$lastIndex][1];
             } else {
-                $merged[] = [$start, $end];
+                $merged[] = [$start, $end, $breakAfter];
             }
         }
 
@@ -421,8 +465,12 @@ class ReservationSlots
      * Bucket reservations into busy minute-intervals both by therapist (they are
      * busy in any room) and by room (the room is occupied for everyone).
      *
+     * Each interval carries the break frozen onto the reservation when it was
+     * booked, so no lookup is needed here and a therapist who has since changed
+     * their default does not retroactively move bookings that already exist.
+     *
      * @param  Collection<int, Reservation>  $rows
-     * @return array{byTherapist: array<string, array<int, array{0: int, 1: int}>>, byRoom: array<string, array<int, array{0: int, 1: int}>>}
+     * @return array{byTherapist: array<string, array<int, array{0: int, 1: int, 2: int}>>, byRoom: array<string, array<int, array{0: int, 1: int, 2: int}>>}
      */
     protected function bucketReservations(Collection $rows): array
     {
@@ -430,12 +478,130 @@ class ReservationSlots
         $byRoom = [];
 
         foreach ($rows as $row) {
-            $interval = [Slot::toMinutes($row->start_time), Slot::toMinutes($row->end_time)];
+            $interval = [Slot::toMinutes($row->start_time), Slot::toMinutes($row->end_time), (int) $row->break_minutes];
             $byTherapist[$row->therapist_id][] = $interval;
             $byRoom[$row->room_id][] = $interval;
         }
 
         return ['byTherapist' => $byTherapist, 'byRoom' => $byRoom];
+    }
+
+    /**
+     * The same bucketing for lessons. A lesson always occupies its room; it only
+     * occupies a therapist when its lecturer maps to one of the profiles we are
+     * offering — a lecturer-only account has no bookable profile and therefore
+     * blocks nothing but the room.
+     *
+     * A lesson has no service to hang an override on, so it leaves behind its
+     * lecturer's own default break — resolved from the lecturer directly rather
+     * than through $profileIdByUser, because a therapist teaching a class needs
+     * their rest whether or not we happen to be offering their slots. An
+     * external lecturer with no staff profile leaves none.
+     *
+     * @param  Collection<int, Lesson>  $rows
+     * @param  array<string, string>  $profileIdByUser  users.id => staff_profiles.id
+     * @return array{byTherapist: array<string, array<int, array{0: int, 1: int, 2: int}>>, byRoom: array<string, array<int, array{0: int, 1: int, 2: int}>>}
+     */
+    protected function bucketLessons(Collection $rows, array $profileIdByUser, BreakResolver $breaks): array
+    {
+        $byTherapist = [];
+        $byRoom = [];
+
+        foreach ($rows as $row) {
+            $profileId = $profileIdByUser[$row->instructor_id] ?? null;
+            $interval = [
+                Slot::toMinutes($row->start_time),
+                Slot::toMinutes($row->end_time),
+                $breaks->defaultMinutesForUser($row->instructor_id),
+            ];
+
+            if ($row->room_id !== null) {
+                $byRoom[$row->room_id][] = $interval;
+            }
+
+            if ($profileId !== null) {
+                $byTherapist[$profileId][] = $interval;
+            }
+        }
+
+        return ['byTherapist' => $byTherapist, 'byRoom' => $byRoom];
+    }
+
+    /**
+     * Concatenate two {byTherapist, byRoom} bucket sets per key. The gap filler
+     * receives the union; {@see mergeIntervals()} normalises any overlap.
+     *
+     * @param  array{byTherapist: array<string, array<int, array{0: int, 1: int}>>, byRoom: array<string, array<int, array{0: int, 1: int}>>}  $first
+     * @param  array{byTherapist: array<string, array<int, array{0: int, 1: int}>>, byRoom: array<string, array<int, array{0: int, 1: int}>>}  $second
+     * @return array{byTherapist: array<string, array<int, array{0: int, 1: int}>>, byRoom: array<string, array<int, array{0: int, 1: int}>>}
+     */
+    protected function mergeBuckets(array $first, array $second): array
+    {
+        foreach (['byTherapist', 'byRoom'] as $dimension) {
+            foreach ($second[$dimension] as $key => $intervals) {
+                $first[$dimension][$key] = [...($first[$dimension][$key] ?? []), ...$intervals];
+            }
+        }
+
+        return $first;
+    }
+
+    /**
+     * Everything that makes a therapist or a room unavailable on a date without
+     * removing the working hour itself: reservations plus lessons.
+     *
+     * Lessons are busy time rather than cuts on purpose. A cut (how room
+     * blockings work) makes the block behave as if it never existed for that
+     * window, so a booking could end at the very minute a course starts and the
+     * turnaround rules restart afterwards. Busy time gives a lesson exactly the
+     * semantics a reservation has — the trailing break, plus the gap filler's
+     * strict gluing, so the gap before a lesson is only offered when it can be
+     * tiled exactly.
+     *
+     * @param  array<int, string>  $therapistIds
+     * @return array{byTherapist: array<string, array<int, array{0: int, 1: int}>>, byRoom: array<string, array<int, array{0: int, 1: int}>>}
+     */
+    protected function busyForDate(Carbon $date, array $therapistIds, BreakResolver $breaks): array
+    {
+        $lessons = Lesson::query()
+            ->whereDate('lesson_date', $date)
+            ->get(['instructor_id', 'room_id', 'start_time', 'end_time']);
+
+        return $this->mergeBuckets(
+            $this->reservationsForDate($date),
+            $this->bucketLessons($lessons, $this->profileIdByUser($therapistIds), $breaks),
+        );
+    }
+
+    /**
+     * @param  array<string, mixed>  $context
+     * @return array{byTherapist: array<string, array<int, array{0: int, 1: int}>>, byRoom: array<string, array<int, array{0: int, 1: int}>>}
+     */
+    protected function busyFromContext(array $context, Carbon $date): array
+    {
+        $lessons = $context['lessons']
+            ->filter(fn (Lesson $row): bool => $row->lesson_date->isSameDay($date));
+
+        return $this->mergeBuckets(
+            $this->reservationsFromContext($context, $date),
+            $this->bucketLessons($lessons, $context['profileIdByUser'], $context['breaks']),
+        );
+    }
+
+    /**
+     * Map users.id => staff_profiles.id for the profiles being offered. Scoped to
+     * them because only their busy intervals are ever read, and because it keeps
+     * a non-bookable profile from leaking in through a lesson.
+     *
+     * @param  array<int, string>  $therapistIds
+     * @return array<string, string>
+     */
+    protected function profileIdByUser(array $therapistIds): array
+    {
+        return StaffProfile::query()
+            ->whereKey($therapistIds)
+            ->pluck('id', 'user_id')
+            ->all();
     }
 
     // --- Single-date resolvers (availableTimes / resolveSlot) -----------------
@@ -471,7 +637,7 @@ class ReservationSlots
         $rows = Reservation::query()
             ->whereDate('reservation_date', $date)
             ->where('status', '!=', ReservationStatus::Cancelled->value)
-            ->get(['therapist_id', 'room_id', 'start_time', 'end_time']);
+            ->get(['therapist_id', 'room_id', 'start_time', 'end_time', 'break_minutes']);
 
         return $this->bucketReservations($rows);
     }
@@ -481,25 +647,17 @@ class ReservationSlots
      */
     protected function roomBlockingsForDate(Carbon $date): array
     {
-        $blockings = RoomBlocking::query()
-            ->where(fn ($query) => $query
-                ->where('is_recurring', true)
-                ->orWhere(fn ($inner) => $inner
-                    ->where('is_recurring', false)
-                    ->where('start_at', '<', $date->copy()->endOfDay())
-                    ->where('end_at', '>', $date->copy()->startOfDay())))
-            ->get();
-
-        return $this->resolveRoomBlockings($blockings, $date);
+        return $this->resolveRoomBlockings(RoomBlockingIntervals::inRange($date, $date)->get(), $date);
     }
 
     // --- Range preloading (availableDays) -------------------------------------
 
     /**
-     * Load every dataset the day loop needs in a handful of range queries.
+     * Load every dataset the day loop needs in a handful of range queries — the
+     * whole window at once, never per day.
      *
      * @param  array<int, string>  $baseIds
-     * @return array<string, Collection<int, mixed>>
+     * @return array{workBlocks: Collection<int, TherapistWorkBlock>, reservations: Collection<int, Reservation>, lessons: Collection<int, Lesson>, roomBlockings: Collection<int, RoomBlocking>, profileIdByUser: array<string, string>, breaks: BreakResolver}
      */
     protected function preload(array $baseIds, Carbon $from, Carbon $to): array
     {
@@ -511,19 +669,25 @@ class ReservationSlots
             'reservations' => Reservation::query()
                 ->whereBetween('reservation_date', [$from, $to])
                 ->where('status', '!=', ReservationStatus::Cancelled->value)
-                ->get(['therapist_id', 'room_id', 'reservation_date', 'start_time', 'end_time']),
-            'roomBlockings' => RoomBlocking::query()
-                ->where('is_recurring', true)
-                ->orWhere(fn ($query) => $query
-                    ->where('is_recurring', false)
-                    ->where('start_at', '<', $to->copy()->endOfDay())
-                    ->where('end_at', '>', $from->copy()->startOfDay()))
-                ->get(),
+                ->get(['therapist_id', 'room_id', 'reservation_date', 'start_time', 'end_time', 'break_minutes']),
+            // Half-open bounds: lesson_date is stored as a full datetime, so an
+            // inclusive `Y-m-d` upper bound would drop the last day under
+            // sqlite's text comparison. The day loop re-filters anyway, so
+            // over-reaching by a few hours costs nothing.
+            'lessons' => Lesson::query()
+                ->where('lesson_date', '>=', $from->toDateString())
+                ->where('lesson_date', '<', $to->copy()->addDay()->toDateString())
+                ->get(['instructor_id', 'room_id', 'lesson_date', 'start_time', 'end_time']),
+            'roomBlockings' => RoomBlockingIntervals::inRange($from, $to)->get(),
+            'profileIdByUser' => $this->profileIdByUser($baseIds),
+            // One resolver for the whole window, so the two break tables are read
+            // once rather than once per day of the loop.
+            'breaks' => new BreakResolver,
         ];
     }
 
     /**
-     * @param  array<string, Collection<int, mixed>>  $context
+     * @param  array<string, mixed>  $context
      * @param  array<int, string>  $therapistIds
      * @return array<string, array<int, array{0: int, 1: int, 2: string}>>
      */
@@ -542,7 +706,7 @@ class ReservationSlots
     }
 
     /**
-     * @param  array<string, Collection<int, mixed>>  $context
+     * @param  array<string, mixed>  $context
      * @return array{byTherapist: array<string, array<int, array{0: int, 1: int}>>, byRoom: array<string, array<int, array{0: int, 1: int}>>}
      */
     protected function reservationsFromContext(array $context, Carbon $date): array
@@ -554,7 +718,7 @@ class ReservationSlots
     }
 
     /**
-     * @param  array<string, Collection<int, mixed>>  $context
+     * @param  array<string, mixed>  $context
      * @return array<string, array<int, array{0: int, 1: int}>>
      */
     protected function roomBlockingsFromContext(array $context, Carbon $date): array
@@ -571,31 +735,6 @@ class ReservationSlots
      */
     protected function resolveRoomBlockings(Collection $blockings, Carbon $date): array
     {
-        $dayStart = $date->copy()->startOfDay();
-        $dayEnd = $date->copy()->endOfDay();
-        $byRoom = [];
-
-        foreach ($blockings as $blocking) {
-            if ($blocking->is_recurring) {
-                if ($blocking->day_of_week !== DayOfWeek::fromCarbon($date) || ! $blocking->week_type->matchesDate($date)) {
-                    continue;
-                }
-
-                $interval = [Slot::toMinutes($blocking->start_time), Slot::toMinutes($blocking->end_time)];
-            } else {
-                if ($blocking->start_at === null || $blocking->end_at === null
-                    || $blocking->end_at->lessThanOrEqualTo($dayStart) || $blocking->start_at->greaterThanOrEqualTo($dayEnd)) {
-                    continue;
-                }
-
-                $start = $blocking->start_at->lessThanOrEqualTo($dayStart) ? 0 : $blocking->start_at->hour * 60 + $blocking->start_at->minute;
-                $end = $blocking->end_at->greaterThanOrEqualTo($dayEnd) ? 24 * 60 : $blocking->end_at->hour * 60 + $blocking->end_at->minute;
-                $interval = [$start, $end];
-            }
-
-            $byRoom[$blocking->room_id][] = $interval;
-        }
-
-        return $byRoom;
+        return RoomBlockingIntervals::byRoom($blockings, $date);
     }
 }

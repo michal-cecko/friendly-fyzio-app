@@ -2,7 +2,9 @@
 
 namespace App\Filament\Clusters\Provoz\Resources\Users\Schemas;
 
+use App\Filament\Support\Schemas\BreakBlocks;
 use App\Mason\Support\Fields;
+use App\Models\Service;
 use App\Models\Specialization;
 use App\Models\StaffProfile;
 use Filament\Forms\Components\DateTimePicker;
@@ -11,6 +13,7 @@ use Filament\Forms\Components\Repeater\TableColumn;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Group;
@@ -70,11 +73,26 @@ class StaffProfileSection
                                             ->label('Publikováno')
                                             ->helperText('Bez data (nebo budoucí datum) = koncept, profil není veřejně přístupný a v týmu není proklikávací.'),
                                         TextInput::make('slug')
-                                            ->label('Slug')
+                                            ->label('URL název')
                                             ->disabled()
                                             ->dehydrated(false)
                                             ->helperText('Součást URL profilu. Odvozuje se automaticky ze jména člena týmu, nelze upravovat ručně.'),
                                     ]),
+                                ]),
+                        ]),
+                    Tab::make('Provoz')
+                        ->icon(Heroicon::OutlinedClock)
+                        ->schema([
+                            Grid::make(['default' => 1, 'lg' => 2])
+                                ->schema([
+                                    BreakBlocks::field(),
+                                    TextEntry::make('serviceBreaks')
+                                        ->label('Pauzy podle služby')
+                                        ->state(self::serviceBreakSummary(...))
+                                        ->listWithLineBreaks()
+                                        ->bulleted()
+                                        ->helperText('Nastavuje se u jednotlivých služeb. Bez vlastní hodnoty platí výchozí pauza vlevo.')
+                                        ->visible(fn (?StaffProfile $record): bool => filled($record) && $record->services()->exists()),
                                 ]),
                         ]),
                     Tab::make('O mně')
@@ -162,5 +180,32 @@ class StaffProfileSection
                         ]),
                 ]),
         ];
+    }
+
+    /**
+     * What this member actually rests after each of their services, and whether
+     * that came from the service or from their default above. Read-only on
+     * purpose — the override belongs to the service assignment, so there is one
+     * place it is edited rather than two that can disagree.
+     *
+     * @return array<int, string>
+     */
+    private static function serviceBreakSummary(?StaffProfile $record): array
+    {
+        if ($record === null) {
+            return [];
+        }
+
+        return $record->services()
+            ->orderBy('name')
+            ->get(['services.id', 'services.name'])
+            ->map(function (Service $service) use ($record): string {
+                $override = $service->pivot->break_blocks;
+                $blocks = $override ?? $record->break_blocks;
+
+                return $service->name.' — '.BreakBlocks::minutesLabel($blocks)
+                    .($override === null ? ' (výchozí)' : ' (vlastní)');
+            })
+            ->all();
     }
 }

@@ -22,7 +22,7 @@ class ServiceCategoryInfolist
                     ->columns(ResponsiveColumns::DENSE)
                     ->schema([
                         TextEntry::make('name')->label('Název'),
-                        TextEntry::make('slug')->label('Slug'),
+                        TextEntry::make('slug')->label('URL název'),
                         TextEntry::make('type')->label('Typ')->badge()->placeholder('—'),
                         TextEntry::make('published_at')
                             ->label('Publikováno')

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\CourseEnrollmentStatus;
 use App\Filament\Clusters\Finance\Resources\CashReceipts\CashReceiptResource;
 use App\Filament\Clusters\Finance\Resources\Invoices\InvoiceResource;
 use App\Filament\Clusters\Finance\Resources\InvoiceSeries\InvoiceSeriesResource;
@@ -14,7 +15,7 @@ use App\Filament\Clusters\Kurzy\Resources\CourseSeries\Pages\ViewCourseSeries;
 use App\Filament\Clusters\Kurzy\Resources\CourseSeries\RelationManagers\LessonsRelationManager;
 use App\Filament\Clusters\Kurzy\Resources\CourseSeries\RelationManagers\SubstituteRulesRelationManager;
 use App\Filament\Clusters\Kurzy\Resources\LessonAttendances\LessonAttendanceResource;
-use App\Filament\Clusters\Kurzy\Resources\OneOffEventBookings\OneOffEventBookingResource;
+use App\Filament\Clusters\Kurzy\Resources\LessonBookings\LessonBookingResource;
 use App\Filament\Clusters\Provoz\Resources\Buildings\Pages\ViewBuilding;
 use App\Filament\Clusters\Provoz\Resources\Buildings\RelationManagers\RoomsRelationManager;
 use App\Filament\Clusters\Provoz\Resources\Clients\Pages\ViewClient;
@@ -29,7 +30,7 @@ use App\Models\CourseSeries;
 use App\Models\Invoice;
 use App\Models\InvoiceSeries;
 use App\Models\LessonAttendance;
-use App\Models\OneOffEventBooking;
+use App\Models\LessonBooking;
 use App\Models\Payment;
 use App\Models\Reservation;
 use App\Models\User;
@@ -139,8 +140,8 @@ class AdminModalLabelsTest extends TestCase
         $enrollment = CourseEnrollment::factory()->create(['client_id' => $client->getKey()]);
         $this->assertSame('přihlášku Jan Novák', CourseEnrollmentResource::getRecordTitle($enrollment));
 
-        $booking = OneOffEventBooking::factory()->create(['client_id' => $client->getKey()]);
-        $this->assertSame('přihlášku Jan Novák', OneOffEventBookingResource::getRecordTitle($booking));
+        $booking = LessonBooking::factory()->create(['client_id' => $client->getKey()]);
+        $this->assertSame('přihlášku Jan Novák', LessonBookingResource::getRecordTitle($booking));
 
         $attendance = LessonAttendance::factory()->create([
             'enrollment_id' => CourseEnrollment::factory()->create(['client_id' => $client->getKey()])->getKey(),
@@ -151,7 +152,12 @@ class AdminModalLabelsTest extends TestCase
     public function test_mounted_delete_modal_names_the_record_in_the_accusative(): void
     {
         $client = User::factory()->customer()->create(['name' => 'Jan Novák']);
-        $enrollment = CourseEnrollment::factory()->create(['client_id' => $client->getKey()]);
+        // Delete is hidden for an active sign-up, and the factory randomises the
+        // status — pin it, or this test fails whenever the dice come up Active.
+        $enrollment = CourseEnrollment::factory()->create([
+            'client_id' => $client->getKey(),
+            'status' => CourseEnrollmentStatus::Cancelled,
+        ]);
 
         $heading = Livewire::test(ListCourseEnrollments::class)
             ->mountAction(TestAction::make('delete')->table($enrollment))

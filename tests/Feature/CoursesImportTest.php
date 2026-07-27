@@ -9,9 +9,8 @@ use App\Enums\PaymentStatus;
 use App\Models\Course;
 use App\Models\CourseCategory;
 use App\Models\CourseEnrollment;
-use App\Models\CourseLesson;
 use App\Models\CourseSeries;
-use App\Models\OneOffEvent;
+use App\Models\Lesson;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
@@ -69,7 +68,7 @@ class CoursesImportTest extends TestCase
         $this->assertSame(0, Course::query()->count());
         $this->assertSame(0, CourseSeries::query()->count());
         $this->assertSame(0, CourseEnrollment::query()->count());
-        $this->assertSame(0, OneOffEvent::query()->count());
+        $this->assertSame(0, Lesson::query()->count());
     }
 
     public function test_creates_categories_and_courses_with_lecturer_qualified_slugs(): void
@@ -95,9 +94,9 @@ class CoursesImportTest extends TestCase
         // The whole term has ended, so nothing may surface on the public
         // archive — neither the grid nor the "Připravujeme" tail.
         $this->assertSame(0, Course::query()->published()->count());
-        $this->assertSame(0, OneOffEvent::query()->published()->count());
+        $this->assertSame(0, Lesson::query()->published()->count());
         $this->assertGreaterThan(0, Course::query()->count());
-        $this->assertGreaterThan(0, OneOffEvent::query()->count());
+        $this->assertGreaterThan(0, Lesson::query()->count());
     }
 
     public function test_series_are_historical_and_inactive_with_generated_lessons(): void
@@ -139,7 +138,7 @@ class CoursesImportTest extends TestCase
 
         $this->assertSame(10, $series->lessons()->count());
 
-        $weekdays = $series->lessons()->get()->map(fn (CourseLesson $l): int => $l->lesson_date->dayOfWeek)->unique();
+        $weekdays = $series->lessons()->get()->map(fn (Lesson $l): int => $l->lesson_date->dayOfWeek)->unique();
         $this->assertEqualsCanonicalizing([3, 4], $weekdays->all()); // Wednesday + Thursday
     }
 
@@ -147,12 +146,12 @@ class CoursesImportTest extends TestCase
     {
         $this->runImport();
 
-        $event = OneOffEvent::query()->where('name', 'Pánevní dno – fyzická rovina')->firstOrFail();
+        $event = Lesson::query()->where('name', 'Pánevní dno – fyzická rovina')->firstOrFail();
 
         $this->assertSame(1000, $event->price); // lower tier
         $this->assertStringContainsString('1 800 Kč', (string) $event->description);
         $this->assertStringContainsString('za 1 blok / 2 bloky', (string) $event->description);
-        $this->assertSame('2025-09-28', $event->event_date->toDateString());
+        $this->assertSame('2025-09-28', $event->lesson_date->toDateString());
         $this->assertTrue($event->isPast());
     }
 
@@ -162,7 +161,7 @@ class CoursesImportTest extends TestCase
 
         // Lucie Amani only rents a room for her own courses: her rows must not
         // be imported, and she must never be given an account.
-        $this->assertSame(0, OneOffEvent::query()->where('name', 'Pánevní dno – emoční rovina')->count());
+        $this->assertSame(0, Lesson::query()->where('name', 'Pánevní dno – emoční rovina')->count());
         $this->assertSame(0, User::query()->where('email', 'lucie.amani@friendlyfyzio.cz')->count());
         $this->assertSame(0, User::query()->where('name', 'Lucie Amani')->count());
     }
@@ -171,7 +170,7 @@ class CoursesImportTest extends TestCase
     {
         $this->runImport();
 
-        $event = OneOffEvent::query()->where('name', 'VBAC s jistotou a péčí')->firstOrFail();
+        $event = Lesson::query()->where('name', 'VBAC s jistotou a péčí')->firstOrFail();
         $anna = User::query()->where('name', 'Anna Fančovičová')->firstOrFail();
 
         $this->assertSame($anna->getKey(), $event->instructor_id);
@@ -261,7 +260,7 @@ class CoursesImportTest extends TestCase
 
         $this->assertSame(1, User::query()->where('email', 'nova.kurzistka@example.com')->count());
         $this->assertSame(4, CourseEnrollment::query()->count());
-        $this->assertSame(1, OneOffEvent::query()->where('name', 'VBAC s jistotou a péčí')->count());
+        $this->assertSame(1, Lesson::query()->where('name', 'VBAC s jistotou a péčí')->count());
 
         Notification::assertNothingSent();
     }

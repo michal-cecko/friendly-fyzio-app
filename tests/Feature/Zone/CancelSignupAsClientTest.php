@@ -10,8 +10,8 @@ use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Models\CourseEnrollment;
 use App\Models\CourseSeries;
-use App\Models\OneOffEvent;
-use App\Models\OneOffEventBooking;
+use App\Models\Lesson;
+use App\Models\LessonBooking;
 use App\Models\User;
 use App\Notifications\EnrollmentTemplateNotification;
 use App\Support\Enrollments\CancellationWindowClosedException;
@@ -63,7 +63,8 @@ class CancelSignupAsClientTest extends TestCase
         app(CancelSignupAsClient::class)($enrollment);
 
         $this->assertSame(CourseEnrollmentStatus::Cancelled, $enrollment->fresh()->status);
-        $this->assertSame(0, $enrollment->payments()->count());
+        // Withdrawn, not erased — the record survives as "Zrušeno".
+        $this->assertSame(PaymentStatus::Cancelled, $enrollment->payments()->sole()->status);
 
         Notification::assertSentTo($enrollment->client, EnrollmentTemplateNotification::class, fn (EnrollmentTemplateNotification $notification): bool => $notification->key === EmailTemplateKey::EnrollmentCancelledByClient);
     }
@@ -99,18 +100,18 @@ class CancelSignupAsClientTest extends TestCase
     public function test_event_bookings_use_a_single_hour_based_window(): void
     {
         // Default: 24 hours before the event — for every event type.
-        $soon = OneOffEventBooking::factory()
-            ->for(OneOffEvent::factory()->create([
-                'event_date' => today()->toDateString(),
+        $soon = LessonBooking::factory()
+            ->for(Lesson::factory()->create([
+                'lesson_date' => today()->toDateString(),
                 'start_time' => now()->addHours(2)->format('H:i:s'),
-            ]), 'event')
+            ]), 'lesson')
             ->create(['status' => BookingStatus::Confirmed]);
 
-        $later = OneOffEventBooking::factory()
-            ->for(OneOffEvent::factory()->create([
-                'event_date' => today()->addDays(5)->toDateString(),
+        $later = LessonBooking::factory()
+            ->for(Lesson::factory()->create([
+                'lesson_date' => today()->addDays(5)->toDateString(),
                 'start_time' => '18:00:00',
-            ]), 'event')
+            ]), 'lesson')
             ->create(['status' => BookingStatus::Confirmed]);
 
         $cancel = app(CancelSignupAsClient::class);

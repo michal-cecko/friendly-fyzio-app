@@ -37,6 +37,7 @@ class EmailTemplateForm
                         Mason::make('content')
                             ->label('Obsah e-mailu')
                             ->bricks(EmailBrickRegistry::all())
+                            ->previewLayout('mason.email-preview')
                             ->columnSpanFull(),
                     ]),
             ]);

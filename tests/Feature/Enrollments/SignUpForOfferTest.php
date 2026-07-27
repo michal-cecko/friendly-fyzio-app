@@ -9,9 +9,8 @@ use App\Enums\CourseSeriesVisibility;
 use App\Enums\EmailTemplateKey;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
-use App\Models\CourseLesson;
 use App\Models\CourseSeries;
-use App\Models\OneOffEvent;
+use App\Models\Lesson;
 use App\Models\User;
 use App\Notifications\ClientAccountCreatedNotification;
 use App\Notifications\EnrollmentTemplateNotification;
@@ -133,7 +132,7 @@ class SignUpForOfferTest extends TestCase
         ]);
 
         foreach (range(0, 11) as $week) {
-            CourseLesson::factory()->for($series, 'series')->create([
+            Lesson::factory()->for($series, 'series')->create([
                 'lesson_date' => today()->subWeeks(4)->addWeeks($week)->toDateString(),
             ]);
         }
@@ -178,8 +177,8 @@ class SignUpForOfferTest extends TestCase
 
     public function test_event_booking_path_creates_booking_payment_and_emails(): void
     {
-        $event = OneOffEvent::factory()->published()->create([
-            'event_date' => today()->addWeeks(3)->toDateString(),
+        $event = Lesson::factory()->standalone()->published()->create([
+            'lesson_date' => today()->addWeeks(3)->toDateString(),
             'capacity' => 8,
             'price' => 3500,
         ]);
@@ -201,8 +200,8 @@ class SignUpForOfferTest extends TestCase
 
     public function test_full_event_rejects_booking(): void
     {
-        $event = OneOffEvent::factory()->published()->create([
-            'event_date' => today()->addWeeks(2)->toDateString(),
+        $event = Lesson::factory()->standalone()->published()->create([
+            'lesson_date' => today()->addWeeks(2)->toDateString(),
             'capacity' => 1,
             'price' => 450,
         ]);
@@ -216,8 +215,8 @@ class SignUpForOfferTest extends TestCase
 
     public function test_duplicate_active_event_booking_is_rejected(): void
     {
-        $event = OneOffEvent::factory()->published()->create([
-            'event_date' => today()->addWeeks(2)->toDateString(),
+        $event = Lesson::factory()->standalone()->published()->create([
+            'lesson_date' => today()->addWeeks(2)->toDateString(),
             'capacity' => 5,
         ]);
 
@@ -230,8 +229,8 @@ class SignUpForOfferTest extends TestCase
 
     public function test_presale_token_opens_unpublished_event_but_regular_signup_stays_closed(): void
     {
-        $event = OneOffEvent::factory()->unpublished()->create([
-            'event_date' => today()->addWeeks(2)->toDateString(),
+        $event = Lesson::factory()->standalone()->unpublished()->create([
+            'lesson_date' => today()->addWeeks(2)->toDateString(),
             'capacity' => 5,
         ]);
 

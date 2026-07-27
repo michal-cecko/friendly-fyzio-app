@@ -2,7 +2,7 @@
 
 namespace App\Livewire\Zone;
 
-use App\Models\CourseLesson;
+use App\Models\Lesson;
 use App\Models\SubstituteToken;
 use App\Models\User;
 use App\Support\Substitutes\RedeemToken;
@@ -77,7 +77,7 @@ class SubstituteTokens extends Component
     }
 
     /**
-     * @return Collection<int, CourseLesson>
+     * @return Collection<int, Lesson>
      */
     protected function redeemOptions(): Collection
     {

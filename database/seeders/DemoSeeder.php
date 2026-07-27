@@ -20,12 +20,11 @@ use App\Models\ClientProfile;
 use App\Models\Course;
 use App\Models\CourseCategory;
 use App\Models\CourseEnrollment;
-use App\Models\CourseLesson;
 use App\Models\CourseSeries;
 use App\Models\EventCategory;
+use App\Models\Lesson;
 use App\Models\LessonAttendance;
-use App\Models\OneOffEvent;
-use App\Models\OneOffEventBooking;
+use App\Models\LessonBooking;
 use App\Models\Reservation;
 use App\Models\Room;
 use App\Models\RoomBlocking;
@@ -293,6 +292,10 @@ class DemoSeeder extends Seeder
                 ->each(fn (Service $service) => $service->therapists()->syncWithoutDetaching([$therapist->getKey()]));
         }
 
+        // Must happen before any reservation is created: each one freezes the
+        // break as it stands when it is saved.
+        $this->varyBreaks($therapists);
+
         // --- Room blockings: recurring cleaning + one-off maintenance ---
         $rooms->random(min(3, $rooms->count()))->each(fn (Room $room) => RoomBlocking::factory()
             ->recurring()
@@ -380,7 +383,7 @@ class DemoSeeder extends Seeder
 
                 $hour = fake()->numberBetween(8, 17);
 
-                $lessons = collect(range(0, 5))->map(fn (int $week) => CourseLesson::factory()->for($series, 'series')->create([
+                $lessons = collect(range(0, 5))->map(fn (int $week) => Lesson::factory()->for($series, 'series')->create([
                     'instructor_id' => $course->instructor_id,
                     'room_id' => $rooms->random()->getKey(),
                     'lesson_date' => $seriesStart->copy()->addWeeks($week)->toDateString(),
@@ -400,14 +403,17 @@ class DemoSeeder extends Seeder
                         'paid_at' => $paymentStatus === PaymentStatus::Paid ? now() : null,
                     ]);
 
-                    foreach ($lessons as $lesson) {
-                        LessonAttendance::factory()->create([
-                            'enrollment_id' => $enrollment->getKey(),
-                            'lesson_id' => $lesson->getKey(),
-                            'attended' => $lesson->lesson_date->isPast() ? fake()->boolean(80) : false,
-                            'cancelled_at' => null,
-                            'token_generated' => false,
-                        ]);
+                    // Joining the série already seats the client on every one of its
+                    // lessons ({@see CourseEnrollmentObserver} → LessonRoster), so
+                    // there is nothing to create here — only who actually turned up
+                    // to the lessons that have already happened.
+                    $past = $lessons->filter(fn (Lesson $lesson): bool => $lesson->lesson_date->isPast());
+
+                    foreach ($past as $lesson) {
+                        LessonAttendance::query()
+                            ->where('client_id', $client->getKey())
+                            ->where('lesson_id', $lesson->getKey())
+                            ->update(['attended' => fake()->boolean(80)]);
                     }
                 }
             }
@@ -430,7 +436,7 @@ class DemoSeeder extends Seeder
             $course = $coursesForLessons->random();
             $date = Carbon::now()->addDays(fake()->numberBetween(-7, 30));
 
-            $lesson = OneOffEvent::factory()->create([
+            $lesson = Lesson::factory()->create([
                 'event_category_id' => $lekceCategory->getKey(),
                 'course_id' => $course->getKey(),
                 'instructor_id' => $instructorIds->random(),
@@ -438,7 +444,7 @@ class DemoSeeder extends Seeder
                 'name' => $course->name.' – jednorázová lekce',
                 'slug' => Str::slug($course->slug.'-'.$date->format('Y-m-d')).'-'.fake()->unique()->numberBetween(1, 100000),
                 'description' => null,
-                'event_date' => $date->toDateString(),
+                'lesson_date' => $date->toDateString(),
                 'start_time' => sprintf('%02d:00', $hour),
                 'end_time' => sprintf('%02d:00', $hour + 1),
                 'capacity' => fake()->numberBetween(4, 15),
@@ -449,9 +455,9 @@ class DemoSeeder extends Seeder
             foreach ($clients->random(fake()->numberBetween(2, 5)) as $client) {
                 $paymentStatus = fake()->randomElement([PaymentStatus::Paid, PaymentStatus::Unpaid]);
 
-                OneOffEventBooking::factory()->create([
+                LessonBooking::factory()->create([
                     'client_id' => $client->getKey(),
-                    'one_off_event_id' => $lesson->getKey(),
+                    'lesson_id' => $lesson->getKey(),
                     'status' => 'confirmed',
                     'payment_status' => $paymentStatus,
                     'paid_at' => $paymentStatus === PaymentStatus::Paid ? now() : null,
@@ -465,13 +471,13 @@ class DemoSeeder extends Seeder
         collect($workshopNames)->each(function (string $name) use ($workshopCategory, $instructorIds, $rooms, $clients) {
             $hour = fake()->numberBetween(9, 16);
 
-            $workshop = OneOffEvent::factory()->create([
+            $workshop = Lesson::factory()->create([
                 'event_category_id' => $workshopCategory->getKey(),
                 'instructor_id' => $instructorIds->random(),
                 'room_id' => $rooms->random()->getKey(),
                 'name' => $name,
                 'slug' => Str::slug($name),
-                'event_date' => Carbon::now()->addDays(fake()->numberBetween(-7, 45))->toDateString(),
+                'lesson_date' => Carbon::now()->addDays(fake()->numberBetween(-7, 45))->toDateString(),
                 'start_time' => sprintf('%02d:00', $hour),
                 'end_time' => sprintf('%02d:00', $hour + 2),
                 'published_at' => now(),
@@ -480,9 +486,9 @@ class DemoSeeder extends Seeder
             foreach ($clients->random(fake()->numberBetween(3, 8)) as $client) {
                 $paymentStatus = fake()->randomElement([PaymentStatus::Paid, PaymentStatus::Paid, PaymentStatus::Unpaid]);
 
-                OneOffEventBooking::factory()->create([
+                LessonBooking::factory()->create([
                     'client_id' => $client->getKey(),
-                    'one_off_event_id' => $workshop->getKey(),
+                    'lesson_id' => $workshop->getKey(),
                     'status' => 'confirmed',
                     'payment_status' => $paymentStatus,
                     'paid_at' => $paymentStatus === PaymentStatus::Paid ? now() : null,
@@ -498,6 +504,38 @@ class DemoSeeder extends Seeder
 
         // Featured photos for all demo courses/workshops (cards + detail heroes).
         $this->call(OfferImagesSeeder::class);
+    }
+
+    /**
+     * The break after a visit belongs to the therapist, so the demo data spreads
+     * it rather than leaving everyone on the default: Jana rests two blocks after
+     * a massage (the spec's own example), Petra works back to back, and Lucie
+     * takes an extra block after one particular service — which is the
+     * per-assignment override, visible on the service form and as a taller grey
+     * strip in the calendar.
+     *
+     * @param  Collection<int, StaffProfile>  $therapists
+     */
+    private function varyBreaks(Collection $therapists): void
+    {
+        $blocksByEmail = [
+            'lucie@friendlyfyzio.cz' => 1,
+            'anna@friendlyfyzio.cz' => 1,
+            'petra@friendlyfyzio.cz' => 0,
+            'jana@friendlyfyzio.cz' => 2,
+        ];
+
+        foreach ($therapists as $therapist) {
+            $therapist->update(['break_blocks' => $blocksByEmail[$therapist->user->email] ?? 1]);
+        }
+
+        $lucie = $therapists->first(
+            fn (StaffProfile $therapist): bool => $therapist->user->email === 'lucie@friendlyfyzio.cz',
+        );
+
+        if ($service = $lucie?->services()->orderBy('name')->first()) {
+            $lucie->services()->updateExistingPivot($service->getKey(), ['break_blocks' => 2]);
+        }
     }
 
     /**
@@ -576,15 +614,15 @@ class DemoSeeder extends Seeder
         ]);
 
         // 7) Event booking paid by transfer + invoiced (event title template).
-        $booking = OneOffEventBooking::query()
+        $booking = LessonBooking::query()
             ->where('payment_status', PaymentStatus::Unpaid)
-            ->with('event')
+            ->with('lesson')
             ->first();
 
         if ($booking !== null) {
             $generator->fromPayment($booking->payments()->create([
                 'client_id' => $booking->client_id,
-                'amount' => (int) $booking->event->price,
+                'amount' => (int) $booking->lesson->price,
                 'method' => PaymentMethod::Qr,
                 'status' => PaymentStatus::Paid,
                 'paid_at' => now()->subDay(),

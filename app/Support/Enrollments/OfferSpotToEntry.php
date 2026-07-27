@@ -9,7 +9,7 @@ use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Models\Concerns\HasCapacity;
 use App\Models\CourseSeries;
-use App\Models\OneOffEvent;
+use App\Models\Lesson;
 use App\Models\Payment;
 use App\Models\User;
 use App\Models\WaitlistEntry;
@@ -39,7 +39,7 @@ class OfferSpotToEntry
      * Offer a spot to one entry. Capacity is the caller's concern — this never
      * checks {@see HasCapacity::spotsLeft()}.
      */
-    public function offer(CourseSeries|OneOffEvent $offer, WaitlistEntry $entry): OfferSpotResult
+    public function offer(CourseSeries|Lesson $offer, WaitlistEntry $entry): OfferSpotResult
     {
         if ($entry->displayEmail() === null) {
             // A guest without an e-mail can't be resolved into an account. Consume
@@ -97,7 +97,7 @@ class OfferSpotToEntry
      *
      * @param  iterable<WaitlistEntry>  $entries
      */
-    public function inviteMany(CourseSeries|OneOffEvent $offer, iterable $entries, bool $enforceCapacity): InviteSummary
+    public function inviteMany(CourseSeries|Lesson $offer, iterable $entries, bool $enforceCapacity): InviteSummary
     {
         $offered = 0;
         $skippedFull = 0;
@@ -126,7 +126,7 @@ class OfferSpotToEntry
         return new InviteSummary($offered, $skippedFull, $skippedDeadEnd, $skippedNoEmail);
     }
 
-    protected function createSignup(CourseSeries|OneOffEvent $offer, User $client): mixed
+    protected function createSignup(CourseSeries|Lesson $offer, User $client): mixed
     {
         if ($offer instanceof CourseSeries) {
             if ($offer->enrollments()->where('client_id', $client->id)->where('status', CourseEnrollmentStatus::Active)->exists()) {
@@ -155,12 +155,12 @@ class OfferSpotToEntry
         ]);
     }
 
-    protected function amountDue(CourseSeries|OneOffEvent $offer): int
+    protected function amountDue(CourseSeries|Lesson $offer): int
     {
         return $offer instanceof CourseSeries ? $offer->currentPrice() : (int) $offer->price;
     }
 
-    protected function notifyPromoted(User $client, CourseSeries|OneOffEvent $offer, Payment $payment, bool $isNewAccount): void
+    protected function notifyPromoted(User $client, CourseSeries|Lesson $offer, Payment $payment, bool $isNewAccount): void
     {
         $client->notify(new EnrollmentTemplateNotification(EmailTemplateKey::WaitlistSpotAvailable, [
             'jmeno' => EnrollmentEmailContext::firstName($client),

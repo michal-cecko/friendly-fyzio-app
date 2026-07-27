@@ -7,8 +7,8 @@ use App\Enums\SettingValueType;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
 use App\Models\CourseSeries;
-use App\Models\OneOffEvent;
-use App\Models\OneOffEventBooking;
+use App\Models\Lesson;
+use App\Models\LessonBooking;
 use App\Models\ReviewRequest;
 use App\Models\Setting;
 use App\Models\User;
@@ -63,15 +63,15 @@ class SendReviewRequestsCommandTest extends TestCase
         Notification::fake();
         $this->enableReviews();
 
-        $event = OneOffEvent::factory()->create(['event_date' => now()->subDays(2)->toDateString()]);
+        $event = Lesson::factory()->create(['lesson_date' => now()->subDays(2)->toDateString()]);
         $client = User::factory()->customer()->create();
-        OneOffEventBooking::factory()->create(['one_off_event_id' => $event->getKey(), 'client_id' => $client->getKey()]);
+        LessonBooking::factory()->create(['lesson_id' => $event->getKey(), 'client_id' => $client->getKey()]);
 
         $this->artisan('reviews:send-requests')->assertSuccessful();
 
         $this->assertDatabaseHas('review_requests', [
             'user_id' => $client->getKey(),
-            'reviewable_type' => 'one_off_event',
+            'reviewable_type' => 'lesson',
             'reviewable_id' => $event->getKey(),
             'channel' => ReviewRequestChannel::Automatic->value,
         ]);
@@ -86,16 +86,16 @@ class SendReviewRequestsCommandTest extends TestCase
         // Lesson-type (course-derived) events are covered by the automatic
         // command too; a submitted review will attach to the parent course.
         $course = Course::factory()->create();
-        $event = OneOffEvent::factory()->withCourse($course)->create([
-            'event_date' => now()->subDays(2)->toDateString(),
+        $event = Lesson::factory()->withCourse($course)->create([
+            'lesson_date' => now()->subDays(2)->toDateString(),
         ]);
         $client = User::factory()->customer()->create();
-        OneOffEventBooking::factory()->create(['one_off_event_id' => $event->getKey(), 'client_id' => $client->getKey()]);
+        LessonBooking::factory()->create(['lesson_id' => $event->getKey(), 'client_id' => $client->getKey()]);
 
         $this->artisan('reviews:send-requests')->assertSuccessful();
 
         $request = ReviewRequest::query()
-            ->where('reviewable_type', 'one_off_event')
+            ->where('reviewable_type', 'lesson')
             ->where('reviewable_id', $event->getKey())
             ->sole();
 
@@ -156,9 +156,9 @@ class SendReviewRequestsCommandTest extends TestCase
             ]);
         }
 
-        $oldEvent = OneOffEvent::factory()->create(['event_date' => now()->subDays(20)->toDateString()]);
-        OneOffEventBooking::factory()->create([
-            'one_off_event_id' => $oldEvent->getKey(),
+        $oldEvent = Lesson::factory()->create(['lesson_date' => now()->subDays(20)->toDateString()]);
+        LessonBooking::factory()->create([
+            'lesson_id' => $oldEvent->getKey(),
             'client_id' => User::factory()->customer()->create()->getKey(),
         ]);
 

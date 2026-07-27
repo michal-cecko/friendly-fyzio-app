@@ -3,10 +3,10 @@
 namespace Tests\Feature\Reviews;
 
 use App\Enums\ReservationStatus;
-use App\Filament\Clusters\Kurzy\Resources\OneOffEventBookings\Pages\ListOneOffEventBookings;
+use App\Filament\Clusters\Kurzy\Resources\LessonBookings\Pages\ListLessonBookings;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Pages\ListReservations;
-use App\Models\OneOffEvent;
-use App\Models\OneOffEventBooking;
+use App\Models\Lesson;
+use App\Models\LessonBooking;
 use App\Models\Reservation;
 use App\Models\User;
 use App\Notifications\ReviewRequestNotification;
@@ -59,12 +59,12 @@ class ManualReviewRequestActionTest extends TestCase
     {
         Notification::fake();
 
-        $event = OneOffEvent::factory()->create(['event_date' => now()->subDays(2)->toDateString()]);
-        $booking = OneOffEventBooking::factory()->create(['one_off_event_id' => $event->getKey()]);
+        $event = Lesson::factory()->create(['lesson_date' => now()->subDays(2)->toDateString()]);
+        $booking = LessonBooking::factory()->create(['lesson_id' => $event->getKey()]);
 
         $this->actingAs(User::factory()->admin()->create());
 
-        Livewire::test(ListOneOffEventBookings::class)
+        Livewire::test(ListLessonBookings::class)
             ->callAction(
                 TestAction::make('sendReviewRequest')->table($booking),
                 data: [],
@@ -73,7 +73,7 @@ class ManualReviewRequestActionTest extends TestCase
 
         $this->assertDatabaseHas('review_requests', [
             'user_id' => $booking->client_id,
-            'reviewable_type' => 'one_off_event',
+            'reviewable_type' => 'lesson',
             'reviewable_id' => $event->getKey(),
             'channel' => 'manual',
         ]);
@@ -95,12 +95,12 @@ class ManualReviewRequestActionTest extends TestCase
 
     public function test_action_is_hidden_for_a_future_event_booking(): void
     {
-        $event = OneOffEvent::factory()->create(['event_date' => now()->addWeek()->toDateString()]);
-        $booking = OneOffEventBooking::factory()->create(['one_off_event_id' => $event->getKey()]);
+        $event = Lesson::factory()->create(['lesson_date' => now()->addWeek()->toDateString()]);
+        $booking = LessonBooking::factory()->create(['lesson_id' => $event->getKey()]);
 
         $this->actingAs(User::factory()->admin()->create());
 
-        Livewire::test(ListOneOffEventBookings::class)
+        Livewire::test(ListLessonBookings::class)
             ->assertActionHidden(TestAction::make('sendReviewRequest')->table($booking));
     }
 }

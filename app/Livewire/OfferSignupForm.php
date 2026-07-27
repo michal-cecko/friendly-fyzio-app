@@ -5,7 +5,7 @@ namespace App\Livewire;
 use App\Enums\BookingStatus;
 use App\Enums\CourseEnrollmentStatus;
 use App\Models\CourseSeries;
-use App\Models\OneOffEvent;
+use App\Models\Lesson;
 use App\Models\WaitlistEntry;
 use App\Support\Enrollments\AlreadySignedUpException;
 use App\Support\Enrollments\EnrollmentData;
@@ -114,7 +114,7 @@ class OfferSignupForm extends Component
         try {
             match (true) {
                 $offer instanceof CourseSeries => $action->forSeries($offer, $data, $this->presale),
-                $offer instanceof OneOffEvent => $action->forEvent($offer, $data, $this->presale),
+                $offer instanceof Lesson => $action->forEvent($offer, $data, $this->presale),
             };
 
             $this->completed = 'signup';
@@ -210,7 +210,7 @@ class OfferSignupForm extends Component
     {
         return (match ($this->offerType) {
             'series' => new CourseSeries,
-            'event' => new OneOffEvent,
+            'event' => new Lesson,
         })->getMorphClass();
     }
 
@@ -235,15 +235,15 @@ class OfferSignupForm extends Component
         ]);
     }
 
-    protected function offer(): CourseSeries|OneOffEvent
+    protected function offer(): CourseSeries|Lesson
     {
         return match ($this->offerType) {
             'series' => CourseSeries::query()->with('course')->findOrFail($this->offerId),
-            'event' => OneOffEvent::query()->with(['course', 'room', 'category'])->findOrFail($this->offerId),
+            'event' => Lesson::query()->with(['course', 'room', 'category'])->findOrFail($this->offerId),
         };
     }
 
-    protected function isEnrolled(CourseSeries|OneOffEvent $offer): bool
+    protected function isEnrolled(CourseSeries|Lesson $offer): bool
     {
         $user = auth()->user();
 
@@ -265,7 +265,7 @@ class OfferSignupForm extends Component
     /**
      * @return array<int, array{0: string, 1: string}>
      */
-    protected function summaryRows(CourseSeries|OneOffEvent $offer): array
+    protected function summaryRows(CourseSeries|Lesson $offer): array
     {
         return match (true) {
             $offer instanceof CourseSeries => array_filter([
@@ -274,18 +274,18 @@ class OfferSignupForm extends Component
                 ['Období', EnrollmentEmailContext::seriesPeriod($offer)],
                 ['Nejbližší lekce', EnrollmentEmailContext::nextLessonLabel($offer)],
             ]),
-            $offer instanceof OneOffEvent => [
-                [(string) ($offer->category?->name ?? 'Akce'), $offer->name],
+            $offer instanceof Lesson => [
+                [(string) ($offer->category?->name ?? 'Akce'), $offer->displayName()],
                 ['Termín', EnrollmentEmailContext::dateTimeLabel($offer->startsAt())],
                 ['Místo', EnrollmentEmailContext::place($offer->room)],
             ],
         };
     }
 
-    protected function offerTitle(CourseSeries|OneOffEvent $offer): string
+    protected function offerTitle(CourseSeries|Lesson $offer): string
     {
         return $offer instanceof CourseSeries
             ? (string) ($offer->course?->name ?? $offer->name)
-            : $offer->name;
+            : $offer->displayName();
     }
 }

@@ -10,6 +10,7 @@ use App\Filament\Clusters\Finance\Resources\Invoices\Actions\MarkInvoicePaidActi
 use App\Filament\Clusters\Finance\Resources\Invoices\Actions\SendInvoiceAction;
 use App\Filament\Exports\InvoiceExporter;
 use App\Models\Invoice;
+use App\Support\Payments\PastDue;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -18,8 +19,10 @@ use Filament\Actions\ExportBulkAction;
 use Filament\Actions\ViewAction;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class InvoicesTable
 {
@@ -80,6 +83,10 @@ class InvoicesTable
                 SelectFilter::make('series_id')
                     ->label('Číselná řada')
                     ->relationship('series', 'name'),
+                Filter::make('past_due')
+                    ->label('Po splatnosti')
+                    ->query(fn (Builder $query): Builder => PastDue::invoices($query))
+                    ->toggle(),
             ])
             ->recordActions([
                 EditAction::make(),

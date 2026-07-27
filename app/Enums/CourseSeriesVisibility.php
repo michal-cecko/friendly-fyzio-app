@@ -25,4 +25,26 @@ enum CourseSeriesVisibility: string implements HasColor, HasLabel
             self::Private => 'gray',
         };
     }
+
+    public function description(): string
+    {
+        return match ($this) {
+            self::Public => 'Série se běžně nabízí na webu — ve výpisu kurzů i na stránce kurzu. Přihlašovací odkaz se u ní proto nenabízí, není k čemu.',
+            self::Private => 'Série se na webu nikde neukáže; přihlásit se dá jen přes přihlašovací odkaz nebo pozvánku, které najdete v akcích na detailu série.',
+        };
+    }
+
+    /**
+     * Keyed by case value for a Radio / ToggleButtons `->descriptions()` call.
+     *
+     * @return array<string, string>
+     */
+    public static function descriptions(): array
+    {
+        return array_reduce(
+            self::cases(),
+            fn (array $carry, self $visibility): array => $carry + [$visibility->value => $visibility->description()],
+            [],
+        );
+    }
 }

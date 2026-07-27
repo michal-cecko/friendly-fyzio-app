@@ -4,7 +4,7 @@ namespace App\Support\Enrollments;
 
 use App\Enums\WaitlistPromotionMode;
 use App\Models\CourseSeries;
-use App\Models\OneOffEvent;
+use App\Models\Lesson;
 use App\Models\WaitlistEntry;
 
 /**
@@ -26,7 +26,7 @@ class PromoteFromWaitlist
      * round, or leave it to staff. The admin actions call {@see handle()} and
      * {@see InviteWaitlistToSpot} directly, so they work in any mode.
      */
-    public static function handleAutomatic(CourseSeries|OneOffEvent|null $offer): void
+    public static function handleAutomatic(CourseSeries|Lesson|null $offer): void
     {
         if ($offer === null) {
             return;
@@ -39,7 +39,7 @@ class PromoteFromWaitlist
         };
     }
 
-    public static function handle(CourseSeries|OneOffEvent $offer): void
+    public static function handle(CourseSeries|Lesson $offer): void
     {
         $service = app(OfferSpotToEntry::class);
 
@@ -60,13 +60,13 @@ class PromoteFromWaitlist
         }
     }
 
-    protected static function offerOpenForPromotion(CourseSeries|OneOffEvent $offer): bool
+    protected static function offerOpenForPromotion(CourseSeries|Lesson $offer): bool
     {
         $offer->refresh();
 
         return match (true) {
             $offer instanceof CourseSeries => ! $offer->hasEnded(),
-            $offer instanceof OneOffEvent => ! $offer->isPast(),
+            $offer instanceof Lesson => ! $offer->isPast(),
         };
     }
 }

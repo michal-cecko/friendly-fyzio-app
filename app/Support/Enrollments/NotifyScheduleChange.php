@@ -3,10 +3,10 @@
 namespace App\Support\Enrollments;
 
 use App\Enums\EmailTemplateKey;
-use App\Models\CourseLesson;
-use App\Models\OneOffEvent;
+use App\Models\Lesson;
 use App\Models\User;
 use App\Notifications\EnrollmentTemplateNotification;
+use App\Support\Emails\MessageBlock;
 use Illuminate\Support\Collection;
 
 /**
@@ -24,16 +24,20 @@ class NotifyScheduleChange
 {
     /**
      * @param  array<string, string>  $snapshot
+     * @return int Number of recipients (participants + instructor) e-mailed.
      */
-    public function __invoke(CourseLesson|OneOffEvent $scheduled, array $snapshot = [], ?string $reason = null): void
+    public function __invoke(Lesson $scheduled, array $snapshot = [], ?string $reason = null): int
     {
         $tokens = [
             'nazev' => $this->name($scheduled),
             'termin' => EnrollmentEmailContext::dateTimeLabel($scheduled->startsAt()),
             'misto' => EnrollmentEmailContext::place($scheduled->room),
             'duvod' => (string) ($reason ?? ''),
+            'zprava' => MessageBlock::render($reason),
             ...$snapshot,
         ];
+
+        $notified = 0;
 
         foreach ($this->clients($scheduled) as $client) {
             if ($client !== null && filled($client->email)) {
@@ -41,6 +45,8 @@ class NotifyScheduleChange
                     'jmeno' => EnrollmentEmailContext::firstName($client),
                     ...$tokens,
                 ]));
+
+                $notified++;
             }
         }
 
@@ -51,31 +57,38 @@ class NotifyScheduleChange
                 'jmeno' => EnrollmentEmailContext::firstName($instructor),
                 ...$tokens,
             ]));
+
+            $notified++;
         }
+
+        return $notified;
     }
 
-    protected function name(CourseLesson|OneOffEvent $scheduled): string
+    protected function name(Lesson $scheduled): string
     {
-        return match (true) {
-            $scheduled instanceof CourseLesson => $scheduled->series !== null
-                ? EnrollmentEmailContext::offerTokens($scheduled->series)['nazev']
-                : '',
-            $scheduled instanceof OneOffEvent => $scheduled->name,
-        };
+        return $scheduled->series !== null
+            ? EnrollmentEmailContext::offerTokens($scheduled->series)['nazev']
+            : $scheduled->displayName();
     }
 
     /**
-     * The account holders to notify: active enrollees of the changed session.
+     * Everyone who was going to be in the room: for a lesson of a série that is
+     * the run's active enrollees (enrollment lives at the série level), and for
+     * every lesson it also includes anyone who bought this single session.
+     * Duplicates are dropped — a client can be both.
      *
      * @return Collection<int, User|null>
      */
-    protected function clients(CourseLesson|OneOffEvent $scheduled): Collection
+    protected function clients(Lesson $scheduled): Collection
     {
-        $signups = match (true) {
-            $scheduled instanceof CourseLesson => $scheduled->series?->activeTakers()->with('client')->get() ?? collect(),
-            default => $scheduled->activeTakers()->with('client')->get(),
-        };
+        $enrolled = $scheduled->series?->activeTakers()->with('client')->get() ?? collect();
+        $dropIns = $scheduled->activeTakers()->with('client')->get();
 
-        return $signups->map(fn ($signup) => $signup->client);
+        return $enrolled
+            ->concat($dropIns)
+            ->map(fn ($signup) => $signup->client)
+            ->filter()
+            ->unique(fn (User $client): string => (string) $client->getKey())
+            ->values();
     }
 }

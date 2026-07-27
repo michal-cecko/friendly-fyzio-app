@@ -7,10 +7,14 @@ use App\Filament\Clusters\Provoz\Resources\Reservations\ReservationResource;
 use App\Models\Reservation;
 use App\Models\ReservationDayWaitlistEntry;
 use App\Support\Mentions\StaffMentions;
+use App\Support\Reservations\BreakResolver;
 use App\Support\Reservations\NotifyReservationDayWaitlist;
 
 /**
  * Reacts to reservation writes:
+ *  - freezes the therapist's break onto the reservation, so the schedule keeps
+ *    showing the gap the visit was booked with even after that therapist
+ *    changes their default ({@see BreakResolver});
  *  - notifies staff members newly @-mentioned in the internal note (an observer,
  *    rather than form hooks, covers every write path — resource pages, table edit
  *    modal, calendar widget, and the public wizard);
@@ -19,6 +23,38 @@ use App\Support\Reservations\NotifyReservationDayWaitlist;
  */
 class ReservationObserver
 {
+    /**
+     * A caller that sets the break itself is taken at its word — an import
+     * replaying history knows better than the therapist's current profile.
+     */
+    public function creating(Reservation $reservation): void
+    {
+        if ($reservation->isDirty('break_minutes')) {
+            return;
+        }
+
+        $reservation->break_minutes = BreakResolver::freshMinutesFor(
+            $reservation->therapist_id,
+            $reservation->service_id,
+        );
+    }
+
+    /**
+     * Moving a visit to another therapist — or changing what is being done —
+     * changes whose break follows it, and how long it is.
+     */
+    public function updating(Reservation $reservation): void
+    {
+        if ($reservation->isDirty('break_minutes') || ! $reservation->isDirty(['therapist_id', 'service_id'])) {
+            return;
+        }
+
+        $reservation->break_minutes = BreakResolver::freshMinutesFor(
+            $reservation->therapist_id,
+            $reservation->service_id,
+        );
+    }
+
     public function created(Reservation $reservation): void
     {
         $this->notifyMentions($reservation, old: null);

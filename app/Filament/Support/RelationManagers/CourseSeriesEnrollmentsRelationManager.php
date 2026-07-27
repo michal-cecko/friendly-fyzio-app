@@ -14,7 +14,7 @@ class CourseSeriesEnrollmentsRelationManager extends AbstractSignupsRelationMana
 {
     protected static string $relationship = 'enrollments';
 
-    protected static ?string $title = 'Přihlášení';
+    protected static ?string $title = 'Přihlášky';
 
     protected static string|BackedEnum|null $icon = Heroicon::OutlinedUsers;
 

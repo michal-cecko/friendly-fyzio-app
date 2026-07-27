@@ -18,9 +18,9 @@ class UpcomingReservationsWidget extends TableWidget
 {
     use AdminOnly;
 
-    protected static ?int $sort = 2;
+    protected static ?int $sort = 4;
 
-    protected int|string|array $columnSpan = 2;
+    protected int|string|array $columnSpan = 1;
 
     public function table(Table $table): Table
     {
@@ -56,16 +56,12 @@ class UpcomingReservationsWidget extends TableWidget
                     ->weight('semibold'),
                 TextColumn::make('client.name')
                     ->label('Klient')
-                    ->placeholder('—'),
-                TextColumn::make('service.name')
-                    ->label('Služba')
+                    ->description(fn (Reservation $record): ?string => $record->service?->name)
                     ->limit(28)
                     ->placeholder('—'),
                 TextColumn::make('therapist.user.name')
                     ->label('Terapeut')
-                    ->placeholder('—'),
-                TextColumn::make('room.name')
-                    ->label('Místnost')
+                    ->description(fn (Reservation $record): ?string => $record->room?->name)
                     ->placeholder('—'),
                 TextColumn::make('status')
                     ->label('Stav')

@@ -49,7 +49,7 @@
                 'subtitle' => 'Vyberte si termín, který vám vyhovuje — kapacity jsou aktuální.',
             ]])
 
-            <livewire:one-off-event-archive :config="['category' => $category->slug]" />
+            <livewire:lesson-archive :config="['category' => $category->slug]" />
         </div>
     </section>
 @endsection

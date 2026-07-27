@@ -2,22 +2,22 @@
 
 namespace App\Filament\Clusters\Provoz\Resources\Reservations\Pages;
 
-use App\Enums\EmailTemplateKey;
 use App\Filament\Clusters\Provoz\Resources\Reservations\ReservationResource;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Schemas\ReservationForm;
 use App\Filament\Resources\Pages\BaseEditRecord;
 use App\Filament\Support\Actions\ActivityLogAction;
+use App\Filament\Support\Concerns\PromptsScheduleChangeNotification;
 use App\Models\Reservation;
-use App\Notifications\ReservationTemplateNotification;
-use App\Notifications\TherapistReservationTemplateNotification;
 use App\Support\ActivityLog\LogActivity;
-use App\Support\Emails\SentEmailReceipt;
+use App\Support\Reservations\NotifyReservationChange;
 use App\Support\Reservations\ReservationChangeSnapshot;
 use Filament\Actions\ViewAction;
 use Filament\Schemas\Schema;
 
 class EditReservation extends BaseEditRecord
 {
+    use PromptsScheduleChangeNotification;
+
     protected static string $resource = ReservationResource::class;
 
     public function getTitle(): string
@@ -28,20 +28,6 @@ class EditReservation extends BaseEditRecord
         return 'Upravit rezervaci '.($record->client?->name ?? 'bez klienta');
     }
 
-    /**
-     * Whether to e-mail the client + therapist about the change (the
-     * "Upozornit zákazníka?" toggle — not a model attribute).
-     */
-    protected bool $notifyClient = false;
-
-    /**
-     * Original values captured before the edit is saved, so the change e-mail
-     * can show the puvodni_* tokens next to the new ones.
-     *
-     * @var array<string, string>
-     */
-    protected array $reservationChangeSnapshot = [];
-
     protected function getHeaderActions(): array
     {
         return [
@@ -51,71 +37,52 @@ class EditReservation extends BaseEditRecord
     }
 
     /**
-     * The edit form intentionally omits the PresenceBanner (filament-gaze) that
-     * the shared resource form carries — the gaze banner errors on this record —
-     * and appends the "notify customer" toggle.
+     * The edit form intentionally omits the PresenceBanner (filament-gaze) that the
+     * shared resource form carries — the gaze banner errors on this record. The old
+     * "Upozornit zákazníka?" toggle is gone: after saving a termín change the page
+     * prompts for the notification instead ({@see PromptsScheduleChangeNotification}).
      */
     public function form(Schema $schema): Schema
     {
-        return $schema->components([
-            ...ReservationForm::components(),
-            ReservationForm::notifyClientToggle(),
-        ]);
+        return $schema->components(ReservationForm::components());
     }
 
-    protected function getRedirectUrl(): string
+    /**
+     * @return array<int, string>
+     */
+    protected function scheduleAttributes(): array
+    {
+        return Reservation::SCHEDULE_ATTRIBUTES;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function captureScheduleSnapshot(): array
+    {
+        return ReservationChangeSnapshot::capture($this->getRecord());
+    }
+
+    protected function scheduleChangeAudience(): string
+    {
+        return 'zákazníka a terapeuta';
+    }
+
+    protected function scheduleChangeRedirectUrl(): ?string
     {
         return ReservationResource::getUrl('view', ['record' => $this->getRecord()]);
     }
 
-    /**
-     * @param  array<string, mixed>  $data
-     * @return array<string, mixed>
-     */
-    protected function mutateFormDataBeforeSave(array $data): array
+    protected function afterRecordSaved(): void
     {
-        $this->notifyClient = (bool) ($data['notify_client'] ?? false);
-        $this->reservationChangeSnapshot = ReservationChangeSnapshot::capture($this->getRecord());
-
-        unset($data['notify_client']);
-
-        return $data;
+        LogActivity::record('reservation_edited', $this->getRecord(), 'Rezervace upravena');
     }
 
-    protected function afterSave(): void
+    /**
+     * @param  array<string, string>  $snapshot
+     */
+    protected function sendScheduleChangeNotification(?string $reason, array $snapshot): int
     {
-        /** @var Reservation $record */
-        $record = $this->getRecord();
-
-        $notifiedClient = $this->notifyClient && filled($record->client?->email);
-        $notifiedTherapist = $this->notifyClient && $record->therapist?->user !== null;
-
-        if ($notifiedClient) {
-            $record->client?->notify(new ReservationTemplateNotification(
-                $record,
-                EmailTemplateKey::ReservationChanged,
-                $this->reservationChangeSnapshot,
-            ));
-        }
-
-        if ($notifiedTherapist) {
-            $record->therapist?->user?->notify(new TherapistReservationTemplateNotification(
-                $record,
-                EmailTemplateKey::TherapistReservationChanged,
-                $this->reservationChangeSnapshot,
-            ));
-        }
-
-        LogActivity::record('reservation_edited', $record, 'Rezervace upravena', [
-            'notified_client' => $notifiedClient,
-            'notified_therapist' => $notifiedTherapist,
-        ]);
-
-        if ($notifiedClient || $notifiedTherapist) {
-            SentEmailReceipt::forCurrentUser(
-                'Změna rezervace',
-                (int) $notifiedClient + (int) $notifiedTherapist,
-            );
-        }
+        return app(NotifyReservationChange::class)($this->getRecord(), $snapshot, $reason);
     }
 }

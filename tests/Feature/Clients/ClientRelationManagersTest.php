@@ -19,8 +19,8 @@ use App\Filament\Clusters\Provoz\Resources\Reservations\Actions\CreateReservatio
 use App\Filament\Clusters\Provoz\Resources\Reservations\ReservationResource;
 use App\Filament\Support\RelationManagers\PaymentsRelationManager;
 use App\Models\CourseEnrollment;
-use App\Models\CourseLesson;
 use App\Models\Invoice;
+use App\Models\Lesson;
 use App\Models\Payment;
 use App\Models\Reservation;
 use App\Models\Room;
@@ -81,7 +81,7 @@ class ClientRelationManagersTest extends TestCase
     public function test_substitute_tokens_tab_shows_the_clients_tokens_only(): void
     {
         $client = User::factory()->customer()->create();
-        $lesson = CourseLesson::factory()->create();
+        $lesson = Lesson::factory()->create();
 
         $mine = SubstituteToken::factory()->create([
             'client_id' => $client->getKey(),

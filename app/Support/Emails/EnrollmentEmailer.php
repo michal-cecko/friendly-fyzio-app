@@ -5,7 +5,7 @@ namespace App\Support\Emails;
 use App\Enums\EmailTemplateKey;
 use App\Enums\PaymentStatus;
 use App\Models\CourseEnrollment;
-use App\Models\OneOffEventBooking;
+use App\Models\LessonBooking;
 use App\Notifications\EnrollmentTemplateNotification;
 use App\Support\Enrollments\EnrollmentEmailContext;
 use App\Support\Payments\PaymentEmailTokens;
@@ -38,12 +38,12 @@ class EnrollmentEmailer
     /**
      * @return array<string, array<string, string>>
      */
-    public static function templateGroups(CourseEnrollment|OneOffEventBooking $signup): array
+    public static function templateGroups(CourseEnrollment|LessonBooking $signup): array
     {
         $clientKeys = [
             self::receivedKey($signup),
             ...self::SHARED_CLIENT_KEYS,
-            ...($signup instanceof OneOffEventBooking ? [
+            ...($signup instanceof LessonBooking ? [
                 EmailTemplateKey::LessonScheduleChanged,
             ] : []),
         ];
@@ -57,14 +57,14 @@ class EnrollmentEmailer
         return $groups;
     }
 
-    public static function send(CourseEnrollment|OneOffEventBooking $signup, EmailTemplateKey $key, ?CopyRecipients $copies = null): void
+    public static function send(CourseEnrollment|LessonBooking $signup, EmailTemplateKey $key, ?CopyRecipients $copies = null): void
     {
         $extra = self::extraTokens($signup, $key);
 
         $signup->client?->notify(new EnrollmentTemplateNotification($key, self::context($signup, $extra), $copies));
     }
 
-    private static function receivedKey(CourseEnrollment|OneOffEventBooking $signup): EmailTemplateKey
+    private static function receivedKey(CourseEnrollment|LessonBooking $signup): EmailTemplateKey
     {
         return $signup instanceof CourseEnrollment
             ? EmailTemplateKey::CourseEnrollmentReceived
@@ -75,7 +75,7 @@ class EnrollmentEmailer
      * @param  array<string, string>  $extra
      * @return array<string, string>
      */
-    private static function context(CourseEnrollment|OneOffEventBooking $signup, array $extra): array
+    private static function context(CourseEnrollment|LessonBooking $signup, array $extra): array
     {
         return $signup instanceof CourseEnrollment
             ? EnrollmentEmailContext::forEnrollment($signup, $extra)
@@ -85,7 +85,7 @@ class EnrollmentEmailer
     /**
      * @return array<string, string>
      */
-    private static function extraTokens(CourseEnrollment|OneOffEventBooking $signup, EmailTemplateKey $key): array
+    private static function extraTokens(CourseEnrollment|LessonBooking $signup, EmailTemplateKey $key): array
     {
         if (in_array($key, self::PAYMENT_KEYS, true)) {
             $payment = $signup->payments()->where('status', PaymentStatus::Unpaid->value)->latest()->first();
@@ -107,7 +107,7 @@ class EnrollmentEmailer
             ->all();
     }
 
-    private static function hasUnpaidPayment(CourseEnrollment|OneOffEventBooking $signup): bool
+    private static function hasUnpaidPayment(CourseEnrollment|LessonBooking $signup): bool
     {
         return $signup->payments()->where('status', PaymentStatus::Unpaid->value)->exists();
     }

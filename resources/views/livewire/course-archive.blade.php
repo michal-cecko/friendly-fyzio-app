@@ -130,7 +130,7 @@
                     @foreach($crossSell['events'] as $event)
                         <a href="{{ $event->permalink() }}" class="group flex items-center justify-between gap-4 rounded-xl border border-line bg-white p-5 transition hover:border-primary">
                             <span class="flex min-w-0 flex-col gap-1">
-                                <span class="truncate font-heading text-sm font-semibold text-neutral-900">{{ $event->name }}</span>
+                                <span class="truncate font-heading text-sm font-semibold text-neutral-900">{{ $event->displayName() }}</span>
                                 <span class="text-sm text-neutral-600">{{ $event->startsAt()->format('j. n. Y') }} · {{ $event->startsAt()->format('H:i') }} · {{ number_format($event->price, 0, ',', ' ') }} Kč</span>
                             </span>
                             <x-lucide name="chevron-right" class="h-5 w-5 shrink-0 text-primary transition group-hover:translate-x-0.5" />

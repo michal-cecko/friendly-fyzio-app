@@ -4,6 +4,7 @@ namespace App\Filament\Clusters\Provoz\Resources\Users\RelationManagers;
 
 use App\Enums\ReservationStatus;
 use App\Filament\Pages\Calendar;
+use App\Models\Reservation;
 use App\Models\User;
 use Filament\Actions\Action;
 use Filament\Resources\RelationManagers\RelationManager;
@@ -35,7 +36,12 @@ class TherapistReservationsRelationManager extends RelationManager
                     ->date('d.m.Y')
                     ->sortable(),
                 TextColumn::make('start_time')
-                    ->label('Od'),
+                    ->label('Od')
+                    ->time('H:i'),
+                TextColumn::make('end_time')
+                    ->label('Do')
+                    ->state(fn (Reservation $record): string => $record->endsAtIncludingBreak()->format('H:i'))
+                    ->description(fn (Reservation $record): ?string => $record->breakLabel()),
                 TextColumn::make('client.name')
                     ->label('Klient')
                     ->searchable(),

@@ -4,6 +4,7 @@ namespace App\Filament\Clusters\Provoz\Resources\Services\Schemas;
 
 use App\Enums\ExamType;
 use App\Enums\ServiceVisibility;
+use App\Filament\Support\Schemas\BreakBlocks;
 use App\Filament\Support\Schemas\DerivedSlug;
 use App\Filament\Support\Schemas\PresenceBanner;
 use App\Filament\Support\Schemas\ResponsiveColumns;
@@ -26,7 +27,6 @@ use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Guava\IconPicker\Forms\Components\IconPicker;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
 
 class ServiceForm
@@ -103,13 +103,6 @@ class ServiceForm
                                     ->step($block)
                                     ->minValue($block)
                                     ->helperText('Násobky '.$block.' min'),
-                                TextInput::make('break_minutes')
-                                    ->label('Pauza')
-                                    ->numeric()
-                                    ->default(0)
-                                    ->suffix('min')
-                                    ->step($block)
-                                    ->minValue(0),
                                 TextInput::make('price')
                                     ->label('Cena')
                                     ->integer()
@@ -155,8 +148,6 @@ class ServiceForm
                             ]),
                         Section::make('Místnosti a terapeuti')
                             ->icon(Heroicon::OutlinedBuildingOffice)
-                            ->gridContainer()
-                            ->columns(ResponsiveColumns::PAIR)
                             ->schema([
                                 Select::make('rooms')
                                     ->label('Místnosti')
@@ -164,18 +155,27 @@ class ServiceForm
                                     ->multiple()
                                     ->preload()
                                     ->searchable(),
-                                Select::make('therapists')
+                                Repeater::make('serviceTherapists')
+                                    ->relationship()
                                     ->label('Terapeuti')
-                                    // Limit the option query to the columns we need: Filament
-                                    // adds DISTINCT for multiple relationship selects, and
-                                    // Postgres cannot DISTINCT staff_profiles' json columns.
-                                    ->relationship(
-                                        'therapists',
-                                        modifyQueryUsing: fn (Builder $query): Builder => $query->select(['staff_profiles.id', 'staff_profiles.user_id']),
-                                    )
-                                    ->getOptionLabelFromRecordUsing(fn (StaffProfile $record): ?string => $record->user?->name)
-                                    ->multiple()
-                                    ->preload(),
+                                    ->helperText('Pauza zůstane prázdná, pokud terapeutovi u této služby stačí jeho výchozí.')
+                                    ->table([
+                                        TableColumn::make('Terapeut')->markAsRequired(),
+                                        TableColumn::make('Pauza po termínu'),
+                                    ])
+                                    ->schema([
+                                        Select::make('therapist_id')
+                                            ->label('Terapeut')
+                                            ->options(self::therapistOptions())
+                                            ->searchable()
+                                            ->required()
+                                            ->distinct()
+                                            // Drives the „Výchozí (15 min)" placeholder next to it.
+                                            ->live(),
+                                        BreakBlocks::override(),
+                                    ])
+                                    ->defaultItems(0)
+                                    ->addActionLabel('Přidat terapeuta'),
                             ]),
                     ]),
                 Section::make('Možné specializace')
@@ -228,5 +228,25 @@ class ServiceForm
                             ->columnSpanFull(),
                     ]),
             ]);
+    }
+
+    /**
+     * Every staff profile, by display name. Deliberately unfiltered: who may
+     * actually be booked is decided by {@see StaffProfile::scopeBookable()} at
+     * offering time, so a lecturer or an assistant can still be linked here
+     * without becoming bookable.
+     *
+     * @return array<string, string>
+     */
+    private static function therapistOptions(): array
+    {
+        return StaffProfile::query()
+            ->with('user')
+            ->get(['id', 'user_id'])
+            ->sortBy(fn (StaffProfile $profile): string => $profile->user?->name ?? '')
+            ->mapWithKeys(fn (StaffProfile $profile): array => [
+                $profile->getKey() => $profile->user?->full_name ?? '—',
+            ])
+            ->all();
     }
 }

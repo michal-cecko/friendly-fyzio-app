@@ -48,7 +48,6 @@ class ReservationWizardTest extends TestCase
         $this->service = Service::factory()->create([
             'category_id' => $this->category->id,
             'duration_minutes' => 60,
-            'break_minutes' => 15,
             'visibility' => ServiceVisibility::Public,
             'published_at' => now(),
         ]);
@@ -351,7 +350,6 @@ class ReservationWizardTest extends TestCase
             'slug' => 'vstupni-vysetreni-aparatu',
             'exam_type' => ExamType::Vstupni,
             'duration_minutes' => 90,
-            'break_minutes' => 15,
             'visibility' => ServiceVisibility::Public,
             'published_at' => now(),
         ]);
@@ -362,7 +360,6 @@ class ReservationWizardTest extends TestCase
             'slug' => 'kontrolni-terapie-aparatu',
             'exam_type' => ExamType::Kontrolni,
             'duration_minutes' => 60,
-            'break_minutes' => 15,
             'visibility' => ServiceVisibility::Clients,
             'existing_client_months' => 12,
             'published_at' => now(),
@@ -496,6 +493,8 @@ class ReservationWizardTest extends TestCase
             ->call('logIn')
             ->assertSet('gate', null)
             ->assertSet('emailKnown', false)
+            // The typed address gives way to the account's — the field is locked from here on.
+            ->assertSet('email', 'dup@example.com')
             ->assertSet('confirmationId', null);
 
         $this->assertAuthenticatedAs($existing);
@@ -517,6 +516,60 @@ class ReservationWizardTest extends TestCase
             ->assertSet('confirmationId', fn ($value): bool => $value !== null);
 
         $this->assertSame($existing->id, Reservation::sole()->client_id);
+    }
+
+    public function test_logged_in_client_email_is_taken_from_the_account_and_cannot_be_overridden(): void
+    {
+        Notification::fake();
+
+        $client = User::factory()->customer()->create(['email' => 'klient@example.com']);
+
+        Livewire::actingAs($client)
+            ->test(ReservationWizard::class)
+            ->assertSet('email', 'klient@example.com')
+            ->call('selectTherapist', $this->therapist->id)
+            ->call('next')
+            ->call('selectCategory', $this->category->slug)
+            ->call('next')
+            ->call('selectService', $this->service->slug)
+            ->call('next')
+            ->call('selectDate', $this->date->toDateString())
+            ->call('next')
+            ->call('selectTime', '08:00')
+            ->call('next')
+            // A tampered payload must not smuggle a foreign address past the locked field.
+            ->set('email', 'jiny@example.com')
+            ->set('phone', '+420604793255')
+            ->set('agreeCancellation', true)
+            ->call('submit')
+            ->assertHasNoErrors()
+            ->assertSet('email', 'klient@example.com')
+            ->assertSet('confirmationId', fn ($value): bool => $value !== null);
+
+        $this->assertSame($client->id, Reservation::sole()->client_id);
+        $this->assertSame(0, User::where('email', 'jiny@example.com')->count());
+    }
+
+    public function test_email_field_is_read_only_for_logged_in_clients(): void
+    {
+        Livewire::actingAs(User::factory()->customer()->create())
+            ->test(ReservationWizard::class)
+            ->set('stepIndex', $this->contactStepIndex())
+            ->assertSeeHtml('readonly')
+            ->assertSee('E-mail je převzat z vašeho účtu');
+    }
+
+    public function test_email_field_stays_editable_for_guests(): void
+    {
+        Livewire::test(ReservationWizard::class)
+            ->set('stepIndex', $this->contactStepIndex())
+            ->assertDontSeeHtml('readonly')
+            ->assertDontSee('E-mail je převzat z vašeho účtu');
+    }
+
+    private function contactStepIndex(): int
+    {
+        return (int) array_search('contact', (new ReservationWizard)->stepOrder(), true);
     }
 
     public function test_continue_without_login_closes_the_optional_panel_and_keeps_the_email(): void

@@ -2,15 +2,12 @@
 
 namespace App\Console\Commands;
 
-use App\Enums\BookingStatus;
-use App\Enums\CourseEnrollmentStatus;
 use App\Enums\EmailTemplateKey;
-use App\Enums\PaymentStatus;
 use App\Models\CourseEnrollment;
-use App\Models\OneOffEventBooking;
+use App\Models\LessonBooking;
 use App\Support\Enrollments\CancelSignup;
+use App\Support\Enrollments\ExpiredPaymentHold;
 use Illuminate\Console\Command;
-use Illuminate\Database\Eloquent\Builder;
 
 /**
  * The enrollment hold-window sweep (docs §4.1: "automatické storno pri
@@ -30,24 +27,16 @@ class CancelUnpaidEnrollments extends Command
     {
         $cancelled = 0;
 
-        CourseEnrollment::query()
-            ->where('status', CourseEnrollmentStatus::Active)
-            ->where('payment_status', '!=', PaymentStatus::Paid)
-            ->whereHas('series', fn (Builder $query) => $query->whereDate('end_date', '>=', today()))
-            ->tap(fn (Builder $query) => $this->withExpiredHold($query))
+        ExpiredPaymentHold::enrollments()
             ->with(['series.course', 'client'])
             ->each(function (CourseEnrollment $enrollment) use (&$cancelled): void {
                 $this->cancel($enrollment);
                 $cancelled++;
             });
 
-        OneOffEventBooking::query()
-            ->whereIn('status', BookingStatus::occupying())
-            ->where('payment_status', '!=', PaymentStatus::Paid)
-            ->whereHas('event', fn (Builder $query) => $query->whereDate('event_date', '>=', today()))
-            ->tap(fn (Builder $query) => $this->withExpiredHold($query))
-            ->with(['event', 'client'])
-            ->each(function (OneOffEventBooking $booking) use (&$cancelled): void {
+        ExpiredPaymentHold::bookings()
+            ->with(['lesson', 'client'])
+            ->each(function (LessonBooking $booking) use (&$cancelled): void {
                 $this->cancel($booking);
                 $cancelled++;
             });
@@ -67,7 +56,7 @@ class CancelUnpaidEnrollments extends Command
             ->whereDate('due_at', '<', today()));
     }
 
-    protected function cancel(CourseEnrollment|OneOffEventBooking $signup): void
+    protected function cancel(CourseEnrollment|LessonBooking $signup): void
     {
         app(CancelSignup::class)(
             $signup,

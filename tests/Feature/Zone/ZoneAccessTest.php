@@ -23,7 +23,6 @@ class ZoneAccessTest extends TestCase
             'tokens' => ['/muj-ucet/nahrady'],
             'credits' => ['/muj-ucet/kredity'],
             'payments' => ['/muj-ucet/platby'],
-            'invoices' => ['/muj-ucet/faktury'],
             'profile' => ['/muj-ucet/profil'],
         ];
     }

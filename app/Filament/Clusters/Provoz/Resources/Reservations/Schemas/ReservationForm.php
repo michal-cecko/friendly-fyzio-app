@@ -40,18 +40,6 @@ class ReservationForm
     }
 
     /**
-     * The "Upozornit zákazníka?" toggle appended to the reservation edit page.
-     * A UI-only field (not a model attribute); read in the page's afterSave.
-     */
-    public static function notifyClientToggle(): Toggle
-    {
-        return Toggle::make('notify_client')
-            ->label('Upozornit zákazníka?')
-            ->helperText('Po uložení odešle zákazníkovi i terapeutovi e-mail o změně rezervace.')
-            ->default(true);
-    }
-
-    /**
      * @param  bool  $withControlTherapy  When false the "Kontrolní terapie" toggle is left
      *                                    out so a caller (the calendar) can place it in a
      *                                    shared row with its own "Upozornit zákazníka" toggle.

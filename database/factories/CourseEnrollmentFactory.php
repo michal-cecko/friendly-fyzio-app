@@ -19,7 +19,7 @@ class CourseEnrollmentFactory extends Factory
      */
     public function definition(): array
     {
-        $paymentStatus = fake()->randomElement(PaymentStatus::cases());
+        $paymentStatus = fake()->randomElement(PaymentStatus::payableCases());
 
         return [
             'client_id' => User::factory()->customer(),

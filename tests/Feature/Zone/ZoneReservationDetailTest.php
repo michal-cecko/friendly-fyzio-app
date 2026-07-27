@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Zone;
 
+use App\Enums\ConfirmationSource;
 use App\Enums\EmailTemplateKey;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
@@ -14,6 +15,7 @@ use App\Notifications\ReservationStornoPaymentNotification;
 use App\Notifications\ReservationTemplateNotification;
 use App\Support\Reservations\ClientReservationState;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -175,13 +177,107 @@ class ZoneReservationDetailTest extends TestCase
         Livewire::actingAs($this->client)
             ->test(ReservationDetail::class, ['reservation' => $reservation])
             ->call('openCancel')
-            ->call('cancelWithDoctorNote');
+            ->call('cancelWithDoctorNote')
+            ->assertSet('confirmation', 'doctor_note')
+            // The result screen sends the client on to the upload, not to a mailto.
+            ->assertSee('Nahrát potvrzení')
+            ->call('showDetail')
+            ->assertSet('confirmation', null)
+            ->assertSee('Potvrzení od lékaře')
+            ->assertSee('Čeká na potvrzení od lékaře');
 
         $reservation->refresh();
 
         $this->assertSame(ReservationStatus::Cancelled, $reservation->status);
         $this->assertNotNull($reservation->doctor_note_requested_at);
         $this->assertSame(0, $reservation->payments()->count());
+    }
+
+    /**
+     * A cancellation is not automatically closed: a suspended note or an unpaid fee
+     * must keep saying so instead of collapsing into a bare „Stornováno".
+     */
+    public function test_an_unresolved_cancellation_keeps_its_own_state(): void
+    {
+        $awaitingNote = $this->reservation([
+            'status' => ReservationStatus::Cancelled,
+            'doctor_note_requested_at' => now(),
+        ]);
+        $this->assertSame(
+            ClientReservationState::AwaitingDoctorNote,
+            ClientReservationState::for($awaitingNote->load('payments', 'doctorNoteDocuments')),
+        );
+
+        $unpaidStorno = $this->reservation(['status' => ReservationStatus::Cancelled]);
+        $unpaidStorno->payments()->create([
+            'client_id' => $this->client->id,
+            'amount' => 500,
+            'method' => PaymentMethod::Qr,
+            'status' => PaymentStatus::Unpaid,
+        ]);
+        $this->assertSame(
+            ClientReservationState::CancelledUnpaid,
+            ClientReservationState::for($unpaidStorno->load('payments', 'doctorNoteDocuments')),
+        );
+    }
+
+    public function test_a_cancelled_reservation_offers_no_actions(): void
+    {
+        $reservation = $this->reservation([
+            'status' => ReservationStatus::Cancelled,
+            'doctor_note_requested_at' => now(),
+        ]);
+
+        Livewire::actingAs($this->client)
+            ->test(ReservationDetail::class, ['reservation' => $reservation])
+            ->assertDontSee('Zrušit rezervaci')
+            ->assertDontSee('Přesunout termín');
+    }
+
+    public function test_a_pending_reservation_can_be_confirmed_from_the_zone(): void
+    {
+        $reservation = $this->reservation(['status' => ReservationStatus::Pending]);
+
+        Livewire::actingAs($this->client)
+            ->test(ReservationDetail::class, ['reservation' => $reservation])
+            ->call('openConfirm')
+            ->assertSee('Potvrdit rezervaci?')
+            ->call('confirmReservation')
+            ->assertSet('confirmingConfirm', false);
+
+        $reservation->refresh();
+
+        $this->assertSame(ReservationStatus::Confirmed, $reservation->status);
+        $this->assertNotNull($reservation->confirmed_at);
+        $this->assertSame(ConfirmationSource::Customer, $reservation->confirmed_by);
+
+        Notification::assertSentTo(
+            $this->client,
+            ReservationTemplateNotification::class,
+            fn (ReservationTemplateNotification $notification): bool => $notification->key === EmailTemplateKey::ReservationConfirmed,
+        );
+    }
+
+    public function test_the_confirm_action_is_offered_only_while_pending(): void
+    {
+        Livewire::actingAs($this->client)
+            ->test(ReservationDetail::class, ['reservation' => $this->reservation(['status' => ReservationStatus::Pending])])
+            ->assertSee('Akce')
+            ->assertSee('Potvrdit rezervaci');
+
+        Livewire::actingAs($this->client)
+            ->test(ReservationDetail::class, ['reservation' => $this->reservation()])
+            ->assertSee('Akce')
+            ->assertDontSee('Potvrdit rezervaci');
+    }
+
+    public function test_the_confirmed_timestamp_is_shown(): void
+    {
+        $reservation = $this->reservation(['confirmed_at' => Carbon::parse('2026-03-04 15:45')]);
+
+        Livewire::actingAs($this->client)
+            ->test(ReservationDetail::class, ['reservation' => $reservation])
+            ->assertSee('Potvrzeno 4. 3. 2026 · 15:45');
     }
 
     public function test_another_clients_reservation_is_not_reachable(): void

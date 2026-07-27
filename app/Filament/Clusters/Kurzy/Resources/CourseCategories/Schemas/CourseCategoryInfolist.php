@@ -20,7 +20,7 @@ class CourseCategoryInfolist
                         TextEntry::make('name')
                             ->label('Název'),
                         TextEntry::make('slug')
-                            ->label('Slug'),
+                            ->label('URL název'),
                         TextEntry::make('description')
                             ->label('Popis')
                             ->placeholder('—')

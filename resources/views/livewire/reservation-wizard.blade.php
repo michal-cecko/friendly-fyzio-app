@@ -377,9 +377,11 @@
                                         </div>
                                         <div>
                                             <label class="mb-1 block text-sm font-medium text-neutral-700">E-mail</label>
-                                            <input type="email" wire:model.blur="email" class="{{ $inputClass }}" placeholder="@">
+                                            <input type="email" wire:model.blur="email" @readonly(auth()->check()) class="{{ $inputClass }} {{ auth()->check() ? 'cursor-not-allowed bg-neutral-100 text-neutral-600' : '' }}" placeholder="@">
                                             @error('email') <span class="mt-1 block text-xs text-red-600">{{ $message }}</span> @enderror
-                                            @if ($emailKnown && auth()->guest())
+                                            @if (auth()->check())
+                                                <p class="mt-1.5 text-sm {{ $muted }}">E-mail je převzat z vašeho účtu. Změnit jej můžete v <a href="{{ route('zone.profile') }}" class="text-primary-dark underline">nastavení účtu</a>.</p>
+                                            @elseif ($emailKnown)
                                                 <p class="mt-1.5 text-sm {{ $muted }}">Tento e-mail už známe — rezervaci automaticky přiřadíme k vašemu účtu. <button type="button" wire:click="showLogin" class="text-primary-dark underline">Chcete se přihlásit?</button></p>
                                             @endif
                                         </div>

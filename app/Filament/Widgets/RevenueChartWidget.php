@@ -16,7 +16,7 @@ class RevenueChartWidget extends ApexChartWidget
 
     protected static ?string $heading = 'Tržby (Kč)';
 
-    protected static ?int $sort = 4;
+    protected static ?int $sort = 6;
 
     protected int|string|array $columnSpan = 'full';
 
@@ -29,7 +29,7 @@ class RevenueChartWidget extends ApexChartWidget
     private const SERIES_LABELS = [
         'reservation' => 'Terapie',
         'course_enrollment' => 'Kurzy',
-        'one_off_event_booking' => 'Jednorázové akce',
+        'lesson_booking' => 'Lekce',
     ];
 
     protected function getFilters(): ?array

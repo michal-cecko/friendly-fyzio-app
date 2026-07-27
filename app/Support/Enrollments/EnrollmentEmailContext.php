@@ -5,8 +5,8 @@ namespace App\Support\Enrollments;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
 use App\Models\CourseSeries;
-use App\Models\OneOffEvent;
-use App\Models\OneOffEventBooking;
+use App\Models\Lesson;
+use App\Models\LessonBooking;
 use App\Models\Room;
 use App\Models\User;
 use App\Support\Settings;
@@ -42,15 +42,15 @@ class EnrollmentEmailContext
     /**
      * @return array<string, string>
      */
-    public static function forEventBooking(OneOffEventBooking $booking, array $extra = []): array
+    public static function forEventBooking(LessonBooking $booking, array $extra = []): array
     {
-        $event = $booking->event;
+        $lesson = $booking->lesson;
 
         return [
             'jmeno' => self::firstName($booking->client),
-            'nazev' => (string) ($event?->name ?? ''),
-            'termin' => $event !== null ? self::dateTimeLabel($event->startsAt()) : '',
-            'misto' => self::place($event?->room),
+            'nazev' => (string) ($lesson?->displayName() ?? ''),
+            'termin' => $lesson !== null ? self::dateTimeLabel($lesson->startsAt()) : '',
+            'misto' => self::place($lesson?->room),
             'rezervace_hodin' => (string) Settings::enrollmentHoldHours(),
             ...$extra,
         ];
@@ -63,14 +63,14 @@ class EnrollmentEmailContext
      *
      * @return array<string, string>
      */
-    public static function offerTokens(CourseSeries|OneOffEvent|Course $offer): array
+    public static function offerTokens(CourseSeries|Lesson|Course $offer): array
     {
         return match (true) {
             $offer instanceof CourseSeries => [
                 'nazev' => trim(($offer->course?->name ?? '').' ('.$offer->name.')'),
                 'termin' => self::seriesPeriod($offer),
             ],
-            $offer instanceof OneOffEvent => [
+            $offer instanceof Lesson => [
                 'nazev' => $offer->name,
                 'termin' => self::dateTimeLabel($offer->startsAt()),
             ],

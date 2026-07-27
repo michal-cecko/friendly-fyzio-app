@@ -18,6 +18,7 @@ use App\Models\User;
 use App\Notifications\ReservationNotification;
 use App\Notifications\ReservationTemplateNotification;
 use App\Notifications\TherapistReservationTemplateNotification;
+use App\Support\Reservations\ReservationEmailContext;
 use Database\Seeders\EmailTemplateSeeder;
 use Database\Seeders\SettingsSeeder;
 use Filament\Actions\Testing\TestAction;
@@ -142,14 +143,14 @@ class ReservationResourceTest extends TestCase
         $reservation = $this->makeReservation($deps, ['start_time' => '09:00:00', 'end_time' => '10:00:00']);
 
         Livewire::test(EditReservation::class, ['record' => $reservation->getKey()])
-            ->fillForm(['end_time' => '11:00', 'notify_client' => false])
+            ->fillForm(['end_time' => '11:00'])
             ->call('save')
             ->assertHasNoFormErrors();
 
         $this->assertSame('11:00', substr((string) $reservation->fresh()->end_time, 0, 5));
     }
 
-    public function test_edit_with_notify_emails_client_and_therapist_with_original_values(): void
+    public function test_editing_the_termin_prompts_and_emails_client_and_therapist_with_original_values(): void
     {
         Notification::fake();
 
@@ -157,19 +158,26 @@ class ReservationResourceTest extends TestCase
         $this->actingAs(User::factory()->admin()->create());
 
         $reservation = $this->makeReservation($deps);
-        $originalServiceName = $deps['service']->name;
-        $newService = Service::factory()->create();
+        $originalWhen = ReservationEmailContext::formatWhen($reservation);
 
-        Livewire::test(EditReservation::class, ['record' => $reservation->getKey()])
-            ->fillForm(['service_id' => $newService->getKey(), 'notify_client' => true])
+        $page = Livewire::test(EditReservation::class, ['record' => $reservation->getKey()])
+            ->fillForm(['end_time' => '11:00'])
             ->call('save')
-            ->assertHasNoFormErrors();
+            ->assertHasNoFormErrors()
+            ->assertActionMounted('scheduleChangeNotification');
+
+        // Nothing is sent on save alone — the notification is opt-in via the prompt.
+        Notification::assertNothingSent();
+
+        $page->setActionData(['reason' => 'Konec posouváme o hodinu.'])
+            ->callMountedAction();
 
         Notification::assertSentTo(
             $deps['client'],
             ReservationTemplateNotification::class,
             fn (ReservationTemplateNotification $notification): bool => $notification->key === EmailTemplateKey::ReservationChanged
-                && ($notification->extraTokens['puvodni_sluzba'] ?? null) === $originalServiceName,
+                && ($notification->extraTokens['puvodni_termin'] ?? null) === $originalWhen
+                && str_contains((string) ($notification->extraTokens['zprava'] ?? ''), 'Konec posouváme o hodinu.'),
         );
         Notification::assertSentTo(
             $deps['therapist']->user,
@@ -178,7 +186,7 @@ class ReservationResourceTest extends TestCase
         );
     }
 
-    public function test_edit_without_notify_sends_nothing(): void
+    public function test_editing_a_non_schedule_field_does_not_prompt_and_sends_nothing(): void
     {
         Notification::fake();
 
@@ -188,9 +196,10 @@ class ReservationResourceTest extends TestCase
         $reservation = $this->makeReservation($deps);
 
         Livewire::test(EditReservation::class, ['record' => $reservation->getKey()])
-            ->fillForm(['end_time' => '12:00', 'notify_client' => false])
+            ->fillForm(['notes' => '<p>Interní poznámka.</p>'])
             ->call('save')
-            ->assertHasNoFormErrors();
+            ->assertHasNoFormErrors()
+            ->assertActionNotMounted('scheduleChangeNotification');
 
         Notification::assertNothingSent();
     }
@@ -242,7 +251,7 @@ class ReservationResourceTest extends TestCase
 
         $this->get("/admin/provoz/reservations/{$first->getKey()}")
             ->assertSuccessful()
-            ->assertSee('Konflikt rezervací');
+            ->assertSee('Konflikt v rozvrhu');
 
         // A lone reservation on another day has nothing to clash with.
         $lone = $this->makeReservation($deps, [
@@ -253,7 +262,7 @@ class ReservationResourceTest extends TestCase
 
         $this->get("/admin/provoz/reservations/{$lone->getKey()}")
             ->assertSuccessful()
-            ->assertDontSee('Konflikt rezervací');
+            ->assertDontSee('Konflikt v rozvrhu');
     }
 
     public function test_admin_can_restore_a_trashed_reservation_from_the_table(): void
@@ -323,7 +332,7 @@ class ReservationResourceTest extends TestCase
         Notification::assertNothingSent();
     }
 
-    public function test_calendar_edit_with_notify_sends_reservation_changed_with_original_values(): void
+    public function test_calendar_edit_of_the_termin_prompts_then_sends_reservation_changed_with_original_values(): void
     {
         Notification::fake();
         $this->seed(SettingsSeeder::class);
@@ -333,23 +342,46 @@ class ReservationResourceTest extends TestCase
         $this->actingAs(User::factory()->admin()->create());
 
         $reservation = $this->makeReservation($deps);
-        $originalServiceName = $deps['service']->name;
-
-        $newService = Service::factory()->create();
+        $originalWhen = ReservationEmailContext::formatWhen($reservation);
 
         Livewire::test(ReservationCalendar::class)
             ->call('onEventClick', ['id' => (string) $reservation->getKey()])
-            ->setActionData($this->formData($deps, ['service_id' => $newService->getKey()]))
+            ->setActionData($this->formData($deps, ['end_time' => '11:00']))
+            // Saving the edit chains straight into the notify prompt.
+            ->callMountedAction()
+            ->assertActionMounted('reservationChangeNotify')
+            ->setActionData(['reason' => 'Konec posouváme.'])
             ->callMountedAction();
 
         Notification::assertSentTo(
             $deps['client'],
             ReservationTemplateNotification::class,
-            function (ReservationTemplateNotification $notification) use ($originalServiceName): bool {
+            function (ReservationTemplateNotification $notification) use ($originalWhen): bool {
                 return $notification->key === EmailTemplateKey::ReservationChanged
-                    && ($notification->extraTokens['puvodni_sluzba'] ?? null) === $originalServiceName;
+                    && ($notification->extraTokens['puvodni_termin'] ?? null) === $originalWhen
+                    && str_contains((string) ($notification->extraTokens['zprava'] ?? ''), 'Konec posouváme.');
             },
         );
+    }
+
+    public function test_calendar_edit_of_a_non_schedule_field_does_not_prompt(): void
+    {
+        Notification::fake();
+        $this->seed(SettingsSeeder::class);
+        $this->seed(EmailTemplateSeeder::class);
+
+        $deps = $this->dependencies();
+        $this->actingAs(User::factory()->admin()->create());
+
+        $reservation = $this->makeReservation($deps);
+
+        Livewire::test(ReservationCalendar::class)
+            ->call('onEventClick', ['id' => (string) $reservation->getKey()])
+            ->setActionData($this->formData($deps, ['notes' => '<p>Poznámka.</p>']))
+            ->callMountedAction()
+            ->assertActionNotMounted('reservationChangeNotify');
+
+        Notification::assertNothingSent();
     }
 
     public function test_metrics_bar_is_shown_by_default_and_toggle_persists_per_user(): void

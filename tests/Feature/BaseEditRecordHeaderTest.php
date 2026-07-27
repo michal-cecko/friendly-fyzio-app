@@ -5,10 +5,12 @@ namespace Tests\Feature;
 use App\Filament\Clusters\Kurzy\Resources\CourseCategories\Pages\EditCourseCategory;
 use App\Filament\Clusters\Kurzy\Resources\Courses\Pages\EditCourse;
 use App\Filament\Clusters\Kurzy\Resources\CourseSeries\Pages\EditCourseSeries;
+use App\Filament\Clusters\Kurzy\Resources\Lessons\Pages\EditLesson;
 use App\Filament\Resources\Pages\BaseEditRecord;
 use App\Models\Course;
 use App\Models\CourseCategory;
 use App\Models\CourseSeries;
+use App\Models\Lesson;
 use App\Models\User;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -58,9 +60,9 @@ class BaseEditRecordHeaderTest extends TestCase
 
     public function test_top_level_view_action_is_relabelled(): void
     {
-        $series = CourseSeries::factory()->create();
+        $lesson = Lesson::factory()->create();
 
-        Livewire::test(EditCourseSeries::class, ['record' => $series->getKey()])
+        Livewire::test(EditLesson::class, ['record' => $lesson->getKey()])
             ->assertActionHasLabel('view', 'Zobrazit detail');
     }
 
@@ -91,5 +93,30 @@ class BaseEditRecordHeaderTest extends TestCase
         $this->assertInstanceOf(Action::class, $headerActions[0]);
         $this->assertSame('saveHeader', $headerActions[0]->getName());
         $this->assertInstanceOf(ActionGroup::class, $headerActions[1]);
+    }
+
+    public function test_course_series_edit_keeps_only_save_in_the_header(): void
+    {
+        $series = CourseSeries::factory()->create();
+
+        $headerActions = Livewire::test(EditCourseSeries::class, ['record' => $series->getKey()])
+            ->assertActionExists('saveHeader')
+            ->assertActionHasLabel('view', 'Zobrazit detail')
+            ->instance()
+            ->getCachedHeaderActions();
+
+        $this->assertCount(2, $headerActions);
+        $this->assertInstanceOf(Action::class, $headerActions[0]);
+        $this->assertSame('saveHeader', $headerActions[0]->getName());
+        $this->assertInstanceOf(ActionGroup::class, $headerActions[1]);
+        $this->assertSame('Další akce', $headerActions[1]->getLabel());
+
+        $this->assertSame(
+            ['emailParticipants', 'presaleLink', 'sendInvitation', 'view', 'delete', 'activityLog'],
+            array_map(
+                fn (Action $action): string => $action->getName(),
+                array_values($headerActions[1]->getFlatActions()),
+            ),
+        );
     }
 }

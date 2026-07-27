@@ -4,6 +4,7 @@ namespace App\Filament\Clusters\Obsah\Pages;
 
 use App\Filament\Clusters\Obsah\ObsahCluster;
 use Filament\Panel;
+use Illuminate\Contracts\Support\Htmlable;
 use RalphJSmit\Filament\MediaLibrary\Filament\Pages\MediaLibrary as BaseMediaLibrary;
 
 /**
@@ -28,6 +29,15 @@ class MediaLibrary extends BaseMediaLibrary
     }
 
     public static function getNavigationLabel(): string
+    {
+        return 'Knihovna médií';
+    }
+
+    /**
+     * The vendor page has no title of its own, so Filament derives "Media
+     * Library" from the class name — name it in Czech instead.
+     */
+    public function getTitle(): string|Htmlable
     {
         return 'Knihovna médií';
     }

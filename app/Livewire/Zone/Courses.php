@@ -4,10 +4,12 @@ namespace App\Livewire\Zone;
 
 use App\Enums\BookingStatus;
 use App\Enums\CourseEnrollmentStatus;
+use App\Enums\PaymentMethod;
 use App\Models\CourseEnrollment;
-use App\Models\CourseLesson;
+use App\Models\Lesson;
 use App\Models\LessonAttendance;
-use App\Models\OneOffEventBooking;
+use App\Models\LessonBooking;
+use App\Models\Payment;
 use App\Models\User;
 use App\Support\Enrollments\CancellationWindowClosedException;
 use App\Support\Enrollments\CancelSignupAsClient;
@@ -34,6 +36,10 @@ class Courses extends Component
     public ?string $confirmingCancelId = null;
 
     public ?string $confirmingCancelType = null;
+
+    public ?string $confirmingExcuseEnrollmentId = null;
+
+    public ?string $confirmingExcuseLessonId = null;
 
     public function selectTab(string $tab): void
     {
@@ -80,29 +86,68 @@ class Courses extends Component
         session()->flash('status', 'Odhlášení proběhlo. Potvrzení jsme vám poslali e-mailem.');
     }
 
-    public function excuseFromLesson(string $enrollmentId, string $lessonId, ExcuseFromLesson $excuse): void
+    public function confirmExcuse(string $enrollmentId, string $lessonId): void
     {
-        $enrollment = $this->enrollments()->firstWhere('id', $enrollmentId);
-        $lesson = $enrollment?->series?->lessons->firstWhere('id', $lessonId);
+        $this->confirmingExcuseEnrollmentId = $enrollmentId;
+        $this->confirmingExcuseLessonId = $lessonId;
+    }
+
+    public function closeExcuse(): void
+    {
+        $this->confirmingExcuseEnrollmentId = null;
+        $this->confirmingExcuseLessonId = null;
+    }
+
+    public function excuseFromLesson(ExcuseFromLesson $excuse): mixed
+    {
+        [$enrollment, $lesson] = $this->lessonBeingExcused();
 
         if ($enrollment === null || $lesson === null) {
-            return;
+            $this->closeExcuse();
+
+            return null;
         }
 
         try {
             $token = $excuse($enrollment, $lesson);
         } catch (SubstituteException $exception) {
             $this->addError('excuse', $exception->getMessage());
+            $this->closeExcuse();
 
-            return;
+            return null;
         }
 
-        session()->flash('status', $token !== null
-            ? 'Z lekce jsme vás odhlásili a vystavili náhradní vstup — najdete ho v Náhradních vstupech.'
-            : 'Z lekce jsme vás odhlásili. Na náhradní vstup už bohužel nevzniká nárok.');
+        $this->closeExcuse();
+
+        if ($token !== null) {
+            session()->flash('status', 'Z lekce jsme vás odhlásili a vystavili náhradní vstup — uplatníte ho níže.');
+
+            return $this->redirectRoute('zone.tokens', navigate: true);
+        }
+
+        session()->flash('status', 'Z lekce jsme vás odhlásili. Na náhradní vstup už bohužel nevzniká nárok.');
+
+        return null;
     }
 
-    protected function signupBeingCancelled(): CourseEnrollment|OneOffEventBooking|null
+    /**
+     * The enrollment + lesson pending an excuse confirmation, if any.
+     *
+     * @return array{0: ?CourseEnrollment, 1: ?Lesson}
+     */
+    protected function lessonBeingExcused(): array
+    {
+        if (blank($this->confirmingExcuseEnrollmentId) || blank($this->confirmingExcuseLessonId)) {
+            return [null, null];
+        }
+
+        $enrollment = $this->enrollments()->firstWhere('id', $this->confirmingExcuseEnrollmentId);
+        $lesson = $enrollment?->series?->lessons->firstWhere('id', $this->confirmingExcuseLessonId);
+
+        return [$enrollment, $lesson];
+    }
+
+    protected function signupBeingCancelled(): CourseEnrollment|LessonBooking|null
     {
         if (blank($this->confirmingCancelId)) {
             return null;
@@ -112,7 +157,7 @@ class Courses extends Component
 
         return match ($this->confirmingCancelType) {
             'enrollment' => $user->courseEnrollments()->with('series.course')->find($this->confirmingCancelId),
-            'booking' => $user->oneOffEventBookings()->with('event.category')->find($this->confirmingCancelId),
+            'booking' => $user->lessonBookings()->with('lesson.category')->find($this->confirmingCancelId),
             default => null,
         };
     }
@@ -137,28 +182,28 @@ class Courses extends Component
     }
 
     /**
-     * @return Collection<int, OneOffEventBooking>
+     * @return Collection<int, LessonBooking>
      */
     protected function bookings(): Collection
     {
         $upcoming = $this->tab === 'aktualni';
 
-        return $this->user()->oneOffEventBookings()
-            ->with(['event.category', 'event.course', 'event.room', 'payments'])
+        return $this->user()->lessonBookings()
+            ->with(['lesson.category', 'lesson.course', 'lesson.room', 'payments'])
             ->when($upcoming, fn ($query) => $query
                 ->whereIn('status', BookingStatus::occupying())
-                ->whereHas('event', fn ($event) => $event->whereDate('event_date', '>=', today())))
+                ->whereHas('lesson', fn ($event) => $event->whereDate('lesson_date', '>=', today())))
             ->when(! $upcoming, fn ($query) => $query
                 ->where(fn ($inner) => $inner
                     ->where('status', BookingStatus::Cancelled)
-                    ->orWhereHas('event', fn ($event) => $event->whereDate('event_date', '<', today()))))
+                    ->orWhereHas('lesson', fn ($event) => $event->whereDate('lesson_date', '<', today()))))
             ->get();
     }
 
     /**
      * Upcoming lessons of an expanded course run with their excuse state.
      *
-     * @return array<int, array{lesson: CourseLesson, excused: bool, token: bool}>
+     * @return array<int, array{lesson: Lesson, excused: bool, token: bool}>
      */
     protected function lessonRows(CourseEnrollment $enrollment): array
     {
@@ -168,8 +213,8 @@ class Courses extends Component
             ->keyBy('lesson_id');
 
         return $enrollment->series?->lessons
-            ->filter(fn (CourseLesson $lesson): bool => $lesson->lesson_date->isToday() || $lesson->lesson_date->isFuture())
-            ->map(fn (CourseLesson $lesson): array => [
+            ->filter(fn (Lesson $lesson): bool => $lesson->lesson_date->isToday() || $lesson->lesson_date->isFuture())
+            ->map(fn (Lesson $lesson): array => [
                 'lesson' => $lesson,
                 'excused' => $attendances->get($lesson->getKey())?->cancelled_at !== null,
                 'token' => (bool) $attendances->get($lesson->getKey())?->token_generated,
@@ -188,10 +233,14 @@ class Courses extends Component
             'enrollments' => $enrollments,
             'bookings' => $this->bookings(),
             'canCancel' => fn ($signup): bool => $cancel->isCancellable($signup),
+            'openPayment' => fn (CourseEnrollment|LessonBooking $signup): ?Payment => $signup->payments
+                ->first(fn (Payment $payment): bool => $payment->method === PaymentMethod::Qr
+                    && $payment->status->isOpen()),
             'lessonRows' => $expanded !== null && ($enrollment = $enrollments->firstWhere('id', $expanded))
                 ? $this->lessonRows($enrollment)
                 : [],
             'cancelling' => $this->signupBeingCancelled(),
+            'excusing' => $this->lessonBeingExcused()[1],
         ]);
     }
 

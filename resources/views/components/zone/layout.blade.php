@@ -7,8 +7,7 @@
         ['route' => 'zone.courses', 'pattern' => 'zone.courses', 'icon' => 'book-open', 'label' => 'Moje kurzy'],
         ['route' => 'zone.tokens', 'pattern' => 'zone.tokens', 'icon' => 'ticket', 'label' => 'Náhradní vstupy'],
         ['route' => 'zone.credits', 'pattern' => 'zone.credits', 'icon' => 'coins', 'label' => 'Kredity'],
-        ['route' => 'zone.payments', 'pattern' => 'zone.payments', 'icon' => 'wallet', 'label' => 'Platby'],
-        ['route' => 'zone.invoices', 'pattern' => 'zone.invoices*', 'icon' => 'file-text', 'label' => 'Faktury'],
+        ['route' => 'zone.payments', 'pattern' => 'zone.payments*', 'icon' => 'wallet', 'label' => 'Platby'],
         ['route' => 'zone.profile', 'pattern' => 'zone.profile', 'icon' => 'user', 'label' => 'Můj profil'],
     ];
 @endphp

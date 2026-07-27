@@ -10,15 +10,20 @@ use App\Filament\Clusters\Finance\Resources\Invoices\Actions\GenerateInvoiceActi
 use App\Filament\Support\PayableLinks;
 use App\Models\Payment;
 use App\Support\Invoices\PayableTitle;
+use App\Support\Payments\PastDue;
 use App\Support\Payments\PaymentNotifier;
 use Filament\Actions\Action;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class PaymentsTable
 {
@@ -78,9 +83,18 @@ class PaymentsTable
                 SelectFilter::make('method')
                     ->label('Způsob platby')
                     ->options(PaymentMethod::class),
+                Filter::make('past_due')
+                    ->label('Po splatnosti')
+                    ->query(fn (Builder $query): Builder => PastDue::payments($query))
+                    ->toggle(),
             ])
             ->recordActions([
                 ViewAction::make(),
+                EditAction::make()
+                    ->modalHeading(fn (Payment $record): string => 'Upravit platbu č. '.$record->number),
+                DeleteAction::make()
+                    ->modalHeading(fn (Payment $record): string => 'Smazat platbu č. '.$record->number)
+                    ->modalDescription('Platbu tím nevratně odstraníte a související záznam se přepočítá jako neuhrazený. Vystavený pokladní doklad ani faktura nezmizí — jen se od platby odpojí.'),
                 GenerateInvoiceAction::make(),
                 GenerateCashReceiptAction::make(),
                 Action::make('markPaid')
@@ -89,7 +103,7 @@ class PaymentsTable
                     ->color('success')
                     ->modalHeading('Označit platbu jako zaplacenou')
                     ->modalSubmitActionLabel('Označit')
-                    ->visible(fn (Payment $record): bool => $record->status !== PaymentStatus::Paid)
+                    ->visible(fn (Payment $record): bool => $record->status->isOpen())
                     ->schema([
                         Toggle::make('notify_client')
                             ->label('Poslat potvrzení klientovi')

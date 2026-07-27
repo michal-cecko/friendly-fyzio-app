@@ -4,8 +4,8 @@ namespace App\Support\Enrollments;
 
 use App\Enums\CourseEnrollmentStatus;
 use App\Models\CourseEnrollment;
-use App\Models\CourseLesson;
 use App\Models\CourseSeries;
+use App\Models\Lesson;
 use App\Models\LessonAttendance;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -13,9 +13,14 @@ use Illuminate\Support\Str;
 /**
  * Keeps `lesson_attendances` a full presence list rather than an exception log:
  * every active enrollment gets a row for every lesson of its série, created when
- * the lesson or the enrollment appears. Staff can then mark someone as not coming
+ * the lesson or the enrollment appears. Rows start out present — being on the
+ * list is what being expected means. Staff can then mark someone as not coming
  * (which frees a spot) straight from the lesson's Docházka tab, and the roster is
  * already there when the lesson happens.
+ *
+ * The list is keyed on the client, not the enrollment — somebody who bought a
+ * single seat is on it too, seated by {@see App\Observers\LessonBookingObserver}
+ * rather than here.
  *
  * Rows generated here are written straight to the table — no model events, so the
  * activity log stays reserved for what people actually decide (an excuse, a
@@ -23,15 +28,16 @@ use Illuminate\Support\Str;
  */
 class LessonRoster
 {
-    public static function forLesson(CourseLesson $lesson): int
+    public static function forLesson(Lesson $lesson): int
     {
-        $enrollmentIds = CourseEnrollment::query()
+        $enrollments = CourseEnrollment::query()
             ->where('series_id', $lesson->series_id)
             ->where('status', CourseEnrollmentStatus::Active)
-            ->pluck('id');
+            ->get(['id', 'client_id']);
 
-        return self::ensure($enrollmentIds->map(fn (string $enrollmentId): array => [
-            'enrollment_id' => $enrollmentId,
+        return self::ensure($enrollments->map(fn (CourseEnrollment $enrollment): array => [
+            'client_id' => $enrollment->client_id,
+            'enrollment_id' => $enrollment->getKey(),
             'lesson_id' => $lesson->getKey(),
         ]));
     }
@@ -42,11 +48,12 @@ class LessonRoster
             return 0;
         }
 
-        $lessonIds = CourseLesson::query()
+        $lessonIds = Lesson::query()
             ->where('series_id', $enrollment->series_id)
             ->pluck('id');
 
         return self::ensure($lessonIds->map(fn (string $lessonId): array => [
+            'client_id' => $enrollment->client_id,
             'enrollment_id' => $enrollment->getKey(),
             'lesson_id' => $lessonId,
         ]));
@@ -54,12 +61,13 @@ class LessonRoster
 
     public static function forSeries(CourseSeries $series): int
     {
-        $enrollmentIds = $series->activeTakers()->pluck('id');
+        $enrollments = $series->activeTakers()->get(['id', 'client_id']);
         $lessonIds = $series->lessons()->pluck('id');
 
-        $pairs = $enrollmentIds->crossJoin($lessonIds)
+        $pairs = $enrollments->crossJoin($lessonIds)
             ->map(fn (array $pair): array => [
-                'enrollment_id' => $pair[0],
+                'client_id' => $pair[0]->client_id,
+                'enrollment_id' => $pair[0]->getKey(),
                 'lesson_id' => $pair[1],
             ]);
 
@@ -67,26 +75,28 @@ class LessonRoster
     }
 
     /**
-     * Inserts the pairs that have no row yet. Existing rows are never touched — an
-     * excuse or a presence tick must survive a later roster pass.
+     * Inserts the rows that have no seat yet. Existing rows are never touched — an
+     * excuse or a presence tick must survive a later roster pass, and a client
+     * already seated by a drop-in booking keeps that seat rather than gaining a
+     * second one.
      *
-     * @param  Collection<int, array{enrollment_id: string, lesson_id: string}>  $pairs
+     * @param  Collection<int, array{client_id: string, enrollment_id: string, lesson_id: string}>  $seats
      */
-    private static function ensure(Collection $pairs): int
+    private static function ensure(Collection $seats): int
     {
-        if ($pairs->isEmpty()) {
+        if ($seats->isEmpty()) {
             return 0;
         }
 
         $existing = LessonAttendance::query()
-            ->whereIn('enrollment_id', $pairs->pluck('enrollment_id')->unique())
-            ->whereIn('lesson_id', $pairs->pluck('lesson_id')->unique())
-            ->get(['enrollment_id', 'lesson_id'])
-            ->map(fn (LessonAttendance $row): string => self::key($row->enrollment_id, $row->lesson_id))
+            ->whereIn('client_id', $seats->pluck('client_id')->unique())
+            ->whereIn('lesson_id', $seats->pluck('lesson_id')->unique())
+            ->get(['client_id', 'lesson_id'])
+            ->map(fn (LessonAttendance $row): string => self::key($row->client_id, $row->lesson_id))
             ->all();
 
-        $missing = $pairs
-            ->reject(fn (array $pair): bool => in_array(self::key($pair['enrollment_id'], $pair['lesson_id']), $existing, true))
+        $missing = $seats
+            ->reject(fn (array $seat): bool => in_array(self::key($seat['client_id'], $seat['lesson_id']), $existing, true))
             ->values();
 
         if ($missing->isEmpty()) {
@@ -96,11 +106,13 @@ class LessonRoster
         $now = now();
 
         $missing
-            ->map(fn (array $pair): array => [
+            ->map(fn (array $seat): array => [
                 'id' => (string) Str::uuid(),
-                'enrollment_id' => $pair['enrollment_id'],
-                'lesson_id' => $pair['lesson_id'],
-                'attended' => false,
+                'client_id' => $seat['client_id'],
+                'enrollment_id' => $seat['enrollment_id'],
+                'booking_id' => null,
+                'lesson_id' => $seat['lesson_id'],
+                'attended' => true,
                 'cancelled_at' => null,
                 'token_generated' => false,
                 'created_at' => $now,
@@ -112,8 +124,8 @@ class LessonRoster
         return $missing->count();
     }
 
-    private static function key(string $enrollmentId, string $lessonId): string
+    private static function key(string $clientId, string $lessonId): string
     {
-        return $enrollmentId.'|'.$lessonId;
+        return $clientId.'|'.$lessonId;
     }
 }

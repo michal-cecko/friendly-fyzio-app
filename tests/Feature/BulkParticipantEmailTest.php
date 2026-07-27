@@ -12,6 +12,7 @@ use App\Models\CourseSeries;
 use App\Models\User;
 use App\Notifications\CustomEmailNotification;
 use App\Notifications\EnrollmentTemplateNotification;
+use App\Support\Emails\CopyRecipients;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
@@ -155,6 +156,45 @@ class BulkParticipantEmailTest extends TestCase
         ))->handle();
 
         Notification::assertSentTimes(CustomEmailNotification::class, 2);
+    }
+
+    /**
+     * A CC/BCC is the sender's single archive of the broadcast, not a copy for
+     * every recipient — it must ride on exactly one of the messages, however
+     * many go out.
+     */
+    public function test_a_broadcast_copy_rides_on_only_one_message(): void
+    {
+        Notification::fake();
+
+        $series = $this->seriesWithParticipants(3);
+        $ids = $series->activeTakers()->pluck('id')->map('strval')->all();
+
+        (new SendBulkParticipantEmailJob(
+            signupClass: CourseEnrollment::class,
+            signupIds: $ids,
+            templateKey: null,
+            subject: 'Změna místa',
+            bodyHtml: '<p>Text.</p>',
+            senderId: $this->admin->getKey(),
+            copies: new CopyRecipients(bcc: ['archiv@friendlyfyzio.cz']),
+        ))->handle();
+
+        $withCopies = 0;
+
+        Notification::assertSentOnDemand(
+            CustomEmailNotification::class,
+            function (CustomEmailNotification $notification) use (&$withCopies): bool {
+                if ($notification->copies !== null) {
+                    $withCopies++;
+                }
+
+                return true;
+            },
+        );
+
+        Notification::assertSentTimes(CustomEmailNotification::class, 3);
+        $this->assertSame(1, $withCopies);
     }
 
     public function test_job_sends_the_chosen_template_to_each_recipient(): void

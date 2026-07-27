@@ -5,12 +5,11 @@ namespace Tests\Feature\Enrollments;
 use App\Enums\BookingStatus;
 use App\Enums\CourseEnrollmentStatus;
 use App\Enums\EmailTemplateKey;
-use App\Filament\Clusters\Kurzy\Resources\OneOffEvents\Pages\EditOneOffEvent;
+use App\Filament\Clusters\Kurzy\Resources\Lessons\Pages\EditLesson;
 use App\Models\CourseEnrollment;
-use App\Models\CourseLesson;
 use App\Models\CourseSeries;
-use App\Models\OneOffEvent;
-use App\Models\OneOffEventBooking;
+use App\Models\Lesson;
+use App\Models\LessonBooking;
 use App\Models\User;
 use App\Notifications\EnrollmentTemplateNotification;
 use App\Support\Enrollments\NotifyScheduleChange;
@@ -28,17 +27,17 @@ class ScheduleChangeNotificationTest extends TestCase
     {
         Notification::fake();
 
-        $event = OneOffEvent::factory()->create(['capacity' => 10]);
-        $confirmed = OneOffEventBooking::factory()->create([
-            'one_off_event_id' => $event->getKey(),
+        $event = Lesson::factory()->standalone()->create(['capacity' => 10]);
+        $confirmed = LessonBooking::factory()->create([
+            'lesson_id' => $event->getKey(),
             'status' => BookingStatus::Confirmed,
         ]);
-        $pending = OneOffEventBooking::factory()->create([
-            'one_off_event_id' => $event->getKey(),
+        $pending = LessonBooking::factory()->create([
+            'lesson_id' => $event->getKey(),
             'status' => BookingStatus::Pending,
         ]);
-        $cancelled = OneOffEventBooking::factory()->create([
-            'one_off_event_id' => $event->getKey(),
+        $cancelled = LessonBooking::factory()->create([
+            'lesson_id' => $event->getKey(),
             'status' => BookingStatus::Cancelled,
         ]);
 
@@ -63,7 +62,7 @@ class ScheduleChangeNotificationTest extends TestCase
         Notification::fake();
 
         $series = CourseSeries::factory()->create();
-        $lesson = CourseLesson::factory()->create(['series_id' => $series->getKey()]);
+        $lesson = Lesson::factory()->create(['series_id' => $series->getKey()]);
         $active = CourseEnrollment::factory()->create([
             'series_id' => $series->getKey(),
             'status' => CourseEnrollmentStatus::Active,
@@ -84,28 +83,27 @@ class ScheduleChangeNotificationTest extends TestCase
         Notification::assertSentTo($lesson->instructor, EnrollmentTemplateNotification::class);
     }
 
-    public function test_editing_an_event_date_with_the_toggle_on_notifies_participants(): void
+    public function test_editing_an_event_date_prompts_and_notifies_participants(): void
     {
         Notification::fake();
         Filament::setCurrentPanel('admin');
         $this->actingAs(User::factory()->admin()->create());
 
-        $event = OneOffEvent::factory()->create([
+        $event = Lesson::factory()->standalone()->create([
             'capacity' => 10,
-            'event_date' => today()->addWeeks(2)->toDateString(),
+            'lesson_date' => today()->addWeeks(2)->toDateString(),
         ]);
-        $booking = OneOffEventBooking::factory()->create([
-            'one_off_event_id' => $event->getKey(),
+        $booking = LessonBooking::factory()->create([
+            'lesson_id' => $event->getKey(),
             'status' => BookingStatus::Confirmed,
         ]);
 
-        Livewire::test(EditOneOffEvent::class, ['record' => $event->getKey()])
-            ->fillForm([
-                'event_date' => today()->addWeeks(3)->toDateString(),
-                'notify_participants' => true,
-            ])
+        Livewire::test(EditLesson::class, ['record' => $event->getKey()])
+            ->fillForm(['lesson_date' => today()->addWeeks(3)->toDateString()])
             ->call('save')
-            ->assertHasNoFormErrors();
+            ->assertHasNoFormErrors()
+            ->assertActionMounted('scheduleChangeNotification')
+            ->callMountedAction();
 
         Notification::assertSentTo(
             $booking->client,
@@ -114,51 +112,108 @@ class ScheduleChangeNotificationTest extends TestCase
         );
     }
 
-    public function test_editing_an_event_with_the_toggle_off_sends_nothing(): void
+    public function test_confirming_the_prompt_includes_the_optional_message_in_the_email(): void
     {
         Notification::fake();
         Filament::setCurrentPanel('admin');
         $this->actingAs(User::factory()->admin()->create());
 
-        $event = OneOffEvent::factory()->create([
-            'capacity' => 10,
-            'event_date' => today()->addWeeks(2)->toDateString(),
+        $series = CourseSeries::factory()->create();
+        $lesson = Lesson::factory()->create([
+            'series_id' => $series->getKey(),
+            'lesson_date' => today()->addWeeks(2)->toDateString(),
         ]);
-        $booking = OneOffEventBooking::factory()->create([
-            'one_off_event_id' => $event->getKey(),
+        $enrollment = CourseEnrollment::factory()->create([
+            'series_id' => $series->getKey(),
+            'status' => CourseEnrollmentStatus::Active,
+        ]);
+
+        Livewire::test(EditLesson::class, ['record' => $lesson->getKey()])
+            ->fillForm(['lesson_date' => today()->addWeeks(3)->toDateString()])
+            ->call('save')
+            ->assertHasNoFormErrors()
+            ->setActionData(['reason' => 'Lekci posouváme o týden.'])
+            ->callMountedAction();
+
+        Notification::assertSentTo(
+            $enrollment->client,
+            EnrollmentTemplateNotification::class,
+            fn (EnrollmentTemplateNotification $n): bool => $n->key === EmailTemplateKey::LessonScheduleChanged
+                && str_contains((string) ($n->tokens['zprava'] ?? ''), 'Lekci posouváme o týden.'),
+        );
+    }
+
+    public function test_confirming_the_prompt_without_a_message_leaves_the_block_empty(): void
+    {
+        Notification::fake();
+        Filament::setCurrentPanel('admin');
+        $this->actingAs(User::factory()->admin()->create());
+
+        $series = CourseSeries::factory()->create();
+        $lesson = Lesson::factory()->create([
+            'series_id' => $series->getKey(),
+            'lesson_date' => today()->addWeeks(2)->toDateString(),
+        ]);
+        $enrollment = CourseEnrollment::factory()->create([
+            'series_id' => $series->getKey(),
+            'status' => CourseEnrollmentStatus::Active,
+        ]);
+
+        Livewire::test(EditLesson::class, ['record' => $lesson->getKey()])
+            ->fillForm(['lesson_date' => today()->addWeeks(3)->toDateString()])
+            ->call('save')
+            ->assertHasNoFormErrors()
+            ->callMountedAction();
+
+        Notification::assertSentTo(
+            $enrollment->client,
+            EnrollmentTemplateNotification::class,
+            fn (EnrollmentTemplateNotification $n): bool => $n->key === EmailTemplateKey::LessonScheduleChanged
+                && (string) ($n->tokens['zprava'] ?? '') === '',
+        );
+    }
+
+    public function test_saving_a_schedule_change_without_confirming_the_prompt_sends_nothing(): void
+    {
+        Notification::fake();
+        Filament::setCurrentPanel('admin');
+        $this->actingAs(User::factory()->admin()->create());
+
+        $event = Lesson::factory()->standalone()->create([
+            'capacity' => 10,
+            'lesson_date' => today()->addWeeks(2)->toDateString(),
+        ]);
+        $booking = LessonBooking::factory()->create([
+            'lesson_id' => $event->getKey(),
             'status' => BookingStatus::Confirmed,
         ]);
 
-        Livewire::test(EditOneOffEvent::class, ['record' => $event->getKey()])
-            ->fillForm([
-                'event_date' => today()->addWeeks(3)->toDateString(),
-                'notify_participants' => false,
-            ])
+        Livewire::test(EditLesson::class, ['record' => $event->getKey()])
+            ->fillForm(['lesson_date' => today()->addWeeks(3)->toDateString()])
             ->call('save')
-            ->assertHasNoFormErrors();
+            ->assertHasNoFormErrors()
+            ->assertActionMounted('scheduleChangeNotification');
 
         Notification::assertNothingSentTo($booking->client);
     }
 
-    public function test_editing_an_event_without_a_schedule_change_sends_nothing(): void
+    public function test_editing_an_event_without_a_schedule_change_does_not_prompt(): void
     {
         Notification::fake();
         Filament::setCurrentPanel('admin');
         $this->actingAs(User::factory()->admin()->create());
 
-        $event = OneOffEvent::factory()->create(['capacity' => 10]);
-        $booking = OneOffEventBooking::factory()->create([
-            'one_off_event_id' => $event->getKey(),
+        $event = Lesson::factory()->standalone()->create(['capacity' => 10]);
+        $booking = LessonBooking::factory()->create([
+            'lesson_id' => $event->getKey(),
             'status' => BookingStatus::Confirmed,
         ]);
 
-        Livewire::test(EditOneOffEvent::class, ['record' => $event->getKey()])
-            ->fillForm([
-                'name' => 'Přejmenovaná akce',
-                'notify_participants' => true,
-            ])
+        Livewire::test(EditLesson::class, ['record' => $event->getKey()])
+            ->fillForm(['name' => 'Přejmenovaná akce'])
             ->call('save')
-            ->assertHasNoFormErrors();
+            ->assertHasNoFormErrors()
+            ->assertActionNotMounted('scheduleChangeNotification');
 
         Notification::assertNothingSentTo($booking->client);
     }

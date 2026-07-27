@@ -9,8 +9,10 @@ use App\Filament\Clusters\Provoz\Resources\Users\UserResource;
 use App\Filament\Support\Schemas\RecordTimestamps;
 use App\Filament\Support\Schemas\ResponsiveColumns;
 use App\Models\Reservation;
+use App\Models\ReservationDocument;
 use App\Support\Reservations\ConflictFinder;
 use Filament\Infolists\Components\IconEntry;
+use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\ViewEntry;
 use Filament\Schemas\Components\Grid;
@@ -40,7 +42,12 @@ class ReservationInfolist
                         Grid::make(3)->schema([
                             TextEntry::make('reservation_date')->label('Datum')->date('d.m.Y'),
                             TextEntry::make('start_time')->label('Od')->time('H:i'),
-                            TextEntry::make('end_time')->label('Do')->time('H:i'),
+                            // „Do" is when the therapist is free again, not when the
+                            // client leaves — the break is part of the slot.
+                            TextEntry::make('end_time')
+                                ->label('Do')
+                                ->state(fn (Reservation $record): string => $record->endsAtIncludingBreak()->format('H:i'))
+                                ->helperText(fn (Reservation $record): ?string => $record->breakLabel()),
                         ]),
                         Grid::make(ResponsiveColumns::DENSE)->gridContainer()->schema([
                             TextEntry::make('client.name')
@@ -124,9 +131,23 @@ class ReservationInfolist
                             ->badge()
                             ->color('success')
                             ->placeholder('— dosud nevyřešeno'),
+                        RepeatableEntry::make('doctorNoteDocuments')
+                            ->label('Nahraná potvrzení')
+                            ->placeholder('— klient zatím nic nenahrál')
+                            ->columnSpanFull()
+                            ->contained(false)
+                            ->schema([
+                                TextEntry::make('original_name')
+                                    ->hiddenLabel()
+                                    ->icon(Heroicon::OutlinedPaperClip)
+                                    ->url(fn (ReservationDocument $record): string => $record->downloadUrl())
+                                    ->openUrlInNewTab()
+                                    ->helperText(fn (ReservationDocument $record): string => $record->sizeForHumans()
+                                        .' · nahráno '.$record->created_at->format('d.m.Y H:i')),
+                            ]),
                         TextEntry::make('doctor_note_hint')
                             ->hiddenLabel()
-                            ->state('Storno poplatek je pozastaven do doručení potvrzení od lékaře. Vyřešte přes akci „Vyřešit storno (lékařské potvrzení)" — buď potvrzení přijměte a poplatek prominěte, nebo jej doúčtujte, pokud nedorazí.')
+                            ->state('Storno poplatek je pozastaven do doručení potvrzení od lékaře. Klient jej nahrává v klientské zóně nebo odkazem z e-mailu. Vyřešte přes akci „Vyřešit storno (lékařské potvrzení)" — buď potvrzení přijměte a poplatek prominěte, nebo jej doúčtujte, pokud nedorazí.')
                             ->columnSpanFull()
                             ->color('gray'),
                     ]),

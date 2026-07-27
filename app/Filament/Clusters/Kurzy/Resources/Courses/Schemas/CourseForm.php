@@ -90,6 +90,13 @@ class CourseForm
                                     ->suffix('h')
                                     ->helperText('Do kolika hodin před lekcí lze zrušit účast bez ztráty nároku na náhradu.')
                                     ->columnSpan(1),
+                                TextInput::make('drop_in_price')
+                                    ->label('Cena jednorázového vstupu')
+                                    ->integer()
+                                    ->minValue(0)
+                                    ->suffix('Kč')
+                                    ->helperText('Za kolik se prodá jedno volné místo na lekci tohoto kurzu. Prázdné = lekce se jednotlivě neprodávají.')
+                                    ->columnSpan(1),
                                 DateTimePicker::make('published_at')
                                     ->label('Publikováno')
                                     ->native(false)

@@ -11,7 +11,7 @@ use App\Models\Course;
 use App\Models\CourseCategory;
 use App\Models\CourseSeries;
 use App\Models\EventCategory;
-use App\Models\OneOffEvent;
+use App\Models\Lesson;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
@@ -40,12 +40,12 @@ class PublicOfferPagesTest extends TestCase
         ]);
     }
 
-    protected function upcomingEvent(array $attributes = []): OneOffEvent
+    protected function upcomingEvent(array $attributes = []): Lesson
     {
-        return OneOffEvent::factory()
+        return Lesson::factory()->standalone()
             ->forCategory(EventCategory::query()->where('slug', 'workshopy')->firstOrFail())
             ->create([
-                'event_date' => today()->addWeeks(3)->toDateString(),
+                'lesson_date' => today()->addWeeks(3)->toDateString(),
                 'published_at' => now(),
                 ...$attributes,
             ]);
@@ -106,7 +106,7 @@ class PublicOfferPagesTest extends TestCase
             ->assertSee($event->name)
             ->assertSee('Přihlásit se a zaplatit');
 
-        $draft = OneOffEvent::factory()
+        $draft = Lesson::factory()->standalone()
             ->forCategory($event->category)
             ->unpublished()
             ->create();
@@ -142,7 +142,7 @@ class PublicOfferPagesTest extends TestCase
     public function test_past_event_stays_reachable_without_signup(): void
     {
         $event = $this->upcomingEvent([
-            'event_date' => today()->subWeeks(2)->toDateString(),
+            'lesson_date' => today()->subWeeks(2)->toDateString(),
         ]);
 
         $this->get('/workshopy/'.$event->slug)
@@ -154,13 +154,13 @@ class PublicOfferPagesTest extends TestCase
     public function test_course_linked_event_falls_back_to_course_description(): void
     {
         $course = $this->publishedCourse(['description' => 'Popis převzatý z kurzu.']);
-        $event = OneOffEvent::factory()
+        $event = Lesson::factory()->standalone()
             ->forCategory(EventCategory::query()->where('slug', 'jednorazove-lekce')->firstOrFail())
             ->withCourse($course)
             ->published()
             ->create([
                 'description' => null,
-                'event_date' => today()->addWeeks(2)->toDateString(),
+                'lesson_date' => today()->addWeeks(2)->toDateString(),
             ]);
 
         $this->get('/jednorazove-lekce/'.$event->slug)

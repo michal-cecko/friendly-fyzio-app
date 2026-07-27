@@ -10,7 +10,7 @@ enum PayableType: string
 {
     case Reservation = 'reservation';
     case CourseEnrollment = 'course_enrollment';
-    case OneOffEventBooking = 'one_off_event_booking';
+    case LessonBooking = 'lesson_booking';
 
     /**
      * Storno fees reuse the reservation tokens but have their own wording,
@@ -29,7 +29,7 @@ enum PayableType: string
         return match ($this) {
             self::Reservation => 'Rezervace',
             self::CourseEnrollment => 'Přihláška na kurz',
-            self::OneOffEventBooking => 'Jednorázová akce',
+            self::LessonBooking => 'Lekce',
         };
     }
 
@@ -48,7 +48,7 @@ enum PayableType: string
         return match ($this) {
             self::Reservation => '{{ sluzba }} – {{ datum }}',
             self::CourseEnrollment => '{{ kurz }} – {{ beh }}',
-            self::OneOffEventBooking => '{{ nazev }} – {{ datum }}',
+            self::LessonBooking => '{{ nazev }} – {{ datum }}',
         };
     }
 
@@ -57,7 +57,7 @@ enum PayableType: string
         return match ($this) {
             self::Reservation => '{{ cas }}, {{ terapeut }}',
             self::CourseEnrollment => '{{ obdobi }}',
-            self::OneOffEventBooking => '{{ cas }}',
+            self::LessonBooking => '{{ cas }}',
         };
     }
 
@@ -83,7 +83,7 @@ enum PayableType: string
                 'obdobi' => 'Období série (od – do)',
                 'klient' => 'Jméno klienta',
             ],
-            self::OneOffEventBooking => [
+            self::LessonBooking => [
                 'nazev' => 'Název akce (Název pro fakturaci, jinak běžný název)',
                 'datum' => 'Datum konání',
                 'cas' => 'Čas začátku',

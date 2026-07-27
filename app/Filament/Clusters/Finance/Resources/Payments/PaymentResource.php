@@ -5,6 +5,7 @@ namespace App\Filament\Clusters\Finance\Resources\Payments;
 use App\Filament\Clusters\Finance\FinanceCluster;
 use App\Filament\Clusters\Finance\Resources\Payments\Pages\ListPayments;
 use App\Filament\Clusters\Finance\Resources\Payments\Pages\ViewPayment;
+use App\Filament\Clusters\Finance\Resources\Payments\Schemas\PaymentForm;
 use App\Filament\Clusters\Finance\Resources\Payments\Schemas\PaymentInfolist;
 use App\Filament\Clusters\Finance\Resources\Payments\Tables\PaymentsTable;
 use App\Models\Payment;
@@ -104,6 +105,15 @@ class PaymentResource extends Resource
     public static function infolist(Schema $schema): Schema
     {
         return PaymentInfolist::configure($schema);
+    }
+
+    /**
+     * Only ever reached through the "Upravit" modal — there is no create or edit
+     * page for a payment.
+     */
+    public static function form(Schema $schema): Schema
+    {
+        return PaymentForm::configure($schema);
     }
 
     public static function table(Table $table): Table

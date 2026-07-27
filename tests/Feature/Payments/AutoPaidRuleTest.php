@@ -7,8 +7,8 @@ use App\Enums\PaymentStatus;
 use App\Enums\ReservationStatus;
 use App\Models\CourseEnrollment;
 use App\Models\CourseSeries;
-use App\Models\OneOffEvent;
-use App\Models\OneOffEventBooking;
+use App\Models\Lesson;
+use App\Models\LessonBooking;
 use App\Models\Reservation;
 use App\Models\Service;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -43,10 +43,10 @@ class AutoPaidRuleTest extends TestCase
         $this->assertNotNull($enrollment->paid_at);
     }
 
-    public function test_paid_payment_marks_one_off_event_booking_paid_with_paid_at(): void
+    public function test_paid_payment_marks_lesson_booking_paid_with_paid_at(): void
     {
-        $booking = OneOffEventBooking::factory()->create([
-            'one_off_event_id' => OneOffEvent::factory()->create(['price' => 950])->getKey(),
+        $booking = LessonBooking::factory()->create([
+            'lesson_id' => Lesson::factory()->create(['price' => 950])->getKey(),
             'payment_status' => PaymentStatus::Unpaid,
             'paid_at' => null,
         ]);
@@ -116,15 +116,18 @@ class AutoPaidRuleTest extends TestCase
     {
         $paidAt = now()->subDay()->startOfSecond();
 
-        $enrollment = CourseEnrollment::factory()->create([
-            'series_id' => CourseSeries::factory()->create(['price' => 500])->getKey(),
+        // A forward-only payable (booking): once Paid it never re-stamps paid_at.
+        // The enrollment is deliberately excluded here — it derives paid_at from
+        // its payments instead (see CourseEnrollmentResourceTest).
+        $booking = LessonBooking::factory()->create([
+            'lesson_id' => Lesson::factory()->create(['price' => 500])->getKey(),
             'payment_status' => PaymentStatus::Paid,
             'paid_at' => $paidAt,
         ]);
 
-        $this->payFor($enrollment, 500);
+        $this->payFor($booking, 500);
 
-        $this->assertTrue($enrollment->fresh()->paid_at->equalTo($paidAt));
+        $this->assertTrue($booking->fresh()->paid_at->equalTo($paidAt));
     }
 
     public function test_unmarking_or_deleting_payment_reverts_reservation(): void
@@ -152,21 +155,23 @@ class AutoPaidRuleTest extends TestCase
 
     public function test_unmarking_payment_does_not_revert_other_payables(): void
     {
-        // Course enrollments (and the other non-reservation payables) keep the
-        // forward-only auto-paid rule — un-marking a payment is a manual correction.
-        $enrollment = CourseEnrollment::factory()->create([
-            'series_id' => CourseSeries::factory()->create(['price' => 500])->getKey(),
+        // The remaining non-deterministic payables (bookings, workshop
+        // registrations) keep the forward-only auto-paid rule — un-marking a
+        // payment is a manual correction. Reservations and course enrollments
+        // instead re-derive from their payments (covered elsewhere).
+        $booking = LessonBooking::factory()->create([
+            'lesson_id' => Lesson::factory()->create(['price' => 500])->getKey(),
             'payment_status' => PaymentStatus::Unpaid,
             'paid_at' => null,
         ]);
 
-        $payment = $this->payFor($enrollment, 500);
+        $payment = $this->payFor($booking, 500);
 
-        $this->assertSame(PaymentStatus::Paid, $enrollment->fresh()->payment_status);
+        $this->assertSame(PaymentStatus::Paid, $booking->fresh()->payment_status);
 
         $payment->update(['status' => PaymentStatus::Unpaid, 'paid_at' => null]);
 
-        $this->assertSame(PaymentStatus::Paid, $enrollment->fresh()->payment_status);
+        $this->assertSame(PaymentStatus::Paid, $booking->fresh()->payment_status);
     }
 
     private function reservation(int $price, ReservationStatus $status = ReservationStatus::Confirmed): Reservation

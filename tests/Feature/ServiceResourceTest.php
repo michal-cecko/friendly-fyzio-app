@@ -8,6 +8,7 @@ use App\Filament\Clusters\Provoz\Resources\Services\ServiceResource;
 use App\Models\Building;
 use App\Models\Room;
 use App\Models\Service;
+use App\Models\StaffProfile;
 use App\Models\User;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -60,13 +61,15 @@ class ServiceResourceTest extends TestCase
     {
         $service = Service::factory()->create();
         $profile = User::factory()->therapist()->create()->staffProfile;
-        $service->therapists()->attach($profile);
+        $service->therapists()->attach($profile, ['break_blocks' => 2]);
 
         $this->actingAs($this->superAdmin());
 
         Livewire::test(EditService::class, ['record' => $service->getKey()])
             ->assertSuccessful()
-            ->assertFormSet(['therapists' => [$profile->getKey()]]);
+            ->assertFormSet(fn (array $state): bool => collect($state['serviceTherapists'])
+                ->contains(fn (array $row): bool => $row['therapist_id'] === $profile->getKey()
+                    && (int) $row['break_blocks'] === 2));
     }
 
     public function test_service_creation_validates_required_fields(): void
@@ -100,7 +103,6 @@ class ServiceResourceTest extends TestCase
                 'name' => 'Masáž',
                 'slug' => 'masaz',
                 'duration_minutes' => 60,
-                'break_minutes' => 15,
                 'price' => 800,
                 'visibility' => 'public',
                 'rooms' => [$room->getKey()],
@@ -112,7 +114,56 @@ class ServiceResourceTest extends TestCase
 
         $this->assertNotNull($service);
         $this->assertSame(60, $service->duration_minutes);
-        $this->assertSame(15, $service->break_minutes);
         $this->assertTrue($service->rooms->contains($room));
+    }
+
+    public function test_can_assign_therapists_with_and_without_a_break_override(): void
+    {
+        $withOverride = StaffProfile::factory()->create(['break_blocks' => 1]);
+        $inheriting = StaffProfile::factory()->create(['break_blocks' => 1]);
+
+        $this->actingAs($this->superAdmin());
+
+        Livewire::test(CreateService::class)
+            ->fillForm([
+                'name' => 'Masáž zad',
+                'slug' => 'masaz-zad',
+                'duration_minutes' => 60,
+                'price' => 800,
+                'visibility' => 'public',
+                'serviceTherapists' => [
+                    ['therapist_id' => $withOverride->getKey(), 'break_blocks' => 2],
+                    ['therapist_id' => $inheriting->getKey(), 'break_blocks' => null],
+                ],
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $service = Service::where('slug', 'masaz-zad')->firstOrFail();
+
+        $this->assertEqualsCanonicalizing(
+            [$withOverride->getKey(), $inheriting->getKey()],
+            $service->therapists->pluck('id')->all(),
+        );
+
+        // An override is stored as given; an empty one stays null so the
+        // therapist's own default keeps applying.
+        $this->assertSame(2, $service->therapists->firstWhere('id', $withOverride->getKey())->pivot->break_blocks);
+        $this->assertNull($service->therapists->firstWhere('id', $inheriting->getKey())->pivot->break_blocks);
+    }
+
+    public function test_a_break_override_survives_a_round_trip_through_the_edit_form(): void
+    {
+        $therapist = StaffProfile::factory()->create(['break_blocks' => 1]);
+        $service = Service::factory()->create();
+        $service->therapists()->attach($therapist, ['break_blocks' => 2]);
+
+        $this->actingAs($this->superAdmin());
+
+        Livewire::test(EditService::class, ['record' => $service->getKey()])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $this->assertSame(2, $service->fresh()->therapists->first()->pivot->break_blocks);
     }
 }

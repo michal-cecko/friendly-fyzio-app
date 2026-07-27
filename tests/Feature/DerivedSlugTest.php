@@ -8,8 +8,8 @@ use App\Filament\Clusters\Kurzy\Resources\Courses\Pages\CreateCourse;
 use App\Filament\Clusters\Kurzy\Resources\Courses\Pages\EditCourse;
 use App\Filament\Clusters\Kurzy\Resources\EventCategories\Pages\CreateEventCategory;
 use App\Filament\Clusters\Kurzy\Resources\EventCategories\Pages\EditEventCategory;
-use App\Filament\Clusters\Kurzy\Resources\OneOffEvents\Pages\CreateOneOffEvent;
-use App\Filament\Clusters\Kurzy\Resources\OneOffEvents\Pages\EditOneOffEvent;
+use App\Filament\Clusters\Kurzy\Resources\Lessons\Pages\CreateLesson;
+use App\Filament\Clusters\Kurzy\Resources\Lessons\Pages\EditLesson;
 use App\Filament\Clusters\Obsah\Resources\Pages\Pages\CreatePage;
 use App\Filament\Clusters\Obsah\Resources\Pages\Pages\EditPage;
 use App\Filament\Clusters\Provoz\Resources\ServiceCategories\Pages\CreateServiceCategory;
@@ -19,7 +19,7 @@ use App\Filament\Clusters\Provoz\Resources\Services\Pages\EditService;
 use App\Models\Course;
 use App\Models\CourseCategory;
 use App\Models\EventCategory;
-use App\Models\OneOffEvent;
+use App\Models\Lesson;
 use App\Models\Page;
 use App\Models\Service;
 use App\Models\ServiceCategory;
@@ -58,7 +58,7 @@ class DerivedSlugTest extends TestCase
             'event category' => [EventCategory::class, CreateEventCategory::class, EditEventCategory::class],
             'course category' => [CourseCategory::class, CreateCourseCategory::class, EditCourseCategory::class],
             'course' => [Course::class, CreateCourse::class, EditCourse::class],
-            'one-off event' => [OneOffEvent::class, CreateOneOffEvent::class, EditOneOffEvent::class],
+            'one-off event' => [Lesson::class, CreateLesson::class, EditLesson::class],
             'page' => [Page::class, CreatePage::class, EditPage::class],
             'service category' => [ServiceCategory::class, CreateServiceCategory::class, EditServiceCategory::class],
             'service' => [Service::class, CreateService::class, EditService::class],

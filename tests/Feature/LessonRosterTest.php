@@ -4,8 +4,8 @@ namespace Tests\Feature;
 
 use App\Enums\CourseEnrollmentStatus;
 use App\Models\CourseEnrollment;
-use App\Models\CourseLesson;
 use App\Models\CourseSeries;
+use App\Models\Lesson;
 use App\Models\LessonAttendance;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Activitylog\Models\Activity;
@@ -34,7 +34,7 @@ class LessonRosterTest extends TestCase
             'status' => CourseEnrollmentStatus::Waitlist,
         ]);
 
-        $lesson = CourseLesson::factory()->create(['series_id' => $series->getKey()]);
+        $lesson = Lesson::factory()->create(['series_id' => $series->getKey()]);
 
         $this->assertSame(3, $lesson->attendances()->count());
     }
@@ -42,7 +42,7 @@ class LessonRosterTest extends TestCase
     public function test_a_new_enrollment_gets_a_row_for_every_lesson(): void
     {
         $series = CourseSeries::factory()->create(['capacity' => 10]);
-        CourseLesson::factory()->count(4)->create(['series_id' => $series->getKey()]);
+        Lesson::factory()->count(4)->create(['series_id' => $series->getKey()]);
 
         $enrollment = CourseEnrollment::factory()->create([
             'series_id' => $series->getKey(),
@@ -55,7 +55,7 @@ class LessonRosterTest extends TestCase
     public function test_a_waitlisted_enrollment_stays_off_the_roster_until_promoted(): void
     {
         $series = CourseSeries::factory()->create(['capacity' => 10]);
-        CourseLesson::factory()->count(2)->create(['series_id' => $series->getKey()]);
+        Lesson::factory()->count(2)->create(['series_id' => $series->getKey()]);
 
         $enrollment = CourseEnrollment::factory()->create([
             'series_id' => $series->getKey(),
@@ -72,7 +72,7 @@ class LessonRosterTest extends TestCase
     public function test_cancelling_keeps_the_rows_but_frees_the_spots(): void
     {
         $series = CourseSeries::factory()->create(['capacity' => 10]);
-        $lesson = CourseLesson::factory()->create(['series_id' => $series->getKey()]);
+        $lesson = Lesson::factory()->create(['series_id' => $series->getKey()]);
 
         $enrollment = CourseEnrollment::factory()->create([
             'series_id' => $series->getKey(),
@@ -90,7 +90,7 @@ class LessonRosterTest extends TestCase
     public function test_generated_rows_are_not_written_to_the_activity_log(): void
     {
         $series = CourseSeries::factory()->create(['capacity' => 10]);
-        CourseLesson::factory()->count(2)->create(['series_id' => $series->getKey()]);
+        Lesson::factory()->count(2)->create(['series_id' => $series->getKey()]);
 
         CourseEnrollment::factory()->create([
             'series_id' => $series->getKey(),
@@ -106,7 +106,7 @@ class LessonRosterTest extends TestCase
     public function test_the_backfill_command_is_idempotent_and_preserves_excuses(): void
     {
         $series = CourseSeries::factory()->create(['capacity' => 10]);
-        $lesson = CourseLesson::factory()->create(['series_id' => $series->getKey()]);
+        $lesson = Lesson::factory()->create(['series_id' => $series->getKey()]);
         $enrollment = CourseEnrollment::factory()->create([
             'series_id' => $series->getKey(),
             'status' => CourseEnrollmentStatus::Active,
@@ -118,7 +118,7 @@ class LessonRosterTest extends TestCase
         // A série whose rows predate the roster.
         LessonAttendance::query()->whereKeyNot($excused->getKey())->delete();
         $olderSeries = CourseSeries::factory()->create(['capacity' => 10]);
-        CourseLesson::factory()->count(3)->create(['series_id' => $olderSeries->getKey()]);
+        Lesson::factory()->count(3)->create(['series_id' => $olderSeries->getKey()]);
         $olderEnrollment = CourseEnrollment::factory()->create([
             'series_id' => $olderSeries->getKey(),
             'status' => CourseEnrollmentStatus::Active,

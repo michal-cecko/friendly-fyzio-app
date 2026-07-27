@@ -64,7 +64,7 @@ class ReviewsBrick extends Brick
                     ->placeholder('Všechny')
                     ->options([
                         'course' => 'Kurzy',
-                        'one_off_event' => 'Jednorázové akce',
+                        'lesson' => 'Lekce',
                         'service' => 'Služby',
                     ])
                     ->visible(fn (Get $get): bool => ($get('source') ?? 'all') === 'all'),
@@ -129,8 +129,8 @@ class ReviewsBrick extends Brick
 
         if (filled($config['reviewable_type'] ?? null)) {
             // Legacy configs may still say 'workshop' — those reviews were
-            // migrated to the unified one_off_event alias.
-            $type = $config['reviewable_type'] === 'workshop' ? 'one_off_event' : $config['reviewable_type'];
+            // migrated to the unified lesson alias.
+            $type = $config['reviewable_type'] === 'workshop' ? 'lesson' : $config['reviewable_type'];
 
             $query->where('reviewable_type', $type);
         }

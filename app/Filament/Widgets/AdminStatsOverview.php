@@ -18,7 +18,7 @@ class AdminStatsOverview extends StatsOverviewWidget
 {
     use AdminOnly;
 
-    protected static ?int $sort = 1;
+    protected static ?int $sort = 3;
 
     protected ?string $pollingInterval = null;
 

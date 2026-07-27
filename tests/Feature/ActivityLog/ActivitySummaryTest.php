@@ -4,6 +4,8 @@ namespace Tests\Feature\ActivityLog;
 
 use App\Enums\EmailTemplateKey;
 use App\Enums\ReservationStatus;
+use App\Models\Lesson;
+use App\Models\LessonAttendance;
 use App\Models\Reservation;
 use App\Models\Service;
 use App\Notifications\ReservationTemplateNotification;
@@ -122,6 +124,54 @@ class ActivitySummaryTest extends TestCase
             ->firstOrFail();
 
         $this->assertStringStartsWith('Odeslán e-mail', ActivityPresenter::summary($activity));
+    }
+
+    /**
+     * A presence event is about a person at a place: the client leads, the
+     * lesson follows. The subject is the seat, whose own title is the client
+     * again — repeating it would read as "Jana — Účast na lekci · Jana".
+     */
+    public function test_a_presence_event_names_the_client_and_the_lesson(): void
+    {
+        $attendance = LessonAttendance::factory()->create();
+
+        $activity = Activity::create([
+            'log_name' => 'default',
+            'description' => 'Klient odhlášen z lekce',
+            'subject_type' => $attendance->getMorphClass(),
+            'subject_id' => $attendance->getKey(),
+            'event' => 'lesson_absence',
+            'properties' => ['client' => 'Jana Nováková', 'lesson_id' => $attendance->lesson_id],
+        ]);
+
+        $summary = ActivityPresenter::summary($activity);
+
+        $this->assertStringStartsWith('Odhlášen z lekce: Jana Nováková — ', $summary);
+        $this->assertStringContainsString($attendance->lesson->logTitle(), $summary);
+        $this->assertStringNotContainsString('Účast na lekci', $summary);
+    }
+
+    /**
+     * These events used to be filed against the lesson itself; those rows have
+     * to keep reading properly.
+     */
+    public function test_a_legacy_presence_event_on_a_lesson_still_reads(): void
+    {
+        $lesson = Lesson::factory()->create();
+
+        $activity = Activity::create([
+            'log_name' => 'default',
+            'description' => 'Klient vrácen do lekce',
+            'subject_type' => $lesson->getMorphClass(),
+            'subject_id' => $lesson->getKey(),
+            'event' => 'lesson_absence_reverted',
+            'properties' => ['client' => 'Jana Nováková'],
+        ]);
+
+        $this->assertSame(
+            'Vrácen do lekce: Jana Nováková — '.$lesson->logTitle(),
+            ActivityPresenter::summary($activity),
+        );
     }
 
     public function test_generic_semantic_event_uses_the_event_label(): void

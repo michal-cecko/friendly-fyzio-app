@@ -150,6 +150,17 @@
     line-height: 1;
 }
 
+/* Table widgets sitting side by side on the dashboard: a list with fewer rows
+   would otherwise leave a stubby card next to a full one. The widget is a grid
+   item and already stretches to the row, so the height only has to be handed
+   down to the card itself — the rows stay at the top and the slack falls to the
+   bottom. */
+.fi-wi-table,
+.fi-wi-table > .fi-ta,
+.fi-wi-table .fi-ta-ctn {
+    height: 100%;
+}
+
 /* Modal footers that opt into Alignment::Between (e.g. the reservation edit modal)
    render as a normal dialog footer: cancel/secondary actions on the left, the save
    action pushed to the right via its start-margin. Filament ships no flex rule for
@@ -159,4 +170,152 @@
     flex-wrap: wrap;
     align-items: center;
     width: 100%;
+}
+
+/* Nápověda is rendered into the sidebar's footer render hook, which sits outside
+   the scrolling nav and therefore inherits none of its padding. Repeat the nav's
+   own inline padding so the icon lands on the same column as every other item —
+   the inner .fi-sidebar-nav-groups contributes the same negative inline margin
+   here as it does inside the nav, so the two cancel out identically. */
+.ff-sidebar-help {
+    padding-inline: calc(var(--spacing) * 6);
+    padding-block-end: calc(var(--spacing) * 6);
+}
+
+/* Help articles are markdown rendered straight to HTML, so the element styling has
+   to come from here — Tailwind's preflight strips headings and lists, and the app
+   does not ship the typography plugin. */
+.ff-help-prose {
+    font-size: 0.875rem;
+    line-height: 1.7;
+    color: var(--gray-700);
+}
+
+:where(.dark) .ff-help-prose {
+    color: var(--gray-300);
+}
+
+.ff-help-prose > :first-child {
+    margin-top: 0;
+}
+
+.ff-help-prose h2,
+.ff-help-prose h3 {
+    font-weight: 600;
+    color: var(--gray-950);
+}
+
+:where(.dark) .ff-help-prose h2,
+:where(.dark) .ff-help-prose h3 {
+    color: white;
+}
+
+.ff-help-prose h2 {
+    margin-top: 2rem;
+    margin-bottom: 0.75rem;
+    font-size: 1rem;
+}
+
+.ff-help-prose h3 {
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.ff-help-prose p,
+.ff-help-prose ul,
+.ff-help-prose ol,
+.ff-help-prose blockquote {
+    margin-bottom: 0.875rem;
+}
+
+.ff-help-prose ul,
+.ff-help-prose ol {
+    padding-inline-start: 1.25rem;
+}
+
+.ff-help-prose ul {
+    list-style: disc;
+}
+
+.ff-help-prose ol {
+    list-style: decimal;
+}
+
+.ff-help-prose li {
+    margin-bottom: 0.25rem;
+}
+
+.ff-help-prose strong {
+    font-weight: 600;
+    color: var(--gray-950);
+}
+
+:where(.dark) .ff-help-prose strong {
+    color: white;
+}
+
+.ff-help-prose a {
+    color: var(--primary-600);
+    text-decoration: underline;
+}
+
+:where(.dark) .ff-help-prose a {
+    color: var(--primary-400);
+}
+
+.ff-help-prose code {
+    padding: 0.1rem 0.3rem;
+    border-radius: 0.25rem;
+    background-color: var(--gray-100);
+    font-size: 0.8125rem;
+}
+
+:where(.dark) .ff-help-prose code {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* "Dobré vědět" asides: a blockquote is the only markdown affordance for them. */
+.ff-help-prose blockquote {
+    padding: 0.75rem 1rem;
+    border-inline-start: 3px solid var(--primary-500);
+    border-radius: 0 0.5rem 0.5rem 0;
+    background-color: var(--gray-50);
+}
+
+:where(.dark) .ff-help-prose blockquote {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.ff-help-prose blockquote > :last-child {
+    margin-bottom: 0;
+}
+
+.ff-help-prose table {
+    width: 100%;
+    margin-bottom: 1rem;
+    border-collapse: collapse;
+    font-size: 0.8125rem;
+}
+
+.ff-help-prose th,
+.ff-help-prose td {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--gray-200);
+    text-align: start;
+    vertical-align: top;
+}
+
+:where(.dark) .ff-help-prose th,
+:where(.dark) .ff-help-prose td {
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.ff-help-prose th {
+    background-color: var(--gray-50);
+    font-weight: 600;
+}
+
+:where(.dark) .ff-help-prose th {
+    background-color: rgba(255, 255, 255, 0.05);
 }

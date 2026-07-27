@@ -6,6 +6,7 @@ use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Models\Payment;
 use App\Models\Reservation;
+use App\Models\ReservationDocument;
 use App\Notifications\ReservationStornoPaymentNotification;
 use App\Support\ActivityLog\LogActivity;
 use App\Support\Emails\SentEmailReceipt;
@@ -16,9 +17,11 @@ use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
+use Filament\Schemas\Components\Text;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\HtmlString;
 
 /**
  * Resolves a late storno for which the client promised a doctor's note. One modal,
@@ -48,6 +51,10 @@ class ResolveDoctorNoteAction extends Action
             ->visible(fn (Reservation $record): bool => $record->doctor_note_requested_at !== null
                 && $record->doctor_note_resolved_at === null)
             ->schema([
+                // The evidence, right where the decision is made — staff should not
+                // have to close the modal to look at what the client sent.
+                Text::make(fn (Reservation $record): HtmlString => self::documentLinks($record))
+                    ->columnSpanFull(),
                 Radio::make('outcome')
                     ->label('Jak bylo storno vyřešeno?')
                     ->required()
@@ -85,6 +92,31 @@ class ResolveDoctorNoteAction extends Action
 
                 self::waive($record);
             });
+    }
+
+    /**
+     * The notes the client uploaded, as download links — or a warning that nothing
+     * has arrived yet (in which case „doručeno" is a decision made off-system, e.g.
+     * a note handed in at the reception).
+     */
+    public static function documentLinks(Reservation $record): HtmlString
+    {
+        $documents = $record->doctorNoteDocuments()->latest()->get();
+
+        if ($documents->isEmpty()) {
+            return new HtmlString('<span class="text-warning-600 dark:text-warning-400">Klient zatím nenahrál žádné potvrzení.</span>');
+        }
+
+        $links = $documents
+            ->map(fn (ReservationDocument $document): string => sprintf(
+                '<li><a href="%s" target="_blank" class="text-primary-600 dark:text-primary-400 underline">%s</a> <span class="text-gray-500">(%s)</span></li>',
+                e($document->downloadUrl()),
+                e($document->original_name),
+                e($document->sizeForHumans()),
+            ))
+            ->implode('');
+
+        return new HtmlString('<span class="font-medium">Nahraná potvrzení:</span><ul class="mt-1 list-disc ps-5">'.$links.'</ul>');
     }
 
     /**

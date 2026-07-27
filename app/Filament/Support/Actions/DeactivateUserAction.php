@@ -3,6 +3,7 @@
 namespace App\Filament\Support\Actions;
 
 use App\Models\User;
+use App\Support\Clients\DeactivateAccount;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Support\Icons\Heroicon;
@@ -31,7 +32,20 @@ class DeactivateUserAction extends Action
             ->requiresConfirmation()
             ->modalHeading('Deaktivovat účet')
             ->modalIcon(Heroicon::OutlinedLockClosed)
-            ->modalDescription('Deaktivací účet ztratí přístup k přihlášení, do administrace i k online rezervacím. Účet a jeho historie zůstávají zachovány kvůli záznamům. Lze kdykoli reaktivovat.')
+            // Spells out the cascade — this takes down live bookings, so nobody
+            // should be able to press it without seeing what goes with them.
+            ->modalDescription(function (User $record): string {
+                $base = 'Deaktivací účet ztratí přístup k přihlášení, do administrace i k online rezervacím. Účet a jeho historie zůstávají zachovány kvůli záznamům. Lze kdykoli reaktivovat.';
+
+                $releases = app(DeactivateAccount::class)->previewSentence($record);
+
+                if ($releases === null) {
+                    return $base;
+                }
+
+                return $base.' Zároveň zrušíme '.$releases
+                    .'. Uvolněná místa se nabídnou pořadníku a nezaplacené platby k těmto rezervacím označíme jako zrušené (dluhy za už proběhlé návštěvy zůstávají).';
+            })
             ->modalSubmitActionLabel('Deaktivovat')
             ->visible(function (User $record): bool {
                 $actor = auth()->user();
@@ -55,13 +69,13 @@ class DeactivateUserAction extends Action
                 return $record->isAdmin() ? $actor->isSuperAdmin() : true;
             })
             ->action(function (User $record): void {
-                $record->update([
-                    'deactivated_at' => now(),
-                    'reactivated_at' => null,
-                ]);
+                $released = app(DeactivateAccount::class)($record);
 
                 Notification::make()
                     ->title('Účet byl deaktivován.')
+                    ->body(array_sum($released) > 0
+                        ? 'Zrušili jsme '.$released['reservations'].' rezervací, '.($released['enrollments'] + $released['bookings']).' přihlášek a '.$released['waitlist'].' míst v pořadníku.'
+                        : null)
                     ->success()
                     ->send();
             });

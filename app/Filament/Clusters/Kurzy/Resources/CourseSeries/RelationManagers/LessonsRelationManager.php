@@ -2,11 +2,11 @@
 
 namespace App\Filament\Clusters\Kurzy\Resources\CourseSeries\RelationManagers;
 
-use App\Filament\Clusters\Kurzy\Resources\CourseLessons\CourseLessonResource;
-use App\Filament\Clusters\Kurzy\Resources\CourseLessons\Schemas\CourseLessonForm;
-use App\Filament\Support\Concerns\NotifiesScheduleChange;
+use App\Filament\Clusters\Kurzy\Resources\Lessons\LessonResource;
+use App\Filament\Clusters\Kurzy\Resources\Lessons\Schemas\LessonForm;
+use App\Filament\Support\Concerns\PromptsScheduleChangeNotification;
 use App\Filament\Support\Tables\OccupancyColumn;
-use App\Models\CourseLesson;
+use App\Models\Lesson;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
@@ -22,7 +22,7 @@ use Filament\Tables\Table;
 /**
  * The série's individual lessons, managed inline on the série detail page. Editing
  * deep-links to the lesson's own edit page so the participant schedule-change
- * notification ({@see NotifiesScheduleChange}) still fires.
+ * prompt ({@see PromptsScheduleChangeNotification}) still fires.
  */
 class LessonsRelationManager extends RelationManager
 {
@@ -41,7 +41,7 @@ class LessonsRelationManager extends RelationManager
 
     public function form(Schema $schema): Schema
     {
-        return CourseLessonForm::configure($schema);
+        return LessonForm::configure($schema);
     }
 
     public function table(Table $table): Table
@@ -57,9 +57,11 @@ class LessonsRelationManager extends RelationManager
                     ->date('d.m.Y')
                     ->sortable(),
                 TextColumn::make('start_time')
-                    ->label('Od'),
+                    ->label('Od')
+                    ->time('H:i'),
                 TextColumn::make('end_time')
-                    ->label('Do'),
+                    ->label('Do')
+                    ->time('H:i'),
                 OccupancyColumn::make('occupancy', countsRelationship: null),
                 TextColumn::make('instructor.name')
                     ->label('Lektor')
@@ -78,11 +80,11 @@ class LessonsRelationManager extends RelationManager
                     ->label('Detail')
                     ->icon(Heroicon::OutlinedArrowTopRightOnSquare)
                     ->color('gray')
-                    ->url(fn (CourseLesson $record): string => CourseLessonResource::getUrl('view', ['record' => $record])),
+                    ->url(fn (Lesson $record): string => LessonResource::getUrl('view', ['record' => $record])),
                 Action::make('edit')
                     ->label('Upravit')
                     ->icon(Heroicon::OutlinedPencilSquare)
-                    ->url(fn (CourseLesson $record): string => CourseLessonResource::getUrl('edit', ['record' => $record])),
+                    ->url(fn (Lesson $record): string => LessonResource::getUrl('edit', ['record' => $record])),
                 DeleteAction::make(),
             ])
             ->toolbarActions([

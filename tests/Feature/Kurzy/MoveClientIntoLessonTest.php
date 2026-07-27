@@ -5,12 +5,12 @@ namespace Tests\Feature\Kurzy;
 use App\Enums\CourseEnrollmentStatus;
 use App\Enums\CourseSeriesStatus;
 use App\Enums\EmailTemplateKey;
-use App\Filament\Clusters\Kurzy\Resources\CourseLessons\Pages\ViewCourseLesson;
-use App\Filament\Clusters\Kurzy\Resources\CourseLessons\RelationManagers\AttendancesRelationManager;
+use App\Filament\Clusters\Kurzy\Resources\Lessons\Pages\ViewLesson;
+use App\Filament\Clusters\Kurzy\Resources\Lessons\RelationManagers\AttendancesRelationManager;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
-use App\Models\CourseLesson;
 use App\Models\CourseSeries;
+use App\Models\Lesson;
 use App\Models\LessonAttendance;
 use App\Models\SubstituteToken;
 use App\Models\User;
@@ -53,9 +53,9 @@ class MoveClientIntoLessonTest extends TestCase
         ]);
     }
 
-    protected function lesson(CourseSeries $series, string $date, string $time = '18:00:00'): CourseLesson
+    protected function lesson(CourseSeries $series, string $date, string $time = '18:00:00'): Lesson
     {
-        return CourseLesson::factory()->for($series, 'series')->create([
+        return Lesson::factory()->for($series, 'series')->create([
             'lesson_date' => $date,
             'start_time' => $time,
             'end_time' => '23:00:00',
@@ -93,9 +93,13 @@ class MoveClientIntoLessonTest extends TestCase
             'lesson_id' => $source->id,
             'token_generated' => false,
         ]);
-        $this->assertNotNull(
-            LessonAttendance::where('enrollment_id', $enrollment->id)->where('lesson_id', $source->id)->first()->cancelled_at,
-        );
+        $excused = LessonAttendance::where('enrollment_id', $enrollment->id)->where('lesson_id', $source->id)->first();
+
+        $this->assertNotNull($excused->cancelled_at);
+
+        // The two rows know about each other, so either presence list can name the other lesson.
+        $this->assertSame($attendance->id, $excused->replacement_attendance_id);
+        $this->assertTrue($attendance->replacementFor->is($excused));
     }
 
     public function test_move_works_without_a_rule_and_over_capacity(): void
@@ -200,7 +204,7 @@ class MoveClientIntoLessonTest extends TestCase
 
         Livewire::test(AttendancesRelationManager::class, [
             'ownerRecord' => $target,
-            'pageClass' => ViewCourseLesson::class,
+            'pageClass' => ViewLesson::class,
         ])
             ->callAction(TestAction::make('moveClientIntoLesson')->table(), [
                 'client_id' => $client->getKey(),

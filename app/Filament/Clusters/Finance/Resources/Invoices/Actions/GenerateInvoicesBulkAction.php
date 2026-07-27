@@ -7,10 +7,12 @@ use App\Enums\DocumentType;
 use App\Models\InvoiceSeries;
 use App\Support\Invoices\DocumentNumberAllocator;
 use App\Support\Invoices\InvoiceGenerator;
+use App\Support\Invoices\InvoiceNotifier;
 use App\Support\Settings;
 use Filament\Actions\BulkAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Model;
@@ -62,15 +64,19 @@ class GenerateInvoicesBulkAction extends BulkAction
                     ->native(false)
                     ->default(fn (): Carbon => today()->addDays(Settings::invoiceDueDays()))
                     ->required(),
+                Toggle::make('notify_client')
+                    ->label('Odeslat faktury zákazníkům e-mailem')
+                    ->default(true),
             ])
             ->action(function (Collection $records, array $data): void {
                 $series = InvoiceSeries::query()->findOrFail($data['series_id']);
                 $issuedAt = Carbon::parse($data['issued_at']);
                 $dueAt = Carbon::parse($data['due_at']);
+                $notify = (bool) ($data['notify_client'] ?? false);
                 $generator = app(InvoiceGenerator::class);
                 $issued = 0;
 
-                $records->each(function (Model $record) use ($generator, $series, $issuedAt, $dueAt, &$issued): void {
+                $records->each(function (Model $record) use ($generator, $series, $issuedAt, $dueAt, $notify, &$issued): void {
                     if (! $record instanceof Payable
                         || ! $record->hasPaidStatus()
                         || $record->invoice()->exists()
@@ -78,8 +84,12 @@ class GenerateInvoicesBulkAction extends BulkAction
                         return;
                     }
 
-                    $generator->fromPayable($record, $series, $issuedAt, $dueAt);
+                    $invoice = $generator->fromPayable($record, $series, $issuedAt, $dueAt);
                     $issued++;
+
+                    if ($notify) {
+                        InvoiceNotifier::send($invoice);
+                    }
                 });
 
                 Notification::make()

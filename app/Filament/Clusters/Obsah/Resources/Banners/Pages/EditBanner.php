@@ -6,9 +6,11 @@ use App\Filament\Clusters\Obsah\Resources\Banners\BannerResource;
 use App\Filament\Resources\Pages\BaseEditRecord;
 use App\Filament\Support\Actions\ActivityLogAction;
 use App\Models\Banner;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\RestoreAction;
+use Filament\Support\Icons\Heroicon;
 
 class EditBanner extends BaseEditRecord
 {
@@ -25,10 +27,17 @@ class EditBanner extends BaseEditRecord
     protected function getHeaderActions(): array
     {
         return [
-            DeleteAction::make(),
-            ForceDeleteAction::make(),
-            RestoreAction::make(),
-            ActivityLogAction::make(),
+            // The catch-all dropdown always sits last in the header.
+            ActionGroup::make([
+                ActivityLogAction::make(),
+                DeleteAction::make(),
+                ForceDeleteAction::make(),
+                RestoreAction::make(),
+            ])
+                ->label('Další akce')
+                ->icon(Heroicon::OutlinedEllipsisHorizontal)
+                ->button()
+                ->color('gray'),
         ];
     }
 }

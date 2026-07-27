@@ -7,7 +7,7 @@ use App\Jobs\SendBulkParticipantEmailJob;
 use App\Mason\Support\EmailFields;
 use App\Models\Course;
 use App\Models\CourseSeries;
-use App\Models\OneOffEvent;
+use App\Models\Lesson;
 use App\Models\WaitlistEntry;
 use App\Support\Emails\WaitlistEntryEmailer;
 use App\Support\Enrollments\AlreadySignedUpException;
@@ -15,6 +15,7 @@ use App\Support\Enrollments\EnrollmentData;
 use App\Support\Enrollments\EnrollmentEmailContext;
 use App\Support\Enrollments\InviteSummary;
 use App\Support\Enrollments\InviteWaitlistToSpot;
+use App\Support\Enrollments\JoinWaitlist;
 use App\Support\Enrollments\OfferClosedException;
 use App\Support\Enrollments\OfferSpotToEntry;
 use App\Support\Enrollments\PromoteFromWaitlist;
@@ -29,6 +30,7 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
@@ -69,6 +71,16 @@ class WaitlistEntriesRelationManager extends RelationManager
         return $ownerRecord instanceof Course ? 'Chci vědět první' : 'Čekací listina';
     }
 
+    /**
+     * The list is worked from the offer's View page, where Filament would
+     * otherwise treat every relation manager as read-only — which silently hides
+     * the built-in delete actions while leaving the custom ones visible.
+     */
+    public function isReadOnly(): bool
+    {
+        return false;
+    }
+
     public function table(Table $table): Table
     {
         return $table
@@ -104,11 +116,46 @@ class WaitlistEntriesRelationManager extends RelationManager
                     ->placeholder('—'),
             ])
             ->headerActions([
+                Action::make('addEntry')
+                    ->label('Přidat zájemce')
+                    ->icon(Heroicon::OutlinedPlus)
+                    ->color('gray')
+                    ->modalHeading(fn (): string => $this->getOwnerRecord() instanceof Course
+                        ? 'Přidat zájemce o kurz'
+                        : 'Přidat na čekací listinu')
+                    ->modalDescription('Pro někoho, kdo se ozval mimo web — telefonem, e-mailem, osobně. Pokud už účet s tímto e-mailem existuje, zájemce se k němu připojí.')
+                    ->modalSubmitActionLabel('Přidat')
+                    ->schema([
+                        TextInput::make('name')
+                            ->label('Jméno')
+                            ->required()
+                            ->maxLength(255),
+                        TextInput::make('email')
+                            ->label('E-mail')
+                            ->email()
+                            ->required()
+                            ->maxLength(255),
+                        TextInput::make('phone')
+                            ->label('Telefon')
+                            ->tel()
+                            ->maxLength(255),
+                        Toggle::make('notify')
+                            ->label('Poslat potvrzení e-mailem')
+                            ->helperText('Stejný e-mail, jaký chodí po přihlášení z webu — s pořadím na listině.')
+                            ->default(true)
+                            // A course's list is an interest sign-up that stays
+                            // silent until a série opens, so there is nothing to
+                            // send and nothing to decide.
+                            ->visible(fn (): bool => ! $this->getOwnerRecord() instanceof Course),
+                    ])
+                    ->action(function (array $data): void {
+                        $this->addEntry($data);
+                    }),
                 Action::make('promote')
                     ->label('Přidat z čekací listiny')
                     ->icon(Heroicon::OutlinedUserPlus)
                     ->color('primary')
-                    ->visible(fn (): bool => $this->promotableOffer() !== null)
+                    ->visible(fn (): bool => $this->hasWaitingEntries())
                     ->disabled(fn (): bool => ! $this->canPromoteNow())
                     ->requiresConfirmation()
                     ->modalHeading('Přidat z čekací listiny')
@@ -133,7 +180,7 @@ class WaitlistEntriesRelationManager extends RelationManager
                     ->label('Oslovit čekající')
                     ->icon(Heroicon::OutlinedEnvelope)
                     ->color('gray')
-                    ->visible(fn (): bool => $this->promotableOffer() !== null)
+                    ->visible(fn (): bool => $this->hasWaitingEntries())
                     ->disabled(fn (): bool => ! $this->canPromoteNow())
                     ->requiresConfirmation()
                     ->modalHeading('Oslovit čekající')
@@ -228,22 +275,75 @@ class WaitlistEntriesRelationManager extends RelationManager
             ]);
     }
 
-    protected function promotableOffer(): CourseSeries|OneOffEvent|null
+    /**
+     * Adds somebody to the list by hand, through the same engine the public
+     * forms use — so an existing account is linked by e-mail and a duplicate
+     * simply returns the entry that is already waiting rather than queueing the
+     * same person twice.
+     *
+     * @param  array{name?: string, email?: string, phone?: ?string, notify?: bool}  $data
+     */
+    protected function addEntry(array $data): void
     {
         $owner = $this->getOwnerRecord();
 
-        return $owner instanceof CourseSeries || $owner instanceof OneOffEvent
+        if (! $owner instanceof Course && ! $owner instanceof CourseSeries && ! $owner instanceof Lesson) {
+            return;
+        }
+
+        $entry = JoinWaitlist::handle(
+            $owner,
+            $data['name'] ?? null,
+            (string) ($data['email'] ?? ''),
+            $data['phone'] ?? null,
+            notify: (bool) ($data['notify'] ?? false),
+        );
+
+        if (! $entry->wasRecentlyCreated) {
+            Notification::make()
+                ->warning()
+                ->title($entry->displayName().' už na listině je')
+                ->body('Se stejným e-mailem tu čeká od '.$entry->created_at?->format('j. n. Y').'.')
+                ->send();
+
+            return;
+        }
+
+        Notification::make()
+            ->success()
+            ->title('Přidáno')
+            ->body($entry->displayName().' je na listině.')
+            ->send();
+    }
+
+    protected function promotableOffer(): CourseSeries|Lesson|null
+    {
+        $owner = $this->getOwnerRecord();
+
+        return $owner instanceof CourseSeries || $owner instanceof Lesson
             ? $owner
             : null;
     }
 
+    /**
+     * Whether anybody is actually waiting. Both header actions work the pending
+     * end of the list, so with nobody on it there is nothing to offer — the
+     * buttons are hidden rather than shown greyed out.
+     */
+    protected function hasWaitingEntries(): bool
+    {
+        return $this->promotableOffer()?->waitlistEntries()->pending()->exists() ?? false;
+    }
+
+    /**
+     * Somebody is waiting, but the run also has to have room — that case stays
+     * visible and disabled, because it is worth seeing that the list is stuck on
+     * capacity rather than empty.
+     */
     protected function canPromoteNow(): bool
     {
-        $offer = $this->promotableOffer();
-
-        return $offer !== null
-            && $offer->spotsLeft() > 0
-            && $offer->waitlistEntries()->pending()->exists();
+        return $this->hasWaitingEntries()
+            && ($this->promotableOffer()?->spotsLeft() ?? 0) > 0;
     }
 
     /**
@@ -255,7 +355,7 @@ class WaitlistEntriesRelationManager extends RelationManager
         $owner = $this->getOwnerRecord();
 
         return $owner instanceof CourseSeries
-            || $owner instanceof OneOffEvent
+            || $owner instanceof Lesson
             || ($owner instanceof Course && $owner->series()->exists());
     }
 
@@ -263,11 +363,11 @@ class WaitlistEntriesRelationManager extends RelationManager
      * The offer to act on: the owner itself, or the série chosen in the modal
      * when the owner is a Course.
      */
-    protected function resolveTargetOffer(array $data): CourseSeries|OneOffEvent|null
+    protected function resolveTargetOffer(array $data): CourseSeries|Lesson|null
     {
         $owner = $this->getOwnerRecord();
 
-        if ($owner instanceof CourseSeries || $owner instanceof OneOffEvent) {
+        if ($owner instanceof CourseSeries || $owner instanceof Lesson) {
             return $owner;
         }
 
@@ -443,7 +543,7 @@ class WaitlistEntriesRelationManager extends RelationManager
      * @param  Collection<int, WaitlistEntry>  $entries
      * @return array{registered:int, full:int, duplicate:int, deactivated:int, noEmail:int}
      */
-    protected function registerEntries(Collection $entries, CourseSeries|OneOffEvent $offer): array
+    protected function registerEntries(Collection $entries, CourseSeries|Lesson $offer): array
     {
         $result = ['registered' => 0, 'full' => 0, 'duplicate' => 0, 'deactivated' => 0, 'noEmail' => 0];
         $signUp = app(SignUpForOffer::class);

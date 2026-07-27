@@ -8,8 +8,7 @@ use App\Enums\WeekType;
 use App\Filament\Clusters\Provoz\Resources\Rooms\RoomResource;
 use App\Filament\Widgets\ReservationCalendar;
 use App\Models\Building;
-use App\Models\CourseLesson;
-use App\Models\OneOffEvent;
+use App\Models\Lesson;
 use App\Models\Reservation;
 use App\Models\ReservationDayWaitlistEntry;
 use App\Models\Room;
@@ -135,6 +134,24 @@ class RoomCalendarTest extends TestCase
         $this->assertNotContains('blocking:'.$blockB->getKey(), $ids);
     }
 
+    public function test_template_mode_lessons_are_limited_to_the_scoped_room(): void
+    {
+        $roomA = $this->makeRoom('Sál A');
+        $roomB = $this->makeRoom('Sál B');
+
+        $lessonBase = ['lesson_date' => $this->monday->toDateString(), 'start_time' => '17:00', 'end_time' => '18:00'];
+        $lessonA = Lesson::factory()->create([...$lessonBase, 'room_id' => $roomA->getKey()]);
+        $lessonB = Lesson::factory()->create([...$lessonBase, 'room_id' => $roomB->getKey()]);
+
+        $calendar = new ReservationCalendar;
+        $calendar->room = $roomA;
+        $calendar->mode = 'template';
+        $ids = array_column($this->fetchWeek($calendar), 'id');
+
+        $this->assertContains('course:'.$lessonA->getKey(), $ids);
+        $this->assertNotContains('course:'.$lessonB->getKey(), $ids);
+    }
+
     public function test_day_summary_is_scoped_to_the_room(): void
     {
         $roomA = $this->makeRoom('Sál A');
@@ -245,10 +262,10 @@ class RoomCalendarTest extends TestCase
         $room = $this->makeRoom();
         $otherRoom = $this->makeRoom('Sál 2');
 
-        $lessonHere = CourseLesson::factory()->create(['room_id' => $room->getKey(), 'lesson_date' => $this->monday->toDateString()]);
-        $lessonElsewhere = CourseLesson::factory()->create(['room_id' => $otherRoom->getKey(), 'lesson_date' => $this->monday->toDateString()]);
-        $eventHere = OneOffEvent::factory()->published()->create(['room_id' => $room->getKey(), 'event_date' => $this->monday->toDateString()]);
-        $eventElsewhere = OneOffEvent::factory()->published()->create(['room_id' => $otherRoom->getKey(), 'event_date' => $this->monday->toDateString()]);
+        $lessonHere = Lesson::factory()->create(['room_id' => $room->getKey(), 'lesson_date' => $this->monday->toDateString()]);
+        $lessonElsewhere = Lesson::factory()->create(['room_id' => $otherRoom->getKey(), 'lesson_date' => $this->monday->toDateString()]);
+        $eventHere = Lesson::factory()->standalone()->published()->create(['room_id' => $room->getKey(), 'lesson_date' => $this->monday->toDateString()]);
+        $eventElsewhere = Lesson::factory()->standalone()->published()->create(['room_id' => $otherRoom->getKey(), 'lesson_date' => $this->monday->toDateString()]);
 
         $calendar = new ReservationCalendar;
         $calendar->room = $room;

@@ -51,7 +51,7 @@ class MarkInvoicePaidAction extends Action
                     ]);
 
                     $record->payments()
-                        ->where('status', '!=', PaymentStatus::Paid->value)
+                        ->whereIn('status', PaymentStatus::openValues())
                         ->get()
                         ->each
                         ->update([

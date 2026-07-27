@@ -913,7 +913,6 @@ class ErgobodyImport extends Command
                 'invoice_title' => 'Historická terapie',
                 'duration_minutes' => 30,
                 'price' => 0,
-                'break_minutes' => 0,
                 'visibility' => ServiceVisibility::Hidden,
                 'published_at' => null,
             ],

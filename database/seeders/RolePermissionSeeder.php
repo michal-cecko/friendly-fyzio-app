@@ -55,11 +55,11 @@ class RolePermissionSeeder extends Seeder
             'ViewAny:Course', 'View:Course',
             'ViewAny:CourseCategory', 'View:CourseCategory',
             'ViewAny:CourseSeries', 'View:CourseSeries',
-            'ViewAny:CourseLesson', 'View:CourseLesson',
+            'ViewAny:Lesson', 'View:Lesson',
             'ViewAny:CourseEnrollment', 'View:CourseEnrollment',
             'ViewAny:LessonAttendance', 'View:LessonAttendance', 'Create:LessonAttendance', 'Update:LessonAttendance',
-            'ViewAny:OneOffEvent', 'View:OneOffEvent',
-            'ViewAny:OneOffEventBooking', 'View:OneOffEventBooking',
+            'ViewAny:Lesson', 'View:Lesson',
+            'ViewAny:LessonBooking', 'View:LessonBooking',
             'ViewAny:EventCategory', 'View:EventCategory',
         ])->get());
         $therapist->syncPermissions(Permission::whereIn('name', [
@@ -82,10 +82,10 @@ class RolePermissionSeeder extends Seeder
             'ViewAny:Course', 'View:Course',
             'ViewAny:CourseCategory', 'View:CourseCategory',
             'ViewAny:CourseSeries', 'View:CourseSeries',
-            'ViewAny:CourseLesson', 'View:CourseLesson',
+            'ViewAny:Lesson', 'View:Lesson',
             'ViewAny:CourseEnrollment', 'View:CourseEnrollment',
             'ViewAny:LessonAttendance', 'View:LessonAttendance', 'Create:LessonAttendance', 'Update:LessonAttendance',
-            'ViewAny:OneOffEvent', 'View:OneOffEvent',
+            'ViewAny:Lesson', 'View:Lesson',
             'ViewAny:EventCategory', 'View:EventCategory',
         ])->get());
 

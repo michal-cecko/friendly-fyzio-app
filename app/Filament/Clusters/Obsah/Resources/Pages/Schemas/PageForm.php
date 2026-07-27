@@ -37,7 +37,7 @@ class PageForm
                                     ->live(onBlur: true)
                                     ->afterStateUpdated(DerivedSlug::syncFrom(Page::class, 'stranka')),
                                 DerivedSlug::field('Adresa stránky na webu. Doplní se sama z názvu.')
-                                    ->label('URL slug'),
+                                    ->label('URL název'),
                                 Mason::make('content')
                                     ->label('Obsah stránky')
                                     ->bricks(BrickRegistry::all())

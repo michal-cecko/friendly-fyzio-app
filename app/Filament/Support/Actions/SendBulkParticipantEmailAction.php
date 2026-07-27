@@ -8,8 +8,8 @@ use App\Jobs\SendBulkParticipantEmailJob;
 use App\Mason\Support\EmailFields;
 use App\Models\CourseEnrollment;
 use App\Models\CourseSeries;
-use App\Models\OneOffEvent;
-use App\Models\OneOffEventBooking;
+use App\Models\Lesson;
+use App\Models\LessonBooking;
 use App\Support\Emails\CopyRecipients;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
@@ -57,16 +57,16 @@ class SendBulkParticipantEmailAction extends Action
             ->label('Napsat účastníkům')
             ->icon(Heroicon::OutlinedEnvelopeOpen)
             ->color('gray')
-            ->visible(fn (CourseSeries|OneOffEvent $record): bool => static::participants($record)->isNotEmpty())
+            ->visible(fn (CourseSeries|Lesson $record): bool => static::participants($record)->isNotEmpty())
             ->modalHeading('Napsat účastníkům')
-            ->modalDescription(fn (CourseSeries|OneOffEvent $record): string => 'Přihlášeno '
+            ->modalDescription(fn (CourseSeries|Lesson $record): string => 'Přihlášeno '
                 .static::participants($record)->count()
                 .' – vyberte, komu zpráva půjde.')
             ->modalSubmitActionLabel('Odeslat')
             ->schema([
                 ToggleButtons::make('audience')
                     ->label('Komu')
-                    ->options(fn (CourseSeries|OneOffEvent $record): array => [
+                    ->options(fn (CourseSeries|Lesson $record): array => [
                         'all' => 'Všem přihlášeným ('.static::participants($record)->count().')',
                         'selected' => 'Vybraným',
                     ])
@@ -79,7 +79,7 @@ class SendBulkParticipantEmailAction extends Action
                     ->multiple()
                     ->searchable()
                     ->required()
-                    ->options(fn (CourseSeries|OneOffEvent $record): array => static::recipientOptions($record))
+                    ->options(fn (CourseSeries|Lesson $record): array => static::recipientOptions($record))
                     ->visible(fn (Get $get): bool => $get('audience') === 'selected'),
                 ToggleButtons::make('mode')
                     ->label('Režim')
@@ -103,9 +103,9 @@ class SendBulkParticipantEmailAction extends Action
                     ->visible(fn (Get $get): bool => $get('mode') === 'custom'),
                 EmailFields::richText('body', 'Text e-mailu', required: true)
                     ->visible(fn (Get $get): bool => $get('mode') === 'custom'),
-                ...CopyRecipientsFields::make('Kopie se přidá ke každému odeslanému e-mailu — u větší skupiny to znamená hodně zpráv.'),
+                ...CopyRecipientsFields::make('Kopie dostanete jen jednou, ne pro každého příjemce zvlášť.'),
             ])
-            ->action(function (CourseSeries|OneOffEvent $record, array $data): void {
+            ->action(function (CourseSeries|Lesson $record, array $data): void {
                 $recipients = static::resolveRecipients($record, $data);
 
                 if ($recipients->isEmpty()) {
@@ -138,9 +138,9 @@ class SendBulkParticipantEmailAction extends Action
     }
 
     /**
-     * @return Collection<int, CourseEnrollment|OneOffEventBooking>
+     * @return Collection<int, CourseEnrollment|LessonBooking>
      */
-    private static function participants(CourseSeries|OneOffEvent $record): Collection
+    private static function participants(CourseSeries|Lesson $record): Collection
     {
         return $record instanceof CourseSeries
             ? $record->activeTakers()->with('client')->get()
@@ -149,12 +149,12 @@ class SendBulkParticipantEmailAction extends Action
 
     /**
      * @param  array<string, mixed>  $data
-     * @return Collection<int, CourseEnrollment|OneOffEventBooking>
+     * @return Collection<int, CourseEnrollment|LessonBooking>
      */
-    private static function resolveRecipients(CourseSeries|OneOffEvent $record, array $data): Collection
+    private static function resolveRecipients(CourseSeries|Lesson $record, array $data): Collection
     {
         $participants = static::participants($record)
-            ->filter(fn (CourseEnrollment|OneOffEventBooking $signup): bool => filled($signup->emailRecipientAddress()));
+            ->filter(fn (CourseEnrollment|LessonBooking $signup): bool => filled($signup->emailRecipientAddress()));
 
         if (($data['audience'] ?? 'all') === 'all') {
             return $participants->values();
@@ -163,18 +163,18 @@ class SendBulkParticipantEmailAction extends Action
         $chosen = array_map('strval', $data['recipient_ids'] ?? []);
 
         return $participants
-            ->filter(fn (CourseEnrollment|OneOffEventBooking $signup): bool => in_array((string) $signup->getKey(), $chosen, true))
+            ->filter(fn (CourseEnrollment|LessonBooking $signup): bool => in_array((string) $signup->getKey(), $chosen, true))
             ->values();
     }
 
     /**
      * @return array<string, string>
      */
-    private static function recipientOptions(CourseSeries|OneOffEvent $record): array
+    private static function recipientOptions(CourseSeries|Lesson $record): array
     {
         return static::participants($record)
-            ->filter(fn (CourseEnrollment|OneOffEventBooking $signup): bool => filled($signup->emailRecipientAddress()))
-            ->mapWithKeys(fn (CourseEnrollment|OneOffEventBooking $signup): array => [
+            ->filter(fn (CourseEnrollment|LessonBooking $signup): bool => filled($signup->emailRecipientAddress()))
+            ->mapWithKeys(fn (CourseEnrollment|LessonBooking $signup): array => [
                 (string) $signup->getKey() => ($signup->emailRecipientName() ?? 'Bez jména').' — '.$signup->emailRecipientAddress(),
             ])
             ->all();

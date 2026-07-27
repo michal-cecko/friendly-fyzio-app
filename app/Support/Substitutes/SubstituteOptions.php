@@ -2,7 +2,7 @@
 
 namespace App\Support\Substitutes;
 
-use App\Models\CourseLesson;
+use App\Models\Lesson;
 use App\Models\LessonAttendance;
 use App\Models\SubstituteRule;
 use App\Models\SubstituteToken;
@@ -17,7 +17,7 @@ use Illuminate\Support\Collection;
 class SubstituteOptions
 {
     /**
-     * @return Collection<int, CourseLesson>
+     * @return Collection<int, Lesson>
      */
     public function forToken(SubstituteToken $token): Collection
     {
@@ -40,10 +40,10 @@ class SubstituteOptions
         // could be burnt on the same lesson.
         $alreadyBookedLessonIds = LessonAttendance::query()
             ->whereNull('cancelled_at')
-            ->whereHas('enrollment', fn ($query) => $query->where('client_id', $token->client_id))
+            ->where('client_id', $token->client_id)
             ->pluck('lesson_id');
 
-        return CourseLesson::query()
+        return Lesson::query()
             ->whereIn('series_id', $targetSeriesIds)
             ->whereNotIn('id', $alreadyBookedLessonIds)
             ->whereDate('lesson_date', '>=', today())
@@ -52,20 +52,20 @@ class SubstituteOptions
             ->orderBy('lesson_date')
             ->orderBy('start_time')
             ->get()
-            ->filter(fn (CourseLesson $lesson): bool => $lesson->lesson_date
+            ->filter(fn (Lesson $lesson): bool => $lesson->lesson_date
                 ->copy()
                 ->setTimeFromTimeString((string) $lesson->start_time)
                 ->isFuture())
-            ->filter(fn (CourseLesson $lesson): bool => $this->freeSpots($lesson) > 0)
+            ->filter(fn (Lesson $lesson): bool => $this->freeSpots($lesson) > 0)
             ->values();
     }
 
     /**
      * Free places on a single lesson. The accounting lives on the model
-     * ({@see CourseLesson::takenSpots()}) so the admin occupancy bar and the
+     * ({@see Lesson::takenSpots()}) so the admin occupancy bar and the
      * substitute engine can never disagree about how full a lesson is.
      */
-    public function freeSpots(CourseLesson $lesson): int
+    public function freeSpots(Lesson $lesson): int
     {
         return $lesson->series === null ? 0 : $lesson->spotsLeft();
     }

@@ -11,11 +11,11 @@ use App\Enums\PaymentStatus;
 use App\Enums\ReservationStatus;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
-use App\Models\CourseLesson;
 use App\Models\CourseSeries;
+use App\Models\EventCategory;
+use App\Models\Lesson;
 use App\Models\LessonAttendance;
-use App\Models\OneOffEvent;
-use App\Models\OneOffEventBooking;
+use App\Models\LessonBooking;
 use App\Models\Payment;
 use App\Models\Reservation;
 use App\Models\Room;
@@ -89,7 +89,11 @@ class ClientZoneDemoSeeder extends Seeder
             $enrollment->forceDelete();
         });
 
-        $client->oneOffEventBookings()->forceDelete();
+        // Drop-in roster rows (booking_id set) aren't reached by the enrollment
+        // loop above, so clear anything left keyed off the client directly.
+        LessonAttendance::query()->where('client_id', $client->getKey())->delete();
+
+        $client->lessonBookings()->forceDelete();
         $client->reservations()->forceDelete();
     }
 
@@ -236,15 +240,18 @@ class ClientZoneDemoSeeder extends Seeder
         $lessons = $series->lessons()->orderBy('lesson_date')->get();
         $targetLessons = $targetSeries->lessons()->orderBy('lesson_date')->get();
 
-        // Timely excuse → active token, ready to redeem.
-        if ($missed = $lessons->firstWhere(fn (CourseLesson $lesson): bool => $lesson->lesson_date->isFuture())) {
-            LessonAttendance::create([
-                'enrollment_id' => $enrollment->getKey(),
-                'lesson_id' => $missed->getKey(),
-                'attended' => false,
-                'cancelled_at' => now(),
-                'token_generated' => true,
-            ]);
+        // Timely excuse → active token, ready to redeem. The enrollment above
+        // already seated the client on every lesson of the série, so excusing
+        // them is an update to that seat rather than a second row.
+        if ($missed = $lessons->firstWhere(fn (Lesson $lesson): bool => $lesson->lesson_date->isFuture())) {
+            LessonAttendance::query()
+                ->where('client_id', $client->getKey())
+                ->where('lesson_id', $missed->getKey())
+                ->update([
+                    'attended' => false,
+                    'cancelled_at' => now(),
+                    'token_generated' => true,
+                ]);
 
             SubstituteToken::create([
                 'client_id' => $client->getKey(),
@@ -254,17 +261,18 @@ class ClientZoneDemoSeeder extends Seeder
         }
 
         // Already redeemed token (+ its substitute attendance in the other course).
-        $past = $lessons->firstWhere(fn (CourseLesson $lesson): bool => $lesson->lesson_date->isPast());
-        $usedFor = $targetLessons->firstWhere(fn (CourseLesson $lesson): bool => $lesson->lesson_date->isFuture());
+        $past = $lessons->firstWhere(fn (Lesson $lesson): bool => $lesson->lesson_date->isPast());
+        $usedFor = $targetLessons->firstWhere(fn (Lesson $lesson): bool => $lesson->lesson_date->isFuture());
 
         if ($past && $usedFor) {
-            LessonAttendance::create([
-                'enrollment_id' => $enrollment->getKey(),
-                'lesson_id' => $past->getKey(),
-                'attended' => false,
-                'cancelled_at' => now()->subWeeks(2),
-                'token_generated' => true,
-            ]);
+            LessonAttendance::query()
+                ->where('client_id', $client->getKey())
+                ->where('lesson_id', $past->getKey())
+                ->update([
+                    'attended' => false,
+                    'cancelled_at' => now()->subWeeks(2),
+                    'token_generated' => true,
+                ]);
 
             SubstituteToken::create([
                 'client_id' => $client->getKey(),
@@ -316,13 +324,20 @@ class ClientZoneDemoSeeder extends Seeder
             'due_at' => today()->addDays(2),
         ]);
 
-        // One-off event booking (unpaid, QR).
-        $event = OneOffEvent::query()->whereDate('event_date', '>=', today()->addWeeks(2))->first();
+        // One-off event booking (unpaid, QR). Since one-off events became plain
+        // lessons, this has to say so: a lesson of a série carries no price of
+        // its own unless its course is sold by the lesson, and the payment below
+        // needs a real amount.
+        $event = Lesson::query()
+            ->whereNull('series_id')
+            ->whereNotNull('price')
+            ->whereDate('lesson_date', '>=', today()->addWeeks(2))
+            ->first();
 
         if ($event !== null) {
-            $booking = OneOffEventBooking::create([
+            $booking = LessonBooking::create([
                 'client_id' => $client->getKey(),
-                'one_off_event_id' => $event->getKey(),
+                'lesson_id' => $event->getKey(),
                 'status' => BookingStatus::Confirmed,
                 'payment_status' => PaymentStatus::Unpaid,
             ]);
@@ -334,6 +349,56 @@ class ClientZoneDemoSeeder extends Seeder
                 'due_at' => today()->addDays(3),
             ]);
         }
+
+        $this->attendedPastEvent($client);
+    }
+
+    /**
+     * A standalone one-off lesson that already happened, paid in cash and marked
+     * attended — the drop-in twin of the future booking above, so "Moje kurzy →
+     * Minulé" shows a completed jednorázová lekce.
+     */
+    protected function attendedPastEvent(User $client): void
+    {
+        $room = Room::query()->first() ?? Room::factory()->create();
+        $category = EventCategory::query()->first() ?? EventCategory::factory()->create();
+
+        $event = Lesson::query()->firstOrCreate(
+            ['series_id' => null, 'name' => 'Demo workshop – proběhlý'],
+            [
+                'event_category_id' => $category->getKey(),
+                'instructor_id' => User::query()->therapists()->value('id'),
+                'room_id' => $room->getKey(),
+                'lesson_date' => today()->subWeeks(3)->toDateString(),
+                'start_time' => '10:00:00',
+                'end_time' => '12:00:00',
+                'slug' => 'demo-workshop-probehly',
+                'capacity' => 15,
+                'price' => 3500,
+                'published_at' => now()->subMonths(2),
+            ],
+        );
+
+        $booking = LessonBooking::create([
+            'client_id' => $client->getKey(),
+            'lesson_id' => $event->getKey(),
+            'status' => BookingStatus::Confirmed,
+            'payment_status' => PaymentStatus::Paid,
+            'paid_at' => now()->subWeeks(3),
+        ]);
+        $booking->payments()->create([
+            'client_id' => $client->getKey(),
+            'amount' => $event->price,
+            'method' => PaymentMethod::Cash,
+            'status' => PaymentStatus::Paid,
+            'paid_at' => now()->subWeeks(3),
+        ]);
+
+        // Creating the booking already seated the client on the lesson's roster
+        // (LessonBookingObserver); mark that seat as attended.
+        LessonAttendance::query()
+            ->where('booking_id', $booking->getKey())
+            ->update(['attended' => true]);
     }
 
     /**
@@ -383,7 +448,7 @@ class ClientZoneDemoSeeder extends Seeder
         foreach (range(0, 11) as $week) {
             $date = Carbon::parse($series->start_date)->addWeeks($week);
 
-            CourseLesson::create([
+            Lesson::create([
                 'series_id' => $series->getKey(),
                 'instructor_id' => $instructor,
                 'room_id' => $room->getKey(),

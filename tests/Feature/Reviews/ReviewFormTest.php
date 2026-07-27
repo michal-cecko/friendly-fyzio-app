@@ -5,7 +5,7 @@ namespace Tests\Feature\Reviews;
 use App\Livewire\ReviewForm;
 use App\Models\Course;
 use App\Models\CourseSeries;
-use App\Models\OneOffEvent;
+use App\Models\Lesson;
 use App\Models\ReviewRequest;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -16,7 +16,7 @@ class ReviewFormTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function requestFor(OneOffEvent $event, User $user): ReviewRequest
+    private function requestFor(Lesson $event, User $user): ReviewRequest
     {
         return ReviewRequest::factory()->create([
             'user_id' => $user->getKey(),
@@ -28,7 +28,7 @@ class ReviewFormTest extends TestCase
     public function test_submitting_creates_hidden_review_and_completes_request(): void
     {
         $user = User::factory()->customer()->create(['name' => 'Jana Nováková']);
-        $event = OneOffEvent::factory()->create(['name' => 'Zdravá záda']);
+        $event = Lesson::factory()->create(['name' => 'Zdravá záda']);
         $request = $this->requestFor($event, $user);
 
         Livewire::test(ReviewForm::class, ['token' => $request->token])
@@ -41,7 +41,7 @@ class ReviewFormTest extends TestCase
 
         $this->assertDatabaseHas('reviews', [
             'client_id' => $user->getKey(),
-            'reviewable_type' => 'one_off_event',
+            'reviewable_type' => 'lesson',
             'reviewable_id' => $event->getKey(),
             'rating' => 5,
             'author_name' => 'Jana Nováková',
@@ -57,7 +57,7 @@ class ReviewFormTest extends TestCase
     public function test_rating_is_required(): void
     {
         $user = User::factory()->customer()->create();
-        $request = $this->requestFor(OneOffEvent::factory()->create(), $user);
+        $request = $this->requestFor(Lesson::factory()->create(), $user);
 
         Livewire::test(ReviewForm::class, ['token' => $request->token])
             ->set('content', 'Bez hvězdiček')
@@ -76,7 +76,7 @@ class ReviewFormTest extends TestCase
     public function test_already_completed_request_cannot_be_reused(): void
     {
         $user = User::factory()->customer()->create();
-        $event = OneOffEvent::factory()->create();
+        $event = Lesson::factory()->create();
         $request = ReviewRequest::factory()->completed()->create([
             'user_id' => $user->getKey(),
             'reviewable_type' => $event->getMorphClass(),
@@ -120,7 +120,7 @@ class ReviewFormTest extends TestCase
     {
         $user = User::factory()->customer()->create();
         $course = Course::factory()->create();
-        $event = OneOffEvent::factory()->withCourse($course)->create();
+        $event = Lesson::factory()->withCourse($course)->create();
         $request = $this->requestFor($event, $user);
 
         Livewire::test(ReviewForm::class, ['token' => $request->token])
@@ -135,7 +135,7 @@ class ReviewFormTest extends TestCase
             'rating' => 5,
         ]);
         $this->assertDatabaseMissing('reviews', [
-            'reviewable_type' => 'one_off_event',
+            'reviewable_type' => 'lesson',
             'reviewable_id' => $event->getKey(),
         ]);
     }

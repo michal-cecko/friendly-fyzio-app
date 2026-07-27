@@ -6,21 +6,27 @@ use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Enums\ReservationStatus;
 use App\Filament\Clusters\Kurzy\Resources\CourseEnrollments\Pages\ListCourseEnrollments;
-use App\Filament\Clusters\Kurzy\Resources\OneOffEventBookings\Pages\ListOneOffEventBookings;
+use App\Filament\Clusters\Kurzy\Resources\LessonBookings\Pages\ListLessonBookings;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Pages\ListReservations;
+use App\Filament\Clusters\Provoz\Resources\Reservations\Pages\ViewReservation;
+use App\Filament\Support\RelationManagers\PaymentsRelationManager;
 use App\Models\CourseEnrollment;
 use App\Models\CourseSeries;
 use App\Models\InvoiceSeries;
-use App\Models\OneOffEvent;
-use App\Models\OneOffEventBooking;
+use App\Models\Lesson;
+use App\Models\LessonBooking;
 use App\Models\Reservation;
 use App\Models\Service;
 use App\Models\User;
 use App\Notifications\PaymentReceivedNotification;
 use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
+use Filament\Forms\Components\Field;
+use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Component;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
+use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -118,6 +124,88 @@ class RecordPaymentActionTest extends TestCase
         Notification::assertSentTo($reservation->client, PaymentReceivedNotification::class);
     }
 
+    /**
+     * The toggle switches between recording money in hand and prescribing what
+     * the client owes, so the helper text has to say which one is armed. Read
+     * off the schema rather than the markup: the modal body is rendered client
+     * side, so none of the fields appear in the component's HTML.
+     */
+    public function test_received_toggle_explains_both_states(): void
+    {
+        $reservation = $this->reservation(800);
+
+        $component = Livewire::test(ListReservations::class)
+            ->mountAction(TestAction::make('recordPayment')->table($reservation));
+
+        $this->assertStringContainsString('Peníze už máte.', $this->receivedHelperText($component));
+
+        $component->setActionData(['received' => false]);
+
+        $helperText = $this->receivedHelperText($component);
+        $this->assertStringContainsString('jen předepisujete', $helperText);
+        $this->assertStringContainsString('splatností za 7 dní', $helperText);
+    }
+
+    /**
+     * The helper text currently rendered under the "Platba již přijata" toggle
+     * of the mounted action.
+     */
+    private function receivedHelperText(Testable $component): string
+    {
+        $toggle = $component
+            ->instance()
+            ->getSchema('mountedActionSchema0')
+            ?->getComponent(fn (Component $schemaComponent): bool => $schemaComponent instanceof Toggle
+                && $schemaComponent->getName() === 'received');
+
+        $this->assertInstanceOf(Toggle::class, $toggle);
+
+        // helperText() is sugar for a below-content Text component, so the
+        // rendered child schema is where the wording actually lives.
+        return (string) $toggle->getChildSchema(Field::BELOW_CONTENT_SCHEMA_KEY)?->toHtmlString();
+    }
+
+    /**
+     * The Platby table lives in its own Livewire component, so recording a
+     * payment from the page header has to tell it to re-query — otherwise the
+     * new payment only shows up after a manual page refresh.
+     */
+    public function test_recording_a_payment_refreshes_the_payments_relation_manager(): void
+    {
+        $reservation = $this->reservation(800);
+
+        Livewire::test(ViewReservation::class, ['record' => $reservation->getKey()])
+            ->callAction(TestAction::make('recordPayment'), [
+                'amount' => 800,
+                'method' => PaymentMethod::Qr->value,
+                'received' => true,
+                'notify_client' => false,
+            ])
+            ->assertHasNoActionErrors()
+            ->assertDispatched(PaymentsRelationManager::REFRESH_EVENT);
+    }
+
+    public function test_payments_relation_manager_listens_for_the_refresh_event(): void
+    {
+        $reservation = $this->reservation(800);
+        $payment = $reservation->payments()->create([
+            'client_id' => $reservation->client_id,
+            'amount' => 800,
+            'method' => PaymentMethod::Qr,
+            'status' => PaymentStatus::Paid,
+            'paid_at' => now(),
+        ]);
+
+        Livewire::test(PaymentsRelationManager::class, [
+            'ownerRecord' => $reservation,
+            'pageClass' => ViewReservation::class,
+        ])
+            ->assertCanSeeTableRecords([$payment])
+            ->dispatch(PaymentsRelationManager::REFRESH_EVENT)
+            ->assertCanSeeTableRecords([$payment])
+            ->assertHasNoErrors();
+    }
+
     public function test_action_hidden_for_paid_payable(): void
     {
         $reservation = Reservation::factory()->create([
@@ -149,15 +237,15 @@ class RecordPaymentActionTest extends TestCase
         $this->assertSame(PaymentStatus::Paid, $enrollment->fresh()->payment_status);
     }
 
-    public function test_records_payment_on_one_off_event_booking(): void
+    public function test_records_payment_on_lesson_booking(): void
     {
-        $booking = OneOffEventBooking::factory()->create([
-            'one_off_event_id' => OneOffEvent::factory()->create(['price' => 950])->getKey(),
+        $booking = LessonBooking::factory()->create([
+            'lesson_id' => Lesson::factory()->create(['price' => 950])->getKey(),
             'payment_status' => PaymentStatus::Unpaid,
             'paid_at' => null,
         ]);
 
-        Livewire::test(ListOneOffEventBookings::class)
+        Livewire::test(ListLessonBookings::class)
             ->callAction(TestAction::make('recordPayment')->table($booking), [
                 'amount' => 950,
                 'method' => PaymentMethod::Qr->value,

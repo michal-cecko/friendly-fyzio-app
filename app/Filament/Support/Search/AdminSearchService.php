@@ -2,8 +2,14 @@
 
 namespace App\Filament\Support\Search;
 
+use App\Filament\Clusters\System\Pages\Concerns\SettingsGroupPage;
+use App\Filament\Pages\Help;
+use App\Filament\Support\Help\HelpSearch;
+use App\Filament\Support\Help\HelpSearchResult;
+use App\Models\Setting;
 use Filament\Facades\Filament;
 use Filament\Resources\Resource;
+use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -59,7 +65,131 @@ class AdminSearchService
             }
         }
 
+        $settings = $this->searchSettings($search);
+
+        if ($settings->isNotEmpty()) {
+            $groups->push(new AdminSearchGroup(
+                label: 'Nastavení',
+                icon: Heroicon::OutlinedCog6Tooth,
+                results: $settings,
+            ));
+        }
+
+        $help = $this->searchHelp($search);
+
+        if ($help->isNotEmpty()) {
+            $groups->push(new AdminSearchGroup(
+                label: 'Nápověda',
+                icon: Heroicon::OutlinedQuestionMarkCircle,
+                results: $help,
+            ));
+        }
+
         return $groups;
+    }
+
+    /**
+     * Search the in-app manual, so someone who does not know a screen exists can
+     * still find the article describing it. Unlike settings this is open to every
+     * panel user — therapists and lecturers need the manual most.
+     *
+     * @return Collection<int, AdminSearchResult>
+     */
+    protected function searchHelp(string $search): Collection
+    {
+        return app(HelpSearch::class)->search($search)
+            ->take(self::RESULTS_PER_RESOURCE)
+            ->map(fn (HelpSearchResult $result): AdminSearchResult => new AdminSearchResult(
+                title: $result->topic->title,
+                details: ['Sekce' => $result->topic->sectionTitle],
+                url: Help::getUrl(['tema' => $result->topic->id]),
+                isTrashed: false,
+                titleHtml: $result->titleHtml,
+                detailsHtml: ['Sekce' => $this->highlighter->highlight($result->topic->sectionTitle, $search)],
+            ))
+            ->values();
+    }
+
+    /**
+     * Search configurable settings by label, helper text (description) or key,
+     * deep-linking each hit to its field on the owning settings page. Restricted
+     * to admins, mirroring {@see SettingsGroupPage::canAccess()}.
+     *
+     * @return Collection<int, AdminSearchResult>
+     */
+    protected function searchSettings(string $search): Collection
+    {
+        if (! (auth()->user()?->isAdmin() ?? false)) {
+            return collect();
+        }
+
+        $pagesByGroup = $this->settingsPagesByGroup();
+
+        if ($pagesByGroup === []) {
+            return collect();
+        }
+
+        $words = array_filter(
+            preg_split('/\s+/u', $search) ?: [],
+            fn (string $word): bool => filled($word),
+        );
+
+        return Setting::query()
+            ->whereIn('group', array_keys($pagesByGroup))
+            ->where(function (Builder $query) use ($words): void {
+                foreach ($words as $word) {
+                    $query->where(function (Builder $query) use ($word): void {
+                        $query->where('label', 'like', "%{$word}%")
+                            ->orWhere('description', 'like', "%{$word}%")
+                            ->orWhere('key', 'like', "%{$word}%");
+                    });
+                }
+            })
+            ->orderBy('group')
+            ->orderBy('sort')
+            ->limit(self::RESULTS_PER_RESOURCE)
+            ->get()
+            ->map(function (Setting $setting) use ($pagesByGroup, $search): AdminSearchResult {
+                /** @var class-string<SettingsGroupPage> $page */
+                $page = $pagesByGroup[$setting->group];
+
+                $title = $setting->label ?: $setting->key;
+
+                $details = array_filter([
+                    'Sekce' => $setting->group,
+                    'Popis' => $setting->description,
+                ], fn (?string $value): bool => filled($value));
+
+                return new AdminSearchResult(
+                    title: $title,
+                    details: $details,
+                    url: $page::getUrl().'#'.$setting->anchor(),
+                    isTrashed: false,
+                    titleHtml: $this->highlighter->highlight($title, $search),
+                    detailsHtml: array_map(
+                        fn (string $value) => $this->highlighter->highlight($value, $search),
+                        $details,
+                    ),
+                );
+            });
+    }
+
+    /**
+     * Map each managed Setting `group` to the settings page class that edits it.
+     *
+     * @return array<string, class-string<SettingsGroupPage>>
+     */
+    protected function settingsPagesByGroup(): array
+    {
+        $map = [];
+
+        foreach (Filament::getCurrentOrDefaultPanel()?->getPages() ?? [] as $page) {
+            if (is_subclass_of($page, SettingsGroupPage::class)) {
+                $map[$page::settingGroup()] = $page;
+            }
+        }
+
+        return $map;
     }
 
     /**
