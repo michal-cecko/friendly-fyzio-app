@@ -146,12 +146,14 @@ class ClientsTable
                 DeactivateUserAction::make(),
                 ReactivateUserAction::make(),
                 Impersonate::make(),
+                // Overriding ->visible() replaces Filament's own condition, so each
+                // of these has to repeat the trashed state it belongs to.
                 DeleteAction::make()
-                    ->visible(fn (User $record): bool => ClientResource::canManageClient($record)),
+                    ->visible(fn (User $record): bool => ! $record->trashed() && ClientResource::canManageClient($record)),
                 RestoreAction::make()
-                    ->visible(fn (User $record): bool => ClientResource::canManageClient($record)),
+                    ->visible(fn (User $record): bool => $record->trashed() && ClientResource::canManageClient($record)),
                 ForceDeleteAction::make()
-                    ->visible(fn (User $record): bool => ClientResource::canManageClient($record)),
+                    ->visible(fn (User $record): bool => $record->trashed() && ClientResource::canManageClient($record)),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

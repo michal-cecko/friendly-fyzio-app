@@ -14,6 +14,7 @@ use App\Models\Reservation;
 use App\Models\User;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\EditAction;
+use Filament\Actions\Testing\TestAction;
 use Filament\Actions\ViewAction;
 use Filament\Facades\Filament;
 use Filament\Schemas\Components\Group;
@@ -321,6 +322,26 @@ class ClientResourceTest extends TestCase
             ->assertSee('20.05.2026')
             ->sortTable('last_reservation_at')
             ->assertCanSeeTableRecords([$client]);
+    }
+
+    public function test_row_actions_follow_the_records_trashed_state(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+
+        $active = User::factory()->customer()->create();
+        $trashed = User::factory()->customer()->create();
+        $trashed->delete();
+
+        Livewire::test(ListClients::class)
+            ->assertActionVisible(TestAction::make('delete')->table($active))
+            ->assertActionHidden(TestAction::make('restore')->table($active))
+            ->assertActionHidden(TestAction::make('forceDelete')->table($active));
+
+        Livewire::test(ListClients::class)
+            ->filterTable('trashed', true)
+            ->assertActionHidden(TestAction::make('delete')->table($trashed))
+            ->assertActionVisible(TestAction::make('restore')->table($trashed))
+            ->assertActionVisible(TestAction::make('forceDelete')->table($trashed));
     }
 
     public function test_non_customer_cannot_be_opened_via_clients_resource(): void

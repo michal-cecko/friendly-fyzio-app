@@ -4,7 +4,6 @@ namespace App\Filament\Clusters\Provoz\Resources\Users\Tables;
 
 use App\Enums\Capability;
 use App\Filament\Clusters\Provoz\Resources\Users\UserResource;
-use App\Filament\Support\Actions\DeactivateUserAction;
 use App\Filament\Support\Actions\ReactivateUserAction;
 use App\Filament\Support\Tables\TimestampColumns;
 use App\Models\User;
@@ -85,14 +84,18 @@ class UsersTable
                 // resource on its own — every write is gated explicitly.
                 EditAction::make()
                     ->visible(fn (): bool => UserResource::canManageStaff()),
-                DeactivateUserAction::make(),
+                // Deactivating cancels live bookings, so it is left to the detail
+                // pages where the whole account is in view — the row only offers
+                // the way back for an account that is already deactivated.
                 ReactivateUserAction::make(),
+                // Overriding ->visible() replaces Filament's own condition, so each
+                // of these has to repeat the trashed state it belongs to.
                 DeleteAction::make()
-                    ->visible(fn (User $record): bool => UserResource::canDeleteUser($record)),
+                    ->visible(fn (User $record): bool => ! $record->trashed() && UserResource::canDeleteUser($record)),
                 RestoreAction::make()
-                    ->visible(fn (): bool => UserResource::canManageStaff()),
+                    ->visible(fn (User $record): bool => $record->trashed() && UserResource::canManageStaff()),
                 ForceDeleteAction::make()
-                    ->visible(fn (): bool => UserResource::canManageStaff()),
+                    ->visible(fn (User $record): bool => $record->trashed() && UserResource::canManageStaff()),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

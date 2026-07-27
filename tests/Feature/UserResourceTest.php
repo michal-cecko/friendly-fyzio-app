@@ -378,6 +378,41 @@ class UserResourceTest extends TestCase
         $this->assertTrue(UserResource::canDeleteUser(User::factory()->admin()->create()));
     }
 
+    public function test_row_actions_follow_the_records_trashed_state(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+
+        $active = User::factory()->therapist()->create();
+        $trashed = User::factory()->therapist()->create();
+        $trashed->delete();
+
+        Livewire::test(ListUsers::class)
+            // An overridden ->visible() replaces Filament's own trashed check, so
+            // these three used to show on every row regardless of state.
+            ->assertActionVisible(TestAction::make('delete')->table($active))
+            ->assertActionHidden(TestAction::make('restore')->table($active))
+            ->assertActionHidden(TestAction::make('forceDelete')->table($active));
+
+        Livewire::test(ListUsers::class)
+            ->filterTable('trashed', true)
+            ->assertActionHidden(TestAction::make('delete')->table($trashed))
+            ->assertActionVisible(TestAction::make('restore')->table($trashed))
+            ->assertActionVisible(TestAction::make('forceDelete')->table($trashed));
+    }
+
+    public function test_the_users_list_has_no_deactivate_row_action(): void
+    {
+        // Deactivating cancels live bookings — it lives on the detail pages, not
+        // one click away in the row. Reactivating stays.
+        $this->actingAs(User::factory()->admin()->create());
+
+        $deactivated = User::factory()->therapist()->create(['deactivated_at' => now()]);
+
+        Livewire::test(ListUsers::class)
+            ->assertActionDoesNotExist(TestAction::make('deactivate')->table($deactivated))
+            ->assertActionVisible(TestAction::make('reactivate')->table($deactivated));
+    }
+
     public function test_a_plain_admin_cannot_grant_admin_or_super_admin(): void
     {
         $admin = User::factory()->admin()->create();

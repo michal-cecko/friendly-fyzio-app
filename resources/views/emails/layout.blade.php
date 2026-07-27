@@ -24,25 +24,26 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <title>{{ $subject ?? '' }}</title>
     {{-- Phones render the 600px card scaled down, so everything reads small. The card is fluid
-         (width:100%;max-width:600px) and these rules bump the type ~30% on narrow viewports.
-         !important is required to beat the inline styles the bricks carry. Clients that strip
-         <style> simply keep the desktop sizes. --}}
+         (width:100%;max-width:600px) and these rules bump the type on narrow viewports — the
+         first pass overshot, so every value here was trimmed by 10% (rounded to whole px, with
+         the scale kept monotonic). !important is required to beat the inline styles the bricks
+         carry. Clients that strip <style> simply keep the desktop sizes. --}}
     <style type="text/css">
         @media only screen and (max-width: 620px) {
-            .e-head { padding: 24px 20px 20px !important; }
-            .e-content { padding: 28px 20px !important; }
-            .e-foot { padding: 20px !important; }
+            .e-head { padding: 22px 18px 18px !important; }
+            .e-content { padding: 25px 18px !important; }
+            .e-foot { padding: 18px !important; }
 
-            .e-logo { font-size: 28px !important; }
-            .e-greeting { font-size: 23px !important; }
-            .e-title { font-size: 20px !important; }
-            .e-text, .e-total, .e-content p, .e-content li { font-size: 18px !important; }
-            .e-small, .e-title-sm, .e-td { font-size: 17px !important; }
-            .e-note { font-size: 16px !important; }
-            .e-th { font-size: 15px !important; }
-            .e-tiny, .e-footer-text { font-size: 14px !important; }
+            .e-logo { font-size: 25px !important; }
+            .e-greeting { font-size: 21px !important; }
+            .e-title { font-size: 18px !important; }
+            .e-text, .e-total, .e-content p, .e-content li { font-size: 16px !important; }
+            .e-small, .e-title-sm, .e-td { font-size: 15px !important; }
+            .e-note { font-size: 14px !important; }
+            .e-th { font-size: 14px !important; }
+            .e-tiny, .e-footer-text { font-size: 13px !important; }
 
-            .e-btn { font-size: 19px !important; padding: 16px 32px !important; }
+            .e-btn { font-size: 17px !important; padding: 14px 29px !important; }
         }
     </style>
 </head>
