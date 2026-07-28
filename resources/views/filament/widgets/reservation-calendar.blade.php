@@ -274,7 +274,11 @@
                     @endif
 
                     <span class="ff-legend">
-                        <span class="ff-leg"><span class="ff-leg-sw" style="background:#EEF2FF;border-color:#6366F1"></span>Blokace</span>
+                        <label class="ff-leg ff-leg-toggle" title="Zobrazit či skrýt blokace v kalendáři">
+                            <input type="checkbox" wire:model.live="showBlockings">
+                            <span class="ff-leg-sw" style="background:#EEF2FF;border-color:#6366F1"></span>
+                            <span>Blokace</span>
+                        </label>
                         @unless ($isTemplate)
                             <span class="ff-leg" title="Pauza terapeuta po termínu"><span class="ff-leg-sw" style="background:#F5F5F5;border-color:#A3A3A3"></span>Pauza</span>
                         @endunless

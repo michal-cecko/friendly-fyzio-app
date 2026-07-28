@@ -23,6 +23,7 @@ use Database\Seeders\EmailTemplateSeeder;
 use Database\Seeders\SettingsSeeder;
 use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
+use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
@@ -435,6 +436,65 @@ class ReservationResourceTest extends TestCase
             ->assertSee('Zobrazit')
             ->assertSee('filters%5Bstatus%5D%5Bvalue%5D=pending', escape: false)
             ->assertSee('filters%5Boutstanding%5D%5BisActive%5D=1', escape: false);
+    }
+
+    public function test_list_page_exposes_its_table_state_to_the_stats_widget(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+
+        $data = Livewire::test(ListReservations::class)->instance()->getWidgetData();
+
+        // Without these props the widget's reactive `array $tableColumnSearches`
+        // hydrates as null on every Livewire update and blows up with a TypeError.
+        $this->assertIsArray($data['tableColumnSearches'] ?? null);
+        $this->assertArrayHasKey('tableFilters', $data);
+        $this->assertArrayHasKey('tableSearch', $data);
+        $this->assertArrayHasKey('activeTab', $data);
+    }
+
+    public function test_stats_track_the_active_table_filter(): void
+    {
+        $deps = $this->dependencies();
+        $this->actingAs(User::factory()->admin()->create());
+
+        $this->makeReservation($deps, ['status' => ReservationStatus::Pending]);
+        $this->makeReservation($deps, [
+            'status' => ReservationStatus::Confirmed,
+            'start_time' => '11:00',
+            'end_time' => '12:00',
+        ]);
+
+        $this->assertSame(1, $this->statValue([], 'Nepotvrzeno'));
+
+        // Filtering the table down to confirmed reservations empties the
+        // "Nepotvrzeno" card, because the stats run the page's filtered query.
+        $this->assertSame(0, $this->statValue(
+            ['status' => ['value' => ReservationStatus::Confirmed->value]],
+            'Nepotvrzeno',
+        ));
+    }
+
+    /**
+     * Value of a single stat card with the given table filters applied.
+     *
+     * @param  array<string, array<string, mixed>>  $tableFilters
+     */
+    private function statValue(array $tableFilters, string $label): mixed
+    {
+        $widget = Livewire::test(ReservationStatsOverview::class, [
+            'tableFilters' => $tableFilters,
+        ])->instance();
+
+        /** @var array<int, Stat> $stats */
+        $stats = (fn (): array => $this->getStats())->call($widget);
+
+        foreach ($stats as $stat) {
+            if ($stat->getLabel() === $label) {
+                return $stat->getValue();
+            }
+        }
+
+        $this->fail("No stat card labelled [{$label}].");
     }
 
     public function test_outstanding_and_unsettled_filters_narrow_the_table(): void

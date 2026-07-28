@@ -119,6 +119,43 @@ class CalendarModesTest extends TestCase
         $this->assertNotContains('blocking:'.$recurring->getKey(), $ids);
     }
 
+    public function test_blocking_legend_toggle_hides_blockings_in_both_modes(): void
+    {
+        $room = $this->makeRoom();
+
+        $oneTime = RoomBlocking::create([
+            'room_id' => $room->getKey(),
+            'is_recurring' => false,
+            'start_at' => $this->monday->copy()->setTime(15, 0),
+            'end_at' => $this->monday->copy()->setTime(16, 0),
+            'reason' => 'Servis',
+        ]);
+
+        $recurring = RoomBlocking::create([
+            'room_id' => $room->getKey(),
+            'is_recurring' => true,
+            'day_of_week' => DayOfWeek::Monday,
+            'week_type' => WeekType::All,
+            'start_time' => '13:00',
+            'end_time' => '14:00',
+        ]);
+
+        // Reservations mode carries the one-off blocking, working hours both.
+        $calendar = new ReservationCalendar;
+        $this->assertContains('blocking:'.$oneTime->getKey(), array_column($this->fetchReservationWeek($calendar), 'id'));
+        $this->assertContains('blocking:'.$recurring->getKey(), array_column($this->fetchTemplateWeek(new ReservationCalendar), 'id'));
+
+        $off = new ReservationCalendar;
+        $off->showBlockings = false;
+        $this->assertNotContains('blocking:'.$oneTime->getKey(), array_column($this->fetchReservationWeek($off), 'id'));
+
+        $offTemplate = new ReservationCalendar;
+        $offTemplate->showBlockings = false;
+        $templateIds = array_column($this->fetchTemplateWeek($offTemplate), 'id');
+        $this->assertNotContains('blocking:'.$recurring->getKey(), $templateIds);
+        $this->assertNotContains('blocking:'.$oneTime->getKey(), $templateIds);
+    }
+
     public function test_clicking_one_time_blocking_marks_it_for_editing(): void
     {
         $room = $this->makeRoom();

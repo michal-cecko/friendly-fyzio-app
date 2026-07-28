@@ -7,11 +7,20 @@ use App\Filament\Clusters\Provoz\Resources\Reservations\Schemas\ReservationForm;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Widgets\ReservationStatsOverview;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
+use Filament\Pages\Concerns\ExposesTableToWidgets;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Support\Icons\Heroicon;
 
 class ListReservations extends ListRecords
 {
+    /**
+     * Required by the stats widget's `InteractsWithPageTable`: it passes the
+     * table state (search, filters, tab…) down as reactive props. Without it
+     * the widget's typed `array $tableColumnSearches` prop hydrates as `null`
+     * on every Livewire update and the stats ignore the active filters.
+     */
+    use ExposesTableToWidgets;
+
     protected static string $resource = ReservationResource::class;
 
     /** Whether the metric cards are shown above the table (per-user preference). */
