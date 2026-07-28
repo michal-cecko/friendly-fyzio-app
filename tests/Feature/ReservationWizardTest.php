@@ -351,6 +351,66 @@ class ReservationWizardTest extends TestCase
         $this->assertSame($second->slug, $component->instance()->therapistSlug);
     }
 
+    public function test_stepping_back_to_the_category_still_lists_every_category(): void
+    {
+        // The therapist is chosen two steps later, so they must not narrow the
+        // category list — someone changing their mind would see only what that one
+        // person happens to do.
+        $otherCategory = ServiceCategory::factory()->create(['type' => ServiceType::Massage, 'published_at' => now()]);
+        $otherService = Service::factory()->create([
+            'category_id' => $otherCategory->id,
+            'visibility' => ServiceVisibility::Public,
+            'published_at' => now(),
+        ]);
+        $otherService->therapists()->attach(StaffProfile::factory()->create(['published_at' => now()]));
+
+        $instance = Livewire::test(ReservationWizard::class)
+            ->call('selectCategory', $this->category->slug)
+            ->call('next')
+            ->call('selectService', $this->service->slug)
+            ->call('next')
+            ->call('goToStep', 0)
+            ->instance();
+
+        $this->assertSame($this->therapist->slug, $instance->therapistSlug);
+        $this->assertTrue($instance->categories->contains('id', $otherCategory->id));
+    }
+
+    public function test_therapist_first_order_narrows_the_category_list_to_the_therapist(): void
+    {
+        // Mirror case: here the therapist *is* the upstream choice, so narrowing is
+        // exactly what the visitor asked for by following a therapist link.
+        $otherCategory = ServiceCategory::factory()->create(['type' => ServiceType::Massage, 'published_at' => now()]);
+        $otherService = Service::factory()->create([
+            'category_id' => $otherCategory->id,
+            'visibility' => ServiceVisibility::Public,
+            'published_at' => now(),
+        ]);
+        $otherService->therapists()->attach(StaffProfile::factory()->create(['published_at' => now()]));
+
+        $instance = Livewire::withQueryParams(['terapeut' => $this->therapist->slug])
+            ->test(ReservationWizard::class)
+            ->instance();
+
+        $this->assertTrue($instance->categories->contains('id', $this->category->id));
+        $this->assertFalse($instance->categories->contains('id', $otherCategory->id));
+    }
+
+    public function test_changing_the_therapist_first_therapist_clears_the_offering(): void
+    {
+        $second = StaffProfile::factory()->create(['published_at' => now()]);
+
+        Livewire::withQueryParams(['terapeut' => $this->therapist->slug])
+            ->test(ReservationWizard::class)
+            ->call('selectCategory', $this->category->slug)
+            ->call('next')
+            ->call('selectService', $this->service->slug)
+            ->call('goToStep', 0)
+            ->call('selectTherapist', $second->slug)
+            ->assertSet('categorySlug', null)
+            ->assertSet('serviceSlug', null);
+    }
+
     public function test_hidden_services_are_not_listed(): void
     {
         $hidden = Service::factory()->create([

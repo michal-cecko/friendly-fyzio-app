@@ -256,6 +256,31 @@ class ReservationWizard extends Component
 
     // --- Option lists ---------------------------------------------------------
 
+    /*
+     * Each option list is narrowed only by selections the user made *earlier* in
+     * the current order. Narrowing by a later one would shrink the list the moment
+     * someone steps back to change their mind — the category step would show only
+     * what the therapist they picked two steps on happens to do.
+     */
+
+    /**
+     * The chosen therapist, but only where they precede the category and service —
+     * i.e. in therapist-first order.
+     */
+    protected function upstreamTherapistId(): ?string
+    {
+        return $this->therapistFirst ? $this->resolvedTherapistId() : null;
+    }
+
+    /**
+     * The chosen service, but only where it precedes the therapist — i.e. in the
+     * normal, category-first order.
+     */
+    protected function upstreamService(): ?Service
+    {
+        return $this->therapistFirst ? null : $this->service();
+    }
+
     /**
      * @return Collection<int, StaffProfile>
      */
@@ -270,7 +295,7 @@ class ReservationWizard extends Component
         return StaffProfile::query()
             ->with('user')
             ->bookable()
-            ->when($this->service, fn ($query) => $query->whereHas('services', fn ($q) => $q->whereKey($this->service->id)))
+            ->when($this->upstreamService(), fn ($query, Service $service) => $query->whereHas('services', fn ($q) => $q->whereKey($service->getKey())))
             ->get()
             ->sortBy(fn (StaffProfile $therapist): string => $therapist->user?->name ?? '')
             ->values();
@@ -286,7 +311,7 @@ class ReservationWizard extends Component
             ->whereNotNull('published_at')
             ->where('published_at', '<=', now())
             ->whereHas('services', fn ($q) => $q->bookable()
-                ->when($this->therapist, fn ($sq) => $sq->whereHas('therapists', fn ($t) => $t->whereKey($this->resolvedTherapistId()))))
+                ->when($this->upstreamTherapistId(), fn ($sq, string $id) => $sq->whereHas('therapists', fn ($t) => $t->whereKey($id))))
             ->orderBy('name')
             ->get();
     }
@@ -304,7 +329,7 @@ class ReservationWizard extends Component
         return $this->category->services()
             ->bookable()
             ->when($this->isPhysioCategory(), fn ($query) => $query->where('exam_type', $this->examType))
-            ->when($this->therapist, fn ($query) => $query->whereHas('therapists', fn ($t) => $t->whereKey($this->resolvedTherapistId())))
+            ->when($this->upstreamTherapistId(), fn ($query, string $id) => $query->whereHas('therapists', fn ($t) => $t->whereKey($id)))
             ->orderBy('duration_minutes')
             ->get();
     }
@@ -345,7 +370,7 @@ class ReservationWizard extends Component
         $present = $this->category->services()
             ->bookable()
             ->whereNotNull('exam_type')
-            ->when($this->therapist, fn ($query) => $query->whereHas('therapists', fn ($t) => $t->whereKey($this->resolvedTherapistId())))
+            ->when($this->upstreamTherapistId(), fn ($query, string $id) => $query->whereHas('therapists', fn ($t) => $t->whereKey($id)))
             ->pluck('exam_type');
 
         return array_values(array_filter(
@@ -709,17 +734,24 @@ class ReservationWizard extends Component
      */
     protected function resetDownstream(string $changed): void
     {
-        if ($changed === 'category') {
+        // The therapist and the category/service invalidate each other, in whichever
+        // direction the current order runs: a new service may not be offered by the
+        // chosen therapist, and a new therapist may not offer the chosen service.
+        $therapistInvalidatesOffering = $this->therapistFirst && $changed === 'therapist';
+
+        if ($therapistInvalidatesOffering) {
+            $this->categorySlug = null;
+        }
+
+        if (! $this->therapistFirst && in_array($changed, ['category', 'service'], true)) {
+            $this->therapistSlug = null;
+        }
+
+        if ($changed === 'category' || $therapistInvalidatesOffering) {
             $this->serviceSlug = null;
             $this->examType = null;
             $this->lapsedMonths = null;
             $this->gate = null;
-        }
-
-        // In the normal order the therapist is picked after the service, so a new
-        // category/service invalidates them — they may not even offer it.
-        if (! $this->therapistFirst && in_array($changed, ['category', 'service'], true)) {
-            $this->therapistSlug = null;
         }
 
         if (in_array($changed, ['therapist', 'category', 'service'], true)) {
