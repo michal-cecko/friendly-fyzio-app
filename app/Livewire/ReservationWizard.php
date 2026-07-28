@@ -31,10 +31,10 @@ use Livewire\Component;
  * Public, full-page reservation wizard.
  *
  * Selections are query-string bound so any state is deep-linkable. The step order
- * is computed, never stored: arriving with a category/service deep-link (e.g.
- * ?sluzba=) puts the wizard in category-first order; otherwise it leads with the
- * therapist. The auth interstitials live in this component too (see the `gate`
- * property) but are wired in a later step.
+ * is computed, never stored: the wizard normally asks category → service →
+ * therapist, and only leads with the therapist when a deep-link names one and
+ * nothing else (e.g. ?terapeut=). The auth interstitials live in this component
+ * too (see the `gate` property) but are wired in a later step.
  */
 class ReservationWizard extends Component
 {
@@ -79,11 +79,11 @@ class ReservationWizard extends Component
     public bool $newsletter = false;
 
     /**
-     * Whether the wizard runs category-first. Decided once, from how the user
-     * arrived (a category/service deep-link), so selecting a category mid-flow
-     * never reorders the steps.
+     * Whether the wizard leads with the therapist instead of the category. Decided
+     * once, from how the user arrived (a therapist-only deep-link), so selecting a
+     * therapist mid-flow never reorders the steps.
      */
-    public bool $categoryFirst = false;
+    public bool $therapistFirst = false;
 
     /** Terminal state: the created reservation id, or a submit error message. */
     public ?string $confirmationId = null;
@@ -136,7 +136,12 @@ class ReservationWizard extends Component
             }
         }
 
-        $this->categoryFirst = filled($this->categorySlug) || filled($this->serviceSlug);
+        // Therapist-first is the exception: a therapist deep-link with nothing else
+        // already answered leads with that person. Any category/service in the URL
+        // (including one derived from ?sluzba= above) means the normal order applies.
+        $this->therapistFirst = filled($this->therapistSlug)
+            && blank($this->categorySlug)
+            && blank($this->serviceSlug);
 
         if (($user = auth()->user()) !== null) {
             $this->prefillContactFromUser($user);
@@ -156,9 +161,9 @@ class ReservationWizard extends Component
      */
     public function stepOrder(): array
     {
-        return $this->categoryFirst
-            ? ['category', 'service', 'therapist', 'date', 'time', 'contact']
-            : ['therapist', 'category', 'service', 'date', 'time', 'contact'];
+        return $this->therapistFirst
+            ? ['therapist', 'category', 'service', 'date', 'time', 'contact']
+            : ['category', 'service', 'therapist', 'date', 'time', 'contact'];
     }
 
     public function currentStep(): string
@@ -709,6 +714,12 @@ class ReservationWizard extends Component
             $this->examType = null;
             $this->lapsedMonths = null;
             $this->gate = null;
+        }
+
+        // In the normal order the therapist is picked after the service, so a new
+        // category/service invalidates them — they may not even offer it.
+        if (! $this->therapistFirst && in_array($changed, ['category', 'service'], true)) {
+            $this->therapistSlug = null;
         }
 
         if (in_array($changed, ['therapist', 'category', 'service'], true)) {

@@ -93,7 +93,7 @@ class ReservationWizardTest extends TestCase
         StaffProfile::factory()->create(['published_at' => now()]);
 
         Livewire::test(ReservationWizard::class)
-            ->call('selectTherapist', $this->therapist->id)
+            ->call('selectCategory', $this->category->slug)
             ->call('next')
             ->assertDispatched('wizard-step-changed')
             ->call('back')
@@ -104,17 +104,18 @@ class ReservationWizardTest extends TestCase
     {
         Notification::fake();
 
-        // A second therapist keeps the therapist step in play (a single therapist is
-        // auto-selected and skipped), so this exercises the full manual flow.
-        StaffProfile::factory()->create(['published_at' => now()]);
+        // A second therapist on the same service keeps the therapist step a real
+        // choice (a lone candidate is auto-selected), so this exercises the full
+        // manual flow.
+        $this->service->therapists()->attach(StaffProfile::factory()->create(['published_at' => now()]));
 
         Livewire::test(ReservationWizard::class)
             ->assertSet('stepIndex', 0)
-            ->call('selectTherapist', $this->therapist->id)
-            ->call('next')
             ->call('selectCategory', $this->category->slug)
             ->call('next')
             ->call('selectService', $this->service->slug)
+            ->call('next')
+            ->call('selectTherapist', $this->therapist->slug)
             ->call('next')
             ->call('selectDate', $this->date->toDateString())
             ->call('next')
@@ -286,14 +287,68 @@ class ReservationWizardTest extends TestCase
         $this->assertSame('category', $instance->currentStep());
     }
 
-    public function test_default_starts_in_therapist_first_order(): void
+    public function test_default_starts_in_category_first_order(): void
     {
-        // A second therapist makes the therapist step a real choice (not auto-skipped).
-        StaffProfile::factory()->create(['published_at' => now()]);
-
         $component = Livewire::test(ReservationWizard::class);
+        $instance = $component->instance();
 
-        $this->assertSame('therapist', $component->instance()->currentStep());
+        $this->assertSame('category', $instance->stepOrder()[0]);
+        $this->assertSame('category', $instance->currentStep());
+    }
+
+    public function test_therapist_deep_link_with_a_service_stays_category_first(): void
+    {
+        // Enough is already answered that leading with the therapist makes no sense —
+        // the deep-linked therapist just arrives preselected on their own step.
+        $component = Livewire::withQueryParams([
+            'terapeut' => $this->therapist->slug,
+            'sluzba' => $this->service->slug,
+        ])->test(ReservationWizard::class);
+        $instance = $component->instance();
+
+        $this->assertSame('category', $instance->stepOrder()[0]);
+        $this->assertSame($this->therapist->slug, $instance->therapistSlug);
+    }
+
+    public function test_last_minute_deep_link_keeps_therapist_first(): void
+    {
+        // The Last-minute brick links a therapist plus a concrete slot, no service.
+        $component = Livewire::withQueryParams([
+            'terapeut' => $this->therapist->slug,
+            'datum' => $this->date->toDateString(),
+            'cas' => '08:00',
+        ])->test(ReservationWizard::class);
+
+        $this->assertSame('therapist', $component->instance()->stepOrder()[0]);
+    }
+
+    public function test_changing_the_service_clears_the_chosen_therapist(): void
+    {
+        // The therapist is picked after the service now, so a different service must
+        // not keep a therapist who may not even offer it.
+        $other = Service::factory()->create([
+            'category_id' => $this->category->id,
+            'duration_minutes' => 30,
+            'visibility' => ServiceVisibility::Public,
+            'published_at' => now(),
+        ]);
+        $second = StaffProfile::factory()->create(['published_at' => now()]);
+        $this->service->therapists()->attach($second);
+        $other->therapists()->attach($second);
+
+        $component = Livewire::test(ReservationWizard::class)
+            ->call('selectCategory', $this->category->slug)
+            ->call('next')
+            ->call('selectService', $this->service->slug)
+            ->call('next')
+            ->call('selectTherapist', $this->therapist->slug)
+            ->call('goToStep', 1)
+            ->call('selectService', $other->slug)
+            ->assertSet('therapistSlug', null);
+
+        // Only one therapist offers the new service, so the step preselects them.
+        $component->call('next');
+        $this->assertSame($second->slug, $component->instance()->therapistSlug);
     }
 
     public function test_hidden_services_are_not_listed(): void
@@ -318,9 +373,9 @@ class ReservationWizardTest extends TestCase
     public function test_submit_requires_consent(): void
     {
         Livewire::test(ReservationWizard::class)
-            ->set('therapistSlug', $this->therapist->slug)
             ->set('categorySlug', $this->category->slug)
             ->set('serviceSlug', $this->service->slug)
+            ->set('therapistSlug', $this->therapist->slug)
             ->set('date', $this->date->toDateString())
             ->set('startTime', '08:00')
             ->set('firstName', 'Jana')
@@ -376,8 +431,6 @@ class ReservationWizardTest extends TestCase
         $physio = $this->physioCategory();
 
         Livewire::test(ReservationWizard::class)
-            ->call('selectTherapist', $this->therapist->id)
-            ->call('next')
             ->call('selectCategory', $physio->slug)
             ->call('next')
             ->assertSee('Typ vyšetření')
@@ -392,8 +445,6 @@ class ReservationWizardTest extends TestCase
         $physio = $this->physioCategory();
 
         Livewire::test(ReservationWizard::class)
-            ->call('selectTherapist', $this->therapist->id)
-            ->call('next')
             ->call('selectCategory', $physio->slug)
             ->call('next')
             ->call('selectExamType', ExamType::Kontrolni->value)
@@ -414,8 +465,6 @@ class ReservationWizardTest extends TestCase
         ]);
 
         Livewire::test(ReservationWizard::class)
-            ->call('selectTherapist', $this->therapist->id)
-            ->call('next')
             ->call('selectCategory', $physio->slug)
             ->call('next')
             ->call('selectExamType', ExamType::Kontrolni->value)
@@ -440,8 +489,6 @@ class ReservationWizardTest extends TestCase
         ]);
 
         Livewire::actingAs($user)->test(ReservationWizard::class)
-            ->call('selectTherapist', $this->therapist->id)
-            ->call('next')
             ->call('selectCategory', $physio->slug)
             ->call('next')
             ->call('selectExamType', ExamType::Kontrolni->value)
@@ -458,9 +505,9 @@ class ReservationWizardTest extends TestCase
         $existing = User::factory()->customer()->create(['email' => 'dup@example.com']);
 
         Livewire::test(ReservationWizard::class)
-            ->set('therapistSlug', $this->therapist->slug)
             ->set('categorySlug', $this->category->slug)
             ->set('serviceSlug', $this->service->slug)
+            ->set('therapistSlug', $this->therapist->slug)
             ->set('date', $this->date->toDateString())
             ->set('startTime', '08:00')
             ->set('firstName', 'Jana')
@@ -503,9 +550,9 @@ class ReservationWizardTest extends TestCase
         Notification::fake();
 
         $component
-            ->set('therapistSlug', $this->therapist->slug)
             ->set('categorySlug', $this->category->slug)
             ->set('serviceSlug', $this->service->slug)
+            ->set('therapistSlug', $this->therapist->slug)
             ->set('date', $this->date->toDateString())
             ->set('startTime', '08:00')
             ->set('firstName', 'Jana')
@@ -527,11 +574,11 @@ class ReservationWizardTest extends TestCase
         Livewire::actingAs($client)
             ->test(ReservationWizard::class)
             ->assertSet('email', 'klient@example.com')
-            ->call('selectTherapist', $this->therapist->id)
-            ->call('next')
             ->call('selectCategory', $this->category->slug)
             ->call('next')
             ->call('selectService', $this->service->slug)
+            ->call('next')
+            // The service has a single therapist, so the step arrives preselected.
             ->call('next')
             ->call('selectDate', $this->date->toDateString())
             ->call('next')
@@ -600,9 +647,9 @@ class ReservationWizardTest extends TestCase
         ]);
 
         $months = Livewire::test(ReservationWizard::class)
-            ->set('therapistSlug', $this->therapist->slug)
             ->set('categorySlug', $this->category->slug)
             ->set('serviceSlug', $this->service->slug)
+            ->set('therapistSlug', $this->therapist->slug)
             ->instance()
             ->calendarMonths();
 
@@ -618,9 +665,9 @@ class ReservationWizardTest extends TestCase
         Carbon::setTestNow($this->date->copy()->startOfDay());
 
         $months = Livewire::test(ReservationWizard::class)
-            ->set('therapistSlug', $this->therapist->slug)
             ->set('categorySlug', $this->category->slug)
             ->set('serviceSlug', $this->service->slug)
+            ->set('therapistSlug', $this->therapist->slug)
             ->instance()
             ->calendarMonths();
 
