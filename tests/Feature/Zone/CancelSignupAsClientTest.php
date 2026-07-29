@@ -10,6 +10,7 @@ use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Models\CourseEnrollment;
 use App\Models\CourseSeries;
+use App\Models\EventCategory;
 use App\Models\Lesson;
 use App\Models\LessonBooking;
 use App\Models\User;
@@ -97,31 +98,64 @@ class CancelSignupAsClientTest extends TestCase
             ->exists());
     }
 
-    public function test_event_bookings_use_a_single_hour_based_window(): void
+    /**
+     * A booking on an event starting `$startsInHours` from now, optionally with
+     * its own window and/or a category carrying one.
+     */
+    protected function booking(int $startsInHours, ?int $lessonHours = null, ?int $categoryHours = null): LessonBooking
     {
-        // Default: 24 hours before the event — for every event type.
-        $soon = LessonBooking::factory()
-            ->for(Lesson::factory()->create([
-                'lesson_date' => today()->toDateString(),
-                'start_time' => now()->addHours(2)->format('H:i:s'),
-            ]), 'lesson')
-            ->create(['status' => BookingStatus::Confirmed]);
+        $starts = now()->addHours($startsInHours);
 
-        $later = LessonBooking::factory()
-            ->for(Lesson::factory()->create([
-                'lesson_date' => today()->addDays(5)->toDateString(),
-                'start_time' => '18:00:00',
-            ]), 'lesson')
-            ->create(['status' => BookingStatus::Confirmed]);
+        $lesson = Lesson::factory()->create([
+            'lesson_date' => $starts->toDateString(),
+            'start_time' => $starts->format('H:i:s'),
+            'cancel_before_hours' => $lessonHours,
+            'event_category_id' => $categoryHours === null
+                ? null
+                : EventCategory::factory()->create(['cancel_before_hours' => $categoryHours])->id,
+        ]);
 
+        return LessonBooking::factory()
+            ->for($lesson, 'lesson')
+            ->create(['status' => BookingStatus::Confirmed]);
+    }
+
+    public function test_event_bookings_fall_back_to_the_clinic_wide_hour_window(): void
+    {
+        // Nothing set on the event or its category: the 24 h setting decides.
         $cancel = app(CancelSignupAsClient::class);
 
-        $this->assertFalse($cancel->isCancellable($soon));
+        $this->assertFalse($cancel->isCancellable($this->booking(startsInHours: 2)));
+
+        $later = $this->booking(startsInHours: 24 * 5);
         $this->assertTrue($cancel->isCancellable($later));
 
         $cancel($later);
 
         $this->assertSame(BookingStatus::Cancelled, $later->fresh()->status);
+    }
+
+    public function test_the_category_window_overrides_the_setting(): void
+    {
+        // "Workshopy": a week's notice, so 30 hours ahead is already too late.
+        $cancel = app(CancelSignupAsClient::class);
+
+        $this->assertFalse($cancel->isCancellable($this->booking(startsInHours: 30, categoryHours: 168)));
+        $this->assertTrue($cancel->isCancellable($this->booking(startsInHours: 24 * 10, categoryHours: 168)));
+    }
+
+    public function test_the_event_window_overrides_its_category(): void
+    {
+        // A demanding workshop in an otherwise 48 h category.
+        $cancel = app(CancelSignupAsClient::class);
+
+        $this->assertFalse($cancel->isCancellable(
+            $this->booking(startsInHours: 24 * 5, lessonHours: 240, categoryHours: 48)
+        ));
+        // And the other way round: a laxer event inside a strict category.
+        $this->assertTrue($cancel->isCancellable(
+            $this->booking(startsInHours: 30, lessonHours: 24, categoryHours: 168)
+        ));
     }
 
     public function test_an_already_cancelled_signup_cannot_be_cancelled_again(): void

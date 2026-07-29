@@ -68,6 +68,9 @@
                                 {{ $series?->name }}
                                 @if($series?->start_date) · {{ $series->start_date->format('j. n. Y') }} – {{ $series->end_date?->format('j. n. Y') }} @endif
                             </p>
+                            @if($note = $cancelNote($enrollment))
+                                <p class="mt-1 text-xs {{ $canCancel($enrollment) ? 'text-neutral-500' : 'text-amber-700' }}">{{ $note }}</p>
+                            @endif
                         </div>
 
                         <div class="flex flex-wrap items-center gap-2.5">
@@ -167,6 +170,9 @@
                             {{ $booking->lesson?->startsAt()?->translatedFormat('j. n. Y · H:i') }}
                             @if($booking->lesson?->room?->name) · {{ $booking->lesson->room->name }} @endif
                         </p>
+                        @if($note = $cancelNote($booking))
+                            <p class="mt-1 text-xs {{ $canCancel($booking) ? 'text-neutral-500' : 'text-amber-700' }}">{{ $note }}</p>
+                        @endif
                     </div>
 
                     <div class="flex shrink-0 flex-wrap items-center gap-2.5">

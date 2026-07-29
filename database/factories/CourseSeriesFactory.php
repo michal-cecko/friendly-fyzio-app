@@ -8,6 +8,8 @@ use App\Enums\DayOfWeek;
 use App\Models\Course;
 use App\Models\CourseSeries;
 use App\Models\Room;
+use App\Support\Lessons\ScheduleSlot;
+use App\Support\Lessons\SeriesSchedule;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -37,17 +39,28 @@ class CourseSeriesFactory extends Factory
 
     /**
      * A série whose recurring rozvrh is filled in, so its lessons can be
-     * generated. Defaults to a single weekday; pass several for a série that
-     * meets more than once a week.
+     * generated. Defaults to a single weekday at one time; pass several days for
+     * a série that meets more than once a week, all sharing the given time.
      *
      * @param  array<int, DayOfWeek>  $days
      */
-    public function withSchedule(array $days = [DayOfWeek::Monday], string $start = '17:00:00', string $end = '18:00:00'): static
+    public function withSchedule(array $days = [DayOfWeek::Monday], string $start = '17:00', string $end = '18:00'): static
+    {
+        return $this->withScheduleSlots(
+            array_map(fn (DayOfWeek $day): ScheduleSlot => new ScheduleSlot($day, $start, $end), $days)
+        );
+    }
+
+    /**
+     * The general form: each slot carries its own day and time, for a série
+     * meeting e.g. on středa at 9:00 and čtvrtek at 10:30.
+     *
+     * @param  array<int, ScheduleSlot>  $slots
+     */
+    public function withScheduleSlots(array $slots): static
     {
         return $this->state(fn (array $attributes): array => [
-            'days_of_week' => array_map(fn (DayOfWeek $day): string => $day->value, $days),
-            'start_time' => $start,
-            'end_time' => $end,
+            'schedule' => SeriesSchedule::fromSlots($slots)->toArray(),
             'room_id' => Room::factory(),
         ]);
     }

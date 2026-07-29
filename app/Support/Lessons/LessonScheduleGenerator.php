@@ -10,17 +10,17 @@ use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Materializes a série's recurring schedule (weekdays + time + room, stored on
- * the série itself) into concrete {@see Lesson} rows between its start_date and
- * end_date.
+ * Materializes a série's recurring rozvrh (a list of weekday + time slots, plus
+ * a room, stored on the série itself) into concrete {@see Lesson} rows between
+ * its start_date and end_date.
  *
  * Stateless (Octane-safe): every call resolves its own data, nothing is cached
  * on the instance — the same contract as {@see App\Support\WorkBlocks\WorkBlockGenerator},
- * whose single-weekday occurrenceDates() this generalises to several weekdays.
+ * whose single-weekday occurrenceDates() this generalises to several slots.
  *
- * Generation is idempotent and additive: a date that already carries a lesson is
- * skipped, and nothing existing is ever rewritten or removed. Re-running after
- * extending the série's end_date fills in only the new dates.
+ * Generation is idempotent and additive: a date+time that already carries a
+ * lesson is skipped, and nothing existing is ever rewritten or removed.
+ * Re-running after extending the série's end_date fills in only the new dates.
  */
 class LessonScheduleGenerator
 {
@@ -33,51 +33,43 @@ class LessonScheduleGenerator
     public const MAX_LESSONS = 200;
 
     /**
-     * Every date in [from, until] falling on any of the given weekdays, ascending
-     * and deduplicated. An empty day list yields no dates.
+     * Every date in [from, until] falling on the given weekday, ascending.
      *
-     * @param  array<int, DayOfWeek>  $days
      * @return array<int, CarbonImmutable>
      */
-    public function occurrenceDates(array $days, CarbonInterface $from, CarbonInterface $until): array
+    public function occurrenceDates(DayOfWeek $day, CarbonInterface $from, CarbonInterface $until): array
     {
-        $from = CarbonImmutable::parse($from->toDateString());
         $until = CarbonImmutable::parse($until->toDateString());
+        $cursor = CarbonImmutable::parse($from->toDateString());
+
+        while (DayOfWeek::fromCarbon($cursor) !== $day) {
+            $cursor = $cursor->addDay();
+        }
 
         $dates = [];
 
-        foreach ($days as $day) {
-            $cursor = $from;
-
-            while (DayOfWeek::fromCarbon($cursor) !== $day) {
-                $cursor = $cursor->addDay();
-            }
-
-            while ($cursor->lessThanOrEqualTo($until)) {
-                $dates[$cursor->toDateString()] = $cursor;
-                $cursor = $cursor->addWeek();
-            }
+        while ($cursor->lessThanOrEqualTo($until)) {
+            $dates[] = $cursor;
+            $cursor = $cursor->addWeek();
         }
 
-        ksort($dates);
-
-        return array_values($dates);
+        return $dates;
     }
 
     /**
-     * Create the série's missing lessons. Dates that already have one — including
-     * a soft-deleted one — are counted as skipped and left alone: a session staff
+     * Create the série's missing lessons. Sessions that already exist — including
+     * soft-deleted ones — are counted as skipped and left alone: a session staff
      * deliberately cancelled must not come back on the next run.
      *
      * @return array{created: int, skipped: int, capped: bool}
      */
     public function generate(CourseSeries $series): array
     {
-        $planned = $this->plannedDates($series);
-        $missing = $this->missingDates($series);
+        $planned = $this->plannedSessions($series);
+        $missing = $this->missingSessions($series);
         $instructor = $series->leadInstructor();
 
-        // Dates the schedule wanted that already carry a lesson (live or cancelled).
+        // Sessions the rozvrh wanted that already exist (live or cancelled).
         $skipped = count($planned) - count($missing);
 
         if ($missing === [] || $instructor === null) {
@@ -88,10 +80,7 @@ class LessonScheduleGenerator
         $create = array_slice($missing, 0, self::MAX_LESSONS);
 
         DB::transaction(function () use ($series, $create, $instructor): void {
-            $startTime = $this->time($series->start_time);
-            $endTime = $this->time($series->end_time);
-
-            foreach ($create as $date) {
+            foreach ($create as ['date' => $date, 'slot' => $slot]) {
                 // create(), never a bulk insert: LessonObserver builds the attendance
                 // roster for the série's participants, and Lesson is Auditable.
                 Lesson::query()->create([
@@ -99,8 +88,8 @@ class LessonScheduleGenerator
                     'instructor_id' => $instructor->getKey(),
                     'room_id' => $series->room_id,
                     'lesson_date' => $date->toDateString(),
-                    'start_time' => $startTime,
-                    'end_time' => $endTime,
+                    'start_time' => $this->time($slot->startTime),
+                    'end_time' => $this->time($slot->endTime),
                 ]);
             }
         });
@@ -113,60 +102,109 @@ class LessonScheduleGenerator
     }
 
     /**
-     * Every date the schedule calls for, whether or not a lesson exists yet.
+     * Every session the rozvrh calls for, whether or not a lesson exists yet,
+     * ascending. A série meeting twice on one day (a morning and an evening
+     * group) yields two sessions on that date — hence the slot next to the date.
      *
-     * @return array<int, CarbonImmutable>
+     * @return array<int, array{date: CarbonImmutable, slot: ScheduleSlot}>
      */
-    public function plannedDates(CourseSeries $series): array
+    public function plannedSessions(CourseSeries $series): array
     {
         if (! $series->hasLessonSchedule() || $series->leadInstructor() === null) {
             return [];
         }
 
-        return $this->occurrenceDates($series->scheduleDays(), $series->start_date, $series->end_date);
+        $sessions = [];
+
+        foreach ($series->weeklySchedule()->slots() as $slot) {
+            foreach ($this->occurrenceDates($slot->day, $series->start_date, $series->end_date) as $date) {
+                $sessions[$this->sessionKey($date, $slot->startTime)] = ['date' => $date, 'slot' => $slot];
+            }
+        }
+
+        ksort($sessions);
+
+        return array_values($sessions);
     }
 
     /**
-     * The scheduled dates with no lesson on them yet — what a run would create.
+     * The scheduled sessions with no lesson on them yet — what a run would create.
      *
-     * @return array<int, CarbonImmutable>
+     * A session counts as taken when a lesson sits on its date at its time. On a
+     * weekday the rozvrh visits only once, any lesson on that date takes it,
+     * whatever its time: staff moving a session an hour later must not make the
+     * generator re-create the original. A weekday with several slots (a morning
+     * and an evening group) has to match on the time as well, otherwise the
+     * second group could never be generated.
+     *
+     * @return array<int, array{date: CarbonImmutable, slot: ScheduleSlot}>
      */
-    public function missingDates(CourseSeries $series): array
+    public function missingSessions(CourseSeries $series): array
     {
-        $planned = $this->plannedDates($series);
+        $planned = $this->plannedSessions($series);
 
         if ($planned === []) {
             return [];
         }
 
-        $taken = $this->existingDates($series);
+        $slotsPerDay = collect($series->weeklySchedule()->slots())
+            ->countBy(fn (ScheduleSlot $slot): string => $slot->day->value);
 
-        return array_values(array_filter(
-            $planned,
-            fn (CarbonImmutable $date): bool => ! in_array($date->toDateString(), $taken, true),
-        ));
+        $existing = $this->existingSessions($series);
+
+        return array_values(array_filter($planned, function (array $session) use ($slotsPerDay, $existing): bool {
+            $date = $session['date']->toDateString();
+
+            $taken = $slotsPerDay->get($session['slot']->day->value, 1) > 1
+                ? in_array($this->sessionKey($session['date'], $session['slot']->startTime), $existing['sessions'], true)
+                : in_array($date, $existing['dates'], true);
+
+            return ! $taken;
+        }));
     }
 
     /**
-     * Dates of the série's lessons, soft-deleted ones included — the whole point
-     * of withTrashed() here is that a cancelled lesson keeps its date occupied.
+     * The dates and date+time keys of the série's lessons, soft-deleted ones
+     * included — the whole point of withTrashed() here is that a cancelled lesson
+     * keeps its slot occupied.
      *
-     * @return array<int, string>
+     * @return array{dates: array<int, string>, sessions: array<int, string>}
      */
-    protected function existingDates(CourseSeries $series): array
+    protected function existingSessions(CourseSeries $series): array
     {
-        return $series->lessons()
+        $lessons = $series->lessons()
             ->withTrashed()
-            ->pluck('lesson_date')
-            ->map(fn (mixed $date): string => CarbonImmutable::parse($date)->toDateString())
-            ->unique()
-            ->values()
-            ->all();
+            ->get(['lesson_date', 'start_time']);
+
+        return [
+            'dates' => $lessons
+                ->map(fn (Lesson $lesson): string => CarbonImmutable::parse($lesson->lesson_date)->toDateString())
+                ->unique()
+                ->values()
+                ->all(),
+            'sessions' => $lessons
+                ->map(fn (Lesson $lesson): string => $this->sessionKey(
+                    CarbonImmutable::parse($lesson->lesson_date),
+                    (string) $lesson->start_time,
+                ))
+                ->unique()
+                ->values()
+                ->all(),
+        ];
     }
 
     /**
-     * Normalise to the H:i:s the lesson form writes — the série's TimePicker
-     * submits H:i, and the column is an uncast raw string on both models.
+     * "2026-09-15 17:30" — one session of the série, date and time normalised so
+     * the same slot always produces the same key. Doubles as the sort key.
+     */
+    protected function sessionKey(CarbonInterface $date, string $startTime): string
+    {
+        return $date->toDateString().' '.CarbonImmutable::parse($startTime)->format('H:i');
+    }
+
+    /**
+     * Normalise to the H:i:s the lesson form writes — a rozvrh slot holds H:i,
+     * and the column is an uncast raw string on both models.
      */
     protected function time(string $value): string
     {

@@ -13,6 +13,7 @@ use App\Models\Payment;
 use App\Models\User;
 use App\Support\Enrollments\CancellationWindowClosedException;
 use App\Support\Enrollments\CancelSignupAsClient;
+use App\Support\Enrollments\SignupStatus;
 use App\Support\Substitutes\ExcuseFromLesson;
 use App\Support\Substitutes\SubstituteException;
 use Illuminate\Contracts\View\View;
@@ -223,6 +224,38 @@ class Courses extends Component
             ->all() ?? [];
     }
 
+    /**
+     * The line under a sign-up saying until when the client can still leave —
+     * or that the window has closed and it is a phone call now. Written out
+     * because the deadline is no longer one number for everybody: an event
+     * takes it from its own setting, its category, or the clinic-wide default.
+     *
+     * Only on the "Aktuální" tab — under a finished course an expired window is
+     * noise, not information.
+     */
+    protected function cancelNote(CourseEnrollment|LessonBooking $signup, CancelSignupAsClient $cancel): ?string
+    {
+        if ($this->tab !== 'aktualni' || ! SignupStatus::isActive($signup)) {
+            return null;
+        }
+
+        $deadline = $cancel->deadline($signup);
+
+        if ($deadline === null) {
+            return null;
+        }
+
+        if (now()->greaterThanOrEqualTo($deadline)) {
+            return 'Lhůta pro odhlášení uplynula – ozvěte se nám prosím telefonicky.';
+        }
+
+        // A course série closes at the start of a day, so the midnight would only
+        // confuse; an event closes at a real hour.
+        $format = $deadline->format('H:i') === '00:00' ? 'j. n. Y' : 'j. n. Y H:i';
+
+        return 'Odhlásit se můžete do '.$deadline->translatedFormat($format).'.';
+    }
+
     public function render(): View
     {
         $cancel = app(CancelSignupAsClient::class);
@@ -233,6 +266,7 @@ class Courses extends Component
             'enrollments' => $enrollments,
             'bookings' => $this->bookings(),
             'canCancel' => fn ($signup): bool => $cancel->isCancellable($signup),
+            'cancelNote' => fn ($signup): ?string => $this->cancelNote($signup, $cancel),
             'openPayment' => fn (CourseEnrollment|LessonBooking $signup): ?Payment => $signup->payments
                 ->first(fn (Payment $payment): bool => $payment->method === PaymentMethod::Qr
                     && $payment->status->isOpen()),

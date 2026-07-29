@@ -35,4 +35,22 @@ enum DayOfWeek: string implements HasLabel
             self::Sunday => 'Neděle',
         };
     }
+
+    /**
+     * The label as it reads mid-sentence — "úterý a čtvrtek 17:30". The public
+     * site writes weekdays lowercase (Carbon's translatedFormat('l') does the
+     * same), while getLabel() stays capitalized for Filament's pickers.
+     */
+    public function lowerLabel(): string
+    {
+        return mb_strtolower($this->getLabel());
+    }
+
+    /**
+     * Position in the week, Monday = 0 — the sort order for a série's rozvrh.
+     */
+    public function order(): int
+    {
+        return (int) array_search($this, self::cases(), true);
+    }
 }

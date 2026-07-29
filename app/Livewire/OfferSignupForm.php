@@ -268,12 +268,15 @@ class OfferSignupForm extends Component
     protected function summaryRows(CourseSeries|Lesson $offer): array
     {
         return match (true) {
-            $offer instanceof CourseSeries => array_filter([
+            // Filtered on the value: a série without a rozvrh (or with no lesson
+            // ahead) drops the row instead of showing an empty one.
+            $offer instanceof CourseSeries => array_values(array_filter([
                 ['Kurz', (string) ($offer->course?->name ?? $offer->name)],
                 ['Série', $offer->name],
                 ['Období', EnrollmentEmailContext::seriesPeriod($offer)],
-                ['Nejbližší lekce', EnrollmentEmailContext::nextLessonLabel($offer)],
-            ]),
+                ['Kdy', (string) $offer->scheduleSummary()],
+                ['Nejbližší lekce', (string) EnrollmentEmailContext::nextLessonLabel($offer)],
+            ], fn (array $row): bool => filled($row[1]))),
             $offer instanceof Lesson => [
                 [(string) ($offer->category?->name ?? 'Akce'), $offer->displayName()],
                 ['Termín', EnrollmentEmailContext::dateTimeLabel($offer->startsAt())],

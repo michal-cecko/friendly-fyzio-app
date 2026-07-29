@@ -94,6 +94,14 @@ class LessonInfolist
                             ->label('Cena')
                             ->suffix(' Kč')
                             ->placeholder('—'),
+                        TextEntry::make('cancel_before_hours')
+                            ->label('Odhlášení klientem')
+                            ->state(fn (Lesson $record): string => $record->cancelBeforeHours().' hodin předem'
+                                .match (true) {
+                                    $record->cancel_before_hours !== null => '',
+                                    $record->category?->cancel_before_hours !== null => ' (z kategorie)',
+                                    default => ' (z nastavení)',
+                                }),
                         TextEntry::make('published_at')
                             ->label('Publikováno')
                             ->dateTime('d.m.Y H:i')

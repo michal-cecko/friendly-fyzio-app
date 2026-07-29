@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\CourseEnrollmentStatus;
 use App\Enums\CourseSeriesStatus;
 use App\Enums\CourseSeriesVisibility;
+use App\Enums\DayOfWeek;
 use App\Livewire\CourseArchive;
 use App\Livewire\OfferSignupForm;
 use App\Models\Course;
@@ -61,6 +62,50 @@ class PublicOfferPagesTest extends TestCase
             ->assertSee('Hormonální jóga')
             ->assertSee('Přihlásit se a zaplatit')
             ->assertSee('Shrnutí objednávky');
+    }
+
+    /**
+     * The weekday and time are the detail clients ask about first, so they belong
+     * in the info list at the top of the page and in the order summary — not only
+     * in the term list at the bottom.
+     */
+    public function test_course_detail_shows_the_series_schedule_at_the_top(): void
+    {
+        $course = $this->publishedCourse();
+        $this->openSeries($course, [
+            'schedule' => [
+                ['day' => DayOfWeek::Tuesday->value, 'start_time' => '17:30', 'end_time' => '18:30'],
+            ],
+        ]);
+
+        $this->get('/kurzy/'.$course->slug)
+            ->assertOk()
+            ->assertSee('úterý 17:30–18:30')
+            ->assertSee('Kdy');
+    }
+
+    public function test_a_series_without_a_schedule_shows_no_empty_row(): void
+    {
+        $course = $this->publishedCourse();
+        $this->openSeries($course, ['schedule' => null]);
+
+        $this->get('/kurzy/'.$course->slug)
+            ->assertOk()
+            ->assertDontSee('Kdy</dt>', escape: false);
+    }
+
+    public function test_the_archive_card_shows_the_weekday_and_start_time(): void
+    {
+        $course = $this->publishedCourse();
+        $this->openSeries($course, [
+            'schedule' => [
+                ['day' => DayOfWeek::Wednesday->value, 'start_time' => '09:00', 'end_time' => '10:00'],
+                ['day' => DayOfWeek::Thursday->value, 'start_time' => '10:30', 'end_time' => '11:30'],
+            ],
+        ]);
+
+        Livewire::test(CourseArchive::class)
+            ->assertSee('středa 09:00, čtvrtek 10:30');
     }
 
     public function test_unpublished_course_is_hidden_from_guests_but_previewable_by_staff(): void

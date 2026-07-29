@@ -56,9 +56,10 @@ class GenerateSeriesLessonsTest extends TestCase
             ->create([
                 'start_date' => '2026-08-03',
                 'end_date' => '2026-08-28',
-                'days_of_week' => [DayOfWeek::Monday->value, DayOfWeek::Wednesday->value],
-                'start_time' => '17:00:00',
-                'end_time' => '18:00:00',
+                'schedule' => [
+                    ['day' => DayOfWeek::Monday->value, 'start_time' => '17:00', 'end_time' => '18:00'],
+                    ['day' => DayOfWeek::Wednesday->value, 'start_time' => '17:00', 'end_time' => '18:00'],
+                ],
                 'room_id' => Room::factory()->create()->getKey(),
                 'capacity' => 10,
                 'status' => CourseSeriesStatus::Open,
@@ -102,7 +103,7 @@ class GenerateSeriesLessonsTest extends TestCase
         // 2026-08-03 and 2026-08-31 are both Mondays and both boundaries.
         $series = $this->series([
             'end_date' => '2026-08-31',
-            'days_of_week' => [DayOfWeek::Monday->value],
+            'schedule' => [['day' => DayOfWeek::Monday->value, 'start_time' => '17:00', 'end_time' => '18:00']],
         ]);
 
         $this->generator()->generate($series);
@@ -179,10 +180,10 @@ class GenerateSeriesLessonsTest extends TestCase
     public function test_an_incomplete_schedule_generates_nothing(): void
     {
         foreach ([
-            ['days_of_week' => []],
-            ['days_of_week' => null],
-            ['start_time' => null],
-            ['end_time' => null],
+            ['schedule' => []],
+            ['schedule' => null],
+            // A slot missing its times is dropped, leaving nothing to generate.
+            ['schedule' => [['day' => DayOfWeek::Monday->value]]],
             ['room_id' => null],
         ] as $missing) {
             $series = $this->series($missing);
@@ -210,18 +211,53 @@ class GenerateSeriesLessonsTest extends TestCase
         $this->assertSame(LessonScheduleGenerator::MAX_LESSONS, $series->lessons()->count());
     }
 
-    public function test_occurrence_dates_are_ascending_and_deduplicated(): void
+    public function test_occurrence_dates_are_ascending(): void
     {
         $dates = $this->generator()->occurrenceDates(
-            [DayOfWeek::Wednesday, DayOfWeek::Monday, DayOfWeek::Monday],
+            DayOfWeek::Wednesday,
             CarbonImmutable::parse('2026-08-03'),
-            CarbonImmutable::parse('2026-08-12'),
+            CarbonImmutable::parse('2026-08-19'),
         );
 
         $this->assertSame(
-            ['2026-08-03', '2026-08-05', '2026-08-10', '2026-08-12'],
+            ['2026-08-05', '2026-08-12', '2026-08-19'],
             array_map(fn (CarbonImmutable $date): string => $date->toDateString(), $dates),
         );
+    }
+
+    public function test_planned_sessions_interleave_the_slots_in_date_order(): void
+    {
+        $series = $this->series(['end_date' => '2026-08-10']);
+
+        $sessions = array_map(
+            fn (array $session): string => $session['date']->toDateString().' '.$session['slot']->startTime,
+            $this->generator()->plannedSessions($series),
+        );
+
+        $this->assertSame(['2026-08-03 17:00', '2026-08-05 17:00', '2026-08-10 17:00'], $sessions);
+    }
+
+    public function test_two_slots_on_one_weekday_each_get_their_lesson(): void
+    {
+        // A morning and an evening group meeting on the same Monday.
+        $series = $this->series([
+            'end_date' => '2026-08-10',
+            'schedule' => [
+                ['day' => DayOfWeek::Monday->value, 'start_time' => '09:00', 'end_time' => '10:00'],
+                ['day' => DayOfWeek::Monday->value, 'start_time' => '17:00', 'end_time' => '18:00'],
+            ],
+        ]);
+
+        $result = $this->generator()->generate($series);
+
+        $this->assertSame(4, $result['created']);
+        $this->assertSame(
+            ['09:00:00', '17:00:00'],
+            $series->lessons()->whereDate('lesson_date', '2026-08-03')->pluck('start_time')->sort()->values()->all(),
+        );
+
+        // And the second run still adds nothing.
+        $this->assertSame(0, $this->generator()->generate($series->fresh())['created']);
     }
 
     public function test_the_relation_manager_action_generates_the_lessons(): void
@@ -241,7 +277,7 @@ class GenerateSeriesLessonsTest extends TestCase
 
     public function test_the_relation_manager_action_is_disabled_without_a_schedule(): void
     {
-        $series = $this->series(['days_of_week' => null]);
+        $series = $this->series(['schedule' => null]);
 
         Livewire::test(LessonsRelationManager::class, [
             'ownerRecord' => $series,
@@ -290,15 +326,21 @@ class GenerateSeriesLessonsTest extends TestCase
     public function test_creating_a_serie_with_a_schedule_redirects_with_the_prompt_flag(): void
     {
         $this->createSeriesThroughForm('Podzim 2026', [
-            'days_of_week' => [DayOfWeek::Monday->value, DayOfWeek::Wednesday->value],
-            'start_time' => '17:00',
-            'end_time' => '18:00',
+            'schedule' => [
+                ['day' => DayOfWeek::Monday->value, 'start_time' => '17:00', 'end_time' => '18:00'],
+                ['day' => DayOfWeek::Wednesday->value, 'start_time' => '18:15', 'end_time' => '19:15'],
+            ],
             'room_id' => Room::factory()->create()->getKey(),
         ]);
 
         $series = CourseSeries::query()->where('name', 'Podzim 2026')->sole();
 
         $this->assertTrue($series->hasLessonSchedule());
+        // The repeater's UUID keys are re-indexed on the way into the column.
+        $this->assertSame([
+            ['day' => 'monday', 'start_time' => '17:00', 'end_time' => '18:00'],
+            ['day' => 'wednesday', 'start_time' => '18:15', 'end_time' => '19:15'],
+        ], $series->schedule);
         // Nothing is created until the prompt on the detail page is confirmed.
         $this->assertSame(0, $series->lessons()->count());
     }
@@ -345,10 +387,16 @@ class GenerateSeriesLessonsTest extends TestCase
         $series->setRelation('room', $series->room()->first());
 
         $this->assertSame(
-            'Pondělí, Středa · 17:00–18:00 · '.$series->room->name,
+            'Pondělí a středa 17:00–18:00 · '.$series->room->name,
             $series->scheduleLabel(),
         );
 
-        $this->assertNull($this->series(['room_id' => null])->scheduleLabel());
+        // Clients see the same rozvrh without the room.
+        $this->assertSame('pondělí a středa 17:00–18:00', $series->scheduleSummary());
+        $this->assertSame('pondělí a středa 17:00', $series->shortScheduleSummary());
+
+        // A missing room no longer hides the rozvrh — only an empty one does.
+        $this->assertNotNull($this->series(['room_id' => null])->scheduleLabel());
+        $this->assertNull($this->series(['schedule' => null])->scheduleLabel());
     }
 }

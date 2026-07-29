@@ -456,15 +456,16 @@ class PageSeeder extends Seeder
     /**
      * The "Storno podmínky" page — linked from the mandatory terms checkbox in
      * both booking flows. The therapy/massage policy is the clinic's binding
-     * wording; the course/lesson/workshop cancellation windows are summarised
-     * from the current settings so the page stays in sync with admin config.
+     * wording; the course window is summarised from the current settings so the
+     * page stays in sync with admin config. The event window is not: it differs
+     * per category and per event, so the page points at where the binding number
+     * actually is instead of naming one that would be wrong for half of them.
      */
     private function stornoTermsPage(): void
     {
         $feePercent = Settings::stornoFeePercent();
         $noShowPercent = Settings::noShowFeePercent();
         $courseDays = Settings::courseCancelBeforeDays();
-        $eventHours = Settings::eventCancelBeforeHours();
 
         Page::updateOrCreate(
             ['system_key' => 'storno-podminky'],
@@ -492,7 +493,7 @@ class PageSeeder extends Seeder
                             '<p>Přihlášky na kurzy a jednorázové akce (lekce, workshopy) se hradí předem (QR platbou). Nezaplacená přihláška po uplynutí rezervační lhůty automaticky propadá a místo nabídneme dalším zájemcům.</p>',
                             '<ul>',
                             "<li><strong>Pohybové kurzy</strong> – odhlásit se můžete nejpozději {$courseDays} dní před začátkem série.</li>",
-                            "<li><strong>Jednorázové akce</strong> (lekce, workshopy) – odhlásit se můžete nejpozději {$eventHours} hodin před konáním.</li>",
+                            '<li><strong>Jednorázové akce</strong> (lekce, workshopy) – lhůta se liší podle typu akce. Konkrétní termín, do kdy se lze odhlásit, najdete u každé akce a u své přihlášky v <a href="/muj-ucet/kurzy">klientské zóně</a>.</li>',
                             '</ul>',
                             "<p>Při pozdějším zrušení termínu fyzioterapie nebo masáže, u kterého již platí storno lhůta, účtujeme storno poplatek ve výši {$feePercent} % z ceny. Po uplynutí storno lhůty už zrušení online není možné – kontaktujte nás prosím telefonicky.</p>",
                             '<h2>Náhradní vstupy u kurzů</h2>',

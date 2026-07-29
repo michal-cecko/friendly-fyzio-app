@@ -108,12 +108,12 @@ class GenerateSeriesLessonsAction extends Action
     protected function describe(?CourseSeries $series): string
     {
         if ($series === null || ! $series->hasLessonSchedule()) {
-            return 'Série zatím nemá rozvrh. Doplňte dny v týdnu, čas a místnost v jejím nastavení na záložce Rozvrh.';
+            return 'Série zatím nemá rozvrh. Doplňte dny a časy konání a místnost v jejím nastavení na záložce Rozvrh.';
         }
 
         $generator = app(LessonScheduleGenerator::class);
-        $planned = count($generator->plannedDates($series));
-        $missing = count($generator->missingDates($series));
+        $planned = count($generator->plannedSessions($series));
+        $missing = count($generator->missingSessions($series));
 
         $intro = 'Podle rozvrhu ('.$series->scheduleLabel().') vychází mezi '
             .$series->start_date->format('j. n. Y').' a '.$series->end_date->format('j. n. Y')
@@ -142,6 +142,7 @@ class GenerateSeriesLessonsAction extends Action
         $points = [
             'Lekce se zakládají jen na dnech z rozvrhu, které padnou <strong>mezi začátek a konec série</strong>. Když chcete další, posuňte nejdřív konec série.',
             'Termín, který už lekci má, se <strong>přeskočí</strong> — i když ji někdo posunul na jiný čas nebo do jiné místnosti. Nic existujícího se nepřepisuje.',
+            'Má-li série v jeden den <strong>dva různé časy</strong> (ranní a večerní skupina), vygenerují se oba — u takového dne se hlídá i čas.',
             '<strong>Smazané lekce se neobnovují.</strong> Když jste lekci zrušili (třeba kvůli svátku), zůstane zrušená i po dalším spuštění.',
             'Spouštět to jde <strong>opakovaně</strong> — pokaždé se doplní jen to, co chybí.',
             'Vygenerované lekce dostanou lektora a místnost ze série. U jednotlivé lekce se to pak dá změnit.',

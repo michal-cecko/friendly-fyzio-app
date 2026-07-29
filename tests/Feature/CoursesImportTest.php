@@ -140,6 +140,10 @@ class CoursesImportTest extends TestCase
 
         $weekdays = $series->lessons()->get()->map(fn (Lesson $l): int => $l->lesson_date->dayOfWeek)->unique();
         $this->assertEqualsCanonicalizing([3, 4], $weekdays->all()); // Wednesday + Thursday
+
+        // Both tracks land in the rozvrh, so the série states its terms on the
+        // public course page too — not only in its name.
+        $this->assertSame('středa 09:00–10:00, čtvrtek 10:30–11:30', $series->scheduleSummary());
     }
 
     public function test_workshops_store_lower_price_tier_with_full_wording(): void

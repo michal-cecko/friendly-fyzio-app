@@ -7,6 +7,7 @@ use App\Filament\Support\Schemas\DerivedSlug;
 use App\Filament\Support\Schemas\PresenceBanner;
 use App\Mason\BrickRegistry;
 use App\Models\EventCategory;
+use App\Support\Settings;
 use Awcodes\Mason\Mason;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Textarea;
@@ -61,6 +62,13 @@ class EventCategoryForm
                                     ->minValue(0)
                                     ->default(0)
                                     ->helperText('Nižší číslo = dřív ve výpisu.')
+                                    ->columnSpan(1),
+                                TextInput::make('cancel_before_hours')
+                                    ->label('Odhlášení z akce (hodin předem)')
+                                    ->integer()
+                                    ->minValue(0)
+                                    ->suffix('hodin')
+                                    ->helperText('Do kolika hodin před akcí se klient může sám odhlásit v klientské zóně. Platí pro všechny akce v této kategorii. Prázdné = obecné nastavení ('.Settings::eventCancelBeforeHours().' hodin).')
                                     ->columnSpan(1),
                                 DateTimePicker::make('published_at')
                                     ->label('Publikováno')

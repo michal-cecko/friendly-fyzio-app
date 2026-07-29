@@ -6,6 +6,7 @@ use App\Enums\Capability;
 use App\Enums\CourseEnrollmentStatus;
 use App\Enums\CourseSeriesStatus;
 use App\Enums\CourseSeriesVisibility;
+use App\Enums\DayOfWeek;
 use App\Enums\OfferVisibility;
 use App\Enums\PaymentStatus;
 use App\Models\Building;
@@ -17,6 +18,8 @@ use App\Models\EventCategory;
 use App\Models\Lesson;
 use App\Models\Room;
 use App\Models\User;
+use App\Support\Lessons\ScheduleSlot;
+use App\Support\Lessons\SeriesSchedule;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
@@ -584,6 +587,7 @@ class CoursesImport extends Command
             'start_date' => $startDate->toDateString(),
             'name' => $seriesName,
             'end_date' => $endDate->toDateString(),
+            'schedule' => $this->scheduleSlots($tracks, $duration),
             'capacity' => (int) $row['capacity'],
             'price' => (int) $row['price'],
             'status' => CourseSeriesStatus::Inactive,
@@ -1037,6 +1041,23 @@ class CoursesImport extends Command
         usort($dates, fn (array $a, array $b): int => $a['date'] <=> $b['date']);
 
         return $dates;
+    }
+
+    /**
+     * The série's rozvrh — one slot per weekly track, so an imported série
+     * carries its day and time into the admin and onto the public course page
+     * instead of only into its own name.
+     *
+     * @param  list<array{start: Carbon, time: string}>  $tracks
+     * @return array<int, array{day: string, start_time: string, end_time: string}>
+     */
+    protected function scheduleSlots(array $tracks, int $duration): array
+    {
+        return SeriesSchedule::fromSlots(array_map(fn (array $track): ScheduleSlot => new ScheduleSlot(
+            DayOfWeek::fromCarbon($track['start']),
+            Carbon::parse($track['time'])->format('H:i'),
+            Carbon::parse($track['time'])->addMinutes($duration)->format('H:i'),
+        ), $tracks))->toArray();
     }
 
     /**

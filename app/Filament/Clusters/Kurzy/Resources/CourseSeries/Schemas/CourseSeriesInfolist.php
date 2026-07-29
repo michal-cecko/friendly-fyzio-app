@@ -46,9 +46,11 @@ class CourseSeriesInfolist
                         TextEntry::make('schedule')
                             ->label('Rozvrh')
                             ->state(fn (CourseSeries $record): ?string => $record->scheduleLabel())
-                            ->helperText(fn (CourseSeries $record): ?string => $record->hasLessonSchedule()
-                                ? null
-                                : 'Bez rozvrhu se lekce přidávají po jedné')
+                            ->helperText(fn (CourseSeries $record): ?string => match (true) {
+                                $record->hasLessonSchedule() => null,
+                                $record->weeklySchedule()->isEmpty() => 'Bez rozvrhu se lekce přidávají po jedné',
+                                default => 'Doplňte místnost, jinak lekce nejde vygenerovat',
+                            })
                             ->placeholder('Nenastaveno'),
                         TextEntry::make('lessons')
                             ->label('Naplánováno lekcí')

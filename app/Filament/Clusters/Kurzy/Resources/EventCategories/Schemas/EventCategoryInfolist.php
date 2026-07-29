@@ -3,6 +3,7 @@
 namespace App\Filament\Clusters\Kurzy\Resources\EventCategories\Schemas;
 
 use App\Filament\Support\Schemas\RecordTimestamps;
+use App\Models\EventCategory;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -27,6 +28,10 @@ class EventCategoryInfolist
                             ->columnSpanFull(),
                         TextEntry::make('display_order')
                             ->label('Pořadí'),
+                        TextEntry::make('cancel_before_hours')
+                            ->label('Odhlášení z akce')
+                            ->state(fn (EventCategory $record): string => $record->cancelBeforeHours().' hodin předem'
+                                .($record->cancel_before_hours === null ? ' (z nastavení)' : '')),
                         TextEntry::make('published_at')
                             ->label('Publikováno')
                             ->dateTime('d.m.Y H:i')

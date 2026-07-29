@@ -77,6 +77,12 @@
                             {{ $event->instructor->name }}
                         </li>
                     @endif
+                    @if($event->startsAt()->isFuture())
+                        <li class="flex items-center gap-3 text-neutral-600">
+                            <x-lucide name="calendar-x" class="h-4.5 w-4.5 shrink-0 text-primary" />
+                            Odhlásit se můžete do {{ $event->startsAt()->subHours($event->cancelBeforeHours())->translatedFormat('j. n. Y H:i') }}
+                        </li>
+                    @endif
                 </ul>
 
                 <hr class="border-line">

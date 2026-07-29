@@ -58,6 +58,14 @@
                             <x-lucide name="calendar" class="h-4.5 w-4.5 shrink-0 text-primary" />
                             {{ EnrollmentEmailContext::seriesPeriod($series) }}
                         </li>
+                        @if($series->scheduleSummary())
+                            {{-- Kdy se série schází — the single most asked-about detail,
+                                 so it sits with the period instead of only in the term list. --}}
+                            <li class="flex items-center gap-3 font-semibold">
+                                <x-lucide name="clock-3" class="h-4.5 w-4.5 shrink-0 text-primary" />
+                                {{ $series->scheduleSummary() }}
+                            </li>
+                        @endif
                         @if($seriesLessons->isNotEmpty() && $seriesLessons->first()->room)
                             <li class="flex items-center gap-3">
                                 <x-lucide name="map-pin" class="h-4.5 w-4.5 shrink-0 text-primary" />

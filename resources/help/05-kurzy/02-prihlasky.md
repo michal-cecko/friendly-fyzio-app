@@ -24,6 +24,20 @@ Proto přihláška nemá klasickou editaci — mění se přes akce (zrušit, ob
 
 Přihlášky, které zůstanou nezaplacené déle, než dovoluje nastavení, se automaticky ruší a místo se uvolní pro náhradníky. Lhůta se nastavuje v **Nastavení → Přihlášky**.
 
+## Do kdy se klient může odhlásit sám
+
+U **kurzu** platí jedna lhůta pro všechny: **Nastavení → Přihlášky → Odhlášení z kurzu (dní předem)**.
+
+U **jednorázových akcí** se lhůta liší podle typu akce, proto se skládá ze tří úrovní — platí ta nejbližší, která je vyplněná:
+
+1. **Konkrétní akce** – pole *Odhlášení klientem (hodin předem)* na lekci. Použijte, když jedna akce potřebuje víc času než ostatní ve své kategorii.
+2. **Kategorie akcí** – stejné pole u kategorie (Kurzy → Kategorie akcí). Sem patří běžné rozdíly: jednorázová lekce 48 hodin, workshop třeba 168.
+3. **Nastavení → Přihlášky → Odhlášení z akce (hodin předem)** – výchozí hodnota pro kategorie, které si nic nenastavily.
+
+Klient vidí konkrétní datum a čas u akce na webu i u své přihlášky v klientské zóně. Po uplynutí lhůty se tlačítko *Odhlásit se* skryje — zrušit přihlášku pak může jen personál, a to bez ohledu na lhůtu.
+
+> Nepleťte si to s **Včasným zrušením (hodin předem)** u kurzu. To neřeší odhlášení z celého kurzu, ale omluvu z jedné lekce a nárok na náhradní vstup.
+
 ## Zrušení a obnovení
 
 Zrušená přihláška jde **obnovit**, pokud je v sérii místo. Zrušení lze provést i natvrdo (smazat), pokud šlo o omyl a nechcete ho mít v historii.

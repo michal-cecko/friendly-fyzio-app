@@ -8,6 +8,7 @@ use App\Filament\Support\Schemas\DerivedSlug;
 use App\Filament\Support\Schemas\PresenceBanner;
 use App\Models\Course;
 use App\Models\CourseSeries;
+use App\Models\EventCategory;
 use App\Models\Lesson;
 use App\Models\User;
 use App\Support\Lessons\ReleaseFreeSpots;
@@ -162,6 +163,7 @@ class LessonForm
                                             ->searchable()
                                             ->preload()
                                             ->native(false)
+                                            ->live()
                                             ->required(fn (Get $get, $livewire): bool => self::standalone($get, $livewire))
                                             ->helperText(fn (Get $get, $livewire): string => self::standalone($get, $livewire)
                                                 ? 'Tvoří adresu na webu a řadí lekci do archivu.'
@@ -222,6 +224,14 @@ class LessonForm
                                                     ? 'Prázdné = cena jednorázového vstupu z kurzu.'
                                                     : 'Prázdné = cena jednorázového vstupu z kurzu ('.$dropIn.' Kč).';
                                             })
+                                            ->columnSpan(1),
+                                        TextInput::make('cancel_before_hours')
+                                            ->label('Odhlášení klientem (hodin předem)')
+                                            ->integer()
+                                            ->minValue(0)
+                                            ->suffix('hodin')
+                                            ->helperText(fn (Get $get): string => 'Do kolika hodin před začátkem se klient může sám odhlásit. Prázdné = '
+                                                .self::inheritedCancelWindow($get))
                                             ->columnSpan(1),
                                         DateTimePicker::make('published_at')
                                             ->label('Publikováno')
@@ -300,6 +310,20 @@ class LessonForm
             : CourseSeries::find($get('series_id'));
 
         return $series?->course;
+    }
+
+    /**
+     * What an empty self-cancel window falls back to: the picked category's own
+     * one, else the clinic-wide setting. Written out in full so nobody has to
+     * open the category to find out what actually applies.
+     */
+    private static function inheritedCancelWindow(Get $get): string
+    {
+        $category = EventCategory::find($get('event_category_id'));
+
+        return $category?->cancel_before_hours !== null
+            ? 'lhůta kategorie „'.$category->name.'“ ('.$category->cancel_before_hours.' hodin).'
+            : 'obecné nastavení ('.Settings::eventCancelBeforeHours().' hodin).';
     }
 
     /**

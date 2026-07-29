@@ -102,6 +102,39 @@ class LessonResourceTest extends TestCase
         ]);
     }
 
+    public function test_the_self_cancel_window_is_saved_on_the_lesson_and_otherwise_inherited(): void
+    {
+        $category = EventCategory::factory()->create(['cancel_before_hours' => 168]);
+        $instructor = User::factory()->lecturer()->create();
+        $room = Room::factory()->create();
+
+        Livewire::test(CreateLesson::class)
+            ->fillForm([
+                'event_category_id' => $category->id,
+                'name' => 'Náročný workshop',
+                'slug' => 'narocny-workshop',
+                'instructor_id' => $instructor->id,
+                'room_id' => $room->id,
+                'lesson_date' => '2026-03-15',
+                'start_time' => '10:00',
+                'end_time' => '12:00',
+                'capacity' => 15,
+                'price' => 800,
+                'cancel_before_hours' => 240,
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $lesson = Lesson::query()->where('slug', 'narocny-workshop')->sole();
+
+        $this->assertSame(240, $lesson->cancelBeforeHours());
+
+        // Cleared, it drops back to the category — not to a frozen copy of 240.
+        $lesson->update(['cancel_before_hours' => null]);
+
+        $this->assertSame(168, $lesson->fresh()->cancelBeforeHours());
+    }
+
     public function test_create_validates_required_fields(): void
     {
         Livewire::test(CreateLesson::class)

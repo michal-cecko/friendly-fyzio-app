@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Zone;
 
+use App\Enums\BookingStatus;
 use App\Enums\CourseEnrollmentStatus;
 use App\Enums\CourseSeriesStatus;
 use App\Enums\PaymentMethod;
@@ -10,7 +11,9 @@ use App\Livewire\Zone\Courses;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
 use App\Models\CourseSeries;
+use App\Models\EventCategory;
 use App\Models\Lesson;
+use App\Models\LessonBooking;
 use App\Models\SubstituteToken;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -107,6 +110,27 @@ class ZoneCoursesPageTest extends TestCase
         Livewire::actingAs($enrollment->client)
             ->test(Courses::class)
             ->assertSeeHtml(route('zone.payments', ['platba' => $payment->getKey()]));
+    }
+
+    public function test_an_event_booking_states_the_deadline_that_actually_applies_to_it(): void
+    {
+        $starts = now()->addDays(10)->setTime(18, 0);
+
+        $lesson = Lesson::factory()->standalone()->create([
+            'lesson_date' => $starts->toDateString(),
+            'start_time' => $starts->format('H:i:s'),
+            'event_category_id' => EventCategory::factory()->create(['cancel_before_hours' => 168])->getKey(),
+        ]);
+
+        $booking = LessonBooking::factory()->for($lesson, 'lesson')->create([
+            'client_id' => User::factory()->customer()->create(['email_verified_at' => now()])->getKey(),
+            'status' => BookingStatus::Confirmed,
+        ]);
+
+        // A week's notice from the category, not the 24 h setting.
+        Livewire::actingAs($booking->client)
+            ->test(Courses::class)
+            ->assertSee('Odhlásit se můžete do '.$starts->copy()->subHours(168)->translatedFormat('j. n. Y H:i'));
     }
 
     /**

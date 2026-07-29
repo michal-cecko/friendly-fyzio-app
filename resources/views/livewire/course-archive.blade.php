@@ -85,6 +85,7 @@
                     :subtitle="$series->name"
                     :description="$series->course->description"
                     :date="'od '.$series->start_date->format('j. n. Y')"
+                    :schedule="$series->shortScheduleSummary()"
                     :taken="$series->takenSpots()"
                     :capacity="$series->capacity"
                     :price="number_format($series->currentPrice(), 0, ',', ' ').' Kč'"

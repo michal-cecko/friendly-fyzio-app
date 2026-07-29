@@ -5,13 +5,13 @@ namespace App\Models;
 use App\Enums\CourseEnrollmentStatus;
 use App\Enums\CourseSeriesStatus;
 use App\Enums\CourseSeriesVisibility;
-use App\Enums\DayOfWeek;
 use App\Enums\OfferState;
 use App\Enums\WaitlistPromotionMode;
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\HasCapacity;
 use App\Observers\CourseSeriesObserver;
 use App\Support\Lessons\LessonScheduleGenerator;
+use App\Support\Lessons\SeriesSchedule;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -19,7 +19,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 #[ObservedBy(CourseSeriesObserver::class)]
@@ -34,9 +33,7 @@ class CourseSeries extends Model
         'invoice_title',
         'start_date',
         'end_date',
-        'days_of_week',
-        'start_time',
-        'end_time',
+        'schedule',
         'room_id',
         'capacity',
         'max_substitutions',
@@ -53,7 +50,7 @@ class CourseSeries extends Model
         return [
             'start_date' => 'date',
             'end_date' => 'date',
-            'days_of_week' => 'array',
+            'schedule' => 'array',
             'capacity' => 'integer',
             'max_substitutions' => 'integer',
             'waitlist_promotion_mode' => WaitlistPromotionMode::class,
@@ -159,53 +156,59 @@ class CourseSeries extends Model
     }
 
     /**
-     * The weekdays this série meets on, as enum cases. Unknown stored values are
-     * dropped rather than thrown on — a schedule is a convenience, and one stale
-     * string must not break the série's detail page.
-     *
-     * @return array<int, DayOfWeek>
+     * When this série meets — one slot per weekly session, so a série running on
+     * středa at 9:00 and čtvrtek at 10:30 is expressible. Unusable stored rows
+     * are dropped rather than thrown on: a rozvrh is a convenience, and one
+     * stale row must not break the série's detail page.
      */
-    public function scheduleDays(): array
+    public function weeklySchedule(): SeriesSchedule
     {
-        return collect($this->days_of_week ?? [])
-            ->map(fn (mixed $day): ?DayOfWeek => is_string($day) ? DayOfWeek::tryFrom($day) : null)
-            ->filter()
-            ->values()
-            ->all();
+        return SeriesSchedule::fromArray($this->schedule);
     }
 
     /**
      * Whether the série carries everything {@see LessonScheduleGenerator} needs
-     * to place a lesson: at least one weekday, both times, and a room (lessons
-     * cannot be saved without one).
+     * to place a lesson: at least one slot and a room (lessons cannot be saved
+     * without one).
      */
     public function hasLessonSchedule(): bool
     {
-        return $this->scheduleDays() !== []
-            && filled($this->start_time)
-            && filled($this->end_time)
-            && $this->room_id !== null;
+        return ! $this->weeklySchedule()->isEmpty() && $this->room_id !== null;
     }
 
     /**
-     * The schedule in one line — "Pondělí, Středa · 17:00–18:00 · Sál A" — for
-     * the série's detail page and the generate-lessons modal. Null while the
-     * schedule is incomplete, so callers can fall back to a placeholder.
+     * The rozvrh in one line for staff — "Pondělí a středa 17:00–18:00 · Sál A".
+     * Null only while no rozvrh is filled in; a missing room still shows the days
+     * and times, since that is what staff need to see to spot what is missing.
      */
     public function scheduleLabel(): ?string
     {
-        if (! $this->hasLessonSchedule()) {
+        if ($this->weeklySchedule()->isEmpty()) {
             return null;
         }
 
-        $days = collect($this->scheduleDays())
-            ->map(fn (DayOfWeek $day): string => $day->getLabel())
-            ->implode(', ');
+        return implode(' · ', array_filter([
+            Str::ucfirst((string) $this->weeklySchedule()->label()),
+            $this->room?->name,
+        ]));
+    }
 
-        $time = Carbon::parse($this->start_time)->format('H:i')
-            .'–'.Carbon::parse($this->end_time)->format('H:i');
+    /**
+     * The rozvrh as clients read it — "úterý a čtvrtek 17:30–18:30", no room
+     * (the public page shows the place on its own row) and no room requirement,
+     * so a série still advertises its day and time before one is assigned.
+     */
+    public function scheduleSummary(): ?string
+    {
+        return $this->weeklySchedule()->label();
+    }
 
-        return implode(' · ', array_filter([$days, $time, $this->room?->name]));
+    /**
+     * The same, shortened to the start time for the cramped offer card.
+     */
+    public function shortScheduleSummary(): ?string
+    {
+        return $this->weeklySchedule()->shortLabel();
     }
 
     public function totalLessonsCount(): int

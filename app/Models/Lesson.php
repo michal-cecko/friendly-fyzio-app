@@ -13,6 +13,7 @@ use App\Models\Concerns\HasPresaleAccess;
 use App\Models\Concerns\Publishable;
 use App\Observers\LessonObserver;
 use App\Support\RichText;
+use App\Support\Settings;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -69,6 +70,7 @@ class Lesson extends Model
         'detail_image',
         'capacity',
         'price',
+        'cancel_before_hours',
         'visibility',
         'presale_token',
         'published_at',
@@ -86,6 +88,7 @@ class Lesson extends Model
             'waitlist_invited_until' => 'datetime',
             'featured_image' => 'integer',
             'detail_image' => 'integer',
+            'cancel_before_hours' => 'integer',
             'published_at' => 'datetime',
             'released_at' => 'datetime',
         ];
@@ -201,6 +204,23 @@ class Lesson extends Model
     public function isSoldIndividually(): bool
     {
         return $this->price !== null;
+    }
+
+    /**
+     * How many hours before the start a client may still cancel their own
+     * booking. Set on the lesson only when this one event needs more notice
+     * than the rest of its category; empty falls back to the category and then
+     * to the clinic-wide setting.
+     *
+     * Deliberately a method rather than an {@see Attribute} accessor: the raw
+     * column has to stay empty in the edit form, or saving an inherited value
+     * would silently freeze it onto the record.
+     */
+    public function cancelBeforeHours(): int
+    {
+        return $this->cancel_before_hours
+            ?? $this->category?->cancel_before_hours
+            ?? Settings::eventCancelBeforeHours();
     }
 
     /**

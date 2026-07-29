@@ -8,6 +8,7 @@
     'subtitle' => null,
     'description' => null,
     'date' => null,
+    'schedule' => null,
     'taken' => 0,
     'capacity' => 0,
     'price' => null,
@@ -112,6 +113,13 @@
                         <span class="inline-flex items-center gap-1.5 text-sm text-neutral-600">
                             <x-lucide name="calendar" class="h-4 w-4 shrink-0 text-primary" />
                             <span class="truncate">{{ $date }}</span>
+                        </span>
+                    @endif
+                    {{-- Courses meet on a fixed weekday; one-off events pass nothing here. --}}
+                    @if($schedule)
+                        <span class="inline-flex items-center gap-1.5 text-sm text-neutral-600">
+                            <x-lucide name="clock-3" class="h-4 w-4 shrink-0 text-primary" />
+                            <span class="truncate">{{ $schedule }}</span>
                         </span>
                     @endif
                     @if($price !== null)

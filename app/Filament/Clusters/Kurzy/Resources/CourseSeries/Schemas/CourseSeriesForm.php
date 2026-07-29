@@ -9,9 +9,10 @@ use App\Enums\WaitlistPromotionMode;
 use App\Filament\Support\Schemas\PresenceBanner;
 use App\Models\Course;
 use App\Models\User;
-use Filament\Forms\Components\CheckboxList;
+use App\Support\Lessons\ScheduleSlot;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Radio;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\TimePicker;
@@ -162,16 +163,41 @@ class CourseSeriesForm
                                 Text::make(new HtmlString(
                                     '<strong>Kdy se série schází.</strong> Podle rozvrhu se dají jedním kliknutím vygenerovat všechny lekce '
                                     .'mezi začátkem a koncem série — a kdykoli později dogenerovat ty, které chybí.<br>'
-                                    .'Vyplnit ho nemusíte: lekce jde dál přidávat po jedné na záložce Lekce.'
+                                    .'Zároveň se den a čas ukazují klientům na webu u kurzu, takže je vyplňte, i když lekce zadáváte ručně.'
                                 ))
                                     ->color('gray')
                                     ->columnSpanFull(),
-                                CheckboxList::make('days_of_week')
-                                    ->label('Dny v týdnu')
-                                    ->options(DayOfWeek::class)
-                                    ->columns(['default' => 2, '@2xl' => 4])
-                                    ->helperText('Série se může scházet i vícekrát týdně — každý zaškrtnutý den dostane vlastní lekci.')
-                                    ->columnSpan(['default' => 1, '@xl' => 12, '@3xl' => 6]),
+                                Repeater::make('schedule')
+                                    ->label('Dny a časy konání')
+                                    ->addActionLabel('Přidat další den')
+                                    ->helperText('Jeden řádek = jeden termín v týdnu. Série se může scházet vícekrát týdně, klidně pokaždé v jiný čas.')
+                                    ->columns(['default' => 1, '@2xl' => 3])
+                                    ->itemLabel(fn (array $state): ?string => ScheduleSlot::fromArray($state)?->label())
+                                    ->defaultItems(0)
+                                    ->reorderable(false)
+                                    // The repeater is not bound to a relationship, so its state stays
+                                    // keyed by the item UUIDs Filament generates. The column holds a
+                                    // plain list, hence the re-index on the way out.
+                                    ->dehydrateStateUsing(fn (?array $state): array => array_values($state ?? []))
+                                    ->schema([
+                                        Select::make('day')
+                                            ->label('Den')
+                                            ->options(DayOfWeek::class)
+                                            ->native(false)
+                                            ->required(),
+                                        TimePicker::make('start_time')
+                                            ->label('Od')
+                                            ->native(false)
+                                            ->seconds(false)
+                                            ->required(),
+                                        TimePicker::make('end_time')
+                                            ->label('Do')
+                                            ->native(false)
+                                            ->seconds(false)
+                                            ->required()
+                                            ->after('start_time'),
+                                    ])
+                                    ->columnSpan(['default' => 1, '@xl' => 12, '@3xl' => 9]),
                                 Select::make('room_id')
                                     ->label('Místnost')
                                     ->relationship('room', 'name')
@@ -180,17 +206,6 @@ class CourseSeriesForm
                                     ->native(false)
                                     ->helperText('Do které místnosti se lekce naplánují. U jednotlivé lekce se pak dá změnit.')
                                     ->columnSpan(['default' => 1, '@xl' => 6, '@3xl' => 3]),
-                                TimePicker::make('start_time')
-                                    ->label('Od')
-                                    ->native(false)
-                                    ->seconds(false)
-                                    ->columnSpan(['default' => 1, '@xl' => 3, '@3xl' => 3]),
-                                TimePicker::make('end_time')
-                                    ->label('Do')
-                                    ->native(false)
-                                    ->seconds(false)
-                                    ->after('start_time')
-                                    ->columnSpan(['default' => 1, '@xl' => 3, '@3xl' => 3]),
                             ]),
                     ]),
             ]);

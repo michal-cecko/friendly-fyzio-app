@@ -35,6 +35,13 @@ class CourseSeriesTable
                     ->description(fn (CourseSeries $record): ?string => $record->instructor_id === null ? 'z kurzu' : null)
                     ->placeholder('—')
                     ->toggleable(),
+                TextColumn::make('schedule')
+                    ->label('Rozvrh')
+                    // The column holds the raw slots; the série formats them.
+                    ->state(fn (CourseSeries $record): ?string => $record->scheduleSummary())
+                    ->placeholder('Nenastaveno')
+                    ->wrap()
+                    ->toggleable(),
                 TextColumn::make('start_date')
                     ->label('Začátek')
                     ->date('d.m.Y')

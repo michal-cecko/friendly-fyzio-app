@@ -3,6 +3,7 @@
 namespace App\Support\Enrollments;
 
 use App\Models\CourseEnrollment;
+use App\Models\Lesson;
 use App\Models\LessonBooking;
 use App\Support\Settings;
 use Illuminate\Support\Carbon;
@@ -11,7 +12,9 @@ use Illuminate\Support\Carbon;
  * Client-initiated cancellation of a course/event sign-up from the
  * client zone (docs §4.1: "klient môže zrušiť do X dní pred začiatkom").
  * Each offer type has its own configurable window; past it the client has to
- * call the clinic. Cancelling withdraws any open payment request and — through
+ * call the clinic. A course série uses the clinic-wide window in days; an event
+ * uses hours, taken from the event itself, else its category, else the setting.
+ * Cancelling withdraws any open payment request and — through
  * the sign-up observers — offers the freed spot to the waitlist.
  *
  * Paid sign-ups can still be cancelled in-window, but no money moves
@@ -55,10 +58,19 @@ class CancelSignupAsClient
                 ?->copy()
                 ->startOfDay()
                 ->subDays(Settings::courseCancelBeforeDays()),
-            $signup instanceof LessonBooking => $signup->lesson
-                ?->startsAt()
-                ->subHours(Settings::eventCancelBeforeHours()),
+            $signup instanceof LessonBooking => $this->lessonDeadline($signup),
         };
+    }
+
+    /**
+     * An event's window is its own if it sets one, otherwise its category's,
+     * otherwise the clinic-wide default — see {@see Lesson::cancelBeforeHours()}.
+     */
+    protected function lessonDeadline(LessonBooking $signup): ?Carbon
+    {
+        $lesson = $signup->lesson;
+
+        return $lesson?->startsAt()?->subHours($lesson->cancelBeforeHours());
     }
 
     protected function isActive(CourseEnrollment|LessonBooking $signup): bool

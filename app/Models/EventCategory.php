@@ -6,6 +6,7 @@ use App\Contracts\HasPublicPage;
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\InteractsWithCustomPage;
 use App\Models\Concerns\Publishable;
+use App\Support\Settings;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -27,6 +28,7 @@ class EventCategory extends Model implements HasPublicPage
         'description',
         'featured_image',
         'display_order',
+        'cancel_before_hours',
         'published_at',
     ];
 
@@ -38,6 +40,7 @@ class EventCategory extends Model implements HasPublicPage
         return [
             'featured_image' => 'integer',
             'display_order' => 'integer',
+            'cancel_before_hours' => 'integer',
             'published_at' => 'datetime',
         ];
     }
@@ -45,6 +48,16 @@ class EventCategory extends Model implements HasPublicPage
     public function events(): HasMany
     {
         return $this->hasMany(Lesson::class, 'event_category_id');
+    }
+
+    /**
+     * How many hours before the start clients of this category may still cancel
+     * themselves — a workshop needs more notice than a single lesson. Empty
+     * falls back to the clinic-wide setting.
+     */
+    public function cancelBeforeHours(): int
+    {
+        return $this->cancel_before_hours ?? Settings::eventCancelBeforeHours();
     }
 
     /**

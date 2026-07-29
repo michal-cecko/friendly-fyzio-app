@@ -131,9 +131,9 @@ class CourseSeriesResourceTest extends TestCase
     }
 
     /**
-     * The Rozvrh tab is what drives lesson generation, so its four fields have to
-     * survive a save like any others — and the multi-weekday list has to come back
-     * out as an array.
+     * The Rozvrh tab is what drives lesson generation, so its rows have to
+     * survive a save like any other field — including a série meeting twice a
+     * week at two different times.
      */
     public function test_edit_saves_the_lesson_schedule(): void
     {
@@ -142,9 +142,10 @@ class CourseSeriesResourceTest extends TestCase
 
         Livewire::test(EditCourseSeries::class, ['record' => $record->getKey()])
             ->fillForm([
-                'days_of_week' => [DayOfWeek::Tuesday->value, DayOfWeek::Thursday->value],
-                'start_time' => '09:30',
-                'end_time' => '10:30',
+                'schedule' => [
+                    ['day' => DayOfWeek::Tuesday->value, 'start_time' => '09:30', 'end_time' => '10:30'],
+                    ['day' => DayOfWeek::Thursday->value, 'start_time' => '18:00', 'end_time' => '19:00'],
+                ],
                 'room_id' => $room->getKey(),
             ])
             ->call('save')
@@ -152,13 +153,31 @@ class CourseSeriesResourceTest extends TestCase
 
         $record->refresh();
 
-        $this->assertSame([DayOfWeek::Tuesday->value, DayOfWeek::Thursday->value], $record->days_of_week);
+        $this->assertSame([
+            ['day' => DayOfWeek::Tuesday->value, 'start_time' => '09:30', 'end_time' => '10:30'],
+            ['day' => DayOfWeek::Thursday->value, 'start_time' => '18:00', 'end_time' => '19:00'],
+        ], $record->schedule);
         $this->assertSame($room->getKey(), $record->room_id);
         $this->assertTrue($record->hasLessonSchedule());
         $this->assertSame(
-            'Úterý, Čtvrtek · 09:30–10:30 · '.$room->name,
+            'Úterý 09:30–10:30, čtvrtek 18:00–19:00 · '.$room->name,
             $record->scheduleLabel(),
         );
+        $this->assertSame('úterý 09:30–10:30, čtvrtek 18:00–19:00', $record->scheduleSummary());
+    }
+
+    /**
+     * The rozvrh is shown to clients on the course page, so staff need to see it
+     * in the list too — including which séries are still missing one.
+     */
+    public function test_the_list_shows_the_schedule(): void
+    {
+        $withSchedule = CourseSeries::factory()->withSchedule([DayOfWeek::Tuesday], '17:30', '18:30')->create();
+        $without = CourseSeries::factory()->create();
+
+        Livewire::test(ListCourseSeries::class)
+            ->assertTableColumnStateSet('schedule', 'úterý 17:30–18:30', $withSchedule)
+            ->assertTableColumnStateSet('schedule', null, $without);
     }
 
     /**
@@ -171,13 +190,13 @@ class CourseSeriesResourceTest extends TestCase
 
         Livewire::test(EditCourseSeries::class, ['record' => $record->getKey()])
             ->fillForm([
-                'days_of_week' => [DayOfWeek::Monday->value],
-                'start_time' => '18:00',
-                'end_time' => '17:00',
+                'schedule' => [
+                    ['day' => DayOfWeek::Monday->value, 'start_time' => '18:00', 'end_time' => '17:00'],
+                ],
                 'room_id' => Room::factory()->create()->getKey(),
             ])
             ->call('save')
-            ->assertHasFormErrors(['end_time']);
+            ->assertHasFormErrors(['schedule.0.end_time']);
     }
 
     /**
