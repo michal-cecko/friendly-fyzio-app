@@ -4,6 +4,7 @@ namespace App\Filament\Clusters\Kurzy\Resources\CourseSeries\RelationManagers;
 
 use App\Filament\Clusters\Kurzy\Resources\Lessons\LessonResource;
 use App\Filament\Clusters\Kurzy\Resources\Lessons\Schemas\LessonForm;
+use App\Filament\Support\Actions\GenerateSeriesLessonsAction;
 use App\Filament\Support\Concerns\PromptsScheduleChangeNotification;
 use App\Filament\Support\Tables\OccupancyColumn;
 use App\Models\Lesson;
@@ -71,6 +72,8 @@ class LessonsRelationManager extends RelationManager
                     ->placeholder('—'),
             ])
             ->headerActions([
+                GenerateSeriesLessonsAction::make()
+                    ->record($this->getOwnerRecord()),
                 CreateAction::make()
                     ->label('Přidat lekci')
                     ->modalHeading('Přidat lekci'),
@@ -96,6 +99,6 @@ class LessonsRelationManager extends RelationManager
                 ]),
             ])
             ->emptyStateHeading('Zatím žádné lekce')
-            ->emptyStateDescription('Přidejte jednotlivá setkání této série.');
+            ->emptyStateDescription('Vygenerujte je z rozvrhu série, nebo přidejte jednotlivá setkání po jednom.');
     }
 }

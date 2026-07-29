@@ -33,20 +33,27 @@ class SubstituteTokenTest extends TestCase
         Notification::fake();
     }
 
-    protected function series(array $courseAttributes = []): CourseSeries
+    /**
+     * The make-up allowance lives on the série, so `$seriesAttributes` is where
+     * a test bends the rules. Passing `$course` puts several séries under one
+     * course, which is the only way to tell the two levels apart.
+     *
+     * @param  array<string, mixed>  $seriesAttributes
+     */
+    protected function series(array $seriesAttributes = [], ?Course $course = null): CourseSeries
     {
-        $course = Course::factory()->create([
+        $course ??= Course::factory()->create([
             'published_at' => now(),
-            'max_substitutions' => 2,
             'early_cancel_hours' => 24,
-            ...$courseAttributes,
         ]);
 
         return CourseSeries::factory()->for($course)->create([
             'start_date' => today()->subWeeks(2)->toDateString(),
             'end_date' => today()->addWeeks(8)->toDateString(),
             'capacity' => 10,
+            'max_substitutions' => 2,
             'status' => CourseSeriesStatus::Open,
+            ...$seriesAttributes,
         ]);
     }
 
@@ -108,7 +115,7 @@ class SubstituteTokenTest extends TestCase
         ]);
     }
 
-    public function test_excuses_beyond_the_courses_limit_generate_no_token(): void
+    public function test_excuses_beyond_the_series_limit_generate_no_token(): void
     {
         $series = $this->series(['max_substitutions' => 1]);
         $enrollment = $this->enrollment($series);
@@ -119,6 +126,36 @@ class SubstituteTokenTest extends TestCase
         $this->assertNotNull(app(ExcuseFromLesson::class)($enrollment, $first));
         $this->assertNull(app(ExcuseFromLesson::class)($enrollment, $second));
         $this->assertSame(1, SubstituteToken::query()->count());
+    }
+
+    /**
+     * The allowance is the série's, not the course's — séries of one course run
+     * for different numbers of lessons, so a short run may grant no make-ups at
+     * all while its sibling grants two.
+     */
+    public function test_the_allowance_is_read_from_the_series_not_the_course(): void
+    {
+        $course = Course::factory()->create(['published_at' => now(), 'early_cancel_hours' => 24]);
+
+        $generous = $this->series(['max_substitutions' => 2], $course);
+        $strict = $this->series(['max_substitutions' => 0], $course);
+
+        $generousEnrollment = $this->enrollment($generous);
+        $strictEnrollment = $this->enrollment($strict);
+
+        $excuse = app(ExcuseFromLesson::class);
+
+        $this->assertSame(2, $excuse->substitutesAllowance($generousEnrollment));
+        $this->assertSame(0, $excuse->substitutesAllowance($strictEnrollment));
+
+        $this->assertNotNull($excuse(
+            $generousEnrollment,
+            $this->lesson($generous, today()->addWeek()->toDateString()),
+        ));
+        $this->assertNull($excuse(
+            $strictEnrollment,
+            $this->lesson($strict, today()->addWeek()->toDateString()),
+        ));
     }
 
     public function test_a_lesson_cannot_be_excused_twice(): void

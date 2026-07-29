@@ -85,7 +85,9 @@
         </div>
 
         @if($description)
-            <p class="line-clamp-2 text-sm leading-relaxed text-neutral-600">{{ $description }}</p>
+            {{-- Descriptions may be rich-editor HTML (courses) or plain text
+                 (events); the card only ever shows a clamped teaser. --}}
+            <p class="line-clamp-2 text-sm leading-relaxed text-neutral-600">{{ \App\Support\RichText::plainText($description) }}</p>
         @endif
 
         @if($capacity > 0 && ($isOpen || $isFull))

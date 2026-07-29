@@ -36,7 +36,7 @@
                 <div class="flex flex-col gap-3">
                     <h1 class="font-heading text-[28px] font-bold leading-tight text-neutral-900">{{ $course->name }}</h1>
                     @if($course->description)
-                        <p class="text-[15px] leading-relaxed text-neutral-600">{{ str($course->description)->limit(160) }}</p>
+                        <p class="text-[15px] leading-relaxed text-neutral-600">{{ str(\App\Support\RichText::plainText($course->description))->limit(160) }}</p>
                     @endif
                 </div>
 
@@ -132,7 +132,7 @@
             <div class="flex flex-col gap-6">
                 <h2 class="font-heading text-2xl font-bold text-neutral-900">O kurzu</h2>
                 @if($course->description)
-                    <div class="whitespace-pre-line text-base leading-[1.7] text-neutral-600">{{ $course->description }}</div>
+                    <div class="ff-prose text-base leading-[1.7] text-neutral-600">{!! \App\Support\RichText::resolveMentions($course->description) !!}</div>
                 @else
                     <p class="text-base text-neutral-500">Podrobný popis kurzu doplníme co nevidět. Máte otázku? Ozvěte se nám.</p>
                 @endif

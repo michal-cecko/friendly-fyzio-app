@@ -116,7 +116,6 @@ class ZoneCoursesPageTest extends TestCase
     {
         $course = Course::factory()->create([
             'published_at' => now(),
-            'max_substitutions' => 2,
             'early_cancel_hours' => 24,
         ]);
 
@@ -124,6 +123,7 @@ class ZoneCoursesPageTest extends TestCase
             'start_date' => today()->subWeeks(2)->toDateString(),
             'end_date' => today()->addWeeks(8)->toDateString(),
             'capacity' => 10,
+            'max_substitutions' => 2,
             'status' => CourseSeriesStatus::Open,
         ]);
 

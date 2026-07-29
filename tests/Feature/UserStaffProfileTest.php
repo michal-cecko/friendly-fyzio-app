@@ -6,9 +6,13 @@ use App\Enums\Capability;
 use App\Filament\Clusters\Provoz\Resources\Users\Pages\CreateUser;
 use App\Filament\Clusters\Provoz\Resources\Users\Pages\EditUser;
 use App\Filament\Clusters\Provoz\Resources\Users\Pages\ViewUser;
+use App\Filament\Support\Schemas\BreakBlocks;
+use App\Models\Service;
+use App\Models\ServiceTherapist;
 use App\Models\Specialization;
 use App\Models\StaffProfile;
 use App\Models\User;
+use App\Support\Reservations\BreakResolver;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -91,6 +95,63 @@ class UserStaffProfileTest extends TestCase
         $this->assertSame(1, StaffProfile::where('user_id', $user->getKey())->count());
         $this->assertSame('Fyzioterapeutka', $user->staffProfile->title);
         $this->assertStringContainsString('jana-novakova', $user->staffProfile->slug);
+    }
+
+    public function test_services_can_be_assigned_from_the_therapists_own_profile(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+
+        $therapist = User::factory()->therapist()->create();
+        $therapist->staffProfile->update(['break_blocks' => 1]);
+        $inherits = Service::factory()->create();
+        $overrides = Service::factory()->create();
+
+        Livewire::test(EditUser::class, ['record' => $therapist->getKey()])
+            ->fillForm([
+                'staffProfile.serviceTherapists' => [
+                    ['service_id' => $inherits->getKey(), 'break_blocks' => null],
+                    ['service_id' => $overrides->getKey(), 'break_blocks' => 3],
+                ],
+            ])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $profile = $therapist->staffProfile->refresh();
+
+        // An empty break stays null (inherit), never collapses to 0 („bez pauzy").
+        $this->assertNull(
+            ServiceTherapist::query()
+                ->where('therapist_id', $profile->getKey())
+                ->where('service_id', $inherits->getKey())
+                ->value('break_blocks'),
+        );
+        $this->assertSame(3, ServiceTherapist::query()
+            ->where('therapist_id', $profile->getKey())
+            ->where('service_id', $overrides->getKey())
+            ->value('break_blocks'));
+
+        // …and the slot engine then resolves it from the profile default.
+        $this->assertSame(
+            BreakBlocks::minutes(1),
+            BreakResolver::freshMinutesFor($profile->getKey(), $inherits->getKey()),
+        );
+        $this->assertSame(
+            BreakBlocks::minutes(3),
+            BreakResolver::freshMinutesFor($profile->getKey(), $overrides->getKey()),
+        );
+    }
+
+    public function test_existing_service_assignments_load_into_the_profile_form(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+
+        $therapist = User::factory()->therapist()->create();
+        $service = Service::factory()->create();
+        $therapist->staffProfile->services()->attach($service, ['break_blocks' => 2]);
+
+        Livewire::test(EditUser::class, ['record' => $therapist->getKey()])
+            ->assertFormFieldExists('staffProfile.serviceTherapists')
+            ->assertSee($service->name);
     }
 
     public function test_full_profile_round_trips_a_specialization_row(): void

@@ -75,20 +75,13 @@ class CourseForm
                                     ])
                                     ->helperText('Krátké představení kurzu pro kartu a detail na webu.')
                                     ->columnSpanFull(),
-                                TextInput::make('max_substitutions')
-                                    ->label('Max. náhrad')
-                                    ->integer()
-                                    ->minValue(0)
-                                    ->default(0)
-                                    ->helperText('Kolik lekcí si účastník smí nahradit v jiném termínu. 0 = náhrady nejsou povolené.')
-                                    ->columnSpan(1),
                                 TextInput::make('early_cancel_hours')
                                     ->label('Včasné zrušení (hodin předem)')
                                     ->integer()
                                     ->minValue(0)
                                     ->default(24)
                                     ->suffix('h')
-                                    ->helperText('Do kolika hodin před lekcí lze zrušit účast bez ztráty nároku na náhradu.')
+                                    ->helperText('Do kolika hodin před lekcí lze zrušit účast bez ztráty nároku na náhradu. Kolik náhrad se smí vybrat, se nastavuje u jednotlivých sérií.')
                                     ->columnSpan(1),
                                 TextInput::make('drop_in_price')
                                     ->label('Cena jednorázového vstupu')

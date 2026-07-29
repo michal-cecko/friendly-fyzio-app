@@ -204,6 +204,65 @@ class PublicOfferPagesTest extends TestCase
             ->assertDontSee('SM cvičení');
     }
 
+    public function test_course_detail_renders_rich_description_as_html(): void
+    {
+        $course = $this->publishedCourse([
+            'name' => 'Jin jóga',
+            'description' => '<p>Pomalé <strong>protažení</strong> a dech.</p><ul><li>Podložka s sebou</li></ul>',
+        ]);
+        $this->openSeries($course);
+
+        $response = $this->get('/kurzy/'.$course->slug)->assertOk();
+
+        $response->assertSee('<strong>protažení</strong>', false)
+            ->assertSee('<li>Podložka s sebou</li>', false)
+            ->assertDontSee('&lt;strong&gt;', false);
+
+        $this->assertStringContainsString(
+            'Pomalé protažení a dech. Podložka s sebou',
+            $response->getContent(),
+            'The hero teaser should collapse the rich description to plain text.',
+        );
+    }
+
+    public function test_offer_cards_strip_tags_from_rich_descriptions(): void
+    {
+        $course = $this->publishedCourse([
+            'name' => 'Jin jóga',
+            'description' => '<p>Pomalé <strong>protažení</strong> a dech.</p>',
+        ]);
+        $this->openSeries($course);
+
+        Livewire::test(CourseArchive::class)
+            ->assertSee('Pomalé protažení a dech.')
+            ->assertDontSee('&lt;strong&gt;', false)
+            ->assertDontSee('<strong>protažení</strong>', false);
+    }
+
+    public function test_event_detail_renders_its_plain_description_as_paragraphs(): void
+    {
+        $event = $this->upcomingEvent([
+            'name' => 'Workshop dechu',
+            'description' => "První odstavec.\n\nDruhý odstavec.",
+        ]);
+
+        $this->get('/workshopy/'.$event->slug)
+            ->assertOk()
+            ->assertSee('<p>První odstavec.</p>', false)
+            ->assertSee('<p>Druhý odstavec.</p>', false);
+    }
+
+    public function test_signup_submit_button_toggles_its_icons_with_livewire_loading_state(): void
+    {
+        $series = $this->openSeries($this->publishedCourse());
+
+        $html = Livewire::test(OfferSignupForm::class, ['offerType' => 'series', 'offerId' => $series->getKey()])
+            ->html();
+
+        $this->assertStringContainsString('wire:loading.remove', $html);
+        $this->assertMatchesRegularExpression('/<svg[^>]*\bwire:loading\b(?!\.)/', $html);
+    }
+
     public function test_signup_form_component_submits_and_validates_terms(): void
     {
         Notification::fake();

@@ -13,12 +13,12 @@ use Filament\Forms\Components\Repeater\TableColumn;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Support\Icons\Heroicon;
 use RalphJSmit\Filament\MediaLibrary\Filament\Forms\Components\MediaPicker;
 
@@ -85,15 +85,29 @@ class StaffProfileSection
                         ->schema([
                             Grid::make(['default' => 1, 'lg' => 2])
                                 ->schema([
-                                    BreakBlocks::field(),
-                                    TextEntry::make('serviceBreaks')
-                                        ->label('Pauzy podle služby')
-                                        ->state(self::serviceBreakSummary(...))
-                                        ->listWithLineBreaks()
-                                        ->bulleted()
-                                        ->helperText('Nastavuje se u jednotlivých služeb. Bez vlastní hodnoty platí výchozí pauza vlevo.')
-                                        ->visible(fn (?StaffProfile $record): bool => filled($record) && $record->services()->exists()),
+                                    BreakBlocks::field()
+                                        // Drives the „Výchozí (15 min)" placeholder in the rows below.
+                                        ->live(),
                                 ]),
+                            Repeater::make('serviceTherapists')
+                                ->relationship()
+                                ->label('Služby')
+                                ->helperText('Které služby tento terapeut provádí. Totéž lze nastavit i u jednotlivých služeb — je to jedna a tatáž tabulka.')
+                                ->table([
+                                    TableColumn::make('Služba')->markAsRequired(),
+                                    TableColumn::make('Pauza po termínu'),
+                                ])
+                                ->schema([
+                                    Select::make('service_id')
+                                        ->label('Služba')
+                                        ->options(self::serviceOptions(...))
+                                        ->searchable()
+                                        ->required()
+                                        ->distinct(),
+                                    BreakBlocks::inheriting(defaultBlocks: fn (Get $get): ?int => self::defaultBreakBlocks($get)),
+                                ])
+                                ->defaultItems(0)
+                                ->addActionLabel('Přidat službu'),
                         ]),
                     Tab::make('O mně')
                         ->icon(Heroicon::OutlinedUser)
@@ -183,29 +197,31 @@ class StaffProfileSection
     }
 
     /**
-     * What this member actually rests after each of their services, and whether
-     * that came from the service or from their default above. Read-only on
-     * purpose — the override belongs to the service assignment, so there is one
-     * place it is edited rather than two that can disagree.
+     * Every service, grouped by category — the same catalogue the service form
+     * offers in reverse. The assignment is one row of `service_therapists`
+     * either way, so editing it from both sides cannot produce a disagreement.
      *
-     * @return array<int, string>
+     * @return array<string, array<string, string>>
      */
-    private static function serviceBreakSummary(?StaffProfile $record): array
+    private static function serviceOptions(): array
     {
-        if ($record === null) {
-            return [];
-        }
-
-        return $record->services()
+        return Service::query()
+            ->with('category')
             ->orderBy('name')
-            ->get(['services.id', 'services.name'])
-            ->map(function (Service $service) use ($record): string {
-                $override = $service->pivot->break_blocks;
-                $blocks = $override ?? $record->break_blocks;
+            ->get(['id', 'name', 'category_id'])
+            ->groupBy(fn (Service $service): string => $service->category?->name ?? 'Ostatní')
+            ->map(fn ($group) => $group->pluck('name', 'id'))
+            ->toArray();
+    }
 
-                return $service->name.' — '.BreakBlocks::minutesLabel($blocks)
-                    .($override === null ? ' (výchozí)' : ' (vlastní)');
-            })
-            ->all();
+    /**
+     * The member's own default, read from the form state rather than the record
+     * so the rows follow an unsaved edit of the field above them.
+     */
+    private static function defaultBreakBlocks(Get $get): ?int
+    {
+        $blocks = $get('../../break_blocks');
+
+        return blank($blocks) ? null : (int) $blocks;
     }
 }

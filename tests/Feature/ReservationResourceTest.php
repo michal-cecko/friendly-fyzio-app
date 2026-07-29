@@ -7,7 +7,10 @@ use App\Enums\PaymentStatus;
 use App\Enums\ReservationStatus;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Pages\EditReservation;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Pages\ListReservations;
+use App\Filament\Clusters\Provoz\Resources\Reservations\ReservationResource;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Widgets\ReservationStatsOverview;
+use App\Filament\Support\Schemas\ResponsiveColumns;
+use App\Filament\Support\Viewport;
 use App\Filament\Widgets\ReservationCalendar;
 use App\Models\Building;
 use App\Models\Reservation;
@@ -23,6 +26,7 @@ use Database\Seeders\EmailTemplateSeeder;
 use Database\Seeders\SettingsSeeder;
 use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
+use Filament\Schemas\Components\Section;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
@@ -149,6 +153,39 @@ class ReservationResourceTest extends TestCase
             ->assertHasNoFormErrors();
 
         $this->assertSame('11:00', substr((string) $reservation->fresh()->end_time, 0, 5));
+    }
+
+    public function test_edit_form_packs_every_field_into_two_contained_sections(): void
+    {
+        $deps = $this->dependencies();
+        $this->actingAs(User::factory()->admin()->create());
+
+        $reservation = $this->makeReservation($deps);
+
+        $page = Livewire::test(EditReservation::class, ['record' => $reservation->getKey()]);
+
+        foreach (['reservation_date', 'start_time', 'end_time', 'room_id', 'client_id', 'service_id', 'therapist_id', 'is_control_therapy', 'notes'] as $field) {
+            $page->assertFormFieldExists($field);
+        }
+
+        // The client is the one field an existing reservation may not reassign.
+        $page->assertFormFieldDisabled('client_id');
+
+        /** @var array<int, Section> $sections */
+        $sections = array_values(array_filter(
+            $page->instance()->form->getComponents(),
+            fn ($component): bool => $component instanceof Section,
+        ));
+
+        $this->assertCount(2, $sections);
+
+        // Cards on a full page — the flat variant is for modals, which are a card
+        // already. The first packs its fields four-up rather than stacking them.
+        foreach ($sections as $section) {
+            $this->assertTrue($section->isContained());
+        }
+
+        $this->assertSame(ResponsiveColumns::DENSE, $sections[0]->getColumns());
     }
 
     public function test_editing_the_termin_prompts_and_emails_client_and_therapist_with_original_values(): void
@@ -402,6 +439,53 @@ class ReservationResourceTest extends TestCase
         // A fresh mount for the same user starts hidden (cross-session persistence).
         Livewire::test(ListReservations::class)
             ->assertDontSeeLivewire(ReservationStatsOverview::class);
+    }
+
+    public function test_metrics_bar_starts_collapsed_on_a_phone_whatever_the_preference_says(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $admin->setPreference('reservations.show_stats', true);
+        $this->actingAs($admin);
+
+        $page = Livewire::withCookie(Viewport::COOKIE, '390')
+            ->test(ListReservations::class)
+            ->assertSet('showStats', false)
+            ->assertDontSeeLivewire(ReservationStatsOverview::class);
+
+        // Still openable for the visit…
+        $page->callAction('toggleStats');
+        $this->assertTrue($page->instance()->showStats);
+
+        // …but a phone never rewrites what the desktop opens with.
+        $this->assertTrue((bool) $admin->fresh()->getPreference('reservations.show_stats'));
+    }
+
+    public function test_hiding_the_metrics_bar_on_a_phone_leaves_the_desktop_preference_alone(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $admin->setPreference('reservations.show_stats', true);
+        $this->actingAs($admin);
+
+        $page = Livewire::withCookie(Viewport::COOKIE, '390')->test(ListReservations::class);
+
+        $page->callAction('toggleStats');
+        $page->callAction('toggleStats');
+
+        $this->assertFalse($page->instance()->showStats);
+        $this->assertTrue((bool) $admin->fresh()->getPreference('reservations.show_stats'));
+    }
+
+    public function test_the_viewport_cookie_survives_cookie_encryption(): void
+    {
+        // The browser writes it, so it arrives in the clear — an encrypted-cookie
+        // middleware that swallowed it would silently push every phone back to the
+        // desktop layout.
+        $this->actingAs(User::factory()->admin()->create());
+
+        $this->withUnencryptedCookie(Viewport::COOKIE, '390')
+            ->get(ReservationResource::getUrl('index'))
+            ->assertSuccessful()
+            ->assertDontSee('Nepotvrzeno');
     }
 
     public function test_revenue_total_is_hidden_without_the_revenue_capability(): void

@@ -43,9 +43,24 @@ class CourseSeriesInfolist
                             ->label('Konec')
                             ->date('d.m.Y')
                             ->placeholder('—'),
+                        TextEntry::make('schedule')
+                            ->label('Rozvrh')
+                            ->state(fn (CourseSeries $record): ?string => $record->scheduleLabel())
+                            ->helperText(fn (CourseSeries $record): ?string => $record->hasLessonSchedule()
+                                ? null
+                                : 'Bez rozvrhu se lekce přidávají po jedné')
+                            ->placeholder('Nenastaveno'),
+                        TextEntry::make('lessons')
+                            ->label('Naplánováno lekcí')
+                            ->state(fn (CourseSeries $record): int => $record->totalLessonsCount()),
                         TextEntry::make('capacity')
                             ->label('Kapacita')
                             ->placeholder('—'),
+                        TextEntry::make('max_substitutions')
+                            ->label('Max. náhrad')
+                            ->helperText(fn (CourseSeries $record): ?string => $record->max_substitutions < 1
+                                ? 'Náhrady nejsou povolené'
+                                : null),
                         TextEntry::make('waitlist_promotion_mode')
                             ->label('Uvolněné místo')
                             ->badge(),

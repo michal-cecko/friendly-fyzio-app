@@ -4,21 +4,26 @@ namespace App\Filament\Clusters\Kurzy\Resources\CourseSeries\Schemas;
 
 use App\Enums\CourseSeriesStatus;
 use App\Enums\CourseSeriesVisibility;
+use App\Enums\DayOfWeek;
 use App\Enums\WaitlistPromotionMode;
 use App\Filament\Support\Schemas\PresenceBanner;
 use App\Models\Course;
 use App\Models\User;
+use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\TimePicker;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Components\Text;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\HtmlString;
 
 class CourseSeriesForm
 {
@@ -134,6 +139,58 @@ class CourseSeriesForm
                                     ->required()
                                     ->columns(['default' => 1, '@2xl' => 3])
                                     ->columnSpanFull(),
+                            ]),
+                        Tab::make('Náhrady')
+                            ->icon(Heroicon::OutlinedArrowsRightLeft)
+                            ->columns(['default' => 1, '@xl' => 12])
+                            ->schema([
+                                TextInput::make('max_substitutions')
+                                    ->label('Max. náhrad')
+                                    ->integer()
+                                    ->minValue(0)
+                                    ->default(0)
+                                    ->required()
+                                    ->helperText('Kolik lekcí si účastník smí nahradit v jiném termínu za celou sérii. 0 = náhrady nejsou povolené. Kde se náhrada uplatní, se nastavuje na záložce Náhrady v detailu série.')
+                                    ->columnSpan(['default' => 1, '@xl' => 4, '@4xl' => 3]),
+                            ]),
+                        Tab::make('Rozvrh')
+                            ->icon(Heroicon::OutlinedCalendarDays)
+                            ->columns(['default' => 1, '@xl' => 12])
+                            ->schema([
+                                // The tab has no heading of its own, so the guidance leads the panel —
+                                // the same shape LessonForm's sale tab uses.
+                                Text::make(new HtmlString(
+                                    '<strong>Kdy se série schází.</strong> Podle rozvrhu se dají jedním kliknutím vygenerovat všechny lekce '
+                                    .'mezi začátkem a koncem série — a kdykoli později dogenerovat ty, které chybí.<br>'
+                                    .'Vyplnit ho nemusíte: lekce jde dál přidávat po jedné na záložce Lekce.'
+                                ))
+                                    ->color('gray')
+                                    ->columnSpanFull(),
+                                CheckboxList::make('days_of_week')
+                                    ->label('Dny v týdnu')
+                                    ->options(DayOfWeek::class)
+                                    ->columns(['default' => 2, '@2xl' => 4])
+                                    ->helperText('Série se může scházet i vícekrát týdně — každý zaškrtnutý den dostane vlastní lekci.')
+                                    ->columnSpan(['default' => 1, '@xl' => 12, '@3xl' => 6]),
+                                Select::make('room_id')
+                                    ->label('Místnost')
+                                    ->relationship('room', 'name')
+                                    ->searchable()
+                                    ->preload()
+                                    ->native(false)
+                                    ->helperText('Do které místnosti se lekce naplánují. U jednotlivé lekce se pak dá změnit.')
+                                    ->columnSpan(['default' => 1, '@xl' => 6, '@3xl' => 3]),
+                                TimePicker::make('start_time')
+                                    ->label('Od')
+                                    ->native(false)
+                                    ->seconds(false)
+                                    ->columnSpan(['default' => 1, '@xl' => 3, '@3xl' => 3]),
+                                TimePicker::make('end_time')
+                                    ->label('Do')
+                                    ->native(false)
+                                    ->seconds(false)
+                                    ->after('start_time')
+                                    ->columnSpan(['default' => 1, '@xl' => 3, '@3xl' => 3]),
                             ]),
                     ]),
             ]);

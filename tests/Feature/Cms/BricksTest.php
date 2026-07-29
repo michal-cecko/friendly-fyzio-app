@@ -159,6 +159,12 @@ class BricksTest extends TestCase
 
         $this->assertStringContainsString('href="'.$published->permalink.'"', $html);
         $this->assertStringNotContainsString('href="'.$draft->permalink.'"', $html);
+
+        // The profile call to action renders as a filled primary button.
+        $this->assertMatchesRegularExpression(
+            '/class="[^"]*bg-primary[^"]*"[^>]*>\s*Shlédnout profil/u',
+            $html,
+        );
     }
 
     public function test_category_cards_brick_renders_clickable_rows_with_pulsing_dots(): void
@@ -418,6 +424,52 @@ class BricksTest extends TestCase
             ->assertSee('rounded-full', false)
             // Custom color is applied inline on a solid style.
             ->assertSee('background-color: #ff0000', false);
+    }
+
+    public function test_hero_buttons_go_full_width_on_narrow_screens(): void
+    {
+        $brick = fn (string $id, array $config = []): array => [
+            'type' => 'masonBrick',
+            'attrs' => ['id' => $id, 'config' => $config],
+        ];
+
+        Page::factory()->system('home')->create([
+            'slug' => '/',
+            'content' => [
+                $brick('hero', ['title' => 'Vítejte', 'buttons' => [
+                    ['text' => 'Rezervovat', 'style' => 'primary', 'link_type' => 'custom', 'url' => '/rezervace'],
+                    ['text' => 'Více', 'style' => 'outline', 'link_type' => 'custom', 'url' => '/o-nas'],
+                ]]),
+            ],
+        ]);
+
+        $html = $this->get('/')->assertOk()->getContent();
+
+        // Both hero buttons stretch below 450px, and the row stacks with them.
+        $this->assertSame(2, substr_count($html, 'max-[450px]:w-full'));
+        $this->assertStringContainsString('max-[450px]:flex-col', $html);
+    }
+
+    public function test_buttons_outside_the_hero_keep_their_intrinsic_width(): void
+    {
+        $brick = fn (string $id, array $config = []): array => [
+            'type' => 'masonBrick',
+            'attrs' => ['id' => $id, 'config' => $config],
+        ];
+
+        Page::factory()->system('home')->create([
+            'slug' => '/',
+            'content' => [
+                $brick('cta-banner', ['title' => 'Přihlaste se', 'buttons' => [
+                    ['text' => 'Rezervovat', 'style' => 'primary', 'link_type' => 'custom', 'url' => '/rezervace'],
+                ]]),
+            ],
+        ]);
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('Rezervovat')
+            ->assertDontSee('max-[450px]:w-full', false);
     }
 
     public function test_bricks_still_render_legacy_button_fields(): void

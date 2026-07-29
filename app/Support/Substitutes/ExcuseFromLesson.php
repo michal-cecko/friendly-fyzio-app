@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\DB;
  * Excusing a client from a single lesson of their course ("odhlásit se z lekce").
  *
  * A timely excuse — at least the course's `early_cancel_hours` before the lesson
- * starts, and while the client is still under the course's `max_substitutions`
+ * starts, and while the client is still under the série's `max_substitutions`
  * limit — mints a substitute token they can redeem in an allowed parallel course.
  * A late (or over-limit) excuse is still recorded, but generates no token: the
  * rules are the same ones the docs describe (FSS §6.4).
@@ -93,11 +93,13 @@ class ExcuseFromLesson
     }
 
     /**
-     * How many make-ups this course grants over the whole série.
+     * How many make-ups this série grants over its whole run. It belongs to the
+     * série rather than the course because séries differ in length — a ten-lesson
+     * run and a six-lesson one cannot share one number.
      */
     public function substitutesAllowance(CourseEnrollment $enrollment): int
     {
-        return (int) ($enrollment->series?->course?->max_substitutions ?? 0);
+        return (int) ($enrollment->series?->max_substitutions ?? 0);
     }
 
     public function substitutesUsed(CourseEnrollment $enrollment): int

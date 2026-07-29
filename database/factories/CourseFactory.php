@@ -26,7 +26,6 @@ class CourseFactory extends Factory
             'name' => $name,
             'slug' => Str::slug($name),
             'description' => fake()->boolean(60) ? fake()->paragraph() : null,
-            'max_substitutions' => fake()->numberBetween(0, 5),
             'early_cancel_hours' => fake()->randomElement([12, 24, 48]),
             'published_at' => fake()->boolean(80) ? now() : null,
         ];

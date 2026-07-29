@@ -1,5 +1,7 @@
 @php
     $btn ??= [];
+    /** Extra classes the including brick wants on this button (e.g. responsive width). */
+    $btnClass ??= '';
     $url = \App\Support\LinkResolver::fromConfig($btn, '') ?: '#';
     $style = $btn['style'] ?? 'primary';
     $color = $btn['color'] ?? null;
@@ -34,7 +36,7 @@
 <a href="{{ $url }}"
    @if($target) target="{{ $target }}" @if($target === '_blank') rel="noopener" @endif @endif
    @if($inlineStyle) style="{{ $inlineStyle }}" @endif
-   class="{{ $wrapper }} {{ $classes }}">
+   class="{{ $wrapper }} {{ $classes }} {{ $btnClass }}">
     @if(! $isText && ! empty($btn['icon']))
         {!! \App\Support\Icon::render($btn['icon'], 'h-5 w-5') !!}
     @endif

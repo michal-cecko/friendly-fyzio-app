@@ -6,6 +6,24 @@
         $results = filled($query) ? $this->results : collect();
     @endphp
 
+    @if ($archived = $this->archived)
+        {{-- Reading an archive is easy to forget you are doing; say so above the article. --}}
+        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-warning-300 bg-warning-50 px-4 py-3 text-sm text-warning-800 dark:border-warning-500/30 dark:bg-warning-500/10 dark:text-warning-300">
+            <x-filament::icon icon="heroicon-o-clock" class="h-5 w-5 shrink-0" />
+
+            <span>
+                Prohlížíte archivní verzi z <strong>{{ $archived->label() }}</strong>@if ($archived->commitLabel()) <span class="text-warning-700/80 dark:text-warning-300/70">({{ $archived->commitLabel() }})</span>@endif. Popisuje panel tak, jak vypadal tehdy.
+            </span>
+
+            <a
+                href="{{ \App\Filament\Pages\Help::getUrl(['version' => \App\Filament\Support\Help\HelpVersions::LATEST]) }}"
+                class="font-semibold underline underline-offset-2"
+            >
+                Zpět na aktuální
+            </a>
+        </div>
+    @endif
+
     @if ($sections->isEmpty())
         <x-filament::empty-state
             icon="heroicon-o-book-open"

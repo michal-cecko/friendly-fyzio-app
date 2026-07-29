@@ -1,7 +1,7 @@
 ---
 title: Orientace v panelu
 icon: heroicon-o-map
-keywords: [panel, menu, sekce, orientace, začínáme, kde najdu]
+keywords: [panel, menu, sekce, orientace, začínáme, kde najdu, verze nápovědy, archiv příručky, stáhnout příručku]
 ---
 
 Administrace je rozdělená do několika sekcí v levém menu. Každá sdružuje agendu, která spolu souvisí.
@@ -19,6 +19,8 @@ Administrace je rozdělená do několika sekcí v levém menu. Každá sdružuje
 | **Aktivita** | Kdo co kdy změnil. Záznam všech úprav a odeslaných e-mailů. |
 
 Úplně dole v menu je **Nápověda** — tato příručka. Zůstává na místě, i když menu odrolujete.
+
+V hlavičce příručky je přepínač **Verze**. *Aktuální* je znění, které platí teď; pod ním jsou starší verze označené datem a otevřou příručku tak, jak vypadala tehdy — včetně hledání, které pak zůstává uvnitř zvolené verze. Že čtete archiv, poznáte podle pruhu nad článkem a podle data v adrese. Administrátoři mají navíc **Stáhnout příručku**: stáhne tu verzi, kterou máte zrovna na obrazovce, jako jeden soubor.
 
 ## Horní lišta
 

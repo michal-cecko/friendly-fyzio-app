@@ -99,6 +99,35 @@
     --plain-link-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
 }
 
+/* Inside a cluster the page carries a second sidebar (the cluster's sub-navigation)
+   next to the panel's own. Filament fixes it at 18rem with no PHP setting to change
+   it, which — stacked on the main sidebar — left barely half the window for the page
+   itself. Matched to the panel's sidebarWidth; the labels are short enough. (It is
+   already hidden below `md`, so this only ever applies on desktop.) */
+.fi-page-sub-navigation-sidebar-ctn {
+    width: 12rem;
+}
+
+/* The panel's own narrow sidebarWidth is a DESKTOP measure: there the sidebar is a
+   column the page has to share, so every rem it gives back is a rem the tables get.
+   Below `lg` it is a slide-over drawer over the full page instead — it takes nothing
+   away, and squeezing it there only makes it harder to hit. Filament declares the
+   variable on `:root`, so this needs the extra specificity to win whatever the
+   stylesheet order turns out to be. */
+@media (max-width: 1023px) {
+    html:root {
+        --sidebar-width: 20rem;
+    }
+}
+
+/* At 12rem the nav's default 1.5rem of side padding is a sixth of the whole
+   sidebar — enough to clip the longest label ("Záznamy aktivity"). */
+@media (min-width: 1024px) {
+    .fi-sidebar-nav {
+        padding-inline: 0.75rem;
+    }
+}
+
 /* Table toolbars: search, filters & column toggles on the left, action buttons on the right. */
 .fi-ta-header-toolbar > :nth-child(1) {
     order: 2;
@@ -113,41 +142,69 @@
    Filament stacks label, value and description vertically, which makes a tall
    card. For a summary strip above a table we want the opposite shape — wide and
    low — so the label and description stack in a left column while the value sits
-   in its own right-hand column spanning both rows. Type sizes are left at
-   Filament's defaults on purpose; the height comes from the layout, not from
-   shrinking the text. */
+   in its own right-hand column spanning both rows.
+
+   That split only holds while the card is wide enough to seat both: a four-digit
+   count beside a twelve-letter Czech label needs room, and without it the value
+   runs straight over the label. So the card is its own query container — below
+   the threshold it falls back to Filament's vertical stack, and the value's type
+   is sized in container units so it gives way as the card narrows instead of
+   pushing the label out of its track. */
 .fi-wi-stats-overview-stat.fyz-stat-compact {
     padding: 0.75rem 1rem;
+    container-type: inline-size;
 }
 
 .fyz-stat-compact .fi-wi-stats-overview-stat-content {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    column-gap: 0.75rem;
     row-gap: 0.125rem;
 }
 
 .fyz-stat-compact .fi-wi-stats-overview-stat-label-ctn {
-    grid-column: 1;
-    grid-row: 1;
     min-width: 0;
 }
 
+/* Last line of defence: a word with nowhere left to go breaks instead of
+   sliding under the value. */
+.fyz-stat-compact .fi-wi-stats-overview-stat-label,
 .fyz-stat-compact .fi-wi-stats-overview-stat-description {
-    grid-column: 1;
-    grid-row: 2;
+    overflow-wrap: break-word;
+    min-width: 0;
 }
 
-/* The value spans both rows, so its type can grow to the full height of the
-   label + description stack instead of sitting on the label's line. */
+/* Capped against the card, not against its own column, so the track stays
+   content-sized: a long money total wraps at its own spaces rather than
+   squeezing the label down to one letter per line. */
 .fyz-stat-compact .fi-wi-stats-overview-stat-value {
-    grid-column: 2;
-    grid-row: 1 / span 2;
-    align-self: center;
-    justify-self: end;
-    font-size: 2.25rem;
-    line-height: 1;
+    font-size: clamp(1.25rem, 11cqi, 2.125rem);
+    line-height: 1.1;
+    max-width: 60cqi;
+}
+
+@container (min-width: 12rem) {
+    .fyz-stat-compact .fi-wi-stats-overview-stat-content {
+        grid-template-columns: minmax(0, 1fr) minmax(0, auto);
+        align-items: center;
+        column-gap: 0.75rem;
+    }
+
+    .fyz-stat-compact .fi-wi-stats-overview-stat-label-ctn {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    .fyz-stat-compact .fi-wi-stats-overview-stat-description {
+        grid-column: 1;
+        grid-row: 2;
+    }
+
+    /* The value spans both rows, so its type can grow to the full height of the
+       label + description stack instead of sitting on the label's line. */
+    .fyz-stat-compact .fi-wi-stats-overview-stat-value {
+        grid-column: 2;
+        grid-row: 1 / span 2;
+        align-self: center;
+        justify-self: end;
+    }
 }
 
 /* Table widgets sitting side by side on the dashboard: a list with fewer rows

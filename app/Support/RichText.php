@@ -32,6 +32,28 @@ class RichText
     }
 
     /**
+     * Collapse rich content to plain text for excerpt contexts (card teasers,
+     * meta descriptions) where tags must not leak into an escaped `{{ }}` echo.
+     */
+    public static function plainText(?string $html): string
+    {
+        return trim((string) preg_replace(
+            '/\s+/u',
+            ' ',
+            html_entity_decode(strip_tags(self::spaceOutBlocks((string) $html)), ENT_QUOTES | ENT_HTML5),
+        ));
+    }
+
+    /**
+     * Insert a space before closing block tags so adjacent paragraphs or list
+     * items don't fuse into one word once the markup is stripped.
+     */
+    private static function spaceOutBlocks(string $html): string
+    {
+        return (string) preg_replace('#</(p|div|li|h[1-6]|blockquote)>#i', ' </$1>', $html);
+    }
+
+    /**
      * Convert plain Textarea text to the equivalent rich-editor HTML: blank
      * lines separate paragraphs, single newlines become <br>. Used when plain
      * text (e.g. a wizard note) lands in a column edited by a RichEditor.

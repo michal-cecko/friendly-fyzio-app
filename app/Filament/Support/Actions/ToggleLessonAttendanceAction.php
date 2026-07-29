@@ -181,7 +181,7 @@ class ToggleLessonAttendanceAction extends Action
     /**
      * Why a poukaz cannot be issued at all, or null when it can. These two are
      * configuration, not a per-client judgement call, so there is no overriding
-     * them from here: a course with no make-up allowance has them switched off,
+     * them from here: a série with no make-up allowance has them switched off,
      * and a série with no target séries has nowhere to redeem one — the poukaz
      * would arrive as an empty list in the client zone.
      */
@@ -194,7 +194,7 @@ class ToggleLessonAttendanceAction extends Action
         }
 
         if (app(ExcuseFromLesson::class)->substitutesAllowance($enrollment) < 1) {
-            return 'Kurz náhrady nenabízí — „Max. náhrad“ je u kurzu nastavené na 0. Změňte to v nastavení kurzu, nebo klienta rovnou přesuňte přes „Přesunout klienta do lekce“.';
+            return 'Tato série náhrady nenabízí — „Max. náhrad“ je u ní nastavené na 0. Změňte to v nastavení série (záložka Náhrady), nebo klienta rovnou přesuňte přes „Přesunout klienta do lekce“.';
         }
 
         if (self::substituteTargets($record) === []) {
@@ -230,9 +230,10 @@ class ToggleLessonAttendanceAction extends Action
     }
 
     /**
-     * Says where the poukaz would be valid and what the course rules allow,
-     * without hiding the override — staff may grant one past the deadline or
-     * past the limit, it just has to be a deliberate choice.
+     * Says where the poukaz would be valid and what the rules allow — the série's
+     * make-up limit and the course's cancellation deadline — without hiding the
+     * override: staff may grant one past the deadline or past the limit, it just
+     * has to be a deliberate choice.
      */
     public static function substituteHelperText(LessonAttendance $record): string
     {

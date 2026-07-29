@@ -48,8 +48,6 @@ class CourseInfolist
                             ->html()
                             ->placeholder('—')
                             ->columnSpanFull(),
-                        TextEntry::make('max_substitutions')
-                            ->label('Max. náhrad'),
                         TextEntry::make('early_cancel_hours')
                             ->label('Včasné zrušení (hodin předem)')
                             ->suffix(' h'),

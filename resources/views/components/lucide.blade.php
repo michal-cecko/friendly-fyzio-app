@@ -29,5 +29,20 @@
 @if(isset($paths[$name]))
     <svg {{ $attributes->merge(['class' => 'h-5 w-5']) }} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{!! $paths[$name] !!}</svg>
 @else
-    {!! \App\Support\Icon::render($name, $attributes->get('class', 'h-5 w-5'), ['aria-hidden' => 'true']) !!}
+    {{-- blade-icons takes attributes as an array, so the bag has to be flattened
+         by hand — otherwise directives like wire:loading are silently dropped
+         and the icon renders unconditionally. Valueless attributes keep an
+         integer key so they render bare. --}}
+    @php
+        $svgAttributes = ['aria-hidden' => 'true'];
+
+        foreach ($attributes->except('class')->getAttributes() as $attribute => $value) {
+            if ($value === true) {
+                $svgAttributes[] = $attribute;
+            } elseif ($value !== false && $value !== null) {
+                $svgAttributes[$attribute] = (string) $value;
+            }
+        }
+    @endphp
+    {!! \App\Support\Icon::render($name, $attributes->get('class', 'h-5 w-5'), $svgAttributes) !!}
 @endif

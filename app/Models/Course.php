@@ -26,7 +26,6 @@ class Course extends Model
         'slug',
         'description',
         'featured_image',
-        'max_substitutions',
         'early_cancel_hours',
         'drop_in_price',
         'published_at',
@@ -35,7 +34,6 @@ class Course extends Model
     protected function casts(): array
     {
         return [
-            'max_substitutions' => 'integer',
             'early_cancel_hours' => 'integer',
             'drop_in_price' => 'integer',
             'featured_image' => 'integer',

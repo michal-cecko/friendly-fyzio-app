@@ -4,13 +4,16 @@ namespace App\Filament\Clusters\Provoz\Resources\Services\Schemas;
 
 use App\Enums\ExamType;
 use App\Enums\ServiceVisibility;
+use App\Filament\Clusters\Provoz\Resources\Services\Pages\EditService;
 use App\Filament\Support\Schemas\BreakBlocks;
 use App\Filament\Support\Schemas\DerivedSlug;
 use App\Filament\Support\Schemas\PresenceBanner;
 use App\Filament\Support\Schemas\ResponsiveColumns;
 use App\Mason\BrickRegistry;
 use App\Models\Service;
+use App\Models\Specialization;
 use App\Models\StaffProfile;
+use App\Support\Icon;
 use App\Support\Settings;
 use Awcodes\Mason\Mason;
 use Filament\Actions\Action;
@@ -20,6 +23,7 @@ use Filament\Forms\Components\Repeater\TableColumn;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
@@ -27,6 +31,7 @@ use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Guava\IconPicker\Forms\Components\IconPicker;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
 
 class ServiceForm
@@ -179,9 +184,13 @@ class ServiceForm
                             ]),
                     ]),
                 Section::make('Možné specializace')
+                    ->key('specializations')
                     ->icon(Heroicon::OutlinedSparkles)
-                    ->description('Sdílený číselník specializací pod touto službou. Terapeuti si je vybírají na svém profilu (seskupené podle služby), takže se nepíšou znovu pro každého.')
+                    ->description('Sdílený číselník specializací pod touto službou. Terapeuti si je vybírají na svém profilu (seskupené podle služby), takže se nepíšou znovu pro každého. Na profilu terapeuta pak specializace odkazuje na rezervaci právě této služby.')
                     ->columnSpanFull()
+                    ->headerActions([
+                        self::attachSpecializationAction(),
+                    ])
                     ->schema([
                         Repeater::make('specializations')
                             ->relationship()
@@ -198,7 +207,10 @@ class ServiceForm
                                 IconPicker::make('icon')
                                     ->label('Ikona')
                                     ->sets(['lucide'])
-                                    ->searchable(),
+                                    ->searchable()
+                                    // Older rows stored bare lucide names („heart"),
+                                    // which the picker rejects as unknown icons.
+                                    ->formatStateUsing(fn (?string $state): ?string => Icon::name($state)),
                                 Textarea::make('description')
                                     ->label('Popis')
                                     ->rows(1)
@@ -228,6 +240,60 @@ class ServiceForm
                             ->columnSpanFull(),
                     ]),
             ]);
+    }
+
+    /**
+     * Pull an existing catalogue entry under this service. The repeater below
+     * only ever creates new entries, so without this the ones that belong
+     * nowhere (or belong somewhere else) could only be moved from the
+     * Specializace resource — the mapping is meant to be reachable from both
+     * ends, since it is what makes the entry a booking link.
+     */
+    private static function attachSpecializationAction(): Action
+    {
+        return Action::make('attachSpecialization')
+            ->label('Přidat existující')
+            ->icon(Heroicon::OutlinedLink)
+            ->visible(fn (?Service $record): bool => $record !== null)
+            ->schema([
+                Select::make('specialization_id')
+                    ->label('Specializace')
+                    ->options(fn (Service $record): array => self::attachableSpecializations($record))
+                    ->searchable()
+                    ->required()
+                    ->helperText('Nezařazené specializace i ty, které dnes patří pod jinou službu.'),
+            ])
+            ->action(function (array $data, Service $record): void {
+                Specialization::query()
+                    ->whereKey($data['specialization_id'])
+                    ->update(['service_id' => $record->getKey()]);
+
+                Notification::make()
+                    ->success()
+                    ->title('Specializace přiřazena')
+                    ->send();
+            })
+            // The row was written straight to the database, so the open form has
+            // to be told to re-read the relationship it does not know changed.
+            ->after(fn (EditService $livewire) => $livewire->refreshFormData(['specializations']));
+    }
+
+    /**
+     * @return array<string, array<string, string>>
+     */
+    private static function attachableSpecializations(Service $record): array
+    {
+        return Specialization::query()
+            ->with('service')
+            ->where(fn (Builder $query): Builder => $query
+                ->whereNull('service_id')
+                ->orWhere('service_id', '!=', $record->getKey()))
+            ->orderBy('name')
+            ->get(['id', 'name', 'service_id'])
+            ->groupBy(fn (Specialization $specialization): string => $specialization->service?->name ?? 'Nezařazené')
+            ->sortBy(fn ($group, string $label): int => $label === 'Nezařazené' ? 0 : 1)
+            ->map(fn ($group) => $group->pluck('name', 'id'))
+            ->toArray();
     }
 
     /**

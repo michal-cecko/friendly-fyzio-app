@@ -44,7 +44,12 @@ class EditReservation extends BaseEditRecord
      */
     public function form(Schema $schema): Schema
     {
-        return $schema->components(ReservationForm::components());
+        // One column, not Filament's two: the groups are card-contained here and each
+        // packs its own fields four-up, so splitting the page in half would only make
+        // them narrower.
+        return $schema
+            ->columns(1)
+            ->components(ReservationForm::components(contained: true));
     }
 
     /**

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\CourseSeriesStatus;
 use App\Enums\CourseSeriesVisibility;
+use App\Enums\DayOfWeek;
 use App\Enums\WaitlistPromotionMode;
 use App\Filament\Clusters\Kurzy\Resources\CourseSeries\Pages\CreateCourseSeries;
 use App\Filament\Clusters\Kurzy\Resources\CourseSeries\Pages\EditCourseSeries;
@@ -11,6 +12,7 @@ use App\Filament\Clusters\Kurzy\Resources\CourseSeries\Pages\ListCourseSeries;
 use App\Filament\Clusters\Kurzy\Resources\CourseSeries\Pages\ViewCourseSeries;
 use App\Models\Course;
 use App\Models\CourseSeries;
+use App\Models\Room;
 use App\Models\User;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -126,6 +128,56 @@ class CourseSeriesResourceTest extends TestCase
             'visibility' => CourseSeriesVisibility::Private->value,
             'waitlist_promotion_mode' => WaitlistPromotionMode::AutomaticInvite->value,
         ]);
+    }
+
+    /**
+     * The Rozvrh tab is what drives lesson generation, so its four fields have to
+     * survive a save like any others — and the multi-weekday list has to come back
+     * out as an array.
+     */
+    public function test_edit_saves_the_lesson_schedule(): void
+    {
+        $record = CourseSeries::factory()->create();
+        $room = Room::factory()->create();
+
+        Livewire::test(EditCourseSeries::class, ['record' => $record->getKey()])
+            ->fillForm([
+                'days_of_week' => [DayOfWeek::Tuesday->value, DayOfWeek::Thursday->value],
+                'start_time' => '09:30',
+                'end_time' => '10:30',
+                'room_id' => $room->getKey(),
+            ])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $record->refresh();
+
+        $this->assertSame([DayOfWeek::Tuesday->value, DayOfWeek::Thursday->value], $record->days_of_week);
+        $this->assertSame($room->getKey(), $record->room_id);
+        $this->assertTrue($record->hasLessonSchedule());
+        $this->assertSame(
+            'Úterý, Čtvrtek · 09:30–10:30 · '.$room->name,
+            $record->scheduleLabel(),
+        );
+    }
+
+    /**
+     * An end time before the start would produce lessons that end before they
+     * begin, so the form must reject it rather than the generator.
+     */
+    public function test_the_schedule_rejects_an_end_time_before_the_start(): void
+    {
+        $record = CourseSeries::factory()->create();
+
+        Livewire::test(EditCourseSeries::class, ['record' => $record->getKey()])
+            ->fillForm([
+                'days_of_week' => [DayOfWeek::Monday->value],
+                'start_time' => '18:00',
+                'end_time' => '17:00',
+                'room_id' => Room::factory()->create()->getKey(),
+            ])
+            ->call('save')
+            ->assertHasFormErrors(['end_time']);
     }
 
     /**

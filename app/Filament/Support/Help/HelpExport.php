@@ -11,14 +11,23 @@ use Illuminate\Support\Str;
  * hierarchy (document → section → article → the article's own headings) and a
  * table of contents, so the model can tell where one article ends and the next
  * begins instead of guessing from a wall of text.
+ *
+ * Given a {@see HelpVersion} the export describes that archived snapshot instead
+ * of the live manual — same shape, but stamped with the version's date and commit
+ * so a downloaded file can always be traced back to the code it documented.
  */
 class HelpExport
 {
-    public function __construct(protected HelpRepository $repository) {}
+    public function __construct(
+        protected HelpRepository $repository,
+        protected ?HelpVersion $version = null,
+    ) {}
 
     public function filename(): string
     {
-        return 'napoveda-'.Str::slug(config('app.name')).'-'.now()->format('Y-m-d').'.md';
+        $stamp = $this->version?->id ?? now()->format('Y-m-d');
+
+        return 'napoveda-'.Str::slug(config('app.name')).'-'.$stamp.'.md';
     }
 
     public function markdown(): string
@@ -29,7 +38,7 @@ class HelpExport
         $lines = [
             '# Nápověda — '.config('app.name'),
             '',
-            'Kompletní příručka administrace, vyexportovaná '.now()->format('j. n. Y').'. '
+            $this->provenance().' '
                 .$this->count($topics->count()).' v '.$this->sectionCount($sections->count()).'.',
             '',
         ];
@@ -74,6 +83,20 @@ class HelpExport
         }
 
         return implode("\n", $lines);
+    }
+
+    /**
+     * Where this file came from. An archived version names its date and commit;
+     * the live manual can only name the day it was exported.
+     */
+    protected function provenance(): string
+    {
+        if ($this->version === null) {
+            return 'Kompletní příručka administrace, vyexportovaná '.now()->format('j. n. Y').'.';
+        }
+
+        return 'Archivní verze příručky z '.$this->version->label()
+            .($this->version->commit !== null ? ' (commit '.$this->version->commit.')' : '').'.';
     }
 
     /**

@@ -1,5 +1,6 @@
 <?php
 
+use App\Filament\Support\Viewport;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -19,6 +20,10 @@ return Application::configure(basePath: dirname(__DIR__))
         // Guests hitting auth-protected pages (the client zone) go to the public
         // login; `return` round-trips them back after signing in.
         $middleware->redirectGuestsTo(fn ($request) => route('public.login', ['return' => $request->getRequestUri()]));
+
+        // Written by the browser, so it cannot be encrypted on the way back in.
+        // It carries a window width and nothing else ({@see App\Filament\Support\Viewport}).
+        $middleware->encryptCookies(except: [Viewport::COOKIE]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // Forward unhandled exceptions to Sentry (SENTRY_LARAVEL_DSN in the environment).

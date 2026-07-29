@@ -21,6 +21,25 @@ document.addEventListener('click', (event) => {
         accordion.parentElement.querySelector('[data-accordion-panel]')?.classList.toggle('hidden');
         accordion.querySelector('[data-accordion-icon]')?.classList.toggle('rotate-90');
         accordion.querySelector('[data-accordion-label]')?.classList.toggle('text-primary');
+        return;
+    }
+
+    // "Zobrazit další…" buttons (see components/site/show-more.blade.php): reveal
+    // the capped-away items of the listed container and flip the button's label.
+    const showMore = event.target.closest('[data-show-more]');
+    if (showMore) {
+        const list = document.getElementById(showMore.dataset.showMore);
+        const expanded = showMore.getAttribute('aria-expanded') === 'true';
+
+        list?.querySelectorAll('[data-show-more-item]').forEach((item) => {
+            item.classList.toggle('hidden', expanded);
+        });
+
+        showMore.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+        showMore.querySelector('[data-show-more-label]').textContent = expanded
+            ? showMore.dataset.moreLabel
+            : showMore.dataset.lessLabel;
+        showMore.querySelector('[data-show-more-icon]')?.classList.toggle('rotate-180', !expanded);
     }
 });
 

@@ -12,6 +12,7 @@ use App\Models\Concerns\HasCapacity;
 use App\Models\Concerns\HasPresaleAccess;
 use App\Models\Concerns\Publishable;
 use App\Observers\LessonObserver;
+use App\Support\RichText;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -371,6 +372,18 @@ class Lesson extends Model
     public function displayDescription(): ?string
     {
         return $this->description ?? $this->offerCourse()?->description;
+    }
+
+    /**
+     * The same description as rich-editor HTML, so a detail page can render one
+     * block regardless of whether it came from the lesson's plain-text field or
+     * the course's rich editor.
+     */
+    public function displayDescriptionHtml(): ?string
+    {
+        return $this->description !== null
+            ? RichText::fromPlainText($this->description)
+            : $this->offerCourse()?->description;
     }
 
     /**

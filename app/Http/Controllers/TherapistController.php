@@ -19,7 +19,9 @@ class TherapistController extends Controller
         $therapist->load([
             'user',
             'specializations' => fn ($query) => $query->orderBy('display_order'),
-            'specializations.specialization',
+            // The service each specialization stands for: it is what the card on
+            // the profile books, and a specialization without one is not shown.
+            'specializations.specialization.service',
         ]);
 
         return view('therapists.show', [

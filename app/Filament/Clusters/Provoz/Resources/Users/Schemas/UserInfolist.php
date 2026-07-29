@@ -2,8 +2,11 @@
 
 namespace App\Filament\Clusters\Provoz\Resources\Users\Schemas;
 
+use App\Filament\Support\Schemas\BreakBlocks;
 use App\Filament\Support\Schemas\DeactivatedBanner;
 use App\Filament\Support\Schemas\RecordTimestamps;
+use App\Models\Service;
+use App\Models\StaffProfile;
 use App\Models\User;
 use App\Support\Media;
 use Filament\Infolists\Components\IconEntry;
@@ -86,6 +89,13 @@ class UserInfolist
                             ->badge()
                             ->placeholder('—')
                             ->columnSpanFull(),
+                        TextEntry::make('services')
+                            ->label('Služby')
+                            ->state(fn (User $record): array => self::serviceBreakSummary($record->staffProfile))
+                            ->listWithLineBreaks()
+                            ->bulleted()
+                            ->placeholder('—')
+                            ->columnSpanFull(),
                         RepeatableEntry::make('staffProfile.education')
                             ->label('Vzdělání')
                             ->columnSpanFull()
@@ -124,5 +134,31 @@ class UserInfolist
                             ->placeholder('—'),
                     ]),
             ]);
+    }
+
+    /**
+     * What this member actually rests after each service they perform, and
+     * whether that came from the assignment or from their own default —
+     * the read-only twin of the repeater on the edit form.
+     *
+     * @return array<int, string>
+     */
+    private static function serviceBreakSummary(?StaffProfile $profile): array
+    {
+        if ($profile === null) {
+            return [];
+        }
+
+        return $profile->services()
+            ->orderBy('name')
+            ->get(['services.id', 'services.name'])
+            ->map(function (Service $service) use ($profile): string {
+                $override = $service->pivot->break_blocks;
+                $blocks = $override ?? $profile->break_blocks;
+
+                return $service->name.' — '.BreakBlocks::minutesLabel($blocks)
+                    .($override === null ? ' (výchozí)' : ' (vlastní)');
+            })
+            ->all();
     }
 }

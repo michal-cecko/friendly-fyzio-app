@@ -21,14 +21,19 @@ class ReservationStatsOverview extends StatsOverviewWidget
 
     /**
      * Wide, low cards over a couple of rows rather than seven narrow columns:
-     * four per row on desktop keeps each card longer than it is tall, which
+     * four per row at full width keeps each card longer than it is tall, which
      * reads far better than cramming them all onto one line.
+     *
+     * Measured against the WIDGET's own width (container queries), not the
+     * window's: inside a cluster the page gives up two sidebars' worth of room,
+     * so a viewport-sized ladder happily asked for four columns in a strip with
+     * space for two, and the labels ended up under the numbers.
      */
     protected array|int|null $columns = [
         'default' => 1,
-        'sm' => 2,
-        'lg' => 3,
-        'xl' => 4,
+        '@md' => 2,
+        '@3xl' => 3,
+        '@5xl' => 4,
     ];
 
     protected function getTablePage(): string

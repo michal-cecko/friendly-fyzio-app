@@ -28,6 +28,10 @@ class ProductionSeeder extends Seeder
         // client history and course archive.
         $this->call(RealDataSeeder::class);
 
+        // The team's published qualifications, onto the staff profiles above.
+        // Fill-when-empty, so it never fights an edit made in the panel.
+        $this->call(StaffQualificationsSeeder::class);
+
         // Services need the therapists and rooms above: an unstaffed service
         // cannot be booked at all.
         $this->call(ServiceSeeder::class);

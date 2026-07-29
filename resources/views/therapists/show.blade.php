@@ -2,13 +2,22 @@
 
 @php
     $name = $therapist->user?->full_name ?? 'Terapeut';
-    $phone = $therapist->user?->phone ?: \App\Support\Settings::get('web.contact_phone');
-    $email = $therapist->user?->email ?: \App\Support\Settings::get('web.contact_email');
-    $address = \App\Support\Settings::get('web.address');
     $photo = \App\Support\Media::url($therapist->photo, '800');
     $bookingUrl = route('reservation.wizard', ['terapeut' => $therapist->slug]);
     $education = $therapist->education ?? [];
     $certifications = $therapist->certifications ?? [];
+
+    // Therapists carry twenty-odd courses each, which would bury the rest of the
+    // page — only the first few show, the remainder unfolds behind a button.
+    $qualificationCap = 3;
+    $hiddenEducation = max(count($education) - $qualificationCap, 0);
+    $hiddenCertifications = max(count($certifications) - $qualificationCap, 0);
+
+    // Only specializations pointing at a service can be booked, so only those
+    // become cards below — the rest have nowhere to send anyone.
+    $bookable = $therapist->specializations->filter(
+        fn ($specialization) => $specialization->specialization?->service !== null,
+    );
 @endphp
 
 @section('content')
@@ -60,37 +69,11 @@
 
                 <span class="h-0.5 w-[60px] bg-primary"></span>
 
-                <div class="flex flex-col gap-3 text-[15px] text-neutral-900">
-                    @if($phone)
-                        <a href="tel:{{ preg_replace('/\s+/', '', $phone) }}" class="inline-flex items-center gap-2.5 transition hover:text-primary">
-                            <x-lucide name="phone" class="h-[18px] w-[18px] text-primary" />
-                            {{ $phone }}
-                        </a>
-                    @endif
-                    @if($email)
-                        <a href="mailto:{{ $email }}" class="inline-flex items-center gap-2.5 transition hover:text-primary">
-                            <x-lucide name="mail" class="h-[18px] w-[18px] text-primary" />
-                            {{ $email }}
-                        </a>
-                    @endif
-                    @if($address)
-                        <span class="inline-flex items-center gap-2.5">
-                            <x-lucide name="map-pin" class="h-[18px] w-[18px] text-primary" />
-                            {{ $address }}
-                        </span>
-                    @endif
-                </div>
-
                 <div class="flex flex-wrap gap-3 pt-2">
                     <a href="{{ $bookingUrl }}" class="inline-flex items-center justify-center gap-2.5 rounded-full bg-primary px-7 py-3.5 font-heading text-sm font-semibold text-white transition hover:bg-primary-dark">
                         <x-lucide name="calendar" class="h-[18px] w-[18px]" />
                         Objednat se
                     </a>
-                    @if($phone)
-                        <a href="tel:{{ preg_replace('/\s+/', '', $phone) }}" class="inline-flex items-center justify-center gap-2.5 rounded-full border-[1.5px] border-primary bg-white px-7 py-3.5 font-heading text-sm font-semibold text-primary transition hover:bg-primary-light">
-                            Zavolat
-                        </a>
-                    @endif
                 </div>
             </div>
         </div>
@@ -116,9 +99,10 @@
                             <x-lucide name="graduation-cap" class="h-6 w-6 text-primary" />
                             <h2 class="font-heading text-2xl font-bold text-neutral-900">Vzdělání</h2>
                         </div>
-                        <div class="flex flex-col gap-4">
-                            @foreach($education as $item)
-                                <div class="flex flex-col gap-1 rounded-xl border border-line bg-white px-6 py-5">
+                        <div id="vzdelani" class="flex flex-col gap-4">
+                            @foreach($education as $index => $item)
+                                <div @class(['flex flex-col gap-1 rounded-xl border border-line bg-white px-6 py-5', 'hidden' => $index >= $qualificationCap])
+                                     @if($index >= $qualificationCap) data-show-more-item @endif>
                                     <p class="font-heading text-base font-semibold text-neutral-900">{{ $item['degree'] ?? '' }}</p>
                                     @if(! empty($item['institution']))
                                         <p class="text-sm text-neutral-600">{{ $item['institution'] }}</p>
@@ -129,6 +113,13 @@
                                 </div>
                             @endforeach
                         </div>
+
+                        @if($hiddenEducation > 0)
+                            <x-site.show-more
+                                target="vzdelani"
+                                :more="trans_choice('{1}Zobrazit další :count záznam|[2,4]Zobrazit další :count záznamy|[5,*]Zobrazit dalších :count záznamů', $hiddenEducation, ['count' => $hiddenEducation])"
+                            />
+                        @endif
                     </div>
                 @endif
 
@@ -138,9 +129,10 @@
                             <x-lucide name="award" class="h-6 w-6 text-primary" />
                             <h2 class="font-heading text-2xl font-bold text-neutral-900">Vybrané certifikace a kurzy</h2>
                         </div>
-                        <div class="flex flex-col gap-4">
-                            @foreach($certifications as $item)
-                                <div class="flex flex-col gap-0.5 rounded-xl border border-line bg-white px-6 py-5">
+                        <div id="certifikace" class="flex flex-col gap-4">
+                            @foreach($certifications as $index => $item)
+                                <div @class(['flex flex-col gap-0.5 rounded-xl border border-line bg-white px-6 py-5', 'hidden' => $index >= $qualificationCap])
+                                     @if($index >= $qualificationCap) data-show-more-item @endif>
                                     <p class="font-heading text-[15px] font-semibold text-neutral-900">{{ $item['name'] ?? '' }}</p>
                                     @if(! empty($item['institution']))
                                         <p class="text-[13px] text-neutral-500">{{ $item['institution'] }}</p>
@@ -151,6 +143,13 @@
                                 </div>
                             @endforeach
                         </div>
+
+                        @if($hiddenCertifications > 0)
+                            <x-site.show-more
+                                target="certifikace"
+                                :more="trans_choice('{1}Zobrazit další :count kurz|[2,4]Zobrazit další :count kurzy|[5,*]Zobrazit dalších :count kurzů', $hiddenCertifications, ['count' => $hiddenCertifications])"
+                            />
+                        @endif
                     </div>
                 @endif
             </div>
@@ -158,7 +157,7 @@
     @endif
 
     {{-- Areas of specialization --}}
-    @if($therapist->specializations->isNotEmpty())
+    @if($bookable->isNotEmpty())
         <section class="bg-white py-16 lg:py-24">
             <div class="ff-container">
                 @include('bricks.partials.heading', ['config' => [
@@ -167,16 +166,22 @@
                 ]])
 
                 <div class="flex flex-wrap justify-center gap-6">
-                    @foreach($therapist->specializations as $specialization)
-                        <div class="flex w-full flex-col items-center gap-4 rounded-2xl bg-surface-alt p-6 text-center sm:w-[calc(50%-0.75rem)] lg:w-[calc(25%-1.125rem)]">
-                            <div class="flex h-14 w-14 items-center justify-center rounded-full bg-primary-light text-primary">
+                    @foreach($bookable as $specialization)
+                        @php($service = $specialization->specialization->service)
+                        <a href="{{ route('reservation.wizard', ['terapeut' => $therapist->slug, 'sluzba' => $service->slug]) }}"
+                           class="group flex w-full flex-col items-center gap-4 rounded-2xl bg-surface-alt p-6 text-center transition hover:bg-primary-light sm:w-[calc(50%-0.75rem)] lg:w-[calc(25%-1.125rem)]">
+                            <div class="flex h-14 w-14 items-center justify-center rounded-full bg-primary-light text-primary transition group-hover:bg-white">
                                 {!! \App\Support\Icon::render($specialization->icon ?: 'heart', 'h-6 w-6') !!}
                             </div>
                             <h3 class="font-heading text-base font-semibold text-neutral-900">{{ $specialization->name }}</h3>
                             @if($specialization->description)
                                 <p class="text-sm leading-relaxed text-neutral-600">{{ $specialization->description }}</p>
                             @endif
-                        </div>
+                            <span class="mt-auto inline-flex items-center gap-1.5 pt-2 font-heading text-sm font-semibold text-primary">
+                                Objednat se
+                                <x-lucide name="arrow-right" class="h-4 w-4 transition group-hover:translate-x-0.5" />
+                            </span>
+                        </a>
                     @endforeach
                 </div>
             </div>
@@ -187,17 +192,12 @@
     <section class="bg-primary-light py-16">
         <div class="ff-container flex flex-col items-center gap-6 text-center">
             <h2 class="font-heading text-3xl font-bold text-neutral-900">Chcete se objednat k {{ $name }}?</h2>
-            <p class="max-w-2xl leading-relaxed text-neutral-600">Rezervujte si termín online nebo nás kontaktujte telefonicky.</p>
+            <p class="max-w-2xl leading-relaxed text-neutral-600">Rezervujte si termín online.</p>
             <div class="flex flex-wrap justify-center gap-3">
                 <a href="{{ $bookingUrl }}" class="inline-flex items-center justify-center gap-2.5 rounded-full bg-primary px-9 py-[18px] font-heading text-base font-semibold text-white transition hover:bg-primary-dark">
                     <x-lucide name="calendar" class="h-5 w-5" />
                     Objednat se
                 </a>
-                @if($phone)
-                    <a href="tel:{{ preg_replace('/\s+/', '', $phone) }}" class="inline-flex items-center justify-center gap-2.5 rounded-full border-[1.5px] border-primary bg-white px-9 py-[18px] font-heading text-base font-semibold text-primary transition hover:bg-white/70">
-                        Zavolat
-                    </a>
-                @endif
             </div>
         </div>
     </section>

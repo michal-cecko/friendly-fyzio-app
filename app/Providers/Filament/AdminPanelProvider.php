@@ -63,6 +63,12 @@ class AdminPanelProvider extends PanelProvider
             // toasts, and stops a dismissed toast from deleting its row.
             ->databaseNotificationsLivewireComponent(DatabaseNotifications::class)
             ->sidebarCollapsibleOnDesktop()
+            // Narrower than Filament's 20rem: no label here comes close to filling
+            // that, and inside a cluster the page carries a second (sub-navigation)
+            // sidebar too — together they were eating nearly half the window and
+            // squeezing the tables and stat cards next to them. The sub-navigation
+            // is matched to this width in the admin theme (it has no PHP setting).
+            ->sidebarWidth('12rem')
             ->collapsibleNavigationGroups()
             ->maxContentWidth(Width::Full)
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
@@ -97,6 +103,12 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(
                 PanelsRenderHook::SIDEBAR_FOOTER,
                 fn (): string => view('filament.sidebar.help-link')->render(),
+            )
+            // Records the window width so the server can render viewport-dependent
+            // layout on the first paint ({@see App\Filament\Support\Viewport}).
+            ->renderHook(
+                PanelsRenderHook::BODY_END,
+                fn (): string => view('filament.viewport-hint')->render(),
             )
             ->colors([
                 'primary' => Color::hex('#d4678a'),

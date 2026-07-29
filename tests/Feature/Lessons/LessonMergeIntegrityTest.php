@@ -156,8 +156,8 @@ class LessonMergeIntegrityTest extends TestCase
     {
         Notification::fake();
 
-        $course = Course::factory()->create(['drop_in_price' => 260, 'early_cancel_hours' => 24, 'max_substitutions' => 0]);
-        $series = CourseSeries::factory()->for($course)->create(['capacity' => 1]);
+        $course = Course::factory()->create(['drop_in_price' => 260, 'early_cancel_hours' => 24]);
+        $series = CourseSeries::factory()->for($course)->create(['capacity' => 1, 'max_substitutions' => 0]);
         $start = now()->addWeek();
         $lesson = Lesson::factory()->for($series, 'series')->create([
             'lesson_date' => $start->format('Y-m-d'),

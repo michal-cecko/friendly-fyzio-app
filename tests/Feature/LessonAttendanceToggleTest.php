@@ -61,17 +61,17 @@ class LessonAttendanceToggleTest extends TestCase
      * from the same instant, so "+2 hours" really is two hours away whatever the
      * clock says when the suite runs.
      */
-    private function lesson(string $startingIn = '+1 week', array $courseAttributes = [], bool $withSubstituteTarget = true): Lesson
+    private function lesson(string $startingIn = '+1 week', array $seriesAttributes = [], bool $withSubstituteTarget = true): Lesson
     {
         $course = Course::factory()->create([
             'early_cancel_hours' => 24,
-            'max_substitutions' => 2,
-            ...$courseAttributes,
         ]);
 
         $series = CourseSeries::factory()->create([
             'course_id' => $course->getKey(),
             'capacity' => 10,
+            'max_substitutions' => 2,
+            ...$seriesAttributes,
         ]);
 
         // A poukaz is only worth issuing where it can be redeemed, so by default
@@ -377,7 +377,7 @@ class LessonAttendanceToggleTest extends TestCase
         $this->assertStringContainsString('Klient si vybere volný termín v:', $helperText);
     }
 
-    public function test_a_course_that_offers_no_substitutes_cannot_grant_one(): void
+    public function test_a_series_that_offers_no_substitutes_cannot_grant_one(): void
     {
         Notification::fake();
 
@@ -393,7 +393,7 @@ class LessonAttendanceToggleTest extends TestCase
             );
 
         $this->assertStringContainsString(
-            '„Max. náhrad“ je u kurzu nastavené na 0',
+            '„Max. náhrad“ je u ní nastavené na 0',
             ToggleLessonAttendanceAction::substituteHelperText($this->attendance($lesson, $enrollment)),
         );
 

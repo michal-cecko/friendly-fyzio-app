@@ -4,9 +4,10 @@
     use App\Enums\OfferState;
     use App\Support\Enrollments\EnrollmentEmailContext;
     use App\Support\Media;
+    use App\Support\RichText;
 
     $image = Media::url($event->displayImage(), '1200');
-    $description = $event->displayDescription();
+    $description = $event->displayDescriptionHtml();
     $state = $event->offerState();
     $spotsLeft = $event->spotsLeft();
     $categoryUrl = $event->category->permalink;
@@ -39,7 +40,7 @@
                 <div class="flex flex-col gap-3">
                     <h1 class="font-heading text-[28px] font-bold leading-tight text-neutral-900">{{ $event->displayName() }}</h1>
                     @if($description)
-                        <p class="text-[15px] leading-relaxed text-neutral-600">{{ str($description)->limit(140) }}</p>
+                        <p class="text-[15px] leading-relaxed text-neutral-600">{{ str(RichText::plainText($description))->limit(140) }}</p>
                     @endif
                 </div>
 
@@ -116,7 +117,7 @@
             <div class="flex flex-col gap-6">
                 <h2 class="font-heading text-2xl font-bold text-neutral-900">O akci</h2>
                 @if($description)
-                    <div class="whitespace-pre-line text-base leading-[1.7] text-neutral-600">{{ $description }}</div>
+                    <div class="ff-prose text-base leading-[1.7] text-neutral-600">{!! RichText::resolveMentions($description) !!}</div>
                 @else
                     <p class="text-base text-neutral-500">Podrobný popis doplníme co nevidět. Máte otázku? Ozvěte se nám.</p>
                 @endif

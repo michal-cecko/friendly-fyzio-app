@@ -5,11 +5,13 @@ namespace App\Models;
 use App\Enums\CourseEnrollmentStatus;
 use App\Enums\CourseSeriesStatus;
 use App\Enums\CourseSeriesVisibility;
+use App\Enums\DayOfWeek;
 use App\Enums\OfferState;
 use App\Enums\WaitlistPromotionMode;
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\HasCapacity;
 use App\Observers\CourseSeriesObserver;
+use App\Support\Lessons\LessonScheduleGenerator;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -17,6 +19,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 #[ObservedBy(CourseSeriesObserver::class)]
@@ -31,7 +34,12 @@ class CourseSeries extends Model
         'invoice_title',
         'start_date',
         'end_date',
+        'days_of_week',
+        'start_time',
+        'end_time',
+        'room_id',
         'capacity',
+        'max_substitutions',
         'waitlist_promotion_mode',
         'waitlist_invited_until',
         'price',
@@ -45,7 +53,9 @@ class CourseSeries extends Model
         return [
             'start_date' => 'date',
             'end_date' => 'date',
+            'days_of_week' => 'array',
             'capacity' => 'integer',
+            'max_substitutions' => 'integer',
             'waitlist_promotion_mode' => WaitlistPromotionMode::class,
             'waitlist_invited_until' => 'datetime',
             'price' => 'integer',
@@ -87,6 +97,15 @@ class CourseSeries extends Model
         return $query->where(fn (Builder $nested) => $nested
             ->where($this->qualifyColumn('instructor_id'), $userId)
             ->orWhereHas('course', fn (Builder $course) => $course->where('instructor_id', $userId)));
+    }
+
+    /**
+     * The room the série's lessons are generated into. Lessons carry their own
+     * room_id, so a single session can still be moved elsewhere afterwards.
+     */
+    public function room(): BelongsTo
+    {
+        return $this->belongsTo(Room::class);
     }
 
     public function lessons(): HasMany
@@ -137,6 +156,56 @@ class CourseSeries extends Model
     public function hasEnded(): bool
     {
         return $this->end_date->isBefore(today());
+    }
+
+    /**
+     * The weekdays this série meets on, as enum cases. Unknown stored values are
+     * dropped rather than thrown on — a schedule is a convenience, and one stale
+     * string must not break the série's detail page.
+     *
+     * @return array<int, DayOfWeek>
+     */
+    public function scheduleDays(): array
+    {
+        return collect($this->days_of_week ?? [])
+            ->map(fn (mixed $day): ?DayOfWeek => is_string($day) ? DayOfWeek::tryFrom($day) : null)
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Whether the série carries everything {@see LessonScheduleGenerator} needs
+     * to place a lesson: at least one weekday, both times, and a room (lessons
+     * cannot be saved without one).
+     */
+    public function hasLessonSchedule(): bool
+    {
+        return $this->scheduleDays() !== []
+            && filled($this->start_time)
+            && filled($this->end_time)
+            && $this->room_id !== null;
+    }
+
+    /**
+     * The schedule in one line — "Pondělí, Středa · 17:00–18:00 · Sál A" — for
+     * the série's detail page and the generate-lessons modal. Null while the
+     * schedule is incomplete, so callers can fall back to a placeholder.
+     */
+    public function scheduleLabel(): ?string
+    {
+        if (! $this->hasLessonSchedule()) {
+            return null;
+        }
+
+        $days = collect($this->scheduleDays())
+            ->map(fn (DayOfWeek $day): string => $day->getLabel())
+            ->implode(', ');
+
+        $time = Carbon::parse($this->start_time)->format('H:i')
+            .'–'.Carbon::parse($this->end_time)->format('H:i');
+
+        return implode(' · ', array_filter([$days, $time, $this->room?->name]));
     }
 
     public function totalLessonsCount(): int

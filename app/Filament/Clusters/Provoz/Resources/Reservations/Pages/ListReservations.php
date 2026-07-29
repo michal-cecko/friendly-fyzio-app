@@ -5,6 +5,7 @@ namespace App\Filament\Clusters\Provoz\Resources\Reservations\Pages;
 use App\Filament\Clusters\Provoz\Resources\Reservations\ReservationResource;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Schemas\ReservationForm;
 use App\Filament\Clusters\Provoz\Resources\Reservations\Widgets\ReservationStatsOverview;
+use App\Filament\Support\Viewport;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Pages\Concerns\ExposesTableToWidgets;
@@ -30,7 +31,12 @@ class ListReservations extends ListRecords
     {
         parent::mount();
 
-        $this->showStats = (bool) auth()->user()->getPreference('reservations.show_stats', true);
+        // Phones open with the metrics collapsed whatever the stored preference
+        // says — seven cards stacked one per row would push the table off the
+        // screen. The preference is left untouched, so it still decides the
+        // desktop, and the header button opens them here for the visit.
+        $this->showStats = ! Viewport::isNarrow()
+            && (bool) auth()->user()->getPreference('reservations.show_stats', true);
     }
 
     protected function getHeaderActions(): array
@@ -42,7 +48,13 @@ class ListReservations extends ListRecords
                 ->color('gray')
                 ->action(function (): void {
                     $this->showStats = ! $this->showStats;
-                    auth()->user()->setPreference('reservations.show_stats', $this->showStats);
+
+                    // Opening them on a phone is for this visit only: persisting it
+                    // would rewrite the desktop default from a screen that starts
+                    // collapsed no matter what the preference holds.
+                    if (! Viewport::isNarrow()) {
+                        auth()->user()->setPreference('reservations.show_stats', $this->showStats);
+                    }
                 }),
             CreateAction::make()
                 ->schema(ReservationForm::components()),

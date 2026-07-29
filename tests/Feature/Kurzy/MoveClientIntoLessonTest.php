@@ -36,20 +36,23 @@ class MoveClientIntoLessonTest extends TestCase
         Notification::fake();
     }
 
-    protected function series(array $courseAttributes = []): CourseSeries
+    /**
+     * @param  array<string, mixed>  $seriesAttributes
+     */
+    protected function series(array $seriesAttributes = []): CourseSeries
     {
         $course = Course::factory()->create([
             'published_at' => now(),
-            'max_substitutions' => 2,
             'early_cancel_hours' => 24,
-            ...$courseAttributes,
         ]);
 
         return CourseSeries::factory()->for($course)->create([
             'start_date' => today()->subWeeks(2)->toDateString(),
             'end_date' => today()->addWeeks(8)->toDateString(),
             'capacity' => 10,
+            'max_substitutions' => 2,
             'status' => CourseSeriesStatus::Open,
+            ...$seriesAttributes,
         ]);
     }
 

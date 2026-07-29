@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Console\Commands\CoursesImport;
+use App\Console\Commands\GroupSpecializations;
 use App\Console\Commands\VoucherImport;
 use App\Enums\Capability;
 use App\Models\Building;
@@ -61,10 +62,27 @@ class RealDataSeeder extends Seeder
         $this->pruneExternalRentalStaff();
         $this->seedOwner();
         $this->seedBuildingAndRooms();
+        $this->groupSpecializations();
         $this->importErgobodyExport();
         $this->importCoursesExport();
         $this->importVouchersExport();
         $this->importWorkBlocksExport();
+    }
+
+    /**
+     * Point each seeded specialization at the service it stands for — that
+     * mapping is what makes it a booking link on the therapist's public profile,
+     * and an unmapped entry is not shown there at all.
+     *
+     * Delegated to {@see GroupSpecializations} rather than
+     * restated here, so the name→service map stays in one place. Runs after the
+     * staff (which creates the catalogue entries) and needs the service
+     * catalogue to exist already — anything it cannot match is reported and left
+     * for the Specializace resource to map by hand.
+     */
+    protected function groupSpecializations(): void
+    {
+        $this->command?->call('specializations:group');
     }
 
     /**

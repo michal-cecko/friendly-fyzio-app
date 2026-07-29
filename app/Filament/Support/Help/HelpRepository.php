@@ -40,6 +40,15 @@ class HelpRepository
     public function __construct(protected ?string $root = null) {}
 
     /**
+     * Absolute path to the tree this repository reads. Snapshotting copies from
+     * here, so it has to be askable rather than re-derived by the caller.
+     */
+    public function root(): string
+    {
+        return $this->root ?? resource_path(self::PATH);
+    }
+
+    /**
      * @return Collection<int, HelpSection>
      */
     public function sections(): Collection
@@ -96,7 +105,7 @@ class HelpRepository
      */
     protected function sectionDirectories(): array
     {
-        $root = $this->root ?? resource_path(self::PATH);
+        $root = $this->root();
 
         if (! File::isDirectory($root)) {
             return [];

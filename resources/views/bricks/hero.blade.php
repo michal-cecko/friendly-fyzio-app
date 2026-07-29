@@ -30,9 +30,9 @@
             @endif
 
             @if($buttons)
-                <div class="flex flex-wrap gap-3">
+                <div class="flex flex-wrap gap-3 max-[450px]:flex-col">
                     @foreach($buttons as $btn)
-                        @include('bricks.partials.button', ['btn' => $btn])
+                        @include('bricks.partials.button', ['btn' => $btn, 'btnClass' => 'max-[450px]:w-full'])
                     @endforeach
                 </div>
             @endif

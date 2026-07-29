@@ -51,17 +51,22 @@ class ReservationForm
      * @param  bool  $lockClient  When true the client select is locked even on create — used
      *                            when booking from a client's own page, where the owner
      *                            record already decides who the reservation belongs to.
+     * @param  bool  $contained  Whether the groups render as cards. Full pages want them;
+     *                           modals are a card already, so there they stay flat.
      * @return array<int, Component>
      */
-    public static function components(bool $withControlTherapy = true, bool $withHeaderLinks = true, bool $lockClient = false): array
+    public static function components(bool $withControlTherapy = true, bool $withHeaderLinks = true, bool $lockClient = false, bool $contained = false): array
     {
         return [
-            // Termín + účastníci in ONE uncontained group (date/time row above the
-            // participant selects), so the modal isn't over-divided. The header holds the
-            // "Otevřít detail" links — Filament modals don't expose the window header
-            // (next to the ✕) for custom actions, so this is the closest spot.
+            // Everything that describes the appointment — kdy, kde, kdo, co — in ONE
+            // container-query grid, so it packs into 4 columns on a full page and folds
+            // to 1–2 in a modal without a second layout. The header holds the "Otevřít
+            // detail" links — Filament modals don't expose the window header (next to
+            // the ✕) for custom actions, so this is the closest spot.
             Section::make()
-                ->contained(false)
+                ->contained($contained)
+                ->gridContainer()
+                ->columns(ResponsiveColumns::DENSE)
                 ->headerActions($withHeaderLinks ? [
                     self::openRecordAction(
                         'openClient',
@@ -85,83 +90,84 @@ class ReservationForm
                     ),
                 ] : [])
                 ->schema([
-                    Grid::make(3)->schema([
-                        DatePicker::make('reservation_date')
-                            ->label('Datum')
-                            ->required()
-                            ->native(false),
-                        TimePicker::make('start_time')
-                            ->label('Od')
-                            ->seconds(false)
-                            ->required(),
-                        TimePicker::make('end_time')
-                            ->label('Do')
-                            ->seconds(false)
-                            ->required()
-                            ->after('start_time'),
-                    ]),
-                    Grid::make(ResponsiveColumns::DENSE)->schema([
-                        Select::make('client_id')
-                            ->label('Klient')
-                            ->relationship('client', 'name')
-                            ->searchable()
-                            ->preload()
-                            ->required()
-                            ->live()
-                            // Reassigning the client would make it a different reservation, so
-                            // the client is locked once the reservation exists.
-                            ->disabled(fn (string $operation): bool => $lockClient || $operation === 'edit')
-                            ->helperText(fn (string $operation): ?string => match (true) {
-                                $lockClient => 'Rezervace se založí tomuto klientovi.',
-                                $operation === 'edit' => 'Klienta nelze u existující rezervace změnit — vážou se na něj platby, doklady a e-mailová komunikace. Potřebujete-li rezervaci převést, zrušte ji a založte novou.',
-                                default => null,
-                            })
-                            ->createOptionForm(self::newClientForm())
-                            ->createOptionUsing(fn (array $data): string => self::createClient($data))
-                            ->createOptionModalHeading('Nový klient')
-                            ->createOptionAction(fn (Action $action): Action => $action
-                                ->label('Nový klient')
-                                ->modalSubmitActionLabel('Vytvořit klienta')
-                                ->modalWidth(Width::Large)),
-                        Select::make('service_id')
-                            ->label('Služba')
-                            ->relationship('service', 'name')
-                            ->searchable()
-                            ->preload()
-                            ->required()
-                            ->live(),
-                        // Staff scoped to their own work book for themselves only: the
-                        // picker offers nobody else and defaults to them.
-                        Select::make('therapist_id')
-                            ->label('Terapeut')
-                            ->relationship('therapist', modifyQueryUsing: fn (Builder $query): Builder => $query
-                                ->when(StaffScope::current()->staffProfileId, fn (Builder $scoped, string $id) => $scoped->whereKey($id)))
-                            ->getOptionLabelFromRecordUsing(fn (StaffProfile $record): ?string => $record->user?->name)
-                            ->default(fn (): ?string => StaffScope::current()->staffProfileId)
-                            ->searchable()
-                            ->preload()
-                            ->required()
-                            ->live(),
-                        Select::make('room_id')
-                            ->label('Místnost')
-                            ->relationship('room', 'name')
-                            ->searchable()
-                            ->preload()
-                            ->required(),
-                    ]),
+                    DatePicker::make('reservation_date')
+                        ->label('Datum')
+                        ->required()
+                        ->native(false),
+                    TimePicker::make('start_time')
+                        ->label('Od')
+                        ->seconds(false)
+                        ->required(),
+                    TimePicker::make('end_time')
+                        ->label('Do')
+                        ->seconds(false)
+                        ->required()
+                        ->after('start_time'),
+                    Select::make('room_id')
+                        ->label('Místnost')
+                        ->relationship('room', 'name')
+                        ->searchable()
+                        ->preload()
+                        ->required(),
+                    Select::make('client_id')
+                        ->label('Klient')
+                        ->relationship('client', 'name')
+                        ->searchable()
+                        ->preload()
+                        ->required()
+                        ->live()
+                        // Reassigning the client would make it a different reservation, so
+                        // the client is locked once the reservation exists.
+                        ->disabled(fn (string $operation): bool => $lockClient || $operation === 'edit')
+                        ->helperText(fn (string $operation): ?string => match (true) {
+                            $lockClient => 'Rezervace se založí tomuto klientovi.',
+                            $operation === 'edit' => 'Klienta nelze změnit.',
+                            default => null,
+                        })
+                        // The full reason lives in a tooltip: it is long enough that, spelled
+                        // out under the field, it would set the height of the whole row.
+                        ->hintIcon(
+                            fn (string $operation): ?Heroicon => $operation === 'edit' && ! $lockClient ? Heroicon::OutlinedInformationCircle : null,
+                            tooltip: 'Na klienta se vážou platby, doklady a e-mailová komunikace. Potřebujete-li rezervaci převést, zrušte ji a založte novou.',
+                        )
+                        ->createOptionForm(self::newClientForm())
+                        ->createOptionUsing(fn (array $data): string => self::createClient($data))
+                        ->createOptionModalHeading('Nový klient')
+                        ->createOptionAction(fn (Action $action): Action => $action
+                            ->label('Nový klient')
+                            ->modalSubmitActionLabel('Vytvořit klienta')
+                            ->modalWidth(Width::Large)),
+                    Select::make('service_id')
+                        ->label('Služba')
+                        ->relationship('service', 'name')
+                        ->searchable()
+                        ->preload()
+                        ->required()
+                        ->live(),
+                    // Staff scoped to their own work book for themselves only: the
+                    // picker offers nobody else and defaults to them.
+                    Select::make('therapist_id')
+                        ->label('Terapeut')
+                        ->relationship('therapist', modifyQueryUsing: fn (Builder $query): Builder => $query
+                            ->when(StaffScope::current()->staffProfileId, fn (Builder $scoped, string $id) => $scoped->whereKey($id)))
+                        ->getOptionLabelFromRecordUsing(fn (StaffProfile $record): ?string => $record->user?->name)
+                        ->default(fn (): ?string => StaffScope::current()->staffProfileId)
+                        ->searchable()
+                        ->preload()
+                        ->required()
+                        ->live(),
+                    // Status is never hand-edited here: new reservations default to Pending,
+                    // and confirming / unconfirming / cancelling all go through their
+                    // dedicated actions so the confirmation source (who + how) is recorded.
+                    ...($withControlTherapy ? [self::controlTherapyToggle()] : []),
                     RecordTimestamps::entries(),
                 ]),
-            // Status is never hand-edited here: new reservations default to Pending, and
-            // confirming / unconfirming / cancelling all go through their dedicated
-            // actions so the confirmation source (who + how) is always recorded.
-            Section::make('Doplňující údaje')
-                ->contained(false)
-                ->gridContainer()
-                ->columns(ResponsiveColumns::DENSE)
+            Section::make('Poznámka')
+                ->contained($contained)
+                ->collapsible($contained)
                 ->schema([
-                    ...($withControlTherapy ? [self::controlTherapyToggle()] : []),
                     RichEditor::make('notes')
-                        ->label('Poznámka')
+                        ->hiddenLabel()
                         ->mentions([StaffMentions::editorProvider()])
                         ->toolbarButtons([
                             ['bold', 'italic', 'link', 'textColor'],
