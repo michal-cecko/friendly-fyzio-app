@@ -30,6 +30,11 @@ class SubstituteTokenTest extends TestCase
     {
         parent::setUp();
 
+        // Several cases place a lesson "today, a few hours from now". Run at
+        // 22:00 UTC that lands before midnight-of-today and reads as past, so
+        // the clock is pinned to the morning.
+        $this->travelTo(today()->setTime(8, 0));
+
         Notification::fake();
     }
 
