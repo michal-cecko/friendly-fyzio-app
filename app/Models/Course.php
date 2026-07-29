@@ -26,6 +26,7 @@ class Course extends Model
         'slug',
         'description',
         'featured_image',
+        'detail_image',
         'early_cancel_hours',
         'drop_in_price',
         'published_at',
@@ -37,6 +38,7 @@ class Course extends Model
             'early_cancel_hours' => 'integer',
             'drop_in_price' => 'integer',
             'featured_image' => 'integer',
+            'detail_image' => 'integer',
             'published_at' => 'datetime',
         ];
     }
@@ -150,5 +152,23 @@ class Course extends Model
     public function permalink(): string
     {
         return url('/kurzy/'.$this->slug);
+    }
+
+    /**
+     * Media-library image id for the landscape card in the archive, falling back
+     * to the square one so a course with only one photo still shows it.
+     */
+    public function cardImage(): ?int
+    {
+        return $this->featured_image ?? $this->detail_image;
+    }
+
+    /**
+     * Media-library image id for the square detail hero, falling back to the
+     * card photo.
+     */
+    public function detailImage(): ?int
+    {
+        return $this->detail_image ?? $this->featured_image;
     }
 }

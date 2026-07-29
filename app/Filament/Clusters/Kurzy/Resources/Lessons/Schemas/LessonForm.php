@@ -137,13 +137,21 @@ class LessonForm
                                     ->visible(fn (Get $get, $livewire): bool => ! self::standalone($get, $livewire)
                                         && self::offerCourse($get, $livewire)?->drop_in_price === null)
                                     ->columnSpanFull(),
-                                MediaPicker::make('featured_image')
-                                    ->label('Fotka')
-                                    ->acceptedFileTypes(['image/*'])
-                                    ->helperText(fn (Get $get, $livewire): string => self::standalone($get, $livewire)
-                                        ? 'Zobrazuje se na kartě v archivu lekcí a v hlavičce detailu.'
-                                        : 'Zobrazuje se na kartě v archivu a v hlavičce detailu. Prázdné = použije se fotka kurzu.')
-                                    ->columnSpan(['default' => 1, '@xl' => 4]),
+                                Group::make()
+                                    ->columns(1)
+                                    ->columnSpan(['default' => 1, '@xl' => 4])
+                                    ->schema([
+                                        MediaPicker::make('featured_image')
+                                            ->label('Fotka na kartu')
+                                            ->acceptedFileTypes(['image/*'])
+                                            ->helperText(fn (Get $get, $livewire): string => 'Na šířku (cca 16:9). Zobrazuje se na kartě v archivu.'
+                                                .(self::standalone($get, $livewire) ? '' : ' Prázdné = použije se fotka kurzu.')),
+                                        MediaPicker::make('detail_image')
+                                            ->label('Fotka do detailu')
+                                            ->acceptedFileTypes(['image/*'])
+                                            ->helperText(fn (Get $get, $livewire): string => 'Čtvercová (1:1). Zobrazuje se v hlavičce detailu.'
+                                                .(self::standalone($get, $livewire) ? '' : ' Prázdné = použije se fotka kurzu.')),
+                                    ]),
                                 Group::make()
                                     ->columns(['default' => 1, '@xl' => 2])
                                     ->columnSpan(['default' => 1, '@xl' => 8])

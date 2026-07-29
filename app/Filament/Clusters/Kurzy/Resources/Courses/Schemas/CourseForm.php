@@ -28,11 +28,19 @@ class CourseForm
                     ->gridContainer()
                     ->columns(['default' => 1, '@2xl' => 3])
                     ->schema([
-                        MediaPicker::make('featured_image')
-                            ->label('Fotka')
-                            ->acceptedFileTypes(['image/*'])
-                            ->helperText('Zobrazuje se na kartě v archivu kurzů a v hlavičce detailu.')
-                            ->columnSpan(['default' => 1, '@2xl' => 1]),
+                        Group::make()
+                            ->columns(1)
+                            ->columnSpan(['default' => 1, '@2xl' => 1])
+                            ->schema([
+                                MediaPicker::make('featured_image')
+                                    ->label('Fotka na kartu')
+                                    ->acceptedFileTypes(['image/*'])
+                                    ->helperText('Na šířku (cca 16:9). Zobrazuje se na kartě v archivu kurzů. Prázdné = použije se fotka z detailu.'),
+                                MediaPicker::make('detail_image')
+                                    ->label('Fotka do detailu')
+                                    ->acceptedFileTypes(['image/*'])
+                                    ->helperText('Čtvercová (1:1). Zobrazuje se v hlavičce detailu kurzu. Prázdné = použije se fotka z karty.'),
+                            ]),
                         Group::make()
                             ->columns(2)
                             ->columnSpan(['default' => 1, '@2xl' => 2])

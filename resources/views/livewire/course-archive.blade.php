@@ -77,7 +77,7 @@
             @foreach($results as $series)
                 <x-site.offer-card
                     :url="$series->course->permalink().'?termin='.$series->getKey()"
-                    :image="Media::url($series->course->featured_image, '400')"
+                    :image="Media::url($series->course->cardImage(), '400')"
                     :image-alt="$series->course->name"
                     :category="$series->course->category?->name"
                     :state="$series->offerState()"
@@ -106,7 +106,7 @@
                 @foreach($preparing as $course)
                     <x-site.offer-card
                         :url="$course->permalink()"
-                        :image="Media::url($course->featured_image, '400')"
+                        :image="Media::url($course->cardImage(), '400')"
                         :image-alt="$course->name"
                         :category="$course->category?->name"
                         :state="\App\Enums\OfferState::Preparing"

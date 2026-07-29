@@ -6,7 +6,7 @@
     use App\Support\Media;
     use App\Support\RichText;
 
-    $image = Media::url($event->displayImage(), '1200');
+    $image = Media::url($event->displayDetailImage(), '1200');
     $description = $event->displayDescriptionHtml();
     $state = $event->offerState();
     $spotsLeft = $event->spotsLeft();
@@ -28,7 +28,7 @@
     {{-- Hero --}}
     <section class="bg-surface-alt">
         <div class="ff-container grid grid-cols-1 gap-10 py-12 lg:grid-cols-[1fr_27.5rem] lg:py-16">
-            <div class="min-h-64 overflow-hidden rounded-2xl bg-primary-light lg:min-h-[30rem]">
+            <div class="aspect-square overflow-hidden rounded-2xl bg-primary-light">
                 @if($image)
                     <img src="{{ $image }}" alt="{{ $event->displayName() }}" class="h-full w-full object-cover">
                 @endif

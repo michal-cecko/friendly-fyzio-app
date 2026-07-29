@@ -67,7 +67,7 @@
                 <x-site.offer-card
                     :soonest="$loop->first && $upcoming->onFirstPage()"
                     :url="$event->permalink()"
-                    :image="Media::url($event->displayImage(), '400')"
+                    :image="Media::url($event->displayCardImage(), '400')"
                     :image-alt="$event->displayName()"
                     :category="$fixedCategory === null ? $event->category?->name : null"
                     :state="$event->offerState()"
@@ -95,7 +95,7 @@
                 @foreach($past as $event)
                     <x-site.offer-card
                         :url="$event->permalink()"
-                        :image="Media::url($event->displayImage(), '400')"
+                        :image="Media::url($event->displayCardImage(), '400')"
                         :image-alt="$event->displayName()"
                         :category="$fixedCategory === null ? $event->category?->name : null"
                         :state="$event->offerState()"

@@ -343,6 +343,7 @@ class ActivityPresenter
         'title_after' => 'Titul za jménem',
         'created_by' => 'Vytvořil',
         'featured_image' => 'Hlavní obrázek',
+        'detail_image' => 'Fotka do detailu',
         'footer_note' => 'Poznámka v patičce',
         'vat_note' => 'Poznámka k DPH',
         'invoice_title' => 'Název pro fakturaci',

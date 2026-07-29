@@ -66,6 +66,7 @@ class Lesson extends Model
         'invoice_title',
         'description',
         'featured_image',
+        'detail_image',
         'capacity',
         'price',
         'visibility',
@@ -84,6 +85,7 @@ class Lesson extends Model
             'waitlist_promotion_mode' => WaitlistPromotionMode::class,
             'waitlist_invited_until' => 'datetime',
             'featured_image' => 'integer',
+            'detail_image' => 'integer',
             'published_at' => 'datetime',
             'released_at' => 'datetime',
         ];
@@ -387,11 +389,22 @@ class Lesson extends Model
     }
 
     /**
-     * Media-library image id for public surfaces, falling back to the course.
+     * Media-library image id for the landscape card in the archive. The lesson's
+     * own photos win over the course's; within each, the card photo wins over the
+     * square one.
      */
-    public function displayImage(): ?int
+    public function displayCardImage(): ?int
     {
-        return $this->featured_image ?? $this->offerCourse()?->featured_image;
+        return $this->featured_image ?? $this->detail_image ?? $this->offerCourse()?->cardImage();
+    }
+
+    /**
+     * Media-library image id for the square detail hero, on the same
+     * lesson-before-course rule as {@see displayCardImage()}.
+     */
+    public function displayDetailImage(): ?int
+    {
+        return $this->detail_image ?? $this->featured_image ?? $this->offerCourse()?->detailImage();
     }
 
     /**

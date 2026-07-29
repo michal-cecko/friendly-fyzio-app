@@ -23,10 +23,15 @@ class CourseInfolist
                     ->columns(2)
                     ->schema([
                         ImageEntry::make('featured_image')
-                            ->label('Fotka')
+                            ->label('Fotka na kartu')
                             ->state(fn (Course $record): ?string => Media::url($record->featured_image, '400'))
                             ->visible(fn (Course $record): bool => filled($record->featured_image))
-                            ->columnSpanFull(),
+                            ->columnSpan(1),
+                        ImageEntry::make('detail_image')
+                            ->label('Fotka do detailu')
+                            ->state(fn (Course $record): ?string => Media::url($record->detail_image, '400'))
+                            ->visible(fn (Course $record): bool => filled($record->detail_image))
+                            ->columnSpan(1),
                         TextEntry::make('name')
                             ->label('Název'),
                         TextEntry::make('slug')
