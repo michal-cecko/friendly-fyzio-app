@@ -10,8 +10,8 @@ use Illuminate\Database\Seeder;
 /**
  * Attaches the custom Mason pages from the Pencil designs: the Fyzioterapie,
  * Relaxace and Přístrojová terapie category landing pages plus their topic/service
- * marketing pages (physiotherapy: pelvic floor, pregnancy; massage: lymphatic,
- * pregnancy, baby and herbal steam; apparatus: laser, cryotherapy — all on their
+ * marketing pages (physiotherapy: pelvic floor, pregnancy; massage: classic,
+ * lymphatic, pregnancy, baby and herbal steam; apparatus: laser, cryotherapy — all on their
  * real services seeded by DemoSeeder). Rendered at /sluzby/{category}[/{service}].
  * Skips gracefully if the owning record is absent.
  */
@@ -26,6 +26,7 @@ class ServicePagesSeeder extends Seeder
         $this->pregnancyPage();
 
         $this->relaxaceCategoryPage();
+        $this->classicMassagePage();
         $this->lymphMassagePage();
         $this->pregnancyMassagePage();
         $this->babyMassagePage();
@@ -360,7 +361,7 @@ class ServicePagesSeeder extends Seeder
 
         $massageCards = [
             ['title' => 'Manuální lymfatické masáže', 'image' => $img('photo-1717500252172-b1840ea64f05', 'relaxace-card-lymfa'), 'url' => '/sluzby/relaxace/lymfaticke-masaze', 'description' => 'Speciální technika lymfatické drenáže podporující imunitu, snižující otoky a napomáhající detoxikaci organismu.'],
-            ['title' => 'Klasické masáže', 'image' => $img('photo-1596740926849-2d473dee8d60', 'relaxace-card-klasicke'), 'url' => '/rezervace', 'description' => 'Klasická masáž pro dospělé – uvolnění svalového napětí, regenerace zad, šíje a ramen, podpora správného držení těla.'],
+            ['title' => 'Klasické masáže', 'image' => $img('photo-1596740926849-2d473dee8d60', 'relaxace-card-klasicke'), 'url' => '/sluzby/relaxace/klasicka-masaz', 'description' => 'Klasická masáž pro dospělé – uvolnění svalového napětí, regenerace zad, šíje a ramen, podpora správného držení těla.'],
             ['title' => 'Těhotenské masáže', 'image' => $img('photo-1671493235081-5842463637cd', 'relaxace-card-tehotenske'), 'url' => '/sluzby/relaxace/tehotenske-masaze', 'description' => 'Jemné masážní techniky přizpůsobené pro těhotné ženy ve 2. a 3. trimestru. Úleva od bolestí zad a napětí.'],
             ['title' => 'Masáže miminek a dětí', 'image' => $img('photo-1612676244045-b3907a062c59', 'relaxace-card-miminek'), 'url' => '/sluzby/relaxace/masaze-miminek-a-deti', 'description' => 'Masáže posilující pouto mezi rodičem a dítětem. Podporují správný vývoj, zlepšují spánek a pomáhají při kolikách.'],
             ['title' => 'Bylinná napářka', 'image' => $img('photo-1539794830467-1f1755804d13', 'relaxace-card-bylinna'), 'url' => '/sluzby/relaxace/bylinna-naparka', 'description' => 'Tradiční bylinná napářka pro detoxikaci a hlubokou relaxaci. Uvolnění dýchacích cest a regenerace pokožky.'],
@@ -434,6 +435,99 @@ class ServicePagesSeeder extends Seeder
                     'cta_text' => 'Sledovat na Instagramu',
                 ]),
             ],
+        ]);
+    }
+
+    private function classicMassagePage(): void
+    {
+        $service = Service::where('slug', 'klasicka-masaz')->first();
+
+        if ($service === null) {
+            return;
+        }
+
+        $this->customPage($service, 'Klasické masáže', [
+            $this->brick('hero', [
+                'eyebrow' => 'Masáže',
+                'title' => 'Klasické masáže',
+                'features' => '<p>Klasická masáž je nejznámější a nejvyhledávanější masážní technika. Uvolní ztuhlé svaly, prokrví tkáně a pomůže vypnout tělu i hlavě. Zaměřujeme se především na záda, šíji a ramena – tedy na místa, která nejvíce trpí sedavým zaměstnáním a každodenním stresem.</p>',
+                'buttons' => [
+                    ['text' => 'Objednat se na masáž', 'url' => '/rezervace', 'icon' => 'calendar', 'style' => 'primary'],
+                    ['text' => 'Více informací', 'url' => '#jak-to-funguje', 'icon' => 'arrow-down', 'style' => 'outline'],
+                ],
+            ]),
+            $this->brick('text-list', [
+                'eyebrow' => 'Jak to funguje',
+                'title' => 'Uvolnění svalového napětí',
+                'body' => '<p>Masáž pracuje s povrchovými i hlubšími vrstvami svalů pomocí tření, hnětení a tlakových hmatů. Prokrvením tkáně se z ní rychleji odplavují zplodiny látkové výměny, přetížený sval povolí a bolest ustoupí.</p><p><strong>Intenzitu masáže vždy přizpůsobíme vašemu přání – od jemné relaxační až po důkladnou masáž zaměřenou na konkrétní bolestivé místo.</strong></p>',
+                'card_style' => 'warning',
+                'card_icon' => 'triangle-alert',
+                'card_title' => 'Kontraindikace',
+                'card_note' => 'Před objednáním se prosím ujistěte, že se na vás nevztahují následující kontraindikace. V případě nejistoty nás neváhejte kontaktovat.',
+                'items' => $this->listItems([
+                    'Horečnaté a zánětlivé stavy, infekční onemocnění',
+                    'Čerstvý úraz, nezhojená jizva nebo rána v masírované oblasti',
+                    'Kožní onemocnění a vyrážky v místě masáže',
+                    'Trombóza, záněty žil a rozsáhlé křečové žíly',
+                    'Onkologické onemocnění v průběhu akutní léčby',
+                    'Nestabilní vysoký krevní tlak a onemocnění srdce',
+                    'Těhotenství – vhodnější je těhotenská masáž',
+                ]),
+            ]),
+            $this->brick('steps', [
+                'eyebrow' => 'Jak to probíhá',
+                'title' => 'Průběh klasické masáže',
+                'subtitle' => 'Masáž trvá 60 minut včetně krátké konzultace a chvíle na vydýchání.',
+                'steps' => [
+                    ['icon' => 'clipboard-list', 'title' => 'Konzultace', 'description' => 'Krátký rozhovor o tom, co vás trápí, která místa vynechat a jak silnou masáž si přejete.'],
+                    ['icon' => 'bed', 'title' => 'Příprava', 'description' => 'Pohodlné uložení na masážním lehátku v klidném a vyhřátém prostředí.'],
+                    ['icon' => 'hand', 'title' => 'Masáž', 'description' => 'Masážní hmaty zaměřené na záda, šíji a ramena, případně na další partie podle domluvy.'],
+                    ['icon' => 'heart', 'title' => 'Doporučení', 'description' => 'Chvíle na vydýchání, pitný režim a tipy, jak si napětí udržet od těla i doma.'],
+                ],
+            ]),
+            $this->brick('feature-cards', [
+                'eyebrow' => 'Příznaky a indikace',
+                'title' => 'Komu pomůže klasická masáž?',
+                'columns' => 2,
+                'background' => 'alt',
+                'cards' => [
+                    ['icon' => 'heart-pulse', 'title' => 'Obtíže, na které zabírá', 'description' => '<ul><li>Bolesti zad a bederní páteře</li><li>Ztuhlá šíje a bolavá ramena</li><li>Napětí ze sedavého zaměstnání</li><li>Bolesti hlavy z přetížené krční páteře</li><li>Svalová únava po sportu</li></ul>'],
+                    ['icon' => 'sparkles', 'title' => 'Co vám masáž přinese', 'description' => '<ul><li>Uvolnění svalového napětí</li><li>Lepší prokrvení a regeneraci tkání</li><li>Úlevu od bolesti a ztuhlosti</li><li>Zklidnění nervového systému</li><li>Kvalitnější spánek</li></ul>'],
+                ],
+                'buttons' => [
+                    ['text' => 'Objednat se na masáž', 'url' => '/rezervace', 'icon' => 'calendar', 'style' => 'primary'],
+                ],
+            ]),
+            $this->brick('quote-banner', [
+                'text' => 'Uvolněné tělo unese mnohem víc než to, které se celý den drží v křeči.',
+                'icon' => 'heart',
+            ]),
+            $this->brick('testimonials', [
+                'eyebrow' => 'Co říkají naši klienti',
+                'title' => 'Recenze klientů',
+                'subtitle' => 'Přečtěte si, jak klasická masáž pomohla našim klientkám.',
+                'background' => 'alt',
+                'items' => [
+                    ['quote' => 'Po celém dni u počítače mě pravidelně bolela šíje. Po masáži je úleva okamžitá a vydrží mi několik dní.', 'author' => 'Tereza N.', 'role' => 'Klasická masáž'],
+                    ['quote' => 'Masáž byla důkladná přesně tam, kde bylo potřeba, a přitom příjemná. Konečně nešlo jen o hlazení.', 'author' => 'Veronika L.', 'role' => 'Klasická masáž'],
+                    ['quote' => 'Chodím pravidelně jednou měsíčně a záda mi to vždycky vrátí do formy. Klidné prostředí a milý přístup.', 'author' => 'Hana B.', 'role' => 'Klasická masáž'],
+                ],
+            ]),
+            $this->brick('pricing', [
+                'eyebrow' => 'Ceník',
+                'title' => 'Klasické masáže',
+                'subtitle' => 'Přehled cen klasické masáže.',
+                'rows' => [
+                    ['name' => 'Klasická masáž', 'note' => '60 min', 'price' => '900 Kč'],
+                ],
+            ]),
+            $this->brick('cta-banner', [
+                'title' => 'Zarezervujte si svou masáž',
+                'subtitle' => 'Vyberte si z naší nabídky masáží a dopřejte si chvíli péče o své tělo. Rezervujte online jednoduše a rychle.',
+                'buttons' => [
+                    ['text' => 'Rezervovat masáž', 'url' => '/rezervace', 'icon' => 'calendar', 'style' => 'white'],
+                ],
+            ]),
         ]);
     }
 

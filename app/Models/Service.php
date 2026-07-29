@@ -27,6 +27,7 @@ class Service extends Model implements HasPublicPage
         'category_id',
         'exam_type',
         'name',
+        'description',
         'invoice_title',
         'slug',
         'icon',

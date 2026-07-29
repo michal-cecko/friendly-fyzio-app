@@ -414,6 +414,7 @@ class PageSeeder extends Seeder
                                 'label' => 'Masáže',
                                 'heading' => 'Masáže a relaxace',
                                 'rows' => [
+                                    ['name' => 'Klasická masáž', 'note' => '60 min', 'price' => '900 Kč'],
                                     ['name' => 'Masáž obličeje, šíje a krku', 'note' => '60 min', 'price' => '1 000 Kč'],
                                     ['name' => 'Těhotenská masáž', 'note' => '60 min', 'price' => '1 000 Kč'],
                                     ['name' => 'Těhotenská masáž', 'note' => '90 min', 'price' => '1 400 Kč'],

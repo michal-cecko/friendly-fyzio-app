@@ -7,6 +7,7 @@ use App\Enums\ServiceVisibility;
 use App\Models\Page;
 use App\Models\Service;
 use App\Models\ServiceCategory;
+use App\Models\StaffProfile;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -61,6 +62,59 @@ class PublicServicePageTest extends TestCase
             ->assertSee('Vstupní vyšetření')
             ->assertSee('1 300 Kč')
             ->assertSee('90 min');
+    }
+
+    public function test_default_service_page_shows_description_therapists_and_sibling_services(): void
+    {
+        $category = ServiceCategory::factory()->create(['slug' => 'relaxace', 'name' => 'Relaxace']);
+        $service = $this->publicService($category, [
+            'slug' => 'klasicka-masaz',
+            'name' => 'Klasická masáž',
+            'description' => '<p>Uvolní ztuhlé svaly zad a šíje.</p>',
+        ]);
+        $this->publicService($category, ['slug' => 'lymfaticke-masaze', 'name' => 'Lymfatické masáže']);
+
+        $profile = StaffProfile::factory()->create(['published_at' => now(), 'slug' => 'denisa-novakova']);
+        $service->therapists()->attach($profile);
+
+        $this->get('/sluzby/relaxace/klasicka-masaz')
+            ->assertOk()
+            ->assertSee('Uvolní ztuhlé svaly zad a šíje.')
+            ->assertSee('Kdo vás ošetří')
+            ->assertSee($profile->user->full_name)
+            ->assertSee('Další služby v kategorii')
+            ->assertSee('Lymfatické masáže')
+            ->assertSee('Objednejte se online');          // CTA band
+    }
+
+    public function test_default_service_page_omits_sections_it_has_no_data_for(): void
+    {
+        $category = ServiceCategory::factory()->create(['slug' => 'relaxace']);
+        $this->publicService($category, ['slug' => 'klasicka-masaz', 'name' => 'Klasická masáž', 'description' => null]);
+
+        // No therapists assigned and no other public service in the category.
+        $this->get('/sluzby/relaxace/klasicka-masaz')
+            ->assertOk()
+            ->assertSee('Klasická masáž')
+            ->assertDontSee('Kdo vás ošetří')
+            ->assertDontSee('Další služby v kategorii');
+    }
+
+    public function test_default_service_page_does_not_list_non_public_siblings(): void
+    {
+        $category = ServiceCategory::factory()->create(['slug' => 'relaxace']);
+        $this->publicService($category, ['slug' => 'klasicka-masaz', 'name' => 'Klasická masáž']);
+        Service::factory()->create([
+            'category_id' => $category->id,
+            'slug' => 'bylinna-naparka',
+            'name' => 'Bylinná napářka',
+            'visibility' => ServiceVisibility::Hidden,
+            'published_at' => now(),
+        ]);
+
+        $this->get('/sluzby/relaxace/klasicka-masaz')
+            ->assertOk()
+            ->assertDontSee('Bylinná napářka');
     }
 
     public function test_published_custom_page_overrides_default(): void

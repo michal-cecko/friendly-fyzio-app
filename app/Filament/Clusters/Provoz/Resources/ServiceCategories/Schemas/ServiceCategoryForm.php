@@ -3,6 +3,7 @@
 namespace App\Filament\Clusters\Provoz\Resources\ServiceCategories\Schemas;
 
 use App\Enums\ServiceType;
+use App\Filament\Support\Actions\CopyPageContentAction;
 use App\Filament\Support\Schemas\DerivedSlug;
 use App\Filament\Support\Schemas\PresenceBanner;
 use App\Filament\Support\Schemas\RecordTimestamps;
@@ -79,6 +80,7 @@ class ServiceCategoryForm
                         Mason::make('content')
                             ->label('Obsah')
                             ->bricks(BrickRegistry::all())
+                            ->hintAction(CopyPageContentAction::make())
                             ->columnSpanFull(),
                     ]),
             ]);

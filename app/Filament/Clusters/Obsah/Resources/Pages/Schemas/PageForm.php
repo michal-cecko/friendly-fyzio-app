@@ -2,6 +2,7 @@
 
 namespace App\Filament\Clusters\Obsah\Resources\Pages\Schemas;
 
+use App\Filament\Support\Actions\CopyPageContentAction;
 use App\Filament\Support\Schemas\DerivedSlug;
 use App\Filament\Support\Schemas\PresenceBanner;
 use App\Mason\BrickRegistry;
@@ -41,6 +42,7 @@ class PageForm
                                 Mason::make('content')
                                     ->label('Obsah stránky')
                                     ->bricks(BrickRegistry::all())
+                                    ->hintAction(CopyPageContentAction::make())
                                     ->columnSpanFull(),
                             ]),
                         Grid::make(1)

@@ -4,18 +4,22 @@ namespace Tests\Feature\Cms;
 
 use App\Enums\BannerType;
 use App\Enums\NavigationLocation;
+use App\Enums\ServiceVisibility;
 use App\Filament\Clusters\Obsah\Resources\Banners\Pages\CreateBanner;
 use App\Filament\Clusters\Obsah\Resources\Navigations\Pages\EditNavigation;
 use App\Filament\Clusters\Obsah\Resources\Pages\Pages\CreatePage;
 use App\Filament\Clusters\Obsah\Resources\Pages\Pages\EditPage;
 use App\Filament\Clusters\Obsah\Resources\Pages\Pages\ListPages;
 use App\Filament\Clusters\Provoz\Resources\ServiceCategories\Pages\EditServiceCategory;
+use App\Filament\Clusters\Provoz\Resources\Services\Pages\EditService;
 use App\Models\Banner;
 use App\Models\Navigation;
 use App\Models\NavigationItem;
 use App\Models\Page;
+use App\Models\Service;
 use App\Models\ServiceCategory;
 use App\Models\User;
+use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -99,6 +103,134 @@ class CmsResourcesTest extends TestCase
 
         // Renders cleanly with the MorphToSelect owner picker bound to an attached page.
         Livewire::test(EditPage::class, ['record' => $page->getKey()])->assertOk();
+    }
+
+    public function test_admin_can_duplicate_a_page_as_a_draft(): void
+    {
+        $category = ServiceCategory::factory()->create();
+        $source = Page::factory()->for($category, 'pageable')->system('cenik')->create([
+            'title' => 'Ceník',
+            'slug' => 'cenik',
+            'published_at' => now(),
+            'content' => [
+                ['type' => 'masonBrick', 'attrs' => ['id' => 'hero', 'config' => ['title' => 'Ceník']]],
+            ],
+        ]);
+
+        $this->actingAs($this->admin());
+
+        Livewire::test(ListPages::class)
+            ->callAction(TestAction::make('replicate')->table($source), [
+                'title' => 'Ceník masáží',
+                'slug' => 'cenik-masazi',
+            ])
+            ->assertHasNoActionErrors();
+
+        $copy = Page::where('slug', 'cenik-masazi')->first();
+
+        $this->assertNotNull($copy);
+        $this->assertSame($source->content, $copy->content);
+        // A copy is never the system page, never owns the original's public URL,
+        // and always starts as a draft.
+        $this->assertNull($copy->system_key);
+        $this->assertFalse($copy->is_system);
+        $this->assertNull($copy->pageable_type);
+        $this->assertNull($copy->pageable_id);
+        $this->assertNull($copy->published_at);
+    }
+
+    public function test_duplicate_rejects_a_slug_that_is_already_taken(): void
+    {
+        $source = Page::factory()->create(['slug' => 'o-nas']);
+        Page::factory()->create(['slug' => 'kontakt']);
+
+        $this->actingAs($this->admin());
+
+        Livewire::test(ListPages::class)
+            ->callAction(TestAction::make('replicate')->table($source), [
+                'title' => 'Kontakt',
+                'slug' => 'kontakt',
+            ])
+            ->assertHasActionErrors(['slug']);
+
+        $this->assertSame(2, Page::count());
+    }
+
+    public function test_admin_can_copy_brick_content_from_another_page(): void
+    {
+        $source = Page::factory()->create([
+            'title' => 'Lymfatické masáže',
+            'slug' => 'lymfaticke-masaze',
+            'content' => [
+                ['type' => 'masonBrick', 'attrs' => ['id' => 'hero', 'config' => ['title' => 'Lymfatické masáže']]],
+            ],
+        ]);
+        $target = Page::factory()->create(['slug' => 'klasicke-masaze', 'content' => []]);
+
+        $this->actingAs($this->admin());
+
+        Livewire::test(EditPage::class, ['record' => $target->getKey()])
+            ->callAction(TestAction::make('copyPageContent')->schemaComponent('content'), [
+                'source_page_id' => $source->getKey(),
+                'mode' => 'replace',
+            ])
+            ->assertHasNoActionErrors()
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $this->assertSame($source->content, $target->refresh()->content);
+        // The source is only read from, never touched.
+        $this->assertSame('Lymfatické masáže', $source->refresh()->title);
+    }
+
+    public function test_copying_content_can_append_instead_of_replacing(): void
+    {
+        $sourceBrick = ['type' => 'masonBrick', 'attrs' => ['id' => 'cta-banner', 'config' => ['title' => 'Objednejte se']]];
+        $ownBrick = ['type' => 'masonBrick', 'attrs' => ['id' => 'hero', 'config' => ['title' => 'Klasické masáže']]];
+
+        $source = Page::factory()->create(['slug' => 'lymfaticke-masaze', 'content' => [$sourceBrick]]);
+        $target = Page::factory()->create(['slug' => 'klasicke-masaze', 'content' => [$ownBrick]]);
+
+        $this->actingAs($this->admin());
+
+        Livewire::test(EditPage::class, ['record' => $target->getKey()])
+            ->callAction(TestAction::make('copyPageContent')->schemaComponent('content'), [
+                'source_page_id' => $source->getKey(),
+                'mode' => 'append',
+            ])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $this->assertSame([$ownBrick, $sourceBrick], $target->refresh()->content);
+    }
+
+    public function test_service_custom_page_can_be_seeded_from_another_service_page(): void
+    {
+        $category = ServiceCategory::factory()->create(['slug' => 'relaxace']);
+        $lymph = Service::factory()->create(['category_id' => $category->id, 'slug' => 'lymfaticke-masaze']);
+        $classic = Service::factory()->create([
+            'category_id' => $category->id,
+            'slug' => 'klasicka-masaz',
+            'visibility' => ServiceVisibility::Public,
+            'published_at' => now(),
+        ]);
+
+        $brick = ['type' => 'masonBrick', 'attrs' => ['id' => 'hero', 'config' => ['title' => 'Masáže']]];
+        Page::factory()->for($lymph, 'pageable')->create(['slug' => 'lymfaticke-masaze-vlastni-stranka', 'content' => [$brick]]);
+
+        $this->actingAs($this->admin());
+
+        // The Mason editor sits inside the customPage relationship section, so this
+        // also proves the action writes to the nested state path.
+        Livewire::test(EditService::class, ['record' => $classic->getKey()])
+            ->callAction(TestAction::make('copyPageContent')->schemaComponent('customPage.content'), [
+                'source_page_id' => $lymph->customPage->getKey(),
+                'mode' => 'replace',
+            ])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $this->assertSame([$brick], $classic->refresh()->customPage?->content);
     }
 
     public function test_admin_can_save_category_public_page_fields(): void

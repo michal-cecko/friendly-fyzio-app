@@ -23,6 +23,7 @@ class RelaxacePagesSeederTest extends TestCase
         $category = ServiceCategory::factory()->create(['slug' => 'relaxace', 'name' => 'Relaxace']);
 
         $services = [
+            ['slug' => 'klasicka-masaz', 'name' => 'Klasická masáž', 'visibility' => ServiceVisibility::Public],
             ['slug' => 'lymfaticke-masaze', 'name' => 'Lymfatické masáže', 'visibility' => ServiceVisibility::Public],
             ['slug' => 'tehotenske-masaze', 'name' => 'Těhotenské masáže', 'visibility' => ServiceVisibility::Public],
             ['slug' => 'masaze-miminek-a-deti', 'name' => 'Masáže miminek a dětí', 'visibility' => ServiceVisibility::Public],
@@ -52,7 +53,22 @@ class RelaxacePagesSeederTest extends TestCase
             ->assertSee('Manuální lymfatické masáže')
             ->assertSee('Masáže miminek a dětí')
             ->assertSee('Bylinná napářka')
-            ->assertSee('Dopřejte si masáž či relaxační rituál');
+            ->assertSee('Dopřejte si masáž či relaxační rituál')
+            // The classic massage card now leads to its own page, not straight to booking.
+            ->assertSee('/sluzby/relaxace/klasicka-masaz', false);
+    }
+
+    public function test_classic_massage_page_renders(): void
+    {
+        $this->seedRelaxace();
+
+        $this->get('/sluzby/relaxace/klasicka-masaz')
+            ->assertOk()
+            ->assertSee('Klasické masáže')
+            ->assertSee('Uvolnění svalového napětí')
+            ->assertSee('Kontraindikace')                        // text-list warning card
+            ->assertSee('Komu pomůže klasická masáž?')           // feature-cards
+            ->assertSee('900 Kč');                               // pricing
     }
 
     public function test_lymphatic_massage_page_renders_new_brick_and_pricing(): void

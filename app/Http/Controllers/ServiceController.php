@@ -8,8 +8,10 @@ use App\Filament\Clusters\Provoz\Resources\Services\ServiceResource;
 use App\Mason\BrickRegistry;
 use App\Models\Service;
 use App\Models\ServiceCategory;
+use App\Support\RichText;
 use Awcodes\Mason\Support\MasonRenderer;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Str;
 
 class ServiceController extends Controller
 {
@@ -69,7 +71,7 @@ class ServiceController extends Controller
             'breadcrumbs' => $breadcrumbs,
             'seo' => [
                 'title' => $service->name,
-                'description' => null,
+                'description' => Str::limit(RichText::plainText($service->description), 155) ?: null,
                 'image' => null,
             ],
         ]);

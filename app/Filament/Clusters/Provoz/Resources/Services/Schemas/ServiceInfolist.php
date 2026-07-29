@@ -54,6 +54,11 @@ class ServiceInfolist
                                             ->badge()
                                             ->placeholder('—')
                                             ->columnSpanFull(),
+                                        TextEntry::make('description')
+                                            ->label('Popis')
+                                            ->html()
+                                            ->placeholder('—')
+                                            ->columnSpanFull(),
                                         RecordTimestamps::entries(),
                                     ]),
                                 Section::make('Místnosti a terapeuti')

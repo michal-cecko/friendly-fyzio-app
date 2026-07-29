@@ -5,6 +5,7 @@ namespace App\Filament\Clusters\Provoz\Resources\Services\Schemas;
 use App\Enums\ExamType;
 use App\Enums\ServiceVisibility;
 use App\Filament\Clusters\Provoz\Resources\Services\Pages\EditService;
+use App\Filament\Support\Actions\CopyPageContentAction;
 use App\Filament\Support\Schemas\BreakBlocks;
 use App\Filament\Support\Schemas\DerivedSlug;
 use App\Filament\Support\Schemas\PresenceBanner;
@@ -20,6 +21,7 @@ use Filament\Actions\Action;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Repeater\TableColumn;
+use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -89,6 +91,13 @@ class ServiceForm
                             ->maxLength(255)
                             ->helperText('Použije se na fakturách a v e-mailech místo běžného názvu.')
                             ->columnSpan(['default' => 1, 'lg' => 4]),
+                        RichEditor::make('description')
+                            ->label('Popis')
+                            ->toolbarButtons([
+                                ['bold', 'italic', 'link', 'bulletList', 'orderedList'],
+                            ])
+                            ->helperText('Text pro výchozí stránku služby. Služby s vlastní stránkou ho nepoužijí.')
+                            ->columnSpanFull(),
                     ]),
                 Grid::make()
                     ->columnSpanFull()
@@ -237,6 +246,7 @@ class ServiceForm
                         Mason::make('content')
                             ->label('Obsah')
                             ->bricks(BrickRegistry::all())
+                            ->hintAction(CopyPageContentAction::make())
                             ->columnSpanFull(),
                     ]),
             ]);

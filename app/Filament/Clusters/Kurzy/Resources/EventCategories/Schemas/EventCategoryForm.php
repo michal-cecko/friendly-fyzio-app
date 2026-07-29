@@ -2,6 +2,7 @@
 
 namespace App\Filament\Clusters\Kurzy\Resources\EventCategories\Schemas;
 
+use App\Filament\Support\Actions\CopyPageContentAction;
 use App\Filament\Support\Schemas\DerivedSlug;
 use App\Filament\Support\Schemas\PresenceBanner;
 use App\Mason\BrickRegistry;
@@ -84,6 +85,7 @@ class EventCategoryForm
                         Mason::make('content')
                             ->label('Obsah')
                             ->bricks(BrickRegistry::all())
+                            ->hintAction(CopyPageContentAction::make())
                             ->columnSpanFull(),
                     ]),
             ]);

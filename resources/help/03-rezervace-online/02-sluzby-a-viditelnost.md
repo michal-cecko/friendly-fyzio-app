@@ -1,7 +1,7 @@
 ---
 title: Služby a jejich viditelnost
 icon: heroicon-o-eye
-keywords: [služba, viditelnost, veřejná, skrytá, pro klienty, vstupní, kontrolní, cena, délka]
+keywords: [služba, viditelnost, veřejná, skrytá, pro klienty, vstupní, kontrolní, cena, délka, popis, stránka služby]
 ---
 
 Služba určuje, co se dělá, jak dlouho to trvá a kolik to stojí. Zároveň rozhoduje, co uvidí klient na webu.
@@ -33,3 +33,11 @@ Přiřazení má vliv i na plánování: do nabídky termínů konkrétní terap
 Délka je v minutách a měla by odpovídat skutečnosti včetně převlékání. Cena se přebírá do plateb a faktur; u konkrétní rezervace se dá přepsat.
 
 > **Změna délky služby přepočítá nabídku, ne existující rezervace.** Už zapsané termíny zůstanou tak, jak jsou.
+
+## Popis a stránka služby
+
+Každá služba má na webu vlastní stránku. Do pole **Popis** v základních údajích napište pár vět o tom, komu je služba určená a co obnáší — text se ukáže hned pod názvem. Formátovat lze tučně, kurzívou, odkazem a odrážkami.
+
+Kromě popisu se na stránce samy objeví délka, cena, terapeuti, kteří službu dělají, a ostatní služby ze stejné kategorie. Co nevyplníte, se prostě nezobrazí.
+
+Když stránce nestačí tahle podoba, sestavte si ji celou z bloků v sekci **Vlastní stránka** dole ve formuláři služby. Vlastní stránka výchozí podobu úplně nahradí a pole Popis se pak nikde nepoužije.
