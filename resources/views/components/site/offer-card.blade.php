@@ -108,7 +108,7 @@
             @endif
 
             <div class="flex items-center justify-between gap-3">
-                <div class="flex min-w-0 flex-col">
+                <div class="flex min-w-0 flex-col gap-1">
                     @if($date)
                         <span class="inline-flex items-center gap-1.5 text-sm text-neutral-600">
                             <x-lucide name="calendar" class="h-4 w-4 shrink-0 text-primary" />

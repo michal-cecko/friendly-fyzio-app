@@ -47,6 +47,23 @@ enum DayOfWeek: string implements HasLabel
     }
 
     /**
+     * The two-letter abbreviation — "út", "čt". Used where a weekday has to fit
+     * next to a time on one cramped line ("út 15:00, čt 15:00").
+     */
+    public function abbreviation(): string
+    {
+        return match ($this) {
+            self::Monday => 'po',
+            self::Tuesday => 'út',
+            self::Wednesday => 'st',
+            self::Thursday => 'čt',
+            self::Friday => 'pá',
+            self::Saturday => 'so',
+            self::Sunday => 'ne',
+        };
+    }
+
+    /**
      * Position in the week, Monday = 0 — the sort order for a série's rozvrh.
      */
     public function order(): int

@@ -143,10 +143,9 @@ class CourseSeriesResourceTest extends TestCase
         Livewire::test(EditCourseSeries::class, ['record' => $record->getKey()])
             ->fillForm([
                 'schedule' => [
-                    ['day' => DayOfWeek::Tuesday->value, 'start_time' => '09:30', 'end_time' => '10:30'],
-                    ['day' => DayOfWeek::Thursday->value, 'start_time' => '18:00', 'end_time' => '19:00'],
+                    ['day' => DayOfWeek::Tuesday->value, 'start_time' => '09:30', 'end_time' => '10:30', 'room_id' => $room->getKey()],
+                    ['day' => DayOfWeek::Thursday->value, 'start_time' => '18:00', 'end_time' => '19:00', 'room_id' => $room->getKey()],
                 ],
-                'room_id' => $room->getKey(),
             ])
             ->call('save')
             ->assertHasNoFormErrors();
@@ -154,10 +153,9 @@ class CourseSeriesResourceTest extends TestCase
         $record->refresh();
 
         $this->assertSame([
-            ['day' => DayOfWeek::Tuesday->value, 'start_time' => '09:30', 'end_time' => '10:30'],
-            ['day' => DayOfWeek::Thursday->value, 'start_time' => '18:00', 'end_time' => '19:00'],
+            ['day' => DayOfWeek::Tuesday->value, 'start_time' => '09:30', 'end_time' => '10:30', 'room_id' => $room->getKey()],
+            ['day' => DayOfWeek::Thursday->value, 'start_time' => '18:00', 'end_time' => '19:00', 'room_id' => $room->getKey()],
         ], $record->schedule);
-        $this->assertSame($room->getKey(), $record->room_id);
         $this->assertTrue($record->hasLessonSchedule());
         $this->assertSame(
             'Úterý 09:30–10:30, čtvrtek 18:00–19:00 · '.$room->name,
@@ -191,9 +189,8 @@ class CourseSeriesResourceTest extends TestCase
         Livewire::test(EditCourseSeries::class, ['record' => $record->getKey()])
             ->fillForm([
                 'schedule' => [
-                    ['day' => DayOfWeek::Monday->value, 'start_time' => '18:00', 'end_time' => '17:00'],
+                    ['day' => DayOfWeek::Monday->value, 'start_time' => '18:00', 'end_time' => '17:00', 'room_id' => Room::factory()->create()->getKey()],
                 ],
-                'room_id' => Room::factory()->create()->getKey(),
             ])
             ->call('save')
             ->assertHasFormErrors(['schedule.0.end_time']);

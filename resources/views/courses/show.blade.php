@@ -58,12 +58,12 @@
                             <x-lucide name="calendar" class="h-4.5 w-4.5 shrink-0 text-primary" />
                             {{ EnrollmentEmailContext::seriesPeriod($series) }}
                         </li>
-                        @if($series->scheduleSummary())
+                        @if($series->shortScheduleSummary())
                             {{-- Kdy se série schází — the single most asked-about detail,
                                  so it sits with the period instead of only in the term list. --}}
                             <li class="flex items-center gap-3 font-semibold">
                                 <x-lucide name="clock-3" class="h-4.5 w-4.5 shrink-0 text-primary" />
-                                {{ $series->scheduleSummary() }}
+                                {{ $series->shortScheduleSummary() }}
                             </li>
                         @endif
                         @if($seriesLessons->isNotEmpty() && $seriesLessons->first()->room)
@@ -124,9 +124,11 @@
     <nav class="border-b border-line bg-white">
         <div class="ff-container flex gap-8 overflow-x-auto text-sm font-medium text-neutral-500">
             <a href="#o-kurzu" class="whitespace-nowrap border-b-2 border-primary py-4 font-semibold text-neutral-900">O kurzu</a>
+            {{-- Termíny lekcí — section hidden for now, so its tab goes with it.
             @if($seriesLessons->isNotEmpty())
                 <a href="#terminy" class="whitespace-nowrap border-b-2 border-transparent py-4 transition hover:text-primary">Termíny lekcí</a>
             @endif
+            --}}
             <a href="#prihlaseni" class="whitespace-nowrap border-b-2 border-transparent py-4 transition hover:text-primary">Přihlášení</a>
             @if($reviews->isNotEmpty())
                 <a href="#recenze" class="whitespace-nowrap border-b-2 border-transparent py-4 transition hover:text-primary">Recenze</a>
@@ -197,7 +199,7 @@
         </div>
     </section>
 
-    {{-- Lesson schedule --}}
+    {{-- Lesson schedule — hidden for now, kept here so it can be switched back on.
     @if($seriesLessons->isNotEmpty())
         <section id="terminy" class="bg-surface-alt py-14 lg:py-20">
             <div class="ff-container flex flex-col gap-8">
@@ -226,6 +228,7 @@
             </div>
         </section>
     @endif
+    --}}
 
     {{-- Sign-up --}}
     <section id="prihlaseni" class="bg-white py-14 lg:py-20">

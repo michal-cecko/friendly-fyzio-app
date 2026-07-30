@@ -27,13 +27,17 @@ class ScheduleFromLessons
     public function forSeries(CourseSeries $series): SeriesSchedule
     {
         return $this->fromRows(
-            $series->lessons()->get(['lesson_date', 'start_time', 'end_time'])
+            $series->lessons()->get(['lesson_date', 'start_time', 'end_time', 'room_id'])
         );
     }
 
     /**
+     * Slots are grouped on the room-free {@see ScheduleSlot::key()}, so the first
+     * lesson of a recurring slot decides its room — a session someone moved
+     * elsewhere once does not rewrite where the série usually meets.
+     *
      * @param  iterable<int, object|array<string, mixed>>  $rows  anything carrying
-     *                                                            lesson_date, start_time and end_time — models or raw DB rows
+     *                                                            lesson_date, start_time, end_time and room_id — models or raw DB rows
      */
     public function fromRows(iterable $rows): SeriesSchedule
     {
@@ -70,11 +74,13 @@ class ScheduleFromLessons
 
         $start = $value('start_time');
         $end = $value('end_time');
+        $room = $value('room_id');
 
         return ScheduleSlot::fromArray([
             'day' => DayOfWeek::fromCarbon(CarbonImmutable::parse($date))->value,
             'start_time' => is_string($start) ? $start : null,
             'end_time' => is_string($end) ? $end : null,
+            'room_id' => is_string($room) ? $room : null,
         ]);
     }
 }

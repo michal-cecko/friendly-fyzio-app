@@ -67,4 +67,37 @@ class ScheduleFromLessonsTest extends TestCase
     {
         $this->assertTrue((new ScheduleFromLessons)->fromRows([])->isEmpty());
     }
+
+    /**
+     * The rozvrh carries the room too, so a série backfilled out of its lessons
+     * comes out ready to generate the ones it is still missing.
+     */
+    public function test_each_slot_takes_the_room_its_lessons_meet_in(): void
+    {
+        $schedule = (new ScheduleFromLessons)->fromRows([
+            ['lesson_date' => '2026-08-03', 'start_time' => '17:00:00', 'end_time' => '18:00:00', 'room_id' => 'velka'],
+            ['lesson_date' => '2026-08-05', 'start_time' => '09:00:00', 'end_time' => '10:00:00', 'room_id' => 'mala'],
+            ['lesson_date' => '2026-08-10', 'start_time' => '17:00:00', 'end_time' => '18:00:00', 'room_id' => 'velka'],
+            // The Wednesday group moved rooms once — the first occurrence still
+            // decides where the série usually meets.
+            ['lesson_date' => '2026-08-12', 'start_time' => '09:00:00', 'end_time' => '10:00:00', 'room_id' => 'velka'],
+        ]);
+
+        $this->assertSame([
+            ['day' => 'monday', 'start_time' => '17:00', 'end_time' => '18:00', 'room_id' => 'velka'],
+            ['day' => 'wednesday', 'start_time' => '09:00', 'end_time' => '10:00', 'room_id' => 'mala'],
+        ], $schedule->toArray());
+        $this->assertTrue($schedule->everySlotHasRoom());
+    }
+
+    public function test_lessons_without_a_room_still_yield_a_schedule(): void
+    {
+        $schedule = (new ScheduleFromLessons)->fromRows([
+            ['lesson_date' => '2026-08-04', 'start_time' => '17:00:00', 'end_time' => '18:00:00'],
+            ['lesson_date' => '2026-08-11', 'start_time' => '17:00:00', 'end_time' => '18:00:00'],
+        ]);
+
+        $this->assertSame('úterý 17:00–18:00', $schedule->label());
+        $this->assertFalse($schedule->everySlotHasRoom());
+    }
 }

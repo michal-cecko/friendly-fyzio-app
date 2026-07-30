@@ -44,10 +44,12 @@
                                 <p class="text-xs font-medium text-primary">{{ $specs }}</p>
                             @endif
                             @if($clickable)
-                                <span class="mt-auto inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 font-heading text-[13px] font-semibold text-white transition group-hover:bg-primary-dark">
-                                    Shlédnout profil
-                                    {!! \App\Support\Icon::render('arrow-right', 'h-4 w-4') !!}
-                                </span>
+                                <div class="mt-auto pt-4">
+                                    <span class="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 font-heading text-[13px] font-semibold text-white transition group-hover:bg-primary-dark">
+                                        Shlédnout profil
+                                        {!! \App\Support\Icon::render('arrow-right', 'h-4 w-4') !!}
+                                    </span>
+                                </div>
                             @endif
                         </div>
                     @if($clickable)

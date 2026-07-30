@@ -8,6 +8,7 @@ use App\Enums\DayOfWeek;
 use App\Enums\WaitlistPromotionMode;
 use App\Filament\Support\Schemas\PresenceBanner;
 use App\Models\Course;
+use App\Models\Room;
 use App\Models\User;
 use App\Support\Lessons\ScheduleSlot;
 use Filament\Forms\Components\DatePicker;
@@ -170,8 +171,8 @@ class CourseSeriesForm
                                 Repeater::make('schedule')
                                     ->label('Dny a časy konání')
                                     ->addActionLabel('Přidat další den')
-                                    ->helperText('Jeden řádek = jeden termín v týdnu. Série se může scházet vícekrát týdně, klidně pokaždé v jiný čas.')
-                                    ->columns(['default' => 1, '@2xl' => 3])
+                                    ->helperText('Jeden řádek = jeden termín v týdnu. Série se může scházet vícekrát týdně, klidně pokaždé v jiný čas a v jiné místnosti. Do místnosti z řádku se lekce naplánují; u jednotlivé lekce se pak dá změnit.')
+                                    ->columns(['default' => 1, '@2xl' => 2, '@4xl' => 6])
                                     ->itemLabel(fn (array $state): ?string => ScheduleSlot::fromArray($state)?->label())
                                     ->defaultItems(0)
                                     ->reorderable(false)
@@ -184,28 +185,34 @@ class CourseSeriesForm
                                             ->label('Den')
                                             ->options(DayOfWeek::class)
                                             ->native(false)
-                                            ->required(),
+                                            ->required()
+                                            ->columnSpan(['default' => 1, '@4xl' => 2]),
                                         TimePicker::make('start_time')
                                             ->label('Od')
                                             ->native(false)
                                             ->seconds(false)
-                                            ->required(),
+                                            ->required()
+                                            ->columnSpan(1),
                                         TimePicker::make('end_time')
                                             ->label('Do')
                                             ->native(false)
                                             ->seconds(false)
                                             ->required()
-                                            ->after('start_time'),
+                                            ->after('start_time')
+                                            ->columnSpan(1),
+                                        // The repeater writes the JSON column rather than a
+                                        // relationship, so the room is a plain options select.
+                                        Select::make('room_id')
+                                            ->label('Místnost')
+                                            ->options(fn (): array => Room::query()
+                                                ->orderBy('name')
+                                                ->pluck('name', 'id')
+                                                ->all())
+                                            ->searchable()
+                                            ->native(false)
+                                            ->columnSpan(['default' => 1, '@4xl' => 2]),
                                     ])
-                                    ->columnSpan(['default' => 1, '@xl' => 12, '@3xl' => 9]),
-                                Select::make('room_id')
-                                    ->label('Místnost')
-                                    ->relationship('room', 'name')
-                                    ->searchable()
-                                    ->preload()
-                                    ->native(false)
-                                    ->helperText('Do které místnosti se lekce naplánují. U jednotlivé lekce se pak dá změnit.')
-                                    ->columnSpan(['default' => 1, '@xl' => 6, '@3xl' => 3]),
+                                    ->columnSpanFull(),
                             ]),
                     ]),
             ]);

@@ -14,7 +14,7 @@ use PHPUnit\Framework\TestCase;
 class SeriesScheduleTest extends TestCase
 {
     /**
-     * @param  array<int, array{day: DayOfWeek, start: string, end: string}>  $rows
+     * @param  array<int, array{day: DayOfWeek, start: string, end: string, room?: string}>  $rows
      */
     protected function schedule(array $rows): SeriesSchedule
     {
@@ -22,6 +22,7 @@ class SeriesScheduleTest extends TestCase
             'day' => $row['day']->value,
             'start_time' => $row['start'],
             'end_time' => $row['end'],
+            'room_id' => $row['room'] ?? null,
         ], $rows));
     }
 
@@ -32,7 +33,7 @@ class SeriesScheduleTest extends TestCase
         ]);
 
         $this->assertSame('úterý 17:30–18:30', $schedule->label());
-        $this->assertSame('úterý 17:30', $schedule->shortLabel());
+        $this->assertSame('út 17:30', $schedule->shortLabel());
     }
 
     public function test_days_sharing_a_time_are_joined_into_one_phrase(): void
@@ -44,7 +45,9 @@ class SeriesScheduleTest extends TestCase
 
         // Sorted pondělí → neděle, whatever order they were typed in.
         $this->assertSame('úterý a čtvrtek 17:30–18:30', $schedule->label());
-        $this->assertSame('úterý a čtvrtek 17:30', $schedule->shortLabel());
+
+        // The short label never groups: the card lists every slot on its own.
+        $this->assertSame('út 17:30, čt 17:30', $schedule->shortLabel());
     }
 
     public function test_three_days_sharing_a_time_use_commas_and_a_final_a(): void
@@ -66,6 +69,7 @@ class SeriesScheduleTest extends TestCase
         ]);
 
         $this->assertSame('středa 09:00–10:00, čtvrtek 10:30–11:30', $schedule->label());
+        $this->assertSame('st 09:00, čt 10:30', $schedule->shortLabel());
     }
 
     public function test_the_same_day_twice_lists_both_times(): void
@@ -100,14 +104,86 @@ class SeriesScheduleTest extends TestCase
     public function test_duplicate_slots_collapse(): void
     {
         $schedule = SeriesSchedule::fromSlots([
-            new ScheduleSlot(DayOfWeek::Tuesday, '17:30', '18:30'),
-            new ScheduleSlot(DayOfWeek::Tuesday, '17:30', '18:30'),
+            new ScheduleSlot(DayOfWeek::Tuesday, '17:30', '18:30', 'room-a'),
+            // A série cannot be in two rooms at once, so this is the same slot and
+            // the first one's room wins.
+            new ScheduleSlot(DayOfWeek::Tuesday, '17:30', '18:30', 'room-b'),
         ]);
 
         $this->assertCount(1, $schedule->slots());
         $this->assertSame([
-            ['day' => 'tuesday', 'start_time' => '17:30', 'end_time' => '18:30'],
+            ['day' => 'tuesday', 'start_time' => '17:30', 'end_time' => '18:30', 'room_id' => 'room-a'],
         ], $schedule->toArray());
+    }
+
+    /**
+     * Staff read the rozvrh with the room in it, and the room may differ per day —
+     * that is the whole point of it living on the slot.
+     */
+    public function test_days_sharing_a_time_and_a_room_are_joined_into_one_phrase(): void
+    {
+        $schedule = $this->schedule([
+            ['day' => DayOfWeek::Monday, 'start' => '17:00', 'end' => '18:00', 'room' => 'velka'],
+            ['day' => DayOfWeek::Wednesday, 'start' => '17:00', 'end' => '18:00', 'room' => 'velka'],
+        ]);
+
+        $this->assertSame(
+            'pondělí a středa 17:00–18:00 · Velká tělocvična',
+            $schedule->labelWithRooms(['velka' => 'Velká tělocvična']),
+        );
+
+        // Clients get the same rozvrh without the room.
+        $this->assertSame('pondělí a středa 17:00–18:00', $schedule->label());
+    }
+
+    public function test_days_in_different_rooms_stay_separate(): void
+    {
+        $schedule = $this->schedule([
+            ['day' => DayOfWeek::Monday, 'start' => '17:00', 'end' => '18:00', 'room' => 'velka'],
+            ['day' => DayOfWeek::Wednesday, 'start' => '17:00', 'end' => '18:00', 'room' => 'mala'],
+        ]);
+
+        $this->assertSame(
+            'pondělí 17:00–18:00 · Velká tělocvična, středa 17:00–18:00 · Malá tělocvična',
+            $schedule->labelWithRooms(['velka' => 'Velká tělocvična', 'mala' => 'Malá tělocvična']),
+        );
+    }
+
+    public function test_a_slot_whose_room_is_unknown_reads_as_the_plain_label(): void
+    {
+        $schedule = $this->schedule([
+            ['day' => DayOfWeek::Monday, 'start' => '17:00', 'end' => '18:00'],
+            // Filled in, but the room has since been deleted.
+            ['day' => DayOfWeek::Wednesday, 'start' => '09:00', 'end' => '10:00', 'room' => 'gone'],
+        ]);
+
+        $this->assertSame('pondělí 17:00–18:00, středa 09:00–10:00', $schedule->labelWithRooms([]));
+        $this->assertNull(SeriesSchedule::fromArray([])->labelWithRooms([]));
+    }
+
+    /**
+     * A lesson cannot be saved without a room, so generation waits until every
+     * slot names one — while the rozvrh itself still holds together without.
+     */
+    public function test_a_slot_without_a_room_is_kept_but_marks_the_schedule_incomplete(): void
+    {
+        $incomplete = $this->schedule([
+            ['day' => DayOfWeek::Monday, 'start' => '17:00', 'end' => '18:00', 'room' => 'velka'],
+            ['day' => DayOfWeek::Wednesday, 'start' => '17:00', 'end' => '18:00'],
+        ]);
+
+        $this->assertCount(2, $incomplete->slots());
+        $this->assertFalse($incomplete->everySlotHasRoom());
+        $this->assertSame(['velka'], $incomplete->roomIds());
+
+        $complete = $this->schedule([
+            ['day' => DayOfWeek::Monday, 'start' => '17:00', 'end' => '18:00', 'room' => 'velka'],
+            ['day' => DayOfWeek::Wednesday, 'start' => '17:00', 'end' => '18:00', 'room' => 'velka'],
+        ]);
+
+        $this->assertTrue($complete->everySlotHasRoom());
+        // One room named twice is one room to look up.
+        $this->assertSame(['velka'], $complete->roomIds());
     }
 
     public function test_stored_seconds_are_trimmed_to_hours_and_minutes(): void

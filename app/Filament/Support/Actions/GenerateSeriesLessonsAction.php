@@ -108,7 +108,7 @@ class GenerateSeriesLessonsAction extends Action
     protected function describe(?CourseSeries $series): string
     {
         if ($series === null || ! $series->hasLessonSchedule()) {
-            return 'Série zatím nemá rozvrh. Doplňte dny a časy konání a místnost v jejím nastavení na záložce Rozvrh.';
+            return 'Série zatím nemá rozvrh. Doplňte v jejím nastavení na záložce Rozvrh dny a časy konání — a u každého termínu i místnost.';
         }
 
         $generator = app(LessonScheduleGenerator::class);
@@ -145,7 +145,7 @@ class GenerateSeriesLessonsAction extends Action
             'Má-li série v jeden den <strong>dva různé časy</strong> (ranní a večerní skupina), vygenerují se oba — u takového dne se hlídá i čas.',
             '<strong>Smazané lekce se neobnovují.</strong> Když jste lekci zrušili (třeba kvůli svátku), zůstane zrušená i po dalším spuštění.',
             'Spouštět to jde <strong>opakovaně</strong> — pokaždé se doplní jen to, co chybí.',
-            'Vygenerované lekce dostanou lektora a místnost ze série. U jednotlivé lekce se to pak dá změnit.',
+            'Vygenerované lekce dostanou lektora ze série a <strong>místnost z toho řádku rozvrhu</strong>, na který termín padne. U jednotlivé lekce se to pak dá změnit.',
         ];
 
         if ($series !== null && $series->activeTakers()->exists()) {

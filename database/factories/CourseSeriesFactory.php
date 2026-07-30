@@ -40,20 +40,31 @@ class CourseSeriesFactory extends Factory
     /**
      * A série whose recurring rozvrh is filled in, so its lessons can be
      * generated. Defaults to a single weekday at one time; pass several days for
-     * a série that meets more than once a week, all sharing the given time.
+     * a série that meets more than once a week, all sharing the given time — and
+     * one room, created unless a specific one is handed over.
      *
      * @param  array<int, DayOfWeek>  $days
      */
-    public function withSchedule(array $days = [DayOfWeek::Monday], string $start = '17:00', string $end = '18:00'): static
+    public function withSchedule(array $days = [DayOfWeek::Monday], string $start = '17:00', string $end = '18:00', ?string $roomId = null): static
     {
-        return $this->withScheduleSlots(
-            array_map(fn (DayOfWeek $day): ScheduleSlot => new ScheduleSlot($day, $start, $end), $days)
-        );
+        return $this->state(fn (array $attributes): array => [
+            'schedule' => SeriesSchedule::fromSlots(array_map(
+                fn (DayOfWeek $day): ScheduleSlot => new ScheduleSlot(
+                    $day,
+                    $start,
+                    $end,
+                    $roomId ?? Room::factory()->create()->getKey(),
+                ),
+                $days,
+            ))->toArray(),
+        ]);
     }
 
     /**
-     * The general form: each slot carries its own day and time, for a série
-     * meeting e.g. on středa at 9:00 and čtvrtek at 10:30.
+     * The general form: each slot carries its own day, time and room, for a série
+     * meeting e.g. on středa at 9:00 in one room and čtvrtek at 10:30 in another.
+     * Slots without a room are kept as they are — a rozvrh that cannot generate
+     * yet is a state worth testing.
      *
      * @param  array<int, ScheduleSlot>  $slots
      */
@@ -61,7 +72,6 @@ class CourseSeriesFactory extends Factory
     {
         return $this->state(fn (array $attributes): array => [
             'schedule' => SeriesSchedule::fromSlots($slots)->toArray(),
-            'room_id' => Room::factory(),
         ]);
     }
 }

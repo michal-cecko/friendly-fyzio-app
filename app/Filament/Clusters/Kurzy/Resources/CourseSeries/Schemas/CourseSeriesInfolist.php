@@ -49,7 +49,7 @@ class CourseSeriesInfolist
                             ->helperText(fn (CourseSeries $record): ?string => match (true) {
                                 $record->hasLessonSchedule() => null,
                                 $record->weeklySchedule()->isEmpty() => 'Bez rozvrhu se lekce přidávají po jedné',
-                                default => 'Doplňte místnost, jinak lekce nejde vygenerovat',
+                                default => 'Doplňte místnost u každého termínu, jinak lekce nejde vygenerovat',
                             })
                             ->placeholder('Nenastaveno'),
                         TextEntry::make('lessons')

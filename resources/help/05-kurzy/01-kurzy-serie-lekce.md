@@ -1,7 +1,7 @@
 ---
 title: Kurzy, série a lekce
 icon: heroicon-o-rectangle-stack
-keywords: [kurz, série, běh, lekce, termín kurzu, struktura, kategorie, lektor série, obsazenost, max. náhrad, včasné zrušení, rozvrh, sloupec rozvrh, generování lekcí, vygenerovat lekce, dny v týdnu, den a čas kurzu, čas konání, místnost série, fotka na kartu, fotka do detailu, fotka kurzu]
+keywords: [kurz, série, běh, lekce, termín kurzu, struktura, kategorie, lektor série, obsazenost, max. náhrad, včasné zrušení, rozvrh, sloupec rozvrh, generování lekcí, vygenerovat lekce, dny v týdnu, den a čas kurzu, čas konání, místnost série, místnost v rozvrhu, každý den v jiné místnosti, fotka na kartu, fotka do detailu, fotka kurzu]
 ---
 
 Kurzy mají tři úrovně a je užitečné je nezaměňovat.
@@ -39,11 +39,13 @@ Není to jen popiska: kdo je u série uvedený, tomu se série objeví v panelu 
 
 ## Rozvrh série
 
-Na záložce **Rozvrh** v nastavení série vyplníte, kdy se běh schází. Každý řádek je jeden termín v týdnu — **den**, **od** a **do** — a řádků může být víc: série, která se schází v pondělí i ve středu, dostane lekci v obou dnech. Časy se přitom nemusí shodovat, takže zvládnete i běh ve středu od 9:00 a ve čtvrtek od 10:30. Vedle rozvrhu se vybírá **místnost**, do které se lekce naplánují.
+Na záložce **Rozvrh** v nastavení série vyplníte, kdy se běh schází. Každý řádek je jeden termín v týdnu — **den**, **od**, **do** a **místnost** — a řádků může být víc: série, která se schází v pondělí i ve středu, dostane lekci v obou dnech. Časy ani místnosti se přitom nemusí shodovat, takže zvládnete i běh ve středu od 9:00 v jedné místnosti a ve čtvrtek od 10:30 ve druhé.
+
+Místnost můžete nechat prázdnou a doplnit ji později — rozvrh se uloží a klientům se den a čas ukazuje i tak, jen se do doplnění nedají generovat lekce.
 
 Rozvrh se **ukazuje klientům na webu** u kurzu (nahoře v info panelu i na kartě v přehledu kurzů a v shrnutí nad přihláškou), takže ho vyplňte, i když lekce zadáváte po jedné. Bez rozvrhu se série chová jako dřív — jen se u ní na webu neobjeví den a čas a nejde spustit generování lekcí.
 
-V seznamu sérií je rozvrh ve sloupci **Rozvrh**; kde chybí, stojí *Nenastaveno* — hledejte podle toho série, u kterých ho ještě nikdo nedoplnil. Stejný řádek najdete i v detailu série, tam s místností navíc.
+V seznamu sérií je rozvrh ve sloupci **Rozvrh**; kde chybí, stojí *Nenastaveno* — hledejte podle toho série, u kterých ho ještě nikdo nedoplnil. Stejný řádek najdete i v detailu série, tam s místnostmi navíc — schází-li se běh v každý den v jiné místnosti, je u každého dne uvedená ta jeho.
 
 > Rozvrh říká, kdy se série schází pravidelně. Skutečné termíny jsou lekce — když jednu z nich posunete jinam, rozvrh se tím nemění. Chcete-li, aby si klient přečetl správný den, opravte rozvrh; jednotlivé posuny vidí ve výpisu *Termíny lekcí* na stránce kurzu.
 
@@ -64,7 +66,7 @@ Generování se dá pouštět **opakovaně** a nikdy nic nepřepíše — dopln�
 - Zakládají se jen dny z rozvrhu, které padnou **mezi začátek a konec série**. Chcete-li lekce dál, posuňte nejdřív **Konec** série a spusťte generování znovu.
 - Termín, který už lekci má, se **přeskočí** — i když ji někdo posunul na jiný čas nebo do jiné místnosti. Jen u dne, na kterém má série v rozvrhu dva různé časy, se hlídá i ten čas, aby se založily obě skupiny.
 - **Smazané lekce se neobnovují.** Zrušená lekce zůstane zrušená i po dalším spuštění, takže si vynechaný svátek nemusíte hlídat.
-- Vygenerované lekce převezmou **lektora a místnost ze série**. U jednotlivé lekce se to pak dá změnit.
+- Vygenerované lekce převezmou **lektora ze série** a **místnost z toho řádku rozvrhu**, na který termín padne. U jednotlivé lekce se to pak dá změnit.
 - Najednou se založí nejvýš 200 lekcí. Když na to narazíte, zkontrolujte, jestli má série správně vyplněný konec.
 
 Když má série přihlášené účastníky, nové lekce se jim rovnou objeví v docházce. Pamatujte také, že **cena pro nově příchozí** se počítá z poměru zbývajících lekcí — generováním se tedy změní. Nejklidnější pořadí je vygenerovat lekce dřív, než se začnou lidé hlásit.

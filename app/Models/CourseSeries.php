@@ -34,7 +34,6 @@ class CourseSeries extends Model
         'start_date',
         'end_date',
         'schedule',
-        'room_id',
         'capacity',
         'max_substitutions',
         'waitlist_promotion_mode',
@@ -94,15 +93,6 @@ class CourseSeries extends Model
         return $query->where(fn (Builder $nested) => $nested
             ->where($this->qualifyColumn('instructor_id'), $userId)
             ->orWhereHas('course', fn (Builder $course) => $course->where('instructor_id', $userId)));
-    }
-
-    /**
-     * The room the série's lessons are generated into. Lessons carry their own
-     * room_id, so a single session can still be moved elsewhere afterwards.
-     */
-    public function room(): BelongsTo
-    {
-        return $this->belongsTo(Room::class);
     }
 
     public function lessons(): HasMany
@@ -168,29 +158,35 @@ class CourseSeries extends Model
 
     /**
      * Whether the série carries everything {@see LessonScheduleGenerator} needs
-     * to place a lesson: at least one slot and a room (lessons cannot be saved
-     * without one).
+     * to place a lesson: at least one slot, and a room on every one of them
+     * (lessons cannot be saved without one). A single roomless slot blocks the
+     * whole run, the same all-or-nothing rule an otherwise incomplete rozvrh has.
      */
     public function hasLessonSchedule(): bool
     {
-        return ! $this->weeklySchedule()->isEmpty() && $this->room_id !== null;
+        $schedule = $this->weeklySchedule();
+
+        return ! $schedule->isEmpty() && $schedule->everySlotHasRoom();
     }
 
     /**
-     * The rozvrh in one line for staff — "Pondělí a středa 17:00–18:00 · Sál A".
-     * Null only while no rozvrh is filled in; a missing room still shows the days
-     * and times, since that is what staff need to see to spot what is missing.
+     * The rozvrh in one line for staff — "Pondělí a středa 17:00–18:00 · Sál A",
+     * or one group per room when the days do not share one. Null only while no
+     * rozvrh is filled in; a missing room still shows the days and times, since
+     * that is what staff need to see to spot what is missing.
      */
     public function scheduleLabel(): ?string
     {
-        if ($this->weeklySchedule()->isEmpty()) {
+        $schedule = $this->weeklySchedule();
+
+        if ($schedule->isEmpty()) {
             return null;
         }
 
-        return implode(' · ', array_filter([
-            Str::ucfirst((string) $this->weeklySchedule()->label()),
-            $this->room?->name,
-        ]));
+        /** @var array<string, string> $roomNames */
+        $roomNames = Room::query()->whereKey($schedule->roomIds())->pluck('name', 'id')->all();
+
+        return Str::ucfirst((string) $schedule->labelWithRooms($roomNames));
     }
 
     /**
@@ -204,7 +200,8 @@ class CourseSeries extends Model
     }
 
     /**
-     * The same, shortened to the start time for the cramped offer card.
+     * The same, abbreviated to weekday and start time — "út 15:00, st 10:00" —
+     * for the cramped offer card and the detail page's summary row.
      */
     public function shortScheduleSummary(): ?string
     {

@@ -144,6 +144,14 @@ class CoursesImportTest extends TestCase
         // Both tracks land in the rozvrh, so the série states its terms on the
         // public course page too — not only in its name.
         $this->assertSame('středa 09:00–10:00, čtvrtek 10:30–11:30', $series->scheduleSummary());
+
+        // Each slot names the room its lessons went into, so the série can also
+        // generate the lessons it is still missing.
+        $this->assertTrue($series->hasLessonSchedule());
+        $this->assertSame(
+            $series->lessons()->first()->room_id,
+            $series->weeklySchedule()->slots()[0]->roomId,
+        );
     }
 
     public function test_workshops_store_lower_price_tier_with_full_wording(): void

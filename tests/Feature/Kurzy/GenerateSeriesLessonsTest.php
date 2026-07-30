@@ -51,16 +51,17 @@ class GenerateSeriesLessonsTest extends TestCase
             'instructor_id' => User::factory()->lecturer()->create()->getKey(),
         ]);
 
+        $room = Room::factory()->create()->getKey();
+
         return CourseSeries::factory()
             ->for($course)
             ->create([
                 'start_date' => '2026-08-03',
                 'end_date' => '2026-08-28',
                 'schedule' => [
-                    ['day' => DayOfWeek::Monday->value, 'start_time' => '17:00', 'end_time' => '18:00'],
-                    ['day' => DayOfWeek::Wednesday->value, 'start_time' => '17:00', 'end_time' => '18:00'],
+                    ['day' => DayOfWeek::Monday->value, 'start_time' => '17:00', 'end_time' => '18:00', 'room_id' => $room],
+                    ['day' => DayOfWeek::Wednesday->value, 'start_time' => '17:00', 'end_time' => '18:00', 'room_id' => $room],
                 ],
-                'room_id' => Room::factory()->create()->getKey(),
                 'capacity' => 10,
                 'status' => CourseSeriesStatus::Open,
                 ...$attributes,
@@ -94,8 +95,39 @@ class GenerateSeriesLessonsTest extends TestCase
         $lesson = $series->lessons()->first();
         $this->assertSame('17:00:00', $lesson->start_time);
         $this->assertSame('18:00:00', $lesson->end_time);
-        $this->assertSame($series->room_id, $lesson->room_id);
+        $this->assertSame($series->schedule[0]['room_id'], $lesson->room_id);
         $this->assertSame($series->leadInstructor()->getKey(), $lesson->instructor_id);
+    }
+
+    /**
+     * The room lives on the slot, so a série running v pondělí in one room and ve
+     * středu in another gets its lessons placed accordingly — that is what the
+     * per-slot room is for.
+     */
+    public function test_each_slot_places_its_lessons_in_its_own_room(): void
+    {
+        $monday = Room::factory()->create();
+        $wednesday = Room::factory()->create();
+
+        $series = $this->series([
+            'schedule' => [
+                ['day' => DayOfWeek::Monday->value, 'start_time' => '17:00', 'end_time' => '18:00', 'room_id' => $monday->getKey()],
+                ['day' => DayOfWeek::Wednesday->value, 'start_time' => '09:00', 'end_time' => '10:00', 'room_id' => $wednesday->getKey()],
+            ],
+        ]);
+
+        $this->assertSame(8, $this->generator()->generate($series)['created']);
+
+        $rooms = $series->lessons()->get()
+            ->mapWithKeys(fn (Lesson $lesson): array => [
+                CarbonImmutable::parse($lesson->lesson_date)->toDateString() => $lesson->room_id,
+            ]);
+
+        // Mondays in one room, Wednesdays in the other.
+        $this->assertSame($monday->getKey(), $rooms['2026-08-03']);
+        $this->assertSame($wednesday->getKey(), $rooms['2026-08-05']);
+        $this->assertSame($monday->getKey(), $rooms['2026-08-24']);
+        $this->assertSame($wednesday->getKey(), $rooms['2026-08-26']);
     }
 
     public function test_the_range_is_inclusive_on_both_ends(): void
@@ -103,7 +135,12 @@ class GenerateSeriesLessonsTest extends TestCase
         // 2026-08-03 and 2026-08-31 are both Mondays and both boundaries.
         $series = $this->series([
             'end_date' => '2026-08-31',
-            'schedule' => [['day' => DayOfWeek::Monday->value, 'start_time' => '17:00', 'end_time' => '18:00']],
+            'schedule' => [[
+                'day' => DayOfWeek::Monday->value,
+                'start_time' => '17:00',
+                'end_time' => '18:00',
+                'room_id' => Room::factory()->create()->getKey(),
+            ]],
         ]);
 
         $this->generator()->generate($series);
@@ -184,7 +221,12 @@ class GenerateSeriesLessonsTest extends TestCase
             ['schedule' => null],
             // A slot missing its times is dropped, leaving nothing to generate.
             ['schedule' => [['day' => DayOfWeek::Monday->value]]],
-            ['room_id' => null],
+            // A lesson cannot be saved without a room, so one roomless slot stops
+            // the whole run — not just its own dates.
+            ['schedule' => [
+                ['day' => DayOfWeek::Monday->value, 'start_time' => '17:00', 'end_time' => '18:00', 'room_id' => Room::factory()->create()->getKey()],
+                ['day' => DayOfWeek::Wednesday->value, 'start_time' => '17:00', 'end_time' => '18:00'],
+            ]],
         ] as $missing) {
             $series = $this->series($missing);
 
@@ -240,11 +282,13 @@ class GenerateSeriesLessonsTest extends TestCase
     public function test_two_slots_on_one_weekday_each_get_their_lesson(): void
     {
         // A morning and an evening group meeting on the same Monday.
+        $room = Room::factory()->create()->getKey();
+
         $series = $this->series([
             'end_date' => '2026-08-10',
             'schedule' => [
-                ['day' => DayOfWeek::Monday->value, 'start_time' => '09:00', 'end_time' => '10:00'],
-                ['day' => DayOfWeek::Monday->value, 'start_time' => '17:00', 'end_time' => '18:00'],
+                ['day' => DayOfWeek::Monday->value, 'start_time' => '09:00', 'end_time' => '10:00', 'room_id' => $room],
+                ['day' => DayOfWeek::Monday->value, 'start_time' => '17:00', 'end_time' => '18:00', 'room_id' => $room],
             ],
         ]);
 
@@ -325,12 +369,13 @@ class GenerateSeriesLessonsTest extends TestCase
 
     public function test_creating_a_serie_with_a_schedule_redirects_with_the_prompt_flag(): void
     {
+        $room = Room::factory()->create();
+
         $this->createSeriesThroughForm('Podzim 2026', [
             'schedule' => [
-                ['day' => DayOfWeek::Monday->value, 'start_time' => '17:00', 'end_time' => '18:00'],
-                ['day' => DayOfWeek::Wednesday->value, 'start_time' => '18:15', 'end_time' => '19:15'],
+                ['day' => DayOfWeek::Monday->value, 'start_time' => '17:00', 'end_time' => '18:00', 'room_id' => $room->getKey()],
+                ['day' => DayOfWeek::Wednesday->value, 'start_time' => '18:15', 'end_time' => '19:15', 'room_id' => $room->getKey()],
             ],
-            'room_id' => Room::factory()->create()->getKey(),
         ]);
 
         $series = CourseSeries::query()->where('name', 'Podzim 2026')->sole();
@@ -338,8 +383,8 @@ class GenerateSeriesLessonsTest extends TestCase
         $this->assertTrue($series->hasLessonSchedule());
         // The repeater's UUID keys are re-indexed on the way into the column.
         $this->assertSame([
-            ['day' => 'monday', 'start_time' => '17:00', 'end_time' => '18:00'],
-            ['day' => 'wednesday', 'start_time' => '18:15', 'end_time' => '19:15'],
+            ['day' => 'monday', 'start_time' => '17:00', 'end_time' => '18:00', 'room_id' => $room->getKey()],
+            ['day' => 'wednesday', 'start_time' => '18:15', 'end_time' => '19:15', 'room_id' => $room->getKey()],
         ], $series->schedule);
         // Nothing is created until the prompt on the detail page is confirmed.
         $this->assertSame(0, $series->lessons()->count());
@@ -384,19 +429,33 @@ class GenerateSeriesLessonsTest extends TestCase
     public function test_the_schedule_label_reads_as_one_line(): void
     {
         $series = $this->series();
-        $series->setRelation('room', $series->room()->first());
+        $room = Room::query()->findOrFail($series->schedule[0]['room_id']);
 
         $this->assertSame(
-            'Pondělí a středa 17:00–18:00 · '.$series->room->name,
+            'Pondělí a středa 17:00–18:00 · '.$room->name,
             $series->scheduleLabel(),
         );
 
         // Clients see the same rozvrh without the room.
         $this->assertSame('pondělí a středa 17:00–18:00', $series->scheduleSummary());
-        $this->assertSame('pondělí a středa 17:00', $series->shortScheduleSummary());
+        $this->assertSame('po 17:00, st 17:00', $series->shortScheduleSummary());
+
+        // Two rooms, two phrases — staff see which day meets where.
+        $other = Room::factory()->create();
+        $mixed = $this->series(['schedule' => [
+            ['day' => DayOfWeek::Monday->value, 'start_time' => '17:00', 'end_time' => '18:00', 'room_id' => $room->getKey()],
+            ['day' => DayOfWeek::Wednesday->value, 'start_time' => '17:00', 'end_time' => '18:00', 'room_id' => $other->getKey()],
+        ]]);
+
+        $this->assertSame(
+            'Pondělí 17:00–18:00 · '.$room->name.', středa 17:00–18:00 · '.$other->name,
+            $mixed->scheduleLabel(),
+        );
 
         // A missing room no longer hides the rozvrh — only an empty one does.
-        $this->assertNotNull($this->series(['room_id' => null])->scheduleLabel());
+        $this->assertSame('Pondělí 17:00–18:00', $this->series(['schedule' => [
+            ['day' => DayOfWeek::Monday->value, 'start_time' => '17:00', 'end_time' => '18:00'],
+        ]])->scheduleLabel());
         $this->assertNull($this->series(['schedule' => null])->scheduleLabel());
     }
 }

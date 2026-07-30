@@ -80,6 +80,8 @@ class PublicOfferPagesTest extends TestCase
 
         $this->get('/kurzy/'.$course->slug)
             ->assertOk()
+            // Abbreviated in the info list, spelled out in the order summary.
+            ->assertSee('út 17:30')
             ->assertSee('úterý 17:30–18:30')
             ->assertSee('Kdy');
     }
@@ -105,7 +107,7 @@ class PublicOfferPagesTest extends TestCase
         ]);
 
         Livewire::test(CourseArchive::class)
-            ->assertSee('středa 09:00, čtvrtek 10:30');
+            ->assertSee('st 09:00, čt 10:30');
     }
 
     public function test_unpublished_course_is_hidden_from_guests_but_previewable_by_staff(): void

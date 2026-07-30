@@ -10,9 +10,9 @@ use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Materializes a série's recurring rozvrh (a list of weekday + time slots, plus
- * a room, stored on the série itself) into concrete {@see Lesson} rows between
- * its start_date and end_date.
+ * Materializes a série's recurring rozvrh (a list of slots stored on the série
+ * itself, each with its own weekday, time and room) into concrete {@see Lesson}
+ * rows between its start_date and end_date.
  *
  * Stateless (Octane-safe): every call resolves its own data, nothing is cached
  * on the instance — the same contract as {@see App\Support\WorkBlocks\WorkBlockGenerator},
@@ -86,7 +86,9 @@ class LessonScheduleGenerator
                 Lesson::query()->create([
                     'series_id' => $series->getKey(),
                     'instructor_id' => $instructor->getKey(),
-                    'room_id' => $series->room_id,
+                    // Every slot carries its own room, so a série can run pondělí
+                    // in one room and středa in another.
+                    'room_id' => $slot->roomId,
                     'lesson_date' => $date->toDateString(),
                     'start_time' => $this->time($slot->startTime),
                     'end_time' => $this->time($slot->endTime),

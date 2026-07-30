@@ -1045,18 +1045,22 @@ class CoursesImport extends Command
 
     /**
      * The série's rozvrh — one slot per weekly track, so an imported série
-     * carries its day and time into the admin and onto the public course page
-     * instead of only into its own name.
+     * carries its day, time and room into the admin and onto the public course
+     * page instead of only into its own name. The room is the same one the
+     * imported lessons land in, which leaves the série ready to generate.
      *
      * @param  list<array{start: Carbon, time: string}>  $tracks
-     * @return array<int, array{day: string, start_time: string, end_time: string}>
+     * @return array<int, array{day: string, start_time: string, end_time: string, room_id: string|null}>
      */
     protected function scheduleSlots(array $tracks, int $duration): array
     {
+        $room = $this->defaultRoom()->getKey();
+
         return SeriesSchedule::fromSlots(array_map(fn (array $track): ScheduleSlot => new ScheduleSlot(
             DayOfWeek::fromCarbon($track['start']),
             Carbon::parse($track['time'])->format('H:i'),
             Carbon::parse($track['time'])->addMinutes($duration)->format('H:i'),
+            $room,
         ), $tracks))->toArray();
     }
 
