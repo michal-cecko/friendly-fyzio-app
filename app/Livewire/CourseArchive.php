@@ -4,12 +4,12 @@ namespace App\Livewire;
 
 use App\Enums\CourseSeriesStatus;
 use App\Enums\CourseSeriesVisibility;
-use App\Enums\OfferVisibility;
 use App\Models\Course;
 use App\Models\CourseCategory;
 use App\Models\CourseSeries;
 use App\Models\EventCategory;
 use App\Models\Lesson;
+use App\Support\Offers\EventArchiveQuery;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -23,10 +23,14 @@ use Livewire\WithPagination;
  * results are shareable/deep-linkable. The grid shows one card per LISTED
  * SERIES (public, open-or-full run), so a course with two upcoming terms
  * appears twice and each card links straight to its term; courses without a
- * listed run surface once in the muted "Připravujeme" tail. One-off events
- * moved to their own category pages — an encouragement section under the grid
- * cross-sells course-derived events ("try a single session first"). Rendered
- * by the course-archive CMS brick.
+ * listed run surface once in the muted "Připravujeme" tail.
+ *
+ * With the brick-level `show_type_switch` on, two cards above the filters
+ * switch the same archive over to one-off events (`?typ=lekce`) — scoped to
+ * the configured event categories, muted "Proběhlé akce" tail included. The
+ * two tabs use different taxonomies (CourseCategory vs EventCategory), so
+ * switching always clears the category pill. Rendered by the course-archive
+ * CMS brick.
  */
 class CourseArchive extends Component
 {
@@ -34,6 +38,9 @@ class CourseArchive extends Component
 
     /** @var array<string, mixed> */
     public array $config = [];
+
+    #[Url(as: 'typ')]
+    public string $type = 'kurzy';
 
     #[Url(as: 'kategorie')]
     public ?string $category = null;
@@ -43,6 +50,12 @@ class CourseArchive extends Component
 
     #[Url(as: 'hledani')]
     public string $search = '';
+
+    public function updatedType(): void
+    {
+        $this->category = null;
+        $this->resetPage('strana');
+    }
 
     public function updatedCategory(): void
     {
@@ -59,10 +72,31 @@ class CourseArchive extends Component
         $this->resetPage('strana');
     }
 
+    public function selectType(string $type): void
+    {
+        $this->type = $type === 'lekce' ? 'lekce' : 'kurzy';
+        $this->category = null;
+        $this->resetPage('strana');
+    }
+
     public function selectCategory(?string $slug): void
     {
         $this->category = $slug;
         $this->resetPage('strana');
+    }
+
+    /**
+     * Whether the events tab is the one being shown. Without the brick toggle
+     * the archive is courses-only, so a stray `?typ=lekce` is ignored.
+     */
+    protected function showsEvents(): bool
+    {
+        return $this->showTypeSwitch() && $this->type === 'lekce';
+    }
+
+    protected function showTypeSwitch(): bool
+    {
+        return (bool) ($this->config['show_type_switch'] ?? false);
     }
 
     /**
@@ -78,14 +112,22 @@ class CourseArchive extends Component
 
     public function render(): View
     {
+        $events = $this->showsEvents();
+
         return view('livewire.course-archive', [
-            'categories' => $this->categories(),
-            'results' => $this->courses(),
-            'preparing' => $this->preparingCourses(),
+            'isEvents' => $events,
+            'categories' => $events ? $this->eventCategories() : $this->categories(),
+            'results' => $events ? $this->events() : $this->courses(),
+            'preparing' => $events ? new Collection : $this->preparingCourses(),
+            'past' => $events ? $this->pastEvents() : new Collection,
             'showFilters' => (bool) ($this->config['show_filters'] ?? true),
             'showSearch' => (bool) ($this->config['show_search'] ?? true),
+            'showTypeSwitch' => $this->showTypeSwitch(),
+            'coursesLabel' => (string) ($this->config['courses_label'] ?? 'Pohybové kurzy'),
+            'coursesSubtitle' => (string) ($this->config['courses_subtitle'] ?? 'Pravidelné semestrální série lekcí'),
+            'eventsLabel' => (string) ($this->config['events_label'] ?? 'Jednorázové lekce'),
+            'eventsSubtitle' => (string) ($this->config['events_subtitle'] ?? 'Jednotlivé lekce bez závazku'),
             'filtersActive' => $this->category !== null || filled($this->search) || $this->availableOnly,
-            'crossSell' => $this->crossSell(),
         ]);
     }
 
@@ -158,51 +200,110 @@ class CourseArchive extends Component
     }
 
     /**
-     * The "try a single session first" encouragement under the course grid:
-     * configured copy, up to three upcoming course-derived events and a CTA to
-     * the configured event category page. Suppressed on filtered/paged views
-     * (mirrors the preparing tail) and via the brick toggle.
-     *
-     * @return array{title: string, text: string, url: ?string, events: Collection<int, Lesson>}|null
+     * Upcoming one-off events for the "Jednorázové lekce" tab, narrowed to the
+     * brick-configured categories. Mirrors the standalone event archive.
      */
-    protected function crossSell(): ?array
+    protected function events(): mixed
     {
-        if (! ($this->config['cross_sell'] ?? true)) {
-            return null;
-        }
-
-        if ($this->availableOnly || filled($this->search) || (int) ($this->paginators['strana'] ?? 1) > 1) {
-            return null;
-        }
-
-        $categorySlug = (string) ($this->config['cross_sell_category'] ?? 'jednorazove-lekce');
-        $category = EventCategory::query()->published()->where('slug', $categorySlug)->first();
-
-        $events = Lesson::query()
-            ->published()
+        return EventArchiveQuery::base($this->activeEventCategorySlugs(), $this->includePrivate())
             ->upcoming()
-            ->where('visibility', OfferVisibility::Public)
-            ->whereNotNull('slug')
-            ->where(fn (Builder $query) => $query
-                ->whereHas('course', fn (Builder $course) => $course->published())
-                ->orWhereHas('series.course', fn (Builder $course) => $course->published()))
-            ->withOccupancyCounts()
-            ->with(['course', 'series.course', 'category'])
+            ->when(filled($this->search), fn (Builder $query) => EventArchiveQuery::applySearch($query, $this->search))
+            ->when($this->availableOnly, fn (Builder $query) => $query
+                ->hasSpotsLeft()
+                ->withoutActiveWaitlistInvite())
             ->orderBy('lesson_date')
             ->orderBy('start_time')
-            ->limit(3)
-            ->get();
+            ->paginate(6, pageName: 'strana');
+    }
 
-        if ($category === null && $events->isEmpty()) {
-            return null;
+    /**
+     * Recently held events, shown muted as information — the events-tab twin of
+     * the courses tab's "Připravujeme" tail, suppressed under the same rules.
+     *
+     * @return Collection<int, Lesson>
+     */
+    protected function pastEvents(): Collection
+    {
+        if ($this->availableOnly || filled($this->search) || (int) ($this->paginators['strana'] ?? 1) > 1) {
+            return new Collection;
         }
 
-        return [
-            'title' => (string) ($this->config['cross_sell_title'] ?? 'Chcete si to nejdřív vyzkoušet?'),
-            'text' => (string) ($this->config['cross_sell_text'] ?? 'Přijďte na jednorázovou lekci bez závazku celého kurzu.'),
-            'url' => $category?->permalink,
-            'events' => $events,
-        ];
+        return EventArchiveQuery::base($this->activeEventCategorySlugs(), $this->includePrivate())
+            ->past()
+            ->orderByDesc('lesson_date')
+            ->limit(3)
+            ->get();
+    }
+
+    /**
+     * The categories actually queried right now: a selected pill narrows the
+     * configured set down to itself.
+     *
+     * @return array<int, string>
+     */
+    protected function activeEventCategorySlugs(): array
+    {
+        $configured = $this->eventCategorySlugs();
+
+        if ($this->category === null) {
+            return $configured;
+        }
+
+        // Guard against a stale `?kategorie=` from the courses tab: an unknown
+        // slug must not widen the archive past its configured categories.
+        if ($configured !== [] && ! in_array($this->category, $configured, true)) {
+            return $configured;
+        }
+
+        return [$this->category];
+    }
+
+    /**
+     * Category pills for the events tab: the configured categories, or every
+     * published one when nothing is configured. A single category needs no
+     * pills — the tab is then pinned to it.
+     *
+     * @return Collection<int, EventCategory>
+     */
+    protected function eventCategories(): Collection
+    {
+        $slugs = $this->eventCategorySlugs();
+
+        if (count($slugs) === 1) {
+            return new Collection;
+        }
+
+        return EventCategory::query()
+            ->published()
+            ->when($slugs !== [], fn (Builder $query) => $query->whereIn('slug', $slugs))
+            ->orderBy('display_order')
+            ->orderBy('name')
+            ->get();
+    }
+
+    /**
+     * The event categories the tab covers. An empty list means every category;
+     * a single one pins the tab to it. Tolerates a bare string, so a config
+     * written by the old single-select shape keeps working.
+     *
+     * @return array<int, string>
+     */
+    protected function eventCategorySlugs(): array
+    {
+        $configured = $this->config['event_categories'] ?? [];
+
+        if (is_string($configured)) {
+            $configured = [$configured];
+        }
+
+        if (! is_array($configured)) {
+            return [];
+        }
+
+        return array_values(array_filter(
+            array_map(fn ($slug): string => (string) $slug, $configured),
+            fn (string $slug): bool => $slug !== '',
+        ));
     }
 
     /**

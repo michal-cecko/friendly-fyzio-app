@@ -87,4 +87,6 @@ Série má stav (připravuje se, probíhá, ukončená) a viditelnost. Historick
 
 Workshopy a jednorázové lekce nejsou kurz se sérií — mají vlastní agendu **Akce** s vlastními kategoriemi. Fungují podobně, ale mají jediný termín a jednodušší přihlašování.
 
+Na webu má každá kategorie akcí vlastní stránku, ale akce se dají ukázat i přímo ve výpisu kurzů — přepínačem v bloku Archiv kurzů, popsaným v článku „Stránky a bloky".
+
 Fotky se u nich vyplňují stejně jako u kurzu — na záložce *Veřejný prodej* jsou tytéž dvě pole. U lekce, která patří ke kurzu, je můžete nechat prázdné a použije se fotka kurzu.

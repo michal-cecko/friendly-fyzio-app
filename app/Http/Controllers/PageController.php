@@ -15,16 +15,6 @@ class PageController extends Controller
 {
     public function show(string $slug = '/'): View|RedirectResponse
     {
-        // The retired "Jednorázové lekce" tab of the course archive lives on as
-        // its own category page; keep old deep links working.
-        if ($slug === 'kurzy' && request()->query('typ') === 'lekce') {
-            $lekce = EventCategory::query()->where('slug', 'jednorazove-lekce')->first();
-
-            if ($lekce !== null) {
-                return redirect()->to($lekce->permalink, 301);
-            }
-        }
-
         // Event category landing pages resolve BEFORE CMS pages: a category's
         // custom page has `pageable` set, and the owned-page redirect below
         // would otherwise bounce the category URL to itself forever.

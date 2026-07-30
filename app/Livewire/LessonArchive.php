@@ -2,9 +2,9 @@
 
 namespace App\Livewire;
 
-use App\Enums\OfferVisibility;
 use App\Models\EventCategory;
 use App\Models\Lesson;
+use App\Support\Offers\EventArchiveQuery;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -88,17 +88,10 @@ class LessonArchive extends Component
     {
         $categorySlug = $this->fixedCategory() ?? $this->category;
 
-        return Lesson::query()
-            ->published()
-            // A lesson only has a public address once it has both — a scheduled
-            // lesson of a série has neither until its free place is released.
-            ->whereNotNull('slug')
-            ->whereNotNull('event_category_id')
-            ->when(! $this->includePrivate(), fn (Builder $query) => $query->where('visibility', OfferVisibility::Public))
-            ->when($categorySlug, fn (Builder $query, string $slug) => $query
-                ->whereHas('category', fn (Builder $category) => $category->where('slug', $slug)))
-            ->withOccupancyCounts()
-            ->with(['room', 'category', 'course', 'series.course']);
+        return EventArchiveQuery::base(
+            $categorySlug === null ? [] : [$categorySlug],
+            $this->includePrivate(),
+        );
     }
 
     /**
@@ -149,19 +142,8 @@ class LessonArchive extends Component
         return $user !== null && ! $user->isStaff();
     }
 
-    /**
-     * Case-insensitive search over the event's own name/description with a
-     * fallback to the linked course's name (lesson-type events often derive
-     * their content from the course).
-     */
     protected function applySearch(Builder $query): Builder
     {
-        $needle = '%'.mb_strtolower(trim($this->search)).'%';
-
-        return $query->where(fn (Builder $inner) => $inner
-            ->whereRaw('LOWER(name) LIKE ?', [$needle])
-            ->orWhereRaw('LOWER(description) LIKE ?', [$needle])
-            ->orWhereHas('course', fn (Builder $course) => $course
-                ->whereRaw('LOWER(name) LIKE ?', [$needle])));
+        return EventArchiveQuery::applySearch($query, $this->search);
     }
 }

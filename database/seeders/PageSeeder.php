@@ -31,8 +31,9 @@ class PageSeeder extends Seeder
 
     /**
      * The "Pohybové kurzy" archive page: hero + the data-driven course archive
-     * brick (category pills, availability, search, pagination — all in the
-     * URL, plus the lesson cross-sell section) + newsletter signup.
+     * brick (kurzy/lekce switch, category pills, availability, search,
+     * pagination — all in the URL) + newsletter signup. The lekce tab is
+     * pinned to the "Jednorázové lekce" event category.
      */
     private function coursesPage(): void
     {
@@ -60,14 +61,16 @@ class PageSeeder extends Seeder
                     ]),
                     $this->brick('course-archive', [
                         'eyebrow' => 'Aktuální nabídka',
-                        'title' => 'Naše kurzy',
+                        'title' => 'Naše kurzy a lekce',
                         'subtitle' => 'Filtrujte podle kategorie a najděte kurz, který vám vyhovuje.',
                         'show_filters' => true,
                         'show_search' => true,
-                        'cross_sell' => true,
-                        'cross_sell_title' => 'Chcete si to nejdřív vyzkoušet?',
-                        'cross_sell_text' => 'Přijďte na jednorázovou lekci bez závazku celého kurzu.',
-                        'cross_sell_category' => 'jednorazove-lekce',
+                        'show_type_switch' => true,
+                        'courses_label' => 'Pohybové kurzy',
+                        'courses_subtitle' => 'Pravidelné semestrální série lekcí',
+                        'events_label' => 'Jednorázové lekce',
+                        'events_subtitle' => 'Jednotlivé lekce bez závazku',
+                        'event_categories' => ['jednorazove-lekce'],
                     ]),
                     $this->brick('newsletter', [
                         'title' => 'Přihlaste se k odběru novinek',

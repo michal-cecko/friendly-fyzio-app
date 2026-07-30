@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Course;
 use App\Models\EventCategory;
 use App\Models\Lesson;
+use Database\Seeders\PageSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -52,14 +53,20 @@ class LessonRoutingTest extends TestCase
         $this->get('/neexistujici-kategorie/neexistujici-akce')->assertNotFound();
     }
 
-    public function test_old_lesson_tab_deep_link_redirects_to_the_category_page(): void
+    public function test_the_lesson_tab_deep_link_opens_the_events_tab_instead_of_redirecting(): void
     {
-        EventCategory::query()->where('slug', 'jednorazove-lekce')->firstOrFail();
+        // ?typ=lekce is tab state on the course archive again, not a legacy URL.
+        $this->seed(PageSeeder::class);
 
-        $response = $this->get('/kurzy?typ=lekce');
+        $lekce = EventCategory::query()->where('slug', 'jednorazove-lekce')->firstOrFail();
+        Lesson::factory()->standalone()->forCategory($lekce)->published()->create([
+            'name' => 'Ochutnávková lekce jógy',
+            'lesson_date' => today()->addWeeks(2)->toDateString(),
+        ]);
 
-        $response->assertStatus(301);
-        $response->assertRedirect(url('/jednorazove-lekce'));
+        $this->get('/kurzy?typ=lekce')
+            ->assertOk()
+            ->assertSee('Ochutnávková lekce jógy');
     }
 
     public function test_old_lesson_url_redirects_to_the_event_permalink_by_preserved_id(): void

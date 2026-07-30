@@ -1,7 +1,7 @@
 ---
 title: Stránky a bloky
 icon: heroicon-o-document
-keywords: [stránka, web, blok, editor, publikovat, koncept, obsah, text na webu, duplikovat, kopírovat, klonovat]
+keywords: [stránka, web, blok, editor, publikovat, koncept, obsah, text na webu, duplikovat, kopírovat, klonovat, archiv kurzů, výpis kurzů, přepínač kurzy lekce, jednorázové lekce na webu, kategorie akcí ve výpisu]
 ---
 
 Stránky veřejného webu se skládají z **bloků**. Blok je hotová sekce — hero, text, karty, citace, tým, recenze, Instagram, výpis kurzů. Skládáte je za sebe jako stavebnici, nepíšete HTML.
@@ -9,6 +9,20 @@ Stránky veřejného webu se skládají z **bloků**. Blok je hotová sekce — 
 ## Práce s bloky
 
 Blok se přidá tlačítkem, přesune tažením a smaže z jeho vlastní nabídky. Každý má vlastní nastavení — nadpis, text, obrázek, tlačítko.
+
+## Blok Archiv kurzů
+
+Tenhle blok si tahá kurzy sám z agendy Kurzy — nic do něj neopisujete. Nastavujete jen, jak má výpis vypadat: nadpis, vyhledávací pole a filtr kategorií s volbou „Jenom dostupné".
+
+Navíc umí **přepínač kurzy / jednorázové akce**. Když ho zapnete, objeví se nad filtry dvě velké karty a návštěvník mezi nimi přepíná stejný výpis — vlevo pravidelné kurzy, vpravo jednorázové akce. Názvy i popisky obou karet si napíšete sami.
+
+U přepínače vybíráte **Kategorie jednorázových akcí**, a tím řídíte, co se na druhé kartě ukáže:
+
+- **Nevyberete nic** — vypíšou se akce ze všech kategorií a návštěvník mezi nimi přepíná dalším filtrem.
+- **Vyberete jednu** — karta je napevno jen pro ni a filtr kategorií se vůbec nezobrazí. Takhle je nastavená stránka Kurzy: druhá karta ukazuje jenom Jednorázové lekce.
+- **Vyberete víc** — filtr kategorií nabídne právě tyhle vybrané a nic jiného.
+
+Karta, kterou návštěvník zvolí, se propíše do adresy, takže na konkrétní záložku jde poslat odkaz.
 
 ## Nezačínejte od prázdné stránky
 
